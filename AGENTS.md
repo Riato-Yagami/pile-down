@@ -11,17 +11,17 @@ précédente moins un. Les valeurs posées sont ensuite masquées.
 
 Conserver en priorité une boucle de jeu courte, lisible et immédiatement
 jouable. La scène principale utilise des contrôles 2D avec des effets de relief
-simulés, sans dépendance externe. La variante 3D reste disponible comme
-prototype expérimental.
+simulés, sans dépendance externe.
 
 ## Organisation
 
-- `scenes/` contient uniquement les scènes Godot réutilisables et la scène
+- `resources/scenes/` contient uniquement les scènes Godot réutilisables et la scène
   principale.
-- `scripts/` contient tous les scripts GDScript.
+- `resources/scripts/` contient tous les scripts GDScript.
+- `resources/fonts/` regroupe les polices et leurs licences.
+- `resources/sprites/` regroupe les textures utilisées par le jeu.
 - `project.godot` et la documentation restent à la racine.
-- Les nouveaux médias éventuels vont dans `assets/`, classés par type si le
-  dossier devient volumineux.
+- Les nouvelles ressources vont dans le sous-dossier approprié de `resources/`.
 - Les tests automatisés éventuels vont dans `tests/`.
 
 Lors d'un déplacement, mettre à jour toutes les références `res://`, le chemin
@@ -31,13 +31,8 @@ Conserver les fichiers `.uid` associés aux scripts.
 ## Architecture
 
 - `GameManager.gd` orchestre la version principale en 2D.
-- `Game3DManager.gd` orchestre la variante expérimentale en 3D.
-- `Piece3D.gd` encapsule une tuile volumique, ses collisions, sa sélection, son
-  déplacement et son retournement.
-- `Pile3D.gd` gère un emplacement fixe et l'empilement physique des tuiles.
 - `PileLayoutManager.gd` calcule les dispositions compactes et stables.
 - `SoftAudio.gd` génère les retours sonores courts sans ressource externe.
-- `RoundedTileMesh.gd` génère les volumes arrondis communs aux pièces 3D.
 - `RoundDots.gd` dessine les indicateurs d'erreur du HUD minimaliste.
 - `HandManager.gd` est seul responsable de la génération et de l'affichage de
   la main.
