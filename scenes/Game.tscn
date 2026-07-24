@@ -1,0 +1,409 @@
+[gd_scene format=3 uid="uid://nhd7ja2wd0h5"]
+
+[ext_resource type="Script" uid="uid://cndv55sh4bdu0" path="res://scripts/GameManager.gd" id="1"]
+[ext_resource type="Script" uid="uid://dni0tcchvcu0r" path="res://scripts/HandManager.gd" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/Card.tscn" id="3"]
+[ext_resource type="Script" uid="uid://dthcxl8xnj12n" path="res://scripts/TimerManager.gd" id="4"]
+[ext_resource type="Texture2D" uid="uid://dsjxa58650rl4" path="res://sprites/background.png" id="5"]
+[ext_resource type="Script" uid="uid://b85rd0kdrucci" path="res://scripts/CountdownRing.gd" id="6"]
+[ext_resource type="Script" uid="uid://ddqbrodgb6dkh" path="res://scripts/RoundDots.gd" id="7"]
+[ext_resource type="Script" uid="uid://ce08w1nx57g03" path="res://scripts/SoftAudio.gd" id="8"]
+[ext_resource type="Texture2D" uid="uid://rs770htrm1l0" path="res://sprites/clock.png" id="9"]
+[ext_resource type="Texture2D" uid="uid://d1bdvbuu47mea" path="res://sprites/round-background.png" id="10"]
+[ext_resource type="Texture2D" uid="uid://qce8go7ptdnr" path="res://sprites/hand/hand-background.png" id="11"]
+[ext_resource type="FontFile" uid="uid://0lls67bvy7ct" path="res://font/VCR_OSD_MONO_1.001.ttf" id="12"]
+[ext_resource type="Texture2D" uid="uid://dhyqwnpnjwhv6" path="res://sprites/hand/life/life-point-full.png" id="13"]
+[ext_resource type="Texture2D" uid="uid://kvt15wncwlow" path="res://sprites/button.png" id="14"]
+[ext_resource type="Texture2D" uid="uid://b1sacjkn0r8mw" path="res://sprites/pop-up.png" id="15"]
+
+[sub_resource type="Theme" id="PixelTheme"]
+default_font = ExtResource("12")
+default_font_size = 14
+
+[sub_resource type="Shader" id="ClockProgressShader"]
+code = "shader_type canvas_item;
+
+uniform float progress : hint_range(0.0, 1.0) = 1.0;
+uniform vec4 progress_color : source_color = vec4(0.302, 0.51, 0.761, 1.0);
+
+void fragment() {
+	vec4 source = texture(TEXTURE, UV);
+	bool green_key = source.g > 0.6 && source.g > source.r * 1.35 && source.g > source.b * 1.35;
+	if (source.a > 0.0 && green_key) {
+		float angle = atan(UV.y - 0.5, UV.x - 0.5);
+		float clockwise_from_top = fract((angle + 1.57079632679) / 6.28318530718);
+		COLOR = clockwise_from_top <= progress ? progress_color : vec4(0.8, 0.8, 0.8, source.a);
+	} else {
+		COLOR = source;
+	}
+}"
+
+[sub_resource type="ShaderMaterial" id="ClockProgressMaterial"]
+resource_local_to_scene = true
+shader = SubResource("ClockProgressShader")
+shader_parameter/progress = 1.0
+shader_parameter/progress_color = Color(0.302, 0.51, 0.761, 1)
+
+[sub_resource type="StyleBoxFlat" id="Wave"]
+bg_color = Color(0.31, 0.64, 0.63, 0.04)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.31, 0.64, 0.63, 0.28)
+corner_radius_top_left = 100
+corner_radius_top_right = 100
+corner_radius_bottom_right = 100
+corner_radius_bottom_left = 100
+
+[sub_resource type="StyleBoxTexture" id="SpriteButton"]
+texture = ExtResource("14")
+
+[node name="Game" type="Control" unique_id=694228927]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("PixelTheme")
+script = ExtResource("1")
+
+[node name="BackgroundArt" type="TextureRect" parent="." unique_id=957653642]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("5")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="TimerRing" type="TextureRect" parent="." unique_id=1181363924]
+unique_name_in_owner = true
+texture_filter = 1
+material = SubResource("ClockProgressMaterial")
+layout_mode = 1
+offset_left = 9.0
+offset_top = 6.0
+offset_right = 37.0
+offset_bottom = 36.0
+pivot_offset = Vector2(14, 14.5)
+texture = ExtResource("9")
+script = ExtResource("6")
+
+[node name="TimerLabel" type="Label" parent="TimerRing" unique_id=1614593335]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_font_sizes/font_size = 14
+text = "5"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RoundPanel" type="TextureRect" parent="." unique_id=1126469928]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -73.0
+offset_top = 7.0
+offset_right = -11.0
+offset_bottom = 37.0
+grow_horizontal = 0
+texture = ExtResource("10")
+
+[node name="RoundLabel" type="Label" parent="RoundPanel" unique_id=698062451]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_font_sizes/font_size = 14
+text = "100"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PilesBoard" type="Control" parent="." unique_id=1086969405]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 46.0
+offset_top = 64.0
+offset_right = -46.0
+offset_bottom = -93.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+
+[node name="RoundWave" type="Panel" parent="." unique_id=1425738561]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(160, 160)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -80.0
+offset_top = -80.0
+offset_right = 80.0
+offset_bottom = 80.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(80, 80)
+mouse_filter = 2
+theme_override_styles/panel = SubResource("Wave")
+
+[node name="TransientLabel" type="Label" parent="." unique_id=1854612339]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -36.0
+offset_right = 220.0
+offset_bottom = 36.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_font_sizes/font_size = 28
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HandTray" type="TextureRect" parent="." unique_id=1006987005]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 18.0
+offset_top = -55.0
+offset_right = -18.0
+offset_bottom = -9.0
+grow_horizontal = 2
+grow_vertical = 0
+texture = ExtResource("11")
+
+[node name="MistakesDots" type="Control" parent="HandTray" unique_id=369532668]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_left = 6.0
+offset_top = 5.0
+offset_right = 15.0
+offset_bottom = 36.0
+mouse_filter = 2
+script = ExtResource("7")
+
+[node name="LifePoint1" type="TextureRect" parent="HandTray/MistakesDots" unique_id=188844852]
+unique_name_in_owner = true
+texture_filter = 1
+layout_mode = 0
+offset_right = 10.0
+offset_bottom = 10.0
+mouse_filter = 2
+texture = ExtResource("13")
+
+[node name="LifePoint2" type="TextureRect" parent="HandTray/MistakesDots" unique_id=706337224]
+unique_name_in_owner = true
+texture_filter = 1
+layout_mode = 0
+offset_top = 12.0
+offset_right = 10.0
+offset_bottom = 22.0
+mouse_filter = 2
+texture = ExtResource("13")
+
+[node name="LifePoint3" type="TextureRect" parent="HandTray/MistakesDots" unique_id=1279791123]
+unique_name_in_owner = true
+texture_filter = 1
+layout_mode = 0
+offset_top = 24.0
+offset_right = 10.0
+offset_bottom = 34.0
+mouse_filter = 2
+texture = ExtResource("13")
+
+[node name="Center" type="CenterContainer" parent="HandTray" unique_id=418610134]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HandContainer" type="HBoxContainer" parent="HandTray/Center" unique_id=1317932487]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="DragLayer" type="Control" parent="." unique_id=648215424]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="HandManager" type="Node" parent="." unique_id=366759602]
+unique_name_in_owner = true
+script = ExtResource("2")
+card_scene = ExtResource("3")
+
+[node name="TimerManager" type="Node" parent="." unique_id=1745576884]
+unique_name_in_owner = true
+script = ExtResource("4")
+
+[node name="SoftAudio" type="Node" parent="." unique_id=730625101]
+unique_name_in_owner = true
+script = ExtResource("8")
+
+[node name="Overlay" type="Control" parent="." unique_id=1498983076]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Scrim" type="ColorRect" parent="Overlay" unique_id=1768170741]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.969, 0.965, 0.949, 0.9)
+
+[node name="Center" type="CenterContainer" parent="Overlay" unique_id=282762708]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="TextureRect" parent="Overlay/Center" unique_id=100339681]
+texture_filter = 1
+custom_minimum_size = Vector2(256, 192)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("15")
+
+[node name="Content" type="VBoxContainer" parent="Overlay/Center/Panel" unique_id=1887149846]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 42.0
+offset_right = -11.0
+offset_bottom = -35.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="OverlayTitle" type="Label" parent="Overlay/Center/Panel/Content" unique_id=128634448]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_font_sizes/font_size = 28
+text = "1"
+horizontal_alignment = 1
+
+[node name="OverlayDetails" type="Label" parent="Overlay/Center/Panel/Content" unique_id=648907875]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.541, 0.533, 0.51, 1)
+theme_override_font_sizes/font_size = 14
+text = "time: 00:000"
+horizontal_alignment = 1
+
+[node name="OverlayButton" type="Button" parent="Overlay/Center/Panel/Content" unique_id=1335381635]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(86, 31)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("SpriteButton")
+theme_override_styles/pressed = SubResource("SpriteButton")
+theme_override_styles/hover = SubResource("SpriteButton")
+text = "REPLAY"
+
+[node name="Splash" type="Control" parent="." unique_id=1259278219]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Background" type="ColorRect" parent="Splash" unique_id=1279132298]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.969, 0.965, 0.949, 1)
+
+[node name="Center" type="CenterContainer" parent="Splash" unique_id=1815383714]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Content" type="VBoxContainer" parent="Splash/Center" unique_id=583057275]
+layout_mode = 2
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="Title" type="Label" parent="Splash/Center/Content" unique_id=1442216190]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_font_sizes/font_size = 28
+text = "PILE DOWN"
+horizontal_alignment = 1
+
+[node name="SplashButton" type="Button" parent="Splash/Center/Content" unique_id=522904768]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(86, 31)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("SpriteButton")
+theme_override_styles/pressed = SubResource("SpriteButton")
+theme_override_styles/hover = SubResource("SpriteButton")
+text = "PLAY"
