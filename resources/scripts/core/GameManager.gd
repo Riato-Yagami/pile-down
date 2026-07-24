@@ -18,15 +18,18 @@ const Debug := preload("res://resources/scripts/core/debug.gd")
 @onready var timer_label: Label = %TimerLabel
 @onready var timer_ring: CountdownRing = %TimerRing
 @onready var round_label: Label = %RoundLabel
+@onready var run_time_label: Label = %RunTimeLabel
 @onready var mistakes_dots: RoundDots = %MistakesDots
 @onready var transient_label: Label = %TransientLabel
 @onready var overlay: Control = %Overlay
-@onready var overlay_title: Label = %OverlayTitle
-@onready var overlay_details: Label = %OverlayDetails
+@onready var overlay_title: RichTextLabel = %OverlayTitle
+@onready var overlay_details: RichTextLabel = %OverlayDetails
 @onready var overlay_button: Button = %OverlayButton
+@onready var overlay_high_score: RichTextLabel = %OverlayHighScore
 @onready var splash: Control = %Splash
 @onready var splash_button: Button = %SplashButton
 @onready var splash_high_score: Label = %SplashHighScore
+@onready var splash_debug_mode: Label = %SplashDebugMode
 @onready var soft_audio: SoftAudio = %SoftAudio
 @onready var special_rule_manager: SpecialRuleManager = %SpecialRuleManager
 @onready var flashlight_overlay: FlashlightOverlay = %FlashlightOverlay
@@ -53,6 +56,9 @@ var _last_urgent_second := -1
 var round_modifiers := RoundModifiers.new()
 var tier_reliefs_applied := 0
 var _debug_action_in_progress := false
+var _hand_cycle_generation := 0
+var _pending_interactive_generation := -1
+var _regeneration_hand_check_pending := false
 
 
 func _ready() -> void:
@@ -60,17 +66,25 @@ func _ready() -> void:
 	hand_manager.card_selected.connect(_on_card_selected)
 	hand_manager.card_drag_started.connect(_on_card_drag_started)
 	hand_manager.card_drag_released.connect(_on_card_drag_released)
+	hand_manager.card_entered_screen.connect(_on_card_entered_screen)
 	timer_manager.time_updated.connect(_on_time_updated)
 	timer_manager.time_expired.connect(_on_time_expired)
 	overlay_button.pressed.connect(_on_overlay_pressed)
 	splash_button.pressed.connect(_on_splash_pressed)
+	special_rule_manager.rules_announcing.connect(_on_special_rules_announcing)
 	resized.connect(_layout_piles)
 	_load_high_score()
+	splash_debug_mode.visible = Debug.is_enabled()
 	input_locked = true
 	splash.visible = true
 
 
 func _process(_delta: float) -> void:
+	if run_time_label.visible:
+		run_time_label.text = _format_duration(_total_time_milliseconds())
+	if _regeneration_hand_check_pending and not input_locked:
+		_regeneration_hand_check_pending = false
+		_reroll_unplayable_hand()
 	if selected_card == null or not is_instance_valid(selected_card) or not selected_card.dragging:
 		return
 	var candidate := _pile_at(selected_card.drag_target)
@@ -127,6 +141,12 @@ func _handle_global_shortcut(event: InputEvent) -> bool:
 		KEY_M:
 			soft_audio.toggle_mute()
 			return true
+		KEY_T:
+			if not splash.visible and not overlay.visible:
+				run_time_label.visible = not run_time_label.visible
+				if run_time_label.visible:
+					run_time_label.text = _format_duration(_total_time_milliseconds())
+				return true
 	return false
 
 
@@ -184,6 +204,9 @@ func _debug_reset_high_score() -> void:
 
 
 func start_game() -> void:
+	soft_audio.play_start()
+	_hand_cycle_generation += 1
+	_pending_interactive_generation = -1
 	pile_count = Difficulty.START_PILES
 	hand_size = Difficulty.START_HAND_SIZE
 	start_value = Difficulty.START_CARD_VALUE
@@ -197,6 +220,7 @@ func start_game() -> void:
 	_apply_debug_progression(Debug.get_start_round(Difficulty.TOTAL_ROUNDS))
 	game_started_msec = Time.get_ticks_msec()
 	round_reached_time_ms = 0
+	run_time_label.visible = false
 	splash.visible = false
 	overlay.visible = false
 	overlay_mode = ""
@@ -205,6 +229,7 @@ func start_game() -> void:
 
 func start_round() -> void:
 	input_locked = true
+	_regeneration_hand_check_pending = false
 	selected_card = null
 	hovered_pile = null
 	mistakes_left = 3
@@ -229,6 +254,7 @@ func start_round() -> void:
 			round_modifiers.roman_numerals_enabled
 		)
 		pile.pile_selected.connect(_on_pile_selected)
+		pile.regenerated.connect(_on_pile_regenerated)
 		piles.append(pile)
 	_layout_piles()
 	for index in piles.size():
@@ -257,11 +283,17 @@ func _layout_piles() -> void:
 		pile.position = (center + positions[index] - Vector2(17.0, 18.0)).round()
 
 
-func _begin_turn() -> void:
+func _begin_turn(hand_prepared := false) -> void:
 	if _all_piles_complete():
 		return
 	selected_card = null
 	input_locked = false
+	if not hand_prepared:
+		_prepare_next_hand(true, false)
+	timer_manager.start_countdown(turn_time)
+
+
+func _prepare_next_hand(clear_existing: bool, enter_from_right: bool) -> void:
 	var wandering_cards := round_modifiers.wandering_hand_cards
 	hand_manager.generate_hand(
 		drag_layer if wandering_cards else hand_container,
@@ -271,11 +303,12 @@ func _begin_turn() -> void:
 		round_modifiers.stack_direction == RoundModifiers.StackDirection.UP,
 		round_modifiers.hover_reveal_enabled,
 		round_modifiers.roman_numerals_enabled,
-		not wandering_cards
+		not wandering_cards,
+		clear_existing,
+		enter_from_right
 	)
 	if wandering_cards:
 		_draw_wandering_hand()
-	timer_manager.start_countdown(turn_time)
 
 
 func _draw_wandering_hand() -> void:
@@ -298,13 +331,30 @@ func _draw_wandering_hand() -> void:
 				break
 		card.global_position = position_candidate.round()
 		occupied.append(card.get_global_rect().grow(5.0))
-		card.enable_wandering(index, true)
-		card.play_draw_in_place(index * 0.045)
+		card.play_wandering_entrance(
+			index,
+			position_candidate.round(),
+			size,
+			index * 0.055
+		)
 
 
 func _on_card_selected(card: PlayingCard) -> void:
 	if not input_locked:
 		selected_card = card
+
+
+func _on_card_entered_screen(card: PlayingCard) -> void:
+	if (
+		_pending_interactive_generation != _hand_cycle_generation
+		or not hand_manager.current_cards.has(card)
+	):
+		return
+	_pending_interactive_generation = -1
+	selected_card = null
+	input_locked = false
+	hand_manager.unlock_hand()
+	timer_manager.start_countdown(turn_time)
 
 
 func _on_card_drag_started(card: PlayingCard) -> void:
@@ -350,7 +400,32 @@ func _on_pile_selected(_pile: MemoryPile) -> void:
 	pass
 
 
+func _on_pile_regenerated(_pile: MemoryPile, _delta: int) -> void:
+	_regeneration_hand_check_pending = true
+
+
+func _reroll_unplayable_hand() -> void:
+	if hand_manager.current_cards.is_empty():
+		return
+	var playable_values := _playable_values()
+	if playable_values.is_empty():
+		return
+	for card in hand_manager.current_cards:
+		if is_instance_valid(card) and card.visible and playable_values.has(card.card_value):
+			return
+
+	_hand_cycle_generation += 1
+	_pending_interactive_generation = _hand_cycle_generation
+	selected_card = null
+	input_locked = true
+	timer_manager.stop_countdown()
+	_start_discard_current_hand()
+	_prepare_next_hand(false, true)
+
+
 func _place_selected_card(pile: MemoryPile) -> void:
+	_hand_cycle_generation += 1
+	var placement_generation := _hand_cycle_generation
 	input_locked = true
 	timer_manager.stop_countdown()
 	hand_manager.lock_hand()
@@ -362,12 +437,16 @@ func _place_selected_card(pile: MemoryPile) -> void:
 	soft_audio.play_tone(610.0, 0.075, 0.055)
 	card.visible = false
 	card.queue_free()
+	_start_discard_current_hand()
+	var next_hand_prepared := not _playable_values().is_empty()
+	if next_hand_prepared:
+		_pending_interactive_generation = placement_generation
+		_prepare_next_hand(false, true)
 
 	if pile.is_complete_value():
 		soft_audio.play_tone(760.0, 0.14, 0.06)
 		await pile.complete_animation()
 		await special_rule_manager.after_card_played(piles, _progression_round())
-		await _discard_current_hand()
 		if _all_piles_complete():
 			await _finish_round()
 			return
@@ -376,8 +455,8 @@ func _place_selected_card(pile: MemoryPile) -> void:
 		await pile.hide_value(true)
 		await special_rule_manager.after_card_played(piles, _progression_round())
 		await get_tree().create_timer(0.12).timeout
-		await _discard_current_hand()
-	_begin_turn()
+	if not next_hand_prepared and placement_generation == _hand_cycle_generation:
+		_begin_turn(false)
 
 
 func _handle_mistake(pile: MemoryPile = null) -> void:
@@ -443,7 +522,12 @@ func _clear_drag_placeholder() -> void:
 
 
 func _discard_current_hand() -> void:
-	await hand_manager.discard_hand(hand_container)
+	await hand_manager.discard_hand(hand_container, drag_layer)
+	_clear_drag_placeholder()
+
+
+func _start_discard_current_hand() -> void:
+	hand_manager.discard_hand(hand_container, drag_layer)
 	_clear_drag_placeholder()
 
 
@@ -457,7 +541,6 @@ func _pile_at(global_point: Vector2) -> MemoryPile:
 func _on_time_expired() -> void:
 	if input_locked:
 		return
-	selected_card = null
 	await _handle_mistake()
 
 
@@ -475,6 +558,9 @@ func _finish_round() -> void:
 		await _finish_game(true)
 		return
 	var change := _advance_difficulty(_progression_round())
+	if change.is_empty():
+		start_round()
+		return
 	transient_label.text = change
 	transient_label.visible = true
 	transient_label.modulate.a = 0.0
@@ -503,25 +589,29 @@ func _finish_game(completed_all_rounds := false) -> void:
 	input_locked = true
 	timer_manager.stop_countdown()
 	await special_rule_manager.end_round(piles)
+	if completed_all_rounds:
+		soft_audio.play_victory()
+	else:
+		soft_audio.play_game_over()
 	var formatted_time := _format_duration(round_reached_time_ms)
 	var high_score_kind := _update_high_score(round_number, round_reached_time_ms)
 	game_over.emit()
-	if completed_all_rounds:
-		overlay_title.text = "YOU WON"
-		overlay_details.text = "in %s" % formatted_time
-		if not high_score_kind.is_empty():
-			overlay_details.text += "\n%s RECORD" % high_score_kind
+	overlay_high_score.visible = not high_score_kind.is_empty()
+	if not high_score_kind.is_empty():
+		var rounds_text := "%d ROUNDS LEFT" % round_number
+		var time_text := "in %s" % formatted_time
+		if high_score_kind == "ROUND":
+			rounds_text = "[color=#4D82C2]%s[/color]" % rounds_text
+		else:
+			time_text = "[color=#4D82C2]%s[/color]" % time_text
+		overlay_title.text = "[center]%s[/center]" % rounds_text
+		overlay_details.text = "[center]%s[/center]" % time_text
+	elif completed_all_rounds:
+		overlay_title.text = "[center]YOU WON[/center]"
+		overlay_details.text = "[center]in %s[/center]" % formatted_time
 	else:
-		overlay_title.text = (
-			"%s RECORD" % high_score_kind
-			if not high_score_kind.is_empty()
-			else "%d ROUNDS LEFT" % round_number
-		)
-		overlay_details.text = (
-			"%d ROUNDS LEFT\ntime: %s" % [round_number, formatted_time]
-			if not high_score_kind.is_empty()
-			else "time: %s" % formatted_time
-		)
+		overlay_title.text = "[center]%d ROUNDS LEFT[/center]" % round_number
+		overlay_details.text = "[center]in %s[/center]" % formatted_time
 	overlay_button.text = "REPLAY"
 	overlay_mode = "restart"
 	overlay.visible = true
@@ -534,6 +624,10 @@ func _on_overlay_pressed() -> void:
 
 func _on_splash_pressed() -> void:
 	start_game()
+
+
+func _on_special_rules_announcing(_rules: Array[SpecialRuleData]) -> void:
+	soft_audio.play_special_rule()
 
 
 func _increase_difficulty(first_upgrade_override := -1) -> String:
@@ -574,13 +668,15 @@ func _increase_difficulty(first_upgrade_override := -1) -> String:
 	):
 		options.append("temps")
 		weights.append(Difficulty.REDUCE_TURN_TIME_WEIGHT)
+	if Difficulty.NO_DIFFICULTY_CHANGE_WEIGHT > 0.0:
+		options.append("none")
+		weights.append(Difficulty.NO_DIFFICULTY_CHANGE_WEIGHT)
 	if options.is_empty():
 		return ""
 	var total := 0.0
 	for weight in weights:
 		total += weight
 	if total <= 0.0:
-		# Preserve the mandatory first upgrade even if both first weights are zero.
 		weights.fill(1.0)
 		total = float(weights.size())
 	var roll := rng.randf_range(0.0, total)
@@ -603,31 +699,49 @@ func _increase_difficulty(first_upgrade_override := -1) -> String:
 		"temps":
 			turn_time -= 1.0
 			return "-1 SECOND"
+		"none":
+			return ""
 	return ""
 
 
 func _advance_difficulty(next_progression_round: int, first_upgrade_override := -1) -> String:
-	var change := _increase_difficulty(first_upgrade_override)
-	if not _is_special_rule_capacity_increase(next_progression_round):
-		return change
+	if not _is_special_tier_relief_round(next_progression_round):
+		return _increase_difficulty(first_upgrade_override)
 	_apply_special_tier_relief()
-	return "%s\nTIER RELIEF" % change if not change.is_empty() else "TIER RELIEF"
+	return "TIER RELIEF"
 
 
-func _is_special_rule_capacity_increase(progression_round: int) -> bool:
-	if progression_round <= 1:
-		return false
-	return (
-		special_rule_manager.get_special_rule_capacity(progression_round)
-		> special_rule_manager.get_special_rule_capacity(progression_round - 1)
-	)
+func _is_special_tier_relief_round(progression_round: int) -> bool:
+	# Reliefs keep following the combo milestone curve after the five-rule cap.
+	var theoretical_rule_count := 2
+	while true:
+		var milestone := Difficulty.special_rule_milestone(
+			theoretical_rule_count
+		)
+		if milestone >= progression_round:
+			return milestone == progression_round
+		theoretical_rule_count += 1
+	return false
 
 
 func _apply_special_tier_relief() -> void:
-	pile_count = maxi(pile_count - 1, Difficulty.START_PILES)
-	hand_size = maxi(hand_size - 1, Difficulty.START_HAND_SIZE)
-	start_value = maxi(start_value - 1, Difficulty.START_CARD_VALUE)
-	turn_time = minf(turn_time + 1.0, Difficulty.START_TURN_TIME)
+	var relief_count := mini(tier_reliefs_applied + 1, 4)
+	var stats: Array[StringName] = [&"piles", &"hand", &"value", &"time"]
+	for index in range(stats.size() - 1, 0, -1):
+		var swap_index := rng.randi_range(0, index)
+		var temporary := stats[index]
+		stats[index] = stats[swap_index]
+		stats[swap_index] = temporary
+	for index in relief_count:
+		match stats[index]:
+			&"piles":
+				pile_count = maxi(pile_count - 1, Difficulty.START_PILES)
+			&"hand":
+				hand_size = maxi(hand_size - 1, Difficulty.START_HAND_SIZE)
+			&"value":
+				start_value = maxi(start_value - 1, Difficulty.START_CARD_VALUE)
+			&"time":
+				turn_time = minf(turn_time + 1.0, Difficulty.START_TURN_TIME)
 	tier_reliefs_applied += 1
 
 
@@ -642,7 +756,7 @@ func _apply_debug_progression(start_round: int) -> void:
 func _playable_values() -> Array[int]:
 	var values: Array[int] = []
 	for pile in piles:
-		if not pile.completed:
+		if not pile.completed and not pile.is_complete_value():
 			var expected := pile.expected_value()
 			if not values.has(expected):
 				values.append(expected)
@@ -693,11 +807,14 @@ func _format_duration(total_msec: int) -> String:
 	var total_minutes := total_seconds / 60
 	var minutes := total_minutes % 60
 	var hours := total_minutes / 60
+	var parts := PackedStringArray()
 	if hours > 0:
-		return "%02d:%02d:%02d:%03d" % [hours, minutes, seconds, milliseconds]
+		parts.append("%d h" % hours)
 	if total_minutes > 0:
-		return "%02d:%02d:%03d" % [minutes, seconds, milliseconds]
-	return "%02d:%03d" % [seconds, milliseconds]
+		parts.append("%d min" % minutes)
+	parts.append("%d s" % seconds)
+	parts.append("%03d ms" % milliseconds)
+	return " ".join(parts)
 
 
 func _update_high_score(rounds_left: int, elapsed_time_ms: int) -> String:
@@ -743,7 +860,7 @@ func _refresh_high_score() -> void:
 	if best_rounds_left < 0 or best_score_time_ms < 0:
 		splash_high_score.text = "HIGH SCORE\n--"
 		return
-	splash_high_score.text = "HIGH SCORE\n%d ROUNDS LEFT\nTIME %s" % [
+	splash_high_score.text = "HIGH SCORE\n%d ROUNDS LEFT\nIN %s" % [
 		best_rounds_left,
 		_format_duration(best_score_time_ms),
 	]

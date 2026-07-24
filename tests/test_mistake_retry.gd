@@ -30,6 +30,18 @@ func _run() -> void:
 	assert(game.timer_manager.running)
 
 	await create_timer(1.0).timeout
+
+	var timed_out_card := game.hand_manager.current_cards[0] as PlayingCard
+	var mistakes_before_timeout := game.mistakes_left
+	game._on_card_drag_started(timed_out_card)
+	game._on_time_expired()
+	await create_timer(0.2).timeout
+	assert(game.mistakes_left == mistakes_before_timeout - 1)
+	assert(timed_out_card.get_parent() == game.hand_container)
+	assert(not timed_out_card.dragging)
+	assert(timed_out_card.selectable)
+	assert(not game.input_locked)
+
 	print("Mistake retry integration test passed.")
 	game.queue_free()
 	quit()

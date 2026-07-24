@@ -54,7 +54,7 @@ godot --path .
 La touche `Échap` revient à l'écran d'accueil depuis le jeu. Sur cet écran,
 elle ferme l'application. La barre d'espace lance la partie depuis l'accueil
 et relance une partie depuis l'écran de fin. La touche `M` coupe ou réactive
-tous les sons.
+tous les sons. Pendant une partie, `T` affiche ou masque le temps total écoulé.
 
 Les cartes et les piles restent des contrôles 2D et utilisent les sprites
 pixel-art du dossier `resources/sprites/`. Toute pile survolée reçoit le même
@@ -64,9 +64,13 @@ brièvement la pile ciblée pour rappeler sa valeur actuelle. La carte revient
 d'abord rapidement dans la même main, qui redevient immédiatement jouable
 pendant la révélation de la pile. La position libérée par une carte jouée reste
 réservée jusqu'à la disparition de la main : les
-cartes restantes ne se recentrent donc pas. Elles sont ensuite défaussées avec
-une sortie échelonnée, puis la nouvelle main est piochée avec une animation
-d'arrivée.
+cartes restantes ne se recentrent donc pas. Dès qu'un dépôt est validé,
+l'ancienne main descend hors de l'écran tandis que la suivante entre depuis la
+droite. Ces animations se jouent en parallèle du rappel complet de la pile,
+sans raccourcir celui-ci. La nouvelle main devient draggable dès qu'elle entre
+dans l'écran, même si son animation continue. Des signatures sonores courtes
+accompagnent aussi le lancement ou replay, l'annonce d'une règle spéciale, la
+défaite et la victoire.
 
 ## Structure
 
@@ -149,10 +153,14 @@ Au lancement, un splash screen affiche `PILE DOWN` et attend une pression sur
 `PLAY`. Il indique aussi le meilleur nombre de rounds restants et le temps
 nécessaire pour l'atteindre. Tous les textes du jeu sont en anglais. En cas de
 défaite, l'écran de score affiche le nombre de rounds restants et le temps
-de passage correspondant. Il annonce `ROUND RECORD` lorsqu'une meilleure
-progression est atteinte et `TIME RECORD` lorsque le même round est atteint
-plus vite. Une victoire affiche `YOU WON` et la durée totale. Le format omet
-les heures ou les minutes tant qu'elles ne sont pas nécessaires.
+de passage correspondant. Lors d'un nouveau record, le titre `HIGHSCORE`
+apparaît avec une vague animée au-dessus du popup afin de ne pas déséquilibrer
+son contenu. La valeur battue est colorée en bleu : le round pour une meilleure
+progression, ou le temps lorsque le même round est atteint plus vite. Une
+victoire sans nouveau record affiche `YOU WON` et la durée totale. Le format
+du score utilise des unités lisibles, par exemple `1 min 12 s 323 ms`, et omet
+les heures ou les minutes lorsqu'elles valent zéro. Il est présenté sous la
+forme `in 1 min 12 s 323 ms`.
 
 ## Régler la difficulté
 
@@ -162,18 +170,23 @@ Tous les réglages sont centralisés dans `resources/scripts/core/difficulty.gd`
 - limites maximales, ainsi que le temps minimal ;
 - nombre total de rounds ;
 - poids de probabilité de chaque malus ;
+- poids de probabilité de n'appliquer aucun changement ;
 - poids séparés du premier malus.
 
 Les poids sont relatifs et n'ont pas besoin de totaliser 100. Une valeur de
-`0` désactive l'option correspondante. Après le premier round, le malus est
-obligatoirement soit une nouvelle pile, soit une nouvelle carte en main. Les
-malus de valeur et de temps ne deviennent disponibles qu'ensuite.
+`0` désactive l'option correspondante. `NO_DIFFICULTY_CHANGE_WEIGHT` ajoute une
+issue silencieuse qui laisse toutes les statistiques intactes et lance
+directement le round suivant. Au premier round, les seuls autres résultats sont
+une nouvelle pile ou une nouvelle carte en main. Les malus de valeur et de
+temps ne deviennent disponibles qu'ensuite. Les rounds `TIER RELIEF` ne
+participent pas à ce tirage.
 
 ## Debug
 
 Les options de développement sont centralisées dans `resources/scripts/core/debug.gd`.
 `ENABLED` est l'interrupteur global : lorsqu'il vaut `false`, toutes les autres
-options sont ignorées.
+options sont ignorées. Lorsqu'il vaut `true`, le menu principal affiche
+`DEBUG MODE` en rouge.
 
 ```gdscript
 const ENABLED := false
@@ -189,8 +202,8 @@ const LOCK_SPECIAL_RULES: Array[StringName] = []
 - `LOCK_SPECIAL_RULES` force une ou plusieurs règles à chaque round, y compris
   avant leurs paliers normaux. Par exemple, utiliser
   `[&"peek_a_card", &"lights_out"]`. Une liste vide restaure la sélection
-  normale. Les doublons, identifiants inconnus et combinaisons structurellement
-  incompatibles sont ignorés avec un avertissement.
+  normale. Les doublons et identifiants inconnus sont ignorés avec un
+  avertissement.
 
 Lorsque `ENABLED` vaut `true`, deux raccourcis clavier sont disponibles :
 
@@ -204,32 +217,40 @@ Un modificateur temporaire peut être sélectionné au début de chaque round de
 progression. Les réglages se trouvent également dans `resources/scripts/core/difficulty.gd` :
 
 ```gdscript
-const SPECIAL_RULE_FREQUENCY := 5
-const SPECIAL_RULE_START_ROUND := 4
+const FIRST_SPECIAL_RULE_ROUND := 4
 const EXTRA_SPECIAL_RULE_CHANCE := 0.75
 const MAX_COMBINED_RULES := 5
+const LIGHTS_OUT_RADIUS := 54.0
 ```
 
 Le numéro utilisé pour ces paliers commence à 1 et augmente, même si le HUD
 affiche le nombre de rounds restants de 100 vers 0. Aucune règle spéciale
-n'apparaît avant `SPECIAL_RULE_START_ROUND`. La capacité est calculée avec
-`floor(round / SPECIAL_RULE_START_ROUND)` et plafonnée par
-`MAX_COMBINED_RULES`. Avec un palier de 4, elle vaut donc une règle au round 4,
-deux au round 8, trois au round 12, quatre au round 16 et cinq au round 20.
+n'apparaît avant `FIRST_SPECIAL_RULE_ROUND` (`k`). Ce premier round spécial
+garantit exactement une règle. Sur les rounds éligibles suivants, la première
+règle a une probabilité `EXTRA_SPECIAL_RULE_CHANCE` (`c`) d'apparaître. Chaque
+règle supplémentaire est tirée avec la même probabilité, et les tirages
+s'arrêtent au premier échec. Deux rounds avec règles spéciales ne peuvent
+jamais se suivre.
 
-Après le palier de départ, les multiples de `SPECIAL_RULE_FREQUENCY`
-garantissent la première règle. Chaque emplacement disponible supplémentaire,
-ainsi que le premier emplacement des autres rounds, est rempli avec une
-probabilité de `EXTRA_SPECIAL_RULE_CHANCE`. Les tirages sont successifs et
-s'arrêtent au premier échec : atteindre la capacité maximale n'est donc jamais
-automatique.
+La capacité passe à `n` règles au round `(k + n - 1) × n`, jusqu'à
+`MAX_COMBINED_RULES`. Avec la valeur par défaut `k = 4`, les paliers sont donc 2 règles au round 10,
+3 au round 18, 4 au round 28 et 5 au round 40. La combinaison complète est
+garantie précisément sur chacun de ces rounds ; le round précédent reste sans
+règle afin de préserver l'alternance.
 
-Lorsqu'un round augmente la capacité maximale de règles combinables, un
-`TIER RELIEF` réduit de 1 le nombre de piles, la taille de main et la valeur de
-départ, puis ajoute 1 seconde au timer. Chaque valeur reste bornée par sa valeur
-initiale : cet allègement ne rend jamais le jeu plus facile que le premier
-round. Le démarrage debug à un round avancé rejoue ces allègements dans leur
-ordre normal.
+À chaque palier théorique de règles combinables, un `TIER RELIEF` allège une
+statistique choisie aléatoirement au premier palier,
+deux statistiques distinctes au deuxième, puis trois et enfin quatre. Un
+allègement retire une pile, une carte en main ou une valeur de départ, ou ajoute
+une seconde au timer. Ce round de palier remplace entièrement l'augmentation de
+difficulté habituelle : aucune statistique n'est d'abord augmentée. Chaque
+valeur reste bornée par sa valeur initiale. Le démarrage debug à un round avancé
+rejoue ces allègements dans leur ordre normal.
+
+Après la limite de cinq règles simultanées, les paliers théoriques continuent
+de déclencher des `TIER RELIEF` selon la même formule, sans augmenter cette
+limite. Avec la valeur par défaut `k = 4`, les reliefs supplémentaires arrivent aux rounds 54, 70 et
+88. À partir du quatrième relief, les quatre statistiques sont allégées.
 
 Les règles disponibles sont :
 
@@ -238,23 +259,43 @@ Les règles disponibles sont :
 - `MERRY-GO-STACK` : mouvement continu, lent et déterministe des piles parmi
   six motifs : ellipse, pendule horizontal, figure en huit, orbites
   concentriques, vague verticale et circuit par points fixes ;
-- `FREE-RANGE CARDS` : apparition directe à des positions libres de l'écran,
-  puis déplacement pseudo-aléatoire hors du plateau ;
+- `FREE-RANGE CARDS` : entrée depuis le bord le plus proche de chaque position
+  libre tirée aléatoirement, déplacement pseudo-aléatoire hors du plateau,
+  puis sortie animée vers le bord le plus proche ;
 - `PILE UP` : progression inversée de 0 vers S ;
-- `LIGHTS OUT` : calque sombre avec lampe circulaire suivant le pointeur ;
+- `LIGHTS OUT` : calque sombre avec lampe circulaire suivant le pointeur ; le
+  cercle lumineux se referme progressivement à l'activation et se rouvre à la
+  fin du round. Son rayon en pixels se règle avec `LIGHTS_OUT_RADIUS` dans
+  `difficulty.gd` ;
 - `PEEK-A-CARD` : cartes cachées révélées au survol ou au premier toucher ;
 - `STACK ATTACK` : régénération temporisée d'une sélection de piles, affichée
-  avec le masque pixel-art `resources/sprites/tiles/tile-regen.png`. Une pile se retourne
+  avec le masque pixel-art `resources/sprites/tiles/tile-regen.png`. Une main
+  devenue entièrement injouable après une régénération est immédiatement
+  retirée et repiochée avec une carte garantie jouable. Une pile se retourne
   brièvement pour révéler sa nouvelle valeur après chaque régénération. Le
   cercle reprend les couleurs du timer global et reste masqué lorsque la pile
   ne peut pas se régénérer davantage ;
-- `ROMAN HOLIDAY` : valeurs de cartes et de piles en chiffres romains.
+- `ROMAN HOLIDAY` : valeurs de cartes et de piles en chiffres romains ; `VII`
+  et `VIII` utilisent la police `Tiny5 Regular` avec une taille réduite afin de
+  rester dans les tuiles.
 
-`SpecialRuleManager.gd` sélectionne les règles pondérées sans doublon et
-rejette les combinaisons incompatibles. `RoundModifiers.gd` constitue l'unique
-état consulté par le gameplay. Chaque `SpecialRuleData` expose `activate()` et
-`deactivate()` sur un `RoundContext`. La fin du round restaure les positions,
-arrête les timers, masque la lampe et réinitialise tous les modificateurs.
+`SpecialRuleManager.gd` sélectionne les règles pondérées sans doublon. Les
+combinaisons difficiles restent autorisées ; seule `LIGHTS OUT` est
+incompatible avec les règles déplaçant les piles (`SHELL GAME` et
+`MERRY-GO-STACK`). `RoundModifiers.gd` constitue l'unique état consulté par le
+gameplay. Chaque `SpecialRuleData` expose `activate()` et `deactivate()` sur un
+`RoundContext`. La fin du round restaure les positions, arrête les timers,
+masque la lampe et réinitialise tous les modificateurs.
+
+Certaines paires reçoivent un titre spécial dans l'annonce, y compris
+lorsqu'elles font partie d'une combinaison plus grande :
+
+- `LIGHTS OUT + PEEK-A-CARD` : `BLIND DATE` ;
+- `PILE UP + STACK ATTACK` : `ONE STEP FORWARD...` ;
+- `ROMAN HOLIDAY + PILE UP` : `THE EMPIRE RISES` ;
+- `SHELL GAME + ROMAN HOLIDAY` : `ET TU, STACK?` ;
+- `FREE-RANGE CARDS + PEEK-A-CARD` : `CARDIO TRAINING` ;
+- `LIGHTS OUT + STACK ATTACK` : `FEAR OF THE STACK`.
 
 Les scènes spécialisées sont :
 

@@ -1,16 +1,21 @@
 class_name FlashlightOverlay
 extends ColorRect
 
-@export var flashlight_radius := 54.0
+const Difficulty := preload("res://resources/scripts/core/difficulty.gd")
+
+var flashlight_radius := Difficulty.LIGHTS_OUT_RADIUS
 @export var flashlight_softness := 14.0
 @export var darkness_alpha := 0.94
 
 var target_position := Vector2(128.0, 160.0)
 var light_position := Vector2(128.0, 160.0)
+var animated_radius := 54.0
+var _transition_tween: Tween
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	animated_radius = flashlight_radius
 	_update_shader()
 
 
@@ -26,12 +31,44 @@ func follow_touch(position: Vector2) -> void:
 	target_position = position
 
 
+func close_in() -> void:
+	_kill_transition()
+	visible = true
+	target_position = get_viewport().get_mouse_position()
+	light_position = target_position
+	animated_radius = _fully_open_radius()
+	_update_shader()
+	_transition_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_transition_tween.tween_property(self, "animated_radius", flashlight_radius, 0.65)
+
+
+func open_out() -> void:
+	if not visible:
+		return
+	_kill_transition()
+	_transition_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_transition_tween.tween_property(self, "animated_radius", _fully_open_radius(), 0.55)
+	await _transition_tween.finished
+	visible = false
+	animated_radius = flashlight_radius
+	_update_shader()
+
+
+func _fully_open_radius() -> float:
+	return size.length() + flashlight_softness
+
+
+func _kill_transition() -> void:
+	if _transition_tween != null and _transition_tween.is_valid():
+		_transition_tween.kill()
+
+
 func _update_shader() -> void:
 	var shader_material := material as ShaderMaterial
 	if shader_material == null:
 		return
 	shader_material.set_shader_parameter("light_position", light_position)
 	shader_material.set_shader_parameter("viewport_size", size)
-	shader_material.set_shader_parameter("radius", flashlight_radius)
+	shader_material.set_shader_parameter("radius", animated_radius)
 	shader_material.set_shader_parameter("softness", flashlight_softness)
 	shader_material.set_shader_parameter("darkness_alpha", darkness_alpha)

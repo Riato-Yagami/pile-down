@@ -1,6 +1,8 @@
 class_name MemoryPile
 extends Control
 
+const TINY_REGULAR_FONT := preload("res://resources/fonts/Tiny5-Regular.ttf")
+
 signal pile_selected(pile)
 signal pile_completed(pile)
 signal regenerated(pile, delta)
@@ -280,4 +282,12 @@ func _refresh() -> void:
 	tile_material.set_shader_parameter("tile_color", color)
 	value_label.visible = face_up
 	value_label.text = RoundModifiers.format_value(current_value, roman_numerals_enabled)
+	value_label.add_theme_font_size_override(
+		"font_size",
+		RoundModifiers.value_font_size(current_value, roman_numerals_enabled)
+	)
+	if roman_numerals_enabled and current_value in [7, 8]:
+		value_label.add_theme_font_override("font", TINY_REGULAR_FONT)
+	else:
+		value_label.remove_theme_font_override("font")
 	value_label.add_theme_color_override("font_color", color.darkened(0.35))

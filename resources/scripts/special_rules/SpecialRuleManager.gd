@@ -2,6 +2,7 @@ class_name SpecialRuleManager
 extends Node
 
 signal rules_selected(rules: Array[SpecialRuleData])
+signal rules_announcing(rules: Array[SpecialRuleData])
 
 const RuleData := preload("res://resources/scripts/special_rules/SpecialRuleData.gd")
 const Modifiers := preload("res://resources/scripts/core/RoundModifiers.gd")
@@ -10,20 +11,26 @@ const Difficulty := preload("res://resources/scripts/core/difficulty.gd")
 const Debug := preload("res://resources/scripts/core/debug.gd")
 
 @onready var announcement: Control = %SpecialRuleAnnouncement
-@onready var flashlight_overlay: Control = %FlashlightOverlay
+@onready var flashlight_overlay: FlashlightOverlay = %FlashlightOverlay
 @onready var moving_pile_pattern: Node = %MovingPilePattern
 
 var active_rules: Array[SpecialRuleData] = []
 var modifiers := RoundModifiers.new()
 var context := RoundContext.new(1, modifiers)
 var rng := RandomNumberGenerator.new()
+var _last_special_rule_round := -1000
 
 var _rules: Array[SpecialRuleData] = [
-	RuleData.new(&"shell_game", "SHELL GAME", "Now you see it...", [&"merry_go_stack"]),
-	RuleData.new(&"merry_go_stack", "MERRY-GO-STACK", "Please remain seated.", [&"shell_game"]),
-	RuleData.new(&"free_range_cards", "FREE-RANGE CARDS", "They escaped again.", [&"lights_out"]),
+	RuleData.new(&"shell_game", "SHELL GAME", "Now you see it..."),
+	RuleData.new(&"merry_go_stack", "MERRY-GO-STACK", "Please remain seated."),
+	RuleData.new(&"free_range_cards", "FREE-RANGE CARDS", "They escaped again."),
 	RuleData.new(&"pile_up", "PILE UP", "Wrong way. Keep going."),
-	RuleData.new(&"lights_out", "LIGHTS OUT", "Hope you brought a mouse.", [&"free_range_cards"]),
+	RuleData.new(
+		&"lights_out",
+		"LIGHTS OUT",
+		"Hope you brought a mouse.",
+		[&"shell_game", &"merry_go_stack"]
+	),
 	RuleData.new(&"peek_a_card", "PEEK-A-CARD", "No peeking. Except peeking."),
 	RuleData.new(&"stack_attack", "STACK ATTACK", "Progress is temporary."),
 	RuleData.new(&"roman_holiday", "ROMAN HOLIDAY", "When in Rome..."),
@@ -35,46 +42,75 @@ func _ready() -> void:
 
 
 func get_special_rule_capacity(round_number: int) -> int:
-	var start_round: int = Difficulty.SPECIAL_RULE_START_ROUND
-	if round_number < start_round:
+	if round_number < Difficulty.FIRST_SPECIAL_RULE_ROUND:
 		return 0
-	return mini(
-		int(round_number / start_round),
-		Difficulty.MAX_COMBINED_RULES
-	)
+	var capacity := 1
+	for rule_count in range(2, Difficulty.MAX_COMBINED_RULES + 1):
+		if round_number < _rule_count_milestone(rule_count):
+			break
+		capacity = rule_count
+	return capacity
 
 
 func get_guaranteed_rule_count(round_number: int) -> int:
-	if round_number < Difficulty.SPECIAL_RULE_START_ROUND:
-		return 0
-	if round_number % Difficulty.SPECIAL_RULE_FREQUENCY != 0:
-		return 0
-	return 1
+	if round_number == Difficulty.FIRST_SPECIAL_RULE_ROUND:
+		return 1
+	for rule_count in range(2, Difficulty.MAX_COMBINED_RULES + 1):
+		if round_number == _rule_count_milestone(rule_count):
+			return rule_count
+	return 0
 
 
 func roll_rule_count(round_number: int) -> int:
 	var capacity := get_special_rule_capacity(round_number)
 	var count := get_guaranteed_rule_count(round_number)
+	if capacity == 0:
+		return 0
+	if count == 0 and rng.randf() >= Difficulty.EXTRA_SPECIAL_RULE_CHANCE:
+		return 0
+	if count == 0:
+		count = 1
 	while count < capacity and rng.randf() < Difficulty.EXTRA_SPECIAL_RULE_CHANCE:
 		count += 1
 	return count
+
+
+func _rule_count_milestone(rule_count: int) -> int:
+	return Difficulty.special_rule_milestone(rule_count)
+
+
+func _round_precedes_guaranteed_combo(round_number: int) -> bool:
+	return get_guaranteed_rule_count(round_number + 1) > 0
 
 
 func begin_round(round_number: int) -> RoundModifiers:
 	await end_round()
 	var locked_rule_ids := Debug.get_locked_special_rules()
 	if locked_rule_ids.is_empty():
-		var requested_count := roll_rule_count(round_number)
+		var requested_count := 0
+		if (
+			_last_special_rule_round != round_number - 1
+			and not _round_precedes_guaranteed_combo(round_number)
+		):
+			requested_count = roll_rule_count(round_number)
+		elif get_guaranteed_rule_count(round_number) > 0:
+			requested_count = get_guaranteed_rule_count(round_number)
 		active_rules = select_special_rules(round_number, requested_count)
 	else:
 		active_rules = _select_locked_rules(locked_rule_ids, round_number)
+	if not active_rules.is_empty():
+		_last_special_rule_round = round_number
 	modifiers = RoundModifiers.new()
 	context = RoundContext.new(round_number, modifiers)
 	for rule in active_rules:
 		rule.activate(context)
 	if flashlight_overlay != null:
-		flashlight_overlay.visible = modifiers.flashlight_enabled
+		if modifiers.flashlight_enabled:
+			flashlight_overlay.close_in()
+		else:
+			flashlight_overlay.visible = false
 	if not active_rules.is_empty() and announcement != null:
+		rules_announcing.emit(active_rules)
 		await announcement.show_rules(active_rules)
 	rules_selected.emit(active_rules)
 	return modifiers
@@ -97,13 +133,7 @@ func _select_locked_rules(
 		if candidate == null:
 			push_warning("Special Rules debug lock: unknown rule id '%s'." % rule_id)
 			continue
-		# Debug locks bypass progression gates, but structurally conflicting
-		# movement rules remain forbidden.
-		var compatibility_round := maxi(
-			round_number,
-			Difficulty.HARD_COMBO_MINIMUM_ROUND
-		)
-		if not _is_compatible(candidate, selected, compatibility_round):
+		if not _is_compatible(candidate, selected):
 			push_warning(
 				"Special Rules debug lock: incompatible rule id '%s' skipped."
 				% rule_id
@@ -163,8 +193,8 @@ func end_round(piles_to_clean: Array[MemoryPile] = []) -> void:
 	for pile in piles_to_clean:
 		if is_instance_valid(pile):
 			pile.disable_regeneration()
-	if flashlight_overlay != null:
-		flashlight_overlay.visible = false
+	if flashlight_overlay != null and flashlight_overlay.visible:
+		await flashlight_overlay.open_out()
 	for index in range(active_rules.size() - 1, -1, -1):
 		active_rules[index].deactivate(context)
 	modifiers.reset()
@@ -180,7 +210,7 @@ func select_special_rules(round_number: int, requested_count: int) -> Array[Spec
 	while selected.size() < requested_count and not candidates.is_empty():
 		var candidate := _weighted_pick(candidates)
 		candidates.erase(candidate)
-		if _is_compatible(candidate, selected, round_number):
+		if _is_compatible(candidate, selected):
 			selected.append(candidate)
 	if selected.size() < requested_count:
 		push_warning(
@@ -206,21 +236,12 @@ func _weighted_pick(candidates: Array[SpecialRuleData]) -> SpecialRuleData:
 
 func _is_compatible(
 	candidate: SpecialRuleData,
-	selected: Array[SpecialRuleData],
-	round_number: int
+	selected: Array[SpecialRuleData]
 ) -> bool:
 	for required in candidate.required_rules:
 		if not selected.any(func(rule: SpecialRuleData) -> bool: return rule.id == required):
 			return false
 	for rule in selected:
 		if candidate.incompatible_rules.has(rule.id) or rule.incompatible_rules.has(candidate.id):
-			return false
-		if (
-			round_number < Difficulty.HARD_COMBO_MINIMUM_ROUND
-			and (
-				(candidate.id == &"peek_a_card" and rule.id == &"lights_out")
-				or (candidate.id == &"lights_out" and rule.id == &"peek_a_card")
-			)
-		):
 			return false
 	return true

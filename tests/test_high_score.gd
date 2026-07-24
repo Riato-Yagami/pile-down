@@ -24,9 +24,12 @@ func _run() -> void:
 	game.round_reached_time_ms = 1500
 	await game._finish_game(false)
 	assert(game.best_score_time_ms == 1500)
-	assert(game.overlay_title.text == "TIME RECORD")
-	assert(game.overlay_details.text.contains("time: 01:500"))
+	assert(game.overlay_high_score.visible)
+	assert(game.overlay_high_score.text.contains("[wave"))
+	assert(game.overlay_high_score.text.contains("HIGHSCORE"))
+	assert(game.overlay_details.text.contains("[color=#4D82C2]in 1 s 500 ms[/color]"))
 
+	await create_timer(0.4).timeout
 	print("High score integration test passed.")
 	game.queue_free()
 	quit()

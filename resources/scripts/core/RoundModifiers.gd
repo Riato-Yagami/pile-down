@@ -32,3 +32,7 @@ static func format_value(value: int, use_roman_numerals: bool) -> String:
 		return str(value)
 	const ROMAN_VALUES := ["O", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"]
 	return ROMAN_VALUES[value] if value >= 0 and value < ROMAN_VALUES.size() else str(value)
+
+
+static func value_font_size(value: int, use_roman_numerals: bool) -> int:
+	return 14 if use_roman_numerals and value in [7, 8] else 20

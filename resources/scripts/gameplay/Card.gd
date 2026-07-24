@@ -4,6 +4,7 @@ extends Control
 signal card_selected(card)
 signal drag_started(card)
 signal drag_released(card, release_position)
+signal entrance_became_interactive(card)
 
 const COLORS := [
 	Color("#4D82C2"),
@@ -13,6 +14,7 @@ const COLORS := [
 	Color("#E06455"),
 	Color("#8772B5"),
 ]
+const TINY_REGULAR_FONT := preload("res://resources/fonts/Tiny5-Regular.ttf")
 
 @export var card_value := 0
 
@@ -33,12 +35,17 @@ var _visual_tween: Tween
 var hover_reveal_enabled := false
 var roman_numerals_enabled := false
 var wandering_enabled := false
+var free_range_card := false
 var wandering_origin := Vector2.ZERO
 var wandering_phase := 0.0
 var wandering_speed := 1.0
 var wandering_radius := Vector2(24.0, 9.0)
 var _hide_generation := 0
 var _flip_in_progress := false
+var _entrance_unlock_pending := false
+var _entrance_animation_running := false
+var _entrance_tween: Tween
+var _entrance_home_positions: Dictionary = {}
 
 
 func _ready() -> void:
@@ -53,6 +60,13 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if (
+		_entrance_unlock_pending
+		and Rect2(Vector2.ZERO, get_viewport_rect().size).intersects(face.get_global_rect())
+	):
+		_entrance_unlock_pending = false
+		set_selectable(true)
+		entrance_became_interactive.emit(self)
 	if wandering_enabled and not dragging:
 		wandering_phase += delta * wandering_speed
 		global_position = (
@@ -85,15 +99,25 @@ func setup(
 
 
 func enable_wandering(index: int, keep_current_position := false) -> void:
+	free_range_card = true
 	wandering_enabled = true
-	wandering_origin = (
-		global_position
-		if keep_current_position
-		else global_position + Vector2((index - 1.5) * 4.0, -42.0 - index * 5.0)
-	)
 	wandering_phase = float(index) * 1.7
 	wandering_speed = 0.65 + index * 0.11
 	wandering_radius = Vector2(25.0 + index * 3.0, 8.0 + index * 2.0)
+	if keep_current_position:
+		var initial_offset := (
+			Vector2(
+				sin(wandering_phase),
+				sin(wandering_phase * 1.7 + card_value)
+			)
+			* wandering_radius
+		)
+		wandering_origin = global_position - initial_offset
+	else:
+		wandering_origin = global_position + Vector2(
+			(index - 1.5) * 4.0,
+			-42.0 - index * 5.0
+		)
 
 
 func disable_wandering() -> void:
@@ -111,6 +135,7 @@ func set_selected_visual(is_selected: bool) -> void:
 
 
 func begin_external_drag(pointer_position: Vector2) -> void:
+	_materialize_entrance_for_drag()
 	wandering_enabled = false
 	if hover_reveal_enabled:
 		face_up = true
@@ -156,11 +181,123 @@ func play_draw(delay: float) -> void:
 	tween.parallel().tween_property(self, "modulate:a", 1.0, 0.14)
 
 
+func play_draw_from_right(delay: float) -> void:
+	set_selectable(false)
+	_entrance_unlock_pending = true
+	_entrance_animation_running = true
+	_entrance_home_positions.clear()
+	var entrance_offset := get_viewport_rect().size.x + size.x + 12.0 - global_position.x
+	var visuals: Array[Control] = [face, face_sprite, back_sprite, value_label]
+	for visual in visuals:
+		_entrance_home_positions[visual] = visual.position
+		visual.position.x += entrance_offset
+	modulate.a = 0.0
+	rotation = 0.1
+	_entrance_tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_entrance_tween.tween_interval(delay)
+	_entrance_tween.set_parallel(true)
+	for visual in visuals:
+		_entrance_tween.tween_property(
+			visual,
+			"position",
+			_entrance_home_positions[visual],
+			0.28
+		)
+	_entrance_tween.tween_property(self, "modulate:a", 1.0, 0.18)
+	_entrance_tween.tween_property(self, "rotation", 0.0, 0.24)
+	_entrance_tween.set_parallel(false)
+	_entrance_tween.tween_callback(_finish_entrance_animation)
+
+
 func play_draw_in_place(delay: float) -> void:
 	modulate.a = 0.0
 	var tween := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tween.tween_interval(delay)
 	tween.tween_property(self, "modulate:a", 1.0, 0.14)
+
+
+func play_wandering_entrance(
+	index: int,
+	destination: Vector2,
+	screen_size: Vector2,
+	delay: float
+) -> void:
+	free_range_card = true
+	wandering_enabled = false
+	set_selectable(false)
+	_entrance_unlock_pending = true
+	var destination_center := destination + size * 0.5
+	var edge_distances := [
+		destination_center.x,
+		screen_size.x - destination_center.x,
+		destination_center.y,
+		screen_size.y - destination_center.y,
+	]
+	var closest_edge := edge_distances.find(edge_distances.min())
+	match closest_edge:
+		0:
+			global_position = Vector2(-size.x - 12.0, destination.y)
+		1:
+			global_position = Vector2(screen_size.x + 12.0, destination.y)
+		2:
+			global_position = Vector2(destination.x, -size.y - 12.0)
+		_:
+			global_position = Vector2(destination.x, screen_size.y + 12.0)
+	modulate.a = 0.0
+	rotation = -0.12 if closest_edge == 0 or closest_edge == 3 else 0.12
+	_entrance_animation_running = true
+	_entrance_tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_entrance_tween.tween_interval(delay)
+	_entrance_tween.tween_property(self, "global_position", destination, 0.28)
+	_entrance_tween.parallel().tween_property(self, "modulate:a", 1.0, 0.18)
+	_entrance_tween.parallel().tween_property(self, "rotation", 0.0, 0.24)
+	_entrance_tween.tween_callback(func() -> void:
+		_entrance_animation_running = false
+		enable_wandering(index, true)
+		set_selectable(true)
+	)
+
+
+func _materialize_entrance_for_drag() -> void:
+	if not _entrance_animation_running:
+		return
+	var visual_global_position := face.global_position
+	if _entrance_tween != null and _entrance_tween.is_valid():
+		_entrance_tween.kill()
+	if not _entrance_home_positions.is_empty():
+		global_position = visual_global_position - (_entrance_home_positions[face] as Vector2)
+		for visual in _entrance_home_positions:
+			(visual as Control).position = _entrance_home_positions[visual]
+	_entrance_home_positions.clear()
+	_entrance_animation_running = false
+	_entrance_unlock_pending = false
+	rotation = 0.0
+	modulate.a = 1.0
+
+
+func _finish_entrance_animation() -> void:
+	for visual in _entrance_home_positions:
+		(visual as Control).position = _entrance_home_positions[visual]
+	_entrance_home_positions.clear()
+	_entrance_animation_running = false
+
+
+func play_wandering_exit(screen_width: float, delay: float) -> float:
+	wandering_enabled = false
+	set_selectable(false)
+	var exits_left := global_position.x + size.x * 0.5 < screen_width * 0.5
+	var destination_x := -size.x - 14.0 if exits_left else screen_width + 14.0
+	var tween := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_interval(delay)
+	tween.tween_property(
+		self,
+		"global_position",
+		Vector2(destination_x, global_position.y + 8.0),
+		0.26
+	)
+	tween.parallel().tween_property(self, "modulate:a", 0.0, 0.18)
+	tween.parallel().tween_property(self, "rotation", -0.16 if exits_left else 0.16, 0.22)
+	return delay + 0.26
 
 
 func flip_down(animated: bool = true) -> void:
@@ -282,4 +419,12 @@ func _update_appearance() -> void:
 	tile_material.set_shader_parameter("tile_color", color)
 	value_label.visible = face_up
 	value_label.text = RoundModifiers.format_value(card_value, roman_numerals_enabled)
+	value_label.add_theme_font_size_override(
+		"font_size",
+		RoundModifiers.value_font_size(card_value, roman_numerals_enabled)
+	)
+	if roman_numerals_enabled and card_value in [7, 8]:
+		value_label.add_theme_font_override("font", TINY_REGULAR_FONT)
+	else:
+		value_label.remove_theme_font_override("font")
 	value_label.add_theme_color_override("font_color", color.darkened(0.35))

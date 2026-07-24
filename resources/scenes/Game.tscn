@@ -146,6 +146,23 @@ text = "100"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="RunTimeLabel" type="Label" parent="." unique_id=140272360]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 50.0
+offset_top = 14.0
+offset_right = -89.0
+offset_bottom = 28.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.541, 0.533, 0.51, 1)
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 12
+text = "12h 34 min 56 s 789 ms"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="PilesBoard" type="Control" parent="." unique_id=1086969405]
 unique_name_in_owner = true
 layout_mode = 1
@@ -331,6 +348,28 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.969, 0.965, 0.949, 0.9)
 
+[node name="OverlayHighScore" type="RichTextLabel" parent="Overlay" unique_id=1165595282]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -128.0
+offset_top = -87.0
+offset_right = 128.0
+offset_bottom = -51.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/default_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_font_sizes/normal_font_size = 20
+bbcode_enabled = true
+text = "[center][wave amp=25.0 freq=3.0 connected=1]HIGHSCORE[/wave][/center]"
+fit_content = true
+scroll_active = false
+
 [node name="Center" type="CenterContainer" parent="Overlay" unique_id=282762708]
 layout_mode = 1
 anchors_preset = 15
@@ -352,31 +391,37 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 20.0
-offset_top = 42.0
+offset_top = 41.0
 offset_right = -11.0
-offset_bottom = -35.0
+offset_bottom = -34.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 10
 alignment = 1
 
-[node name="OverlayTitle" type="Label" parent="Overlay/Center/Panel/Content" unique_id=128634448]
+[node name="OverlayTitle" type="RichTextLabel" parent="Overlay/Center/Panel/Content" unique_id=128634448]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
-theme_override_font_sizes/font_size = 20
-text = "1"
-horizontal_alignment = 1
-autowrap_mode = 2
+mouse_filter = 2
+theme_override_colors/default_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_font_sizes/normal_font_size = 20
+bbcode_enabled = true
+text = "[center]100 rounds left[/center]"
+fit_content = true
+scroll_active = false
 
-[node name="OverlayDetails" type="Label" parent="Overlay/Center/Panel/Content" unique_id=648907875]
+[node name="OverlayDetails" type="RichTextLabel" parent="Overlay/Center/Panel/Content" unique_id=648907875]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.541, 0.533, 0.51, 1)
-theme_override_font_sizes/font_size = 20
-text = "time: 00:000"
-horizontal_alignment = 1
-autowrap_mode = 2
+mouse_filter = 2
+theme_override_colors/default_color = Color(0.541, 0.533, 0.51, 1)
+theme_override_font_sizes/normal_font_size = 20
+bbcode_enabled = true
+text = "[center]time: 00:000[/center]"
+fit_content = true
+scroll_active = false
 
 [node name="OverlayButton" type="Button" parent="Overlay/Center/Panel/Content" unique_id=1335381635]
 unique_name_in_owner = true
@@ -427,6 +472,15 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
 theme_override_font_sizes/font_size = 40
 text = "PILE DOWN"
+horizontal_alignment = 1
+
+[node name="SplashDebugMode" type="Label" parent="Splash/Center/Content" unique_id=1141230549]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.878, 0.392, 0.333, 1)
+theme_override_font_sizes/font_size = 14
+text = "DEBUG MODE"
 horizontal_alignment = 1
 
 [node name="SplashHighScore" type="Label" parent="Splash/Center/Content" unique_id=657671615]
