@@ -11,6 +11,8 @@ func _run() -> void:
 	var game := GameScene.instantiate() as GameManager
 	root.add_child(game)
 	assert(game.splash_debug_mode.visible == DebugSettings.is_enabled())
+	assert(game.music_manager.is_playing_menu_music())
+	assert(game.music_manager.low_pass_enabled)
 	var play_event := InputEventKey.new()
 	play_event.keycode = KEY_SPACE
 	play_event.pressed = true
@@ -24,6 +26,24 @@ func _run() -> void:
 	assert(game._handle_global_shortcut(mute_event))
 	assert(game.soft_audio.is_muted() == initial_mute_state)
 	await create_timer(7.0).timeout
+	assert(game.music_manager.is_playing_game_music())
+	assert(not game.music_manager.low_pass_enabled)
+	game._on_special_rules_announcing([])
+	assert(game.music_manager.low_pass_enabled)
+	game._on_special_rules_announcement_finished()
+	assert(not game.music_manager.low_pass_enabled)
+	assert(game.music_manager.current_section == 1)
+	game.music_manager.seek(4.9)
+	game.music_manager.request_next_section()
+	await create_timer(0.3).timeout
+	assert(game.music_manager.current_section == 2)
+	game.music_manager.seek(4.9)
+	game.music_manager.request_next_section()
+	await create_timer(0.3).timeout
+	assert(game.music_manager.current_section == 3)
+	game.music_manager.request_next_section()
+	await process_frame
+	assert(game.music_manager.current_section == 3)
 	var time_event := InputEventKey.new()
 	time_event.keycode = KEY_T
 	time_event.pressed = true

@@ -3,6 +3,7 @@ extends Node
 
 signal rules_selected(rules: Array[SpecialRuleData])
 signal rules_announcing(rules: Array[SpecialRuleData])
+signal rules_announcement_finished()
 
 const RuleData := preload("res://resources/scripts/special_rules/SpecialRuleData.gd")
 const Modifiers := preload("res://resources/scripts/core/RoundModifiers.gd")
@@ -112,6 +113,7 @@ func begin_round(round_number: int) -> RoundModifiers:
 	if not active_rules.is_empty() and announcement != null:
 		rules_announcing.emit(active_rules)
 		await announcement.show_rules(active_rules)
+		rules_announcement_finished.emit()
 	rules_selected.emit(active_rules)
 	return modifiers
 

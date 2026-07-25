@@ -9,6 +9,21 @@ signal game_over()
 const PILE_SCENE := preload("res://resources/scenes/Pile.tscn")
 const Difficulty := preload("res://resources/scripts/core/difficulty.gd")
 const Debug := preload("res://resources/scripts/core/debug.gd")
+const MUSIC_BUS_NAME := &"Music"
+const SFX_BUS_NAME := &"SFX"
+const AUDIO_CONFIG_PATH := "user://pile_down.cfg"
+const URGENT_TICK_THRESHOLDS: Array[float] = [
+	2.0,
+	1.6667,
+	1.3333,
+	1.0,
+	0.8333,
+	0.6667,
+	0.5,
+	0.3333,
+	0.1667,
+	0.0,
+]
 
 @onready var piles_board: Control = %PilesBoard
 @onready var hand_container: HBoxContainer = %HandContainer
@@ -28,9 +43,14 @@ const Debug := preload("res://resources/scripts/core/debug.gd")
 @onready var overlay_high_score: RichTextLabel = %OverlayHighScore
 @onready var splash: Control = %Splash
 @onready var splash_button: Button = %SplashButton
-@onready var splash_high_score: Label = %SplashHighScore
+@onready var splash_high_score: RichTextLabel = %SplashHighScore
+@onready var splash_high_score_time: Label = %SplashHighScoreTime
 @onready var splash_debug_mode: Label = %SplashDebugMode
+@onready var music_volume_slider: HSlider = %MusicVolumeSlider
+@onready var sound_volume_slider: HSlider = %SoundVolumeSlider
+@onready var debug_help: Label = %DebugHelp
 @onready var soft_audio: SoftAudio = %SoftAudio
+@onready var music_manager: MusicManager = %MusicManager
 @onready var special_rule_manager: SpecialRuleManager = %SpecialRuleManager
 @onready var flashlight_overlay: FlashlightOverlay = %FlashlightOverlay
 
@@ -52,13 +72,17 @@ var hovered_pile: MemoryPile
 var drag_placeholder: Control
 var drag_home_index := -1
 var overlay_mode := ""
-var _last_urgent_second := -1
+var _last_clock_second := -1
+var _urgent_tick_index := 0
+var _clock_flash_tween: Tween
 var round_modifiers := RoundModifiers.new()
 var tier_reliefs_applied := 0
 var _debug_action_in_progress := false
 var _hand_cycle_generation := 0
 var _pending_interactive_generation := -1
 var _regeneration_hand_check_pending := false
+var _music_volume_before_mute := 100.0
+var _sound_volume_before_mute := 100.0
 
 
 func _ready() -> void:
@@ -72,14 +96,63 @@ func _ready() -> void:
 	overlay_button.pressed.connect(_on_overlay_pressed)
 	splash_button.pressed.connect(_on_splash_pressed)
 	special_rule_manager.rules_announcing.connect(_on_special_rules_announcing)
+	special_rule_manager.rules_announcement_finished.connect(
+		_on_special_rules_announcement_finished
+	)
 	resized.connect(_layout_piles)
+	_setup_audio_controls()
 	_load_high_score()
 	splash_debug_mode.visible = Debug.is_enabled()
+	_refresh_debug_help()
 	input_locked = true
 	splash.visible = true
 
 
+func _setup_audio_controls() -> void:
+	var config := ConfigFile.new()
+	config.load(AUDIO_CONFIG_PATH)
+	music_volume_slider.set_value_no_signal(
+		float(config.get_value("audio", "music_volume", 1.0)) * 100.0
+	)
+	sound_volume_slider.set_value_no_signal(
+		float(config.get_value("audio", "sound_volume", 1.0)) * 100.0
+	)
+	if music_volume_slider.value > 0.0:
+		_music_volume_before_mute = music_volume_slider.value
+	if sound_volume_slider.value > 0.0:
+		_sound_volume_before_mute = sound_volume_slider.value
+	music_volume_slider.value_changed.connect(
+		_on_volume_changed.bind(MUSIC_BUS_NAME, "music_volume")
+	)
+	sound_volume_slider.value_changed.connect(
+		_on_volume_changed.bind(SFX_BUS_NAME, "sound_volume")
+	)
+	_apply_bus_volume(MUSIC_BUS_NAME, music_volume_slider.value / 100.0)
+	_apply_bus_volume(SFX_BUS_NAME, sound_volume_slider.value / 100.0)
+
+
+func _on_volume_changed(value: float, bus_name: StringName, config_key: String) -> void:
+	var linear_volume := value / 100.0
+	_apply_bus_volume(bus_name, linear_volume)
+	var config := ConfigFile.new()
+	config.load(AUDIO_CONFIG_PATH)
+	config.set_value("audio", config_key, linear_volume)
+	config.save(AUDIO_CONFIG_PATH)
+
+
+func _apply_bus_volume(bus_name: StringName, linear_volume: float) -> void:
+	var bus_index := AudioServer.get_bus_index(bus_name)
+	if bus_index < 0:
+		return
+	AudioServer.set_bus_volume_db(
+		bus_index,
+		linear_to_db(maxf(linear_volume, 0.0001))
+	)
+	AudioServer.set_bus_mute(bus_index, is_zero_approx(linear_volume))
+
+
 func _process(_delta: float) -> void:
+	debug_help.visible = Debug.is_enabled() and not splash.visible and not overlay.visible
 	if run_time_label.visible:
 		run_time_label.text = _format_duration(_total_time_milliseconds())
 	if _regeneration_hand_check_pending and not input_locked:
@@ -130,7 +203,8 @@ func _handle_global_shortcut(event: InputEvent) -> bool:
 	match key_event.keycode:
 		KEY_ESCAPE:
 			if splash.visible:
-				get_tree().quit()
+				if not OS.has_feature("web"):
+					get_tree().quit()
 			else:
 				get_tree().reload_current_scene()
 			return true
@@ -139,7 +213,7 @@ func _handle_global_shortcut(event: InputEvent) -> bool:
 				start_game()
 				return true
 		KEY_M:
-			soft_audio.toggle_mute()
+			_toggle_audio_sliders()
 			return true
 		KEY_T:
 			if not splash.visible and not overlay.visible:
@@ -150,6 +224,21 @@ func _handle_global_shortcut(event: InputEvent) -> bool:
 	return false
 
 
+func _toggle_audio_sliders() -> void:
+	var sliders_are_muted := (
+		is_zero_approx(music_volume_slider.value)
+		and is_zero_approx(sound_volume_slider.value)
+	)
+	if sliders_are_muted:
+		music_volume_slider.value = _music_volume_before_mute
+		sound_volume_slider.value = _sound_volume_before_mute
+		return
+	_music_volume_before_mute = music_volume_slider.value
+	_sound_volume_before_mute = sound_volume_slider.value
+	music_volume_slider.value = 0.0
+	sound_volume_slider.value = 0.0
+
+
 func _handle_debug_shortcut(event: InputEvent) -> bool:
 	if not Debug.is_enabled() or not event is InputEventKey:
 		return false
@@ -158,9 +247,14 @@ func _handle_debug_shortcut(event: InputEvent) -> bool:
 		return false
 	match key_event.keycode:
 		KEY_S:
-			if input_locked or splash.visible or overlay.visible:
+			if splash.visible or overlay.visible:
 				return false
-			_debug_skip_round()
+			music_manager.request_next_section()
+			_refresh_debug_help()
+			return true
+		KEY_G:
+			Debug.toggle_god_mode()
+			_refresh_debug_help()
 			return true
 		KEY_R:
 			if input_locked and not splash.visible and not overlay.visible:
@@ -171,15 +265,6 @@ func _handle_debug_shortcut(event: InputEvent) -> bool:
 			_debug_reset_high_score()
 			return true
 	return false
-
-
-func _debug_skip_round() -> void:
-	_debug_action_in_progress = true
-	input_locked = true
-	timer_manager.stop_countdown()
-	await _discard_current_hand()
-	await _finish_round()
-	_debug_action_in_progress = false
 
 
 func _debug_reset_game() -> void:
@@ -203,8 +288,24 @@ func _debug_reset_high_score() -> void:
 	_refresh_high_score()
 
 
+func _refresh_debug_help() -> void:
+	if not Debug.is_enabled():
+		debug_help.visible = false
+		return
+	debug_help.text = (
+		"[S] NEXT MUSIC SECTION\n"
+		+ "[G] GOD MODE: %s\n" % ("ON" if Debug.is_god_mode_enabled() else "OFF")
+		+ "[R] RESET GAME\n"
+		+ "[H] CLEAR HIGH SCORE\n"
+		+ "[T] SHOW RUN TIME\n"
+		+ "[M] MUTE AUDIO\n"
+		+ "[ESC] BACK TO MENU"
+	)
+
+
 func start_game() -> void:
 	soft_audio.play_start()
+	music_manager.set_low_pass_enabled(false, true)
 	_hand_cycle_generation += 1
 	_pending_interactive_generation = -1
 	pile_count = Difficulty.START_PILES
@@ -218,6 +319,8 @@ func start_game() -> void:
 		+ 1
 	)
 	_apply_debug_progression(Debug.get_start_round(Difficulty.TOTAL_ROUNDS))
+	music_manager.reset_game_sections(tier_reliefs_applied + 1)
+	music_manager.transition_to_game_music()
 	game_started_msec = Time.get_ticks_msec()
 	round_reached_time_ms = 0
 	run_time_label.visible = false
@@ -233,7 +336,8 @@ func start_round() -> void:
 	selected_card = null
 	hovered_pile = null
 	mistakes_left = 3
-	_last_urgent_second = -1
+	_last_clock_second = -1
+	_urgent_tick_index = 0
 	timer_manager.stop_countdown()
 	hand_manager.clear_hand(hand_container)
 	_clear_drag_placeholder()
@@ -287,13 +391,18 @@ func _begin_turn(hand_prepared := false) -> void:
 	if _all_piles_complete():
 		return
 	selected_card = null
-	input_locked = false
+	input_locked = true
 	if not hand_prepared:
-		_prepare_next_hand(true, false)
-	timer_manager.start_countdown(turn_time)
+		await _prepare_next_hand(true, false)
+	input_locked = false
+	hand_manager.unlock_hand()
 
 
 func _prepare_next_hand(clear_existing: bool, enter_from_right: bool) -> void:
+	var requested_generation := _hand_cycle_generation
+	await music_manager.wait_for_next_hand_beat()
+	if requested_generation != _hand_cycle_generation or _all_piles_complete():
+		return
 	var wandering_cards := round_modifiers.wandering_hand_cards
 	hand_manager.generate_hand(
 		drag_layer if wandering_cards else hand_container,
@@ -309,6 +418,7 @@ func _prepare_next_hand(clear_existing: bool, enter_from_right: bool) -> void:
 	)
 	if wandering_cards:
 		_draw_wandering_hand()
+	_start_turn_countdown()
 
 
 func _draw_wandering_hand() -> void:
@@ -354,7 +464,6 @@ func _on_card_entered_screen(card: PlayingCard) -> void:
 	selected_card = null
 	input_locked = false
 	hand_manager.unlock_hand()
-	timer_manager.start_countdown(turn_time)
 
 
 func _on_card_drag_started(card: PlayingCard) -> void:
@@ -375,7 +484,7 @@ func _on_card_drag_started(card: PlayingCard) -> void:
 	if card.get_parent() != drag_layer:
 		card.reparent(drag_layer, false)
 	card.global_position = start_position
-	card.begin_external_drag(get_viewport().get_mouse_position())
+	card.begin_external_drag(card.drag_target)
 	soft_audio.play_tone(330.0, 0.045, 0.035)
 
 
@@ -482,7 +591,7 @@ func _handle_mistake(pile: MemoryPile = null) -> void:
 		hand_manager.clear_selection()
 		input_locked = false
 		hand_manager.unlock_hand()
-		timer_manager.start_countdown(turn_time)
+		_start_turn_countdown()
 		if pile != null and is_instance_valid(pile) and not pile.completed:
 			_reveal_mistake_pile(pile)
 
@@ -558,6 +667,8 @@ func _finish_round() -> void:
 		await _finish_game(true)
 		return
 	var change := _advance_difficulty(_progression_round())
+	if change == "TIER RELIEF":
+		music_manager.request_next_section()
 	if change.is_empty():
 		start_round()
 		return
@@ -589,6 +700,7 @@ func _finish_game(completed_all_rounds := false) -> void:
 	input_locked = true
 	timer_manager.stop_countdown()
 	await special_rule_manager.end_round(piles)
+	music_manager.set_low_pass_enabled(true)
 	if completed_all_rounds:
 		soft_audio.play_victory()
 	else:
@@ -627,7 +739,12 @@ func _on_splash_pressed() -> void:
 
 
 func _on_special_rules_announcing(_rules: Array[SpecialRuleData]) -> void:
+	music_manager.set_low_pass_enabled(true)
 	soft_audio.play_special_rule()
+
+
+func _on_special_rules_announcement_finished() -> void:
+	music_manager.set_low_pass_enabled(false, true)
 
 
 func _increase_difficulty(first_upgrade_override := -1) -> String:
@@ -770,22 +887,56 @@ func _all_piles_complete() -> bool:
 	return not piles.is_empty()
 
 
+func _start_turn_countdown() -> void:
+	# Le premier tick correspond au passage à la seconde suivante, pas à
+	# l'initialisation du chronomètre.
+	_last_clock_second = ceili(turn_time)
+	_urgent_tick_index = 0
+	while (
+		_urgent_tick_index < URGENT_TICK_THRESHOLDS.size()
+		and URGENT_TICK_THRESHOLDS[_urgent_tick_index] >= turn_time
+	):
+		_urgent_tick_index += 1
+	if _clock_flash_tween != null and _clock_flash_tween.is_valid():
+		_clock_flash_tween.kill()
+	timer_ring.flash_strength = 0.0
+	timer_manager.start_countdown(turn_time)
+
+
 func _on_time_updated(time_left: float) -> void:
+	var displayed_second := ceili(time_left)
 	timer_label.text = RoundModifiers.format_value(
-		ceili(time_left),
+		displayed_second,
 		round_modifiers.roman_numerals_enabled
 	)
 	timer_ring.set_ratio(timer_manager.ratio())
-	var urgent := time_left <= 1.0 and time_left > 0.0
-	if urgent:
-		var pulse := (sin(Time.get_ticks_msec() * 0.018) + 1.0) * 0.5
-		timer_ring.modulate = Color.WHITE.lerp(Color("#E06455"), pulse * 0.35)
-		var second := ceili(time_left * 4.0)
-		if second != _last_urgent_second:
-			_last_urgent_second = second
-			soft_audio.play_tone(420.0, 0.025, 0.018)
-	else:
-		timer_ring.modulate = Color.WHITE
+	if time_left > 2.0 and displayed_second != _last_clock_second:
+		_last_clock_second = displayed_second
+		soft_audio.play_clock_tick()
+	elif time_left <= 2.0:
+		while (
+			_urgent_tick_index < URGENT_TICK_THRESHOLDS.size()
+			and time_left <= URGENT_TICK_THRESHOLDS[_urgent_tick_index]
+		):
+			var threshold := URGENT_TICK_THRESHOLDS[_urgent_tick_index]
+			var urgency := 1.0 - threshold / 2.0
+			soft_audio.play_clock_tick(urgency)
+			_flash_clock_tick(urgency)
+			_urgent_tick_index += 1
+
+
+func _flash_clock_tick(urgency: float) -> void:
+	if _clock_flash_tween != null and _clock_flash_tween.is_valid():
+		_clock_flash_tween.kill()
+	var red_strength := lerpf(0.55, 0.9, clampf(urgency, 0.0, 1.0))
+	timer_ring.flash_strength = red_strength
+	_clock_flash_tween = create_tween()
+	_clock_flash_tween.tween_property(
+		timer_ring,
+		"flash_strength",
+		0.0,
+		0.12
+	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 
 func _update_hud() -> void:
@@ -858,12 +1009,14 @@ func _load_high_score() -> void:
 
 func _refresh_high_score() -> void:
 	if best_rounds_left < 0 or best_score_time_ms < 0:
-		splash_high_score.text = "HIGH SCORE\n--"
+		splash_high_score.text = "[center]HIGHSCORE\n--[/center]"
+		splash_high_score_time.visible = false
 		return
-	splash_high_score.text = "HIGH SCORE\n%d ROUNDS LEFT\nIN %s" % [
-		best_rounds_left,
-		_format_duration(best_score_time_ms),
-	]
+	splash_high_score.text = (
+		"[center]HIGHSCORE\n%d rounds left[/center]" % best_rounds_left
+	)
+	splash_high_score_time.text = "in %s" % _format_duration(best_score_time_ms)
+	splash_high_score_time.visible = true
 
 
 func _progression_round() -> int:

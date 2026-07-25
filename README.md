@@ -17,6 +17,10 @@ compte à rebours.
 - Le compteur de rounds commence à `100`, puis descend après chaque victoire.
   La partie est terminée lorsqu'il atteint `0`.
 
+Le menu d'accueil propose des curseurs séparés pour régler le volume de la
+musique et celui des effets sonores. Ces préférences sont sauvegardées dans
+`user://pile_down.cfg`.
+
 Le meilleur score privilégie le plus petit nombre de rounds restants, puis le
 temps le plus court en cas d'égalité. Le temps enregistré est celui du passage
 au round atteint, pas celui de la défaite sur ce round. Le score est sauvegardé
@@ -45,16 +49,64 @@ ou directement :
 godot --path .
 ```
 
+## Build Web
+
+Le preset `Web` produit une version release sans threads, compatible avec un
+hébergement statique standard :
+
+```sh
+./build/build_web.sh
+```
+
+Les templates d'export doivent correspondre à la version de Godot utilisée.
+S'ils manquent, les scripts téléchargent automatiquement les templates
+officiels correspondants dans `build/.godot_data/`. Le premier téléchargement
+est volumineux, mais l'archive est ensuite conservée dans
+`build/.template_cache/`.
+Le script lit `VERSION` (par exemple `v0.2`), produit le point d'entrée
+`build/web/index.html`, puis crée automatiquement
+`build/web/pile-down-web-<version>.zip`. Pour utiliser un
+autre exécutable Godot :
+
+```sh
+PILE_DOWN_GODOT_BIN=/chemin/vers/godot ./build/build_web.sh
+```
+
+Le build Linux x86_64 et son archive versionnée sont produits dans
+`build/linux/` avec :
+
+```sh
+./build/build_linux.sh
+```
+
+Pour produire les versions Web et Linux en une seule commande :
+
+```sh
+./build/build_all.sh
+```
+
 ## Commandes
 
 1. Faire glisser une pièce depuis la main.
 2. La déposer sur la pile qui attend cette valeur.
 3. Mémoriser la nouvelle valeur avant que la carte ne se retourne.
 
+Sur mobile et dans la version Web, le glissement utilise directement les
+événements tactiles sans les convertir en clics souris. Les cartes suivent le
+pointeur avec le léger lissage visuel d'origine.
+En plein écran, le jeu conserve son ratio vertical `256 × 320` et occupe la
+plus grande surface possible. Les zones restantes sur les écrans plus larges
+ou plus hauts utilisent la même couleur beige que le fond du jeu. La scène
+`Main.tscn` fournit ce cadre adaptatif autour de la scène de jeu, directement
+dans le canvas principal afin de conserver des coordonnées tactiles exactes.
+
 La touche `Échap` revient à l'écran d'accueil depuis le jeu. Sur cet écran,
-elle ferme l'application. La barre d'espace lance la partie depuis l'accueil
-et relance une partie depuis l'écran de fin. La touche `M` coupe ou réactive
-tous les sons. Pendant une partie, `T` affiche ou masque le temps total écoulé.
+elle ferme l'application desktop et reste sans effet dans la version Web. La
+barre d'espace lance la partie depuis l'accueil et relance une partie depuis
+l'écran de fin. La touche `M` coupe ou réactive tous les sons. Pendant une
+partie, `T` affiche ou masque le temps total écoulé.
+Le titre du menu utilise le même effet ondulé que l'annonce `HIGHSCORE`. Le
+temps du meilleur score reprend la police Tiny5 et la taille de l'écran de fin.
 
 Les cartes et les piles restent des contrôles 2D et utilisent les sprites
 pixel-art du dossier `resources/sprites/`. Toute pile survolée reçoit le même
@@ -70,7 +122,30 @@ droite. Ces animations se jouent en parallèle du rappel complet de la pile,
 sans raccourcir celui-ci. La nouvelle main devient draggable dès qu'elle entre
 dans l'écran, même si son animation continue. Des signatures sonores courtes
 accompagnent aussi le lancement ou replay, l'annonce d'une règle spéciale, la
-défaite et la victoire.
+défaite et la victoire. La musique du menu joue en boucle sur l'accueil.
+Lorsqu'une partie démarre, sa boucle en cours se termine avant que la musique
+du jeu ne prenne le relais. Le jeu commence avec `section-1.wav`, puis passe à
+la section numérotée suivante après chaque `TIER RELIEF`, à la fin du segment
+musical de cinq secondes en cours. Si cette section n'existe pas, la section
+courante continue en boucle.
+L'apparition de chaque nouvelle main et le départ de son chronomètre sont
+alignés sur la grille musicale. Ce comportement se configure dans
+`resources/scripts/core/settings.gd` : `SYNC_HANDS_TO_MUSIC` l'active ou le
+désactive, et `HAND_BEAT_INTERVAL` vaut `1.0` pour un beat ou `0.5` pour un
+demi-beat. `MUSIC_VOLUME_DB` règle le niveau de la musique et `SFX_VOLUME_DB`
+le niveau global des effets sonores. `TILE_COLORS` contient les dix couleurs
+utilisées par les cartes et les piles pour les valeurs de `0` à `9`. Un filtre
+passe-bas, dont la fréquence est réglée par
+`MUSIC_LOW_PASS_CUTOFF_HZ`, atténue la musique dans les menus et pendant les
+annonces de règles spéciales. Il commence à se retirer dès la sortie de ces
+écrans et s'ouvre progressivement pendant `MUSIC_LOW_PASS_RELEASE_SECONDS`.
+Le lecteur musical utilise le mode de lecture `Stream` afin que ce filtre soit
+également traité dans les exports Web ; les effets courts restent sur leur mode
+de lecture à faible latence.
+Les ticks du chronomètre sont discrets au début, puis accélèrent à partir des
+deux dernières secondes : trois ticks entre `2` et `1`, puis six entre `1` et
+`0`, avec une légère montée de volume et de hauteur. Pendant ces deux secondes,
+l'horloge produit un flash rouge synchronisé avec chaque tick.
 
 ## Structure
 
@@ -205,9 +280,12 @@ const LOCK_SPECIAL_RULES: Array[StringName] = []
   normale. Les doublons et identifiants inconnus sont ignorés avec un
   avertissement.
 
-Lorsque `ENABLED` vaut `true`, deux raccourcis clavier sont disponibles :
+Lorsque `ENABLED` vaut `true`, un aide-mémoire des raccourcis est affiché en
+jeu :
 
-- `S` termine le round courant et passe au suivant ;
+- `S` prépare la section musicale suivante, jouée à la fin du segment de cinq
+  secondes en cours ;
+- `G` active ou désactive le god mode pendant l'exécution ;
 - `R` réinitialise immédiatement la partie avec les valeurs de départ ;
 - `H` efface le high score sauvegardé.
 

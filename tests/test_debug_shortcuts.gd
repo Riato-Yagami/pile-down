@@ -13,20 +13,29 @@ func _run() -> void:
 	game.start_game()
 	await _wait_until_unlocked(game)
 
-	var initial_round := game.round_number
-	var skip_event := InputEventKey.new()
-	skip_event.keycode = KEY_S
-	skip_event.pressed = true
-	assert(game._handle_debug_shortcut(skip_event))
-	await _wait_until_unlocked(game)
-	assert(game.round_number == initial_round - 1)
+	assert(game.debug_help.visible)
+	assert(game.debug_help.text.contains("[S] NEXT MUSIC SECTION"))
+	var section_event := InputEventKey.new()
+	section_event.keycode = KEY_S
+	section_event.pressed = true
+	var initial_section := game.music_manager.current_section
+	assert(game._handle_debug_shortcut(section_event))
+	assert(game.music_manager.current_section == initial_section + 1)
+
+	var initial_god_mode := DebugSettings.is_god_mode_enabled()
+	var god_event := InputEventKey.new()
+	god_event.keycode = KEY_G
+	god_event.pressed = true
+	assert(game._handle_debug_shortcut(god_event))
+	assert(DebugSettings.is_god_mode_enabled() != initial_god_mode)
+	assert(game.debug_help.text.contains("GOD MODE: ON"))
 
 	var reset_event := InputEventKey.new()
 	reset_event.keycode = KEY_R
 	reset_event.pressed = true
 	assert(game._handle_debug_shortcut(reset_event))
 	await _wait_until_unlocked(game)
-	assert(game.round_number == initial_round)
+	assert(game.round_number == DifficultySettings.TOTAL_ROUNDS)
 
 	game.best_rounds_left = 12
 	game.best_score_time_ms = 1234

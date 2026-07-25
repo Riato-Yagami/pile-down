@@ -9,6 +9,7 @@
 [ext_resource type="FontFile" uid="uid://camkk5gui0ppq" path="res://resources/fonts/Tiny5-Regular.ttf" id="6_1vynq"]
 [ext_resource type="Script" uid="uid://ddqbrodgb6dkh" path="res://resources/scripts/ui/RoundDots.gd" id="7"]
 [ext_resource type="Script" uid="uid://ce08w1nx57g03" path="res://resources/scripts/audio/SoftAudio.gd" id="8"]
+[ext_resource type="Script" uid="uid://cq3bv2tiwdnnk" path="res://resources/scripts/audio/MusicManager.gd" id="8_music"]
 [ext_resource type="Texture2D" uid="uid://rs770htrm1l0" path="res://resources/sprites/clock.png" id="9"]
 [ext_resource type="Texture2D" uid="uid://d1bdvbuu47mea" path="res://resources/sprites/round-background.png" id="10"]
 [ext_resource type="Texture2D" uid="uid://qce8go7ptdnr" path="res://resources/sprites/hand/hand-background.png" id="11"]
@@ -20,6 +21,8 @@
 [ext_resource type="PackedScene" path="res://resources/scenes/FlashlightOverlay.tscn" id="17"]
 [ext_resource type="Script" uid="uid://cjc0st8mtcvw6" path="res://resources/scripts/special_rules/MovingPilePattern.gd" id="18"]
 [ext_resource type="Script" uid="uid://cnisbqmpaaunh" path="res://resources/scripts/special_rules/SpecialRuleManager.gd" id="19"]
+[ext_resource type="Script" uid="uid://crqsmcucrpe54" path="res://resources/scripts/ui/VolumeSlider.gd" id="20_volume"]
+[ext_resource type="Texture2D" uid="uid://7xknldn6usde" path="res://resources/sprites/bar.png" id="21_bar"]
 
 [sub_resource type="Theme" id="PixelTheme"]
 default_font = ExtResource("12")
@@ -30,17 +33,21 @@ code = "shader_type canvas_item;
 
 uniform float progress : hint_range(0.0, 1.0) = 1.0;
 uniform vec4 progress_color : source_color = vec4(0.302, 0.51, 0.761, 1.0);
+uniform vec4 flash_color : source_color = vec4(0.878, 0.392, 0.333, 1.0);
+uniform float flash_strength : hint_range(0.0, 1.0) = 0.0;
 
 void fragment() {
 	vec4 source = texture(TEXTURE, UV);
+	vec4 clock_color;
 	bool green_key = source.g > 0.6 && source.g > source.r * 1.35 && source.g > source.b * 1.35;
 	if (source.a > 0.0 && green_key) {
 		float angle = atan(UV.y - 0.5, UV.x - 0.5);
 		float clockwise_from_top = fract((angle + 1.57079632679) / 6.28318530718);
-		COLOR = clockwise_from_top <= progress ? progress_color : vec4(0.8, 0.8, 0.8, source.a);
+		clock_color = clockwise_from_top <= progress ? progress_color : vec4(0.8, 0.8, 0.8, source.a);
 	} else {
-		COLOR = source;
+		clock_color = source;
 	}
+	COLOR = mix(clock_color, vec4(flash_color.rgb, clock_color.a), flash_strength);
 }"
 
 [sub_resource type="ShaderMaterial" id="ClockProgressMaterial"]
@@ -48,6 +55,8 @@ resource_local_to_scene = true
 shader = SubResource("ClockProgressShader")
 shader_parameter/progress = 1.0
 shader_parameter/progress_color = Color(0.302, 0.51, 0.761, 1)
+shader_parameter/flash_color = Color(0.878, 0.392, 0.333, 1)
+shader_parameter/flash_strength = 0.0
 
 [sub_resource type="StyleBoxFlat" id="Wave"]
 bg_color = Color(0.31, 0.64, 0.63, 0.04)
@@ -63,6 +72,65 @@ corner_radius_bottom_left = 100
 
 [sub_resource type="StyleBoxTexture" id="SpriteButton"]
 texture = ExtResource("14")
+
+[sub_resource type="StyleBoxFlat" id="SpriteButtonPressed"]
+bg_color = Color(0.176, 0.373, 0.62, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="SpriteButtonHover"]
+bg_color = Color(0.427, 0.655, 0.898, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.176, 0.373, 0.62, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+expand_margin_left = 1.0
+expand_margin_top = 1.0
+expand_margin_right = 1.0
+expand_margin_bottom = 1.0
+
+[sub_resource type="Shader" id="VolumeBarShader"]
+code = "shader_type canvas_item;
+
+uniform float progress : hint_range(0.0, 1.0) = 1.0;
+uniform vec4 fill_color : source_color = vec4(0.302, 0.51, 0.761, 1.0);
+uniform vec4 empty_color : source_color = vec4(0.725, 0.765, 0.812, 1.0);
+
+void fragment() {
+	vec4 source = texture(TEXTURE, UV);
+	vec4 level_color = UV.x <= progress ? fill_color : empty_color;
+	bool green_mask = source.g > 0.9 && source.r < 0.1 && source.b < 0.1;
+	COLOR = green_mask
+		? vec4(level_color.rgb, source.a * level_color.a)
+		: source;
+}"
+
+[sub_resource type="ShaderMaterial" id="MusicVolumeBarMaterial"]
+resource_local_to_scene = true
+shader = SubResource("VolumeBarShader")
+shader_parameter/progress = 1.0
+shader_parameter/fill_color = Color(0.302, 0.51, 0.761, 1)
+shader_parameter/empty_color = Color(0.725, 0.765, 0.812, 1)
+
+[sub_resource type="ShaderMaterial" id="SoundVolumeBarMaterial"]
+resource_local_to_scene = true
+shader = SubResource("VolumeBarShader")
+shader_parameter/progress = 1.0
+shader_parameter/fill_color = Color(0.302, 0.51, 0.761, 1)
+shader_parameter/empty_color = Color(0.725, 0.765, 0.812, 1)
+
+[sub_resource type="StyleBoxEmpty" id="EmptySliderStyle"]
+
+[sub_resource type="AtlasTexture" id="TransparentSliderGrabber"]
+atlas = ExtResource("21_bar")
+region = Rect2(0, 0, 1, 1)
 
 [node name="Game" type="Control" unique_id=694228927]
 layout_mode = 3
@@ -149,17 +217,14 @@ vertical_alignment = 1
 [node name="RunTimeLabel" type="Label" parent="." unique_id=140272360]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
 offset_left = 50.0
 offset_top = 14.0
-offset_right = -89.0
+offset_right = 231.0
 offset_bottom = 28.0
-grow_horizontal = 2
 theme_override_colors/font_color = Color(0.541, 0.533, 0.51, 1)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 12
-text = "12h 34 min 56 s 789 ms"
+text = "1 min 12 s 323 ms"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -308,6 +373,10 @@ script = ExtResource("4")
 unique_name_in_owner = true
 script = ExtResource("8")
 
+[node name="MusicManager" type="AudioStreamPlayer" parent="." unique_id=1212818728]
+unique_name_in_owner = true
+script = ExtResource("8_music")
+
 [node name="MovingPilePattern" type="Node" parent="." unique_id=497167325]
 unique_name_in_owner = true
 script = ExtResource("18")
@@ -329,9 +398,34 @@ layer = 20
 [node name="SpecialRuleAnnouncement" parent="SpecialRuleAnnouncementLayer" unique_id=2141706670 instance=ExtResource("16")]
 unique_name_in_owner = true
 
-[node name="Overlay" type="Control" parent="." unique_id=1498983076]
+[node name="DebugHelp" type="Label" parent="." unique_id=920061710]
 unique_name_in_owner = true
 visible = false
+z_index = 50
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = -78.0
+offset_right = 157.0
+offset_bottom = -4.0
+grow_vertical = 0
+theme_override_colors/font_color = Color(1, 1, 1, 0.82)
+theme_override_colors/font_outline_color = Color(0.1, 0.1, 0.1, 0.9)
+theme_override_constants/outline_size = 2
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 8
+text = "[S] NEXT MUSIC SECTION
+[G] GOD MODE: OFF
+[R] RESET GAME
+[H] CLEAR HIGH SCORE
+[T] SHOW RUN TIME
+[M] MUTE AUDIO
+[ESC] BACK TO MENU"
+
+[node name="Overlay" type="Control" parent="." unique_id=1498983076]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -417,11 +511,13 @@ custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 mouse_filter = 2
 theme_override_colors/default_color = Color(0.541, 0.533, 0.51, 1)
-theme_override_font_sizes/normal_font_size = 20
+theme_override_fonts/normal_font = ExtResource("6_1vynq")
+theme_override_font_sizes/normal_font_size = 12
 bbcode_enabled = true
-text = "[center]time: 00:000[/center]"
+text = "in 01 h 23 min 45 s 678 ms"
 fit_content = true
 scroll_active = false
+horizontal_alignment = 1
 
 [node name="OverlayButton" type="Button" parent="Overlay/Center/Panel/Content" unique_id=1335381635]
 unique_name_in_owner = true
@@ -429,15 +525,15 @@ custom_minimum_size = Vector2(86, 31)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 0.72, 1)
 theme_override_font_sizes/font_size = 20
 theme_override_styles/normal = SubResource("SpriteButton")
-theme_override_styles/pressed = SubResource("SpriteButton")
-theme_override_styles/hover = SubResource("SpriteButton")
+theme_override_styles/pressed = SubResource("SpriteButtonPressed")
+theme_override_styles/hover = SubResource("SpriteButtonHover")
 text = "REPLAY"
 
 [node name="Splash" type="Control" parent="." unique_id=1259278219]
 unique_name_in_owner = true
-visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -467,11 +563,19 @@ layout_mode = 2
 theme_override_constants/separation = 18
 alignment = 1
 
-[node name="Title" type="Label" parent="Splash/Center/Content" unique_id=1442216190]
+[node name="Title" type="RichTextLabel" parent="Splash/Center/Content" unique_id=1442216190]
+custom_minimum_size = Vector2(236, 48)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
-theme_override_font_sizes/font_size = 40
-text = "PILE DOWN"
+offset_transform_enabled = true
+offset_transform_position = Vector2(-10, 0)
+mouse_filter = 2
+theme_override_colors/default_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_font_sizes/normal_font_size = 40
+bbcode_enabled = true
+text = "[wave amp=25.0 freq=3.0 connected=1] .PILE DOWN.[/wave]"
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
 horizontal_alignment = 1
 
 [node name="SplashDebugMode" type="Label" parent="Splash/Center/Content" unique_id=1141230549]
@@ -483,23 +587,135 @@ theme_override_font_sizes/font_size = 14
 text = "DEBUG MODE"
 horizontal_alignment = 1
 
-[node name="SplashHighScore" type="Label" parent="Splash/Center/Content" unique_id=657671615]
+[node name="SplashHighScore" type="RichTextLabel" parent="Splash/Center/Content" unique_id=657671615]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
+mouse_filter = 2
+theme_override_colors/default_color = Color(0.541, 0.533, 0.51, 1)
+theme_override_font_sizes/normal_font_size = 20
+bbcode_enabled = true
+text = "[center]HIGHSCORE
+42 rounds left[/center]"
+fit_content = true
+scroll_active = false
+
+[node name="SplashHighScoreTime" type="Label" parent="Splash/Center/Content" unique_id=2067517804]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 14)
+layout_mode = 2
+offset_transform_enabled = true
+offset_transform_position = Vector2(0, -19.49)
 theme_override_colors/font_color = Color(0.541, 0.533, 0.51, 1)
-theme_override_font_sizes/font_size = 20
-text = "HIGH SCORE
---"
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 12
+text = "in 1 min 12 s 323 ms"
 horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="SplashButton" type="Button" parent="Splash/Center/Content" unique_id=522904768]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(86, 31)
 layout_mode = 2
 size_flags_horizontal = 4
+offset_transform_enabled = true
+offset_transform_position = Vector2(0, -17.875)
 theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 0.72, 1)
 theme_override_font_sizes/font_size = 20
 theme_override_styles/normal = SubResource("SpriteButton")
-theme_override_styles/pressed = SubResource("SpriteButton")
-theme_override_styles/hover = SubResource("SpriteButton")
+theme_override_styles/pressed = SubResource("SpriteButtonPressed")
+theme_override_styles/hover = SubResource("SpriteButtonHover")
 text = "PLAY"
+
+[node name="AudioControls" type="VBoxContainer" parent="Splash" unique_id=2084179241]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = -43.0
+offset_right = 144.0
+offset_bottom = -7.0
+grow_vertical = 0
+theme_override_constants/separation = 2
+
+[node name="MusicRow" type="HBoxContainer" parent="Splash/AudioControls" unique_id=165726750]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Label" type="Label" parent="Splash/AudioControls/MusicRow" unique_id=1718612431]
+custom_minimum_size = Vector2(48, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 12
+text = "MUSIC"
+vertical_alignment = 1
+
+[node name="MusicVolumeSlider" type="HSlider" parent="Splash/AudioControls/MusicRow" unique_id=1338331245]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(84, 6)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_icons/grabber = SubResource("TransparentSliderGrabber")
+theme_override_icons/grabber_disabled = SubResource("TransparentSliderGrabber")
+theme_override_icons/grabber_highlight = SubResource("TransparentSliderGrabber")
+theme_override_styles/grabber_area = SubResource("EmptySliderStyle")
+theme_override_styles/grabber_area_highlight = SubResource("EmptySliderStyle")
+theme_override_styles/slider = SubResource("EmptySliderStyle")
+value = 100.0
+script = ExtResource("20_volume")
+
+[node name="Bar" type="TextureRect" parent="Splash/AudioControls/MusicRow/MusicVolumeSlider" unique_id=241571226]
+material = SubResource("MusicVolumeBarMaterial")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("21_bar")
+stretch_mode = 3
+
+[node name="SoundRow" type="HBoxContainer" parent="Splash/AudioControls" unique_id=403265211]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Label" type="Label" parent="Splash/AudioControls/SoundRow" unique_id=1444721140]
+custom_minimum_size = Vector2(48, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 12
+text = "SOUNDS"
+vertical_alignment = 1
+
+[node name="SoundVolumeSlider" type="HSlider" parent="Splash/AudioControls/SoundRow" unique_id=1751041834]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(84, 6)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_icons/grabber = SubResource("TransparentSliderGrabber")
+theme_override_icons/grabber_disabled = SubResource("TransparentSliderGrabber")
+theme_override_icons/grabber_highlight = SubResource("TransparentSliderGrabber")
+theme_override_styles/grabber_area = SubResource("EmptySliderStyle")
+theme_override_styles/grabber_area_highlight = SubResource("EmptySliderStyle")
+theme_override_styles/slider = SubResource("EmptySliderStyle")
+value = 100.0
+script = ExtResource("20_volume")
+
+[node name="Bar" type="TextureRect" parent="Splash/AudioControls/SoundRow/SoundVolumeSlider" unique_id=212451574]
+material = SubResource("SoundVolumeBarMaterial")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("21_bar")
+stretch_mode = 3

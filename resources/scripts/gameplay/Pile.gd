@@ -7,7 +7,7 @@ signal pile_selected(pile)
 signal pile_completed(pile)
 signal regenerated(pile, delta)
 
-const COLORS := PlayingCard.COLORS
+const Settings := preload("res://resources/scripts/core/settings.gd")
 
 @onready var glow: Panel = %Glow
 @onready var face: Button = %Face
@@ -274,7 +274,7 @@ func play_entrance(delay: float) -> void:
 func _refresh() -> void:
 	if not is_node_ready():
 		return
-	var color: Color = COLORS[current_value % COLORS.size()]
+	var color: Color = Settings.TILE_COLORS[current_value % Settings.TILE_COLORS.size()]
 	face_sprite.visible = face_up
 	back_sprite.visible = not face_up
 	_update_regeneration_ring_visibility()

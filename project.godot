@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Pile Down"
-run/main_scene="res://resources/scenes/Game.tscn"
+run/main_scene="res://resources/scenes/Main.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -23,11 +23,14 @@ window/size/window_width_override=512
 window/size/window_height_override=640
 window/stretch/mode="viewport"
 window/stretch/aspect="expand"
-window/stretch/scale_mode="integer"
 
 [gui]
 
 theme/custom_font="res://resources/fonts/VCR_OSD_MONO_1.001.ttf"
+
+[input_devices]
+
+pointing/emulate_mouse_from_touch=false
 
 [rendering]
 
@@ -35,5 +38,6 @@ textures/canvas_textures/default_texture_filter=0
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.968627, 0.964706, 0.94902, 1)
 2d/snap/snap_2d_transforms_to_pixel=true
 2d/snap/snap_2d_vertices_to_pixel=true

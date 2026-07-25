@@ -4,7 +4,7 @@ extends RefCounted
 # Starting values.
 const START_PILES := 1
 const START_HAND_SIZE := 1
-const START_CARD_VALUE := 5
+const START_CARD_VALUE := 3
 const START_TURN_TIME := 5.0
 
 # Limits. Keep these aligned with the gameplay invariants.
@@ -18,9 +18,9 @@ const TOTAL_ROUNDS := 50
 
 # Relative weights used after the first cleared round.
 # A weight of 0 disables an option. The values do not need to add up to 100.
-const ADD_PILE_WEIGHT := 40.0
+const ADD_PILE_WEIGHT := 35.0
 const ADD_CARD_WEIGHT := 25.0
-const ADD_START_VALUE_WEIGHT := 10.0
+const ADD_START_VALUE_WEIGHT := 15.0
 const REDUCE_TURN_TIME_WEIGHT := 5.0
 const NO_DIFFICULTY_CHANGE_WEIGHT := 10.0
 

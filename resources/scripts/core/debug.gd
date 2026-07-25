@@ -2,21 +2,21 @@ class_name DebugSettings
 extends RefCounted
 
 # Master switch. Every option below is ignored while this is false.
-const ENABLED := true
+const ENABLED := false
 
 # Mistakes still play their feedback, but never consume a life.
 const GOD_MODE := false
 
 # Progression round shown when starting a new game, from 1 to TOTAL_ROUNDS.
-const START_AT_ROUND := 49
+const START_AT_ROUND := 1
 
 # Keep empty for normal rule selection. Add several ids to lock a combination.
 # Valid ids:
 # shell_game, merry_go_stack, free_range_cards, pile_up, lights_out,
 # peek_a_card, stack_attack, roman_holiday.
-const LOCK_SPECIAL_RULES: Array[StringName] = [
-	"lights_out"
-]
+const LOCK_SPECIAL_RULES: Array[StringName] = []
+
+static var _runtime_god_mode := GOD_MODE
 
 
 static func is_enabled() -> bool:
@@ -24,7 +24,14 @@ static func is_enabled() -> bool:
 
 
 static func is_god_mode_enabled() -> bool:
-	return ENABLED and GOD_MODE
+	return ENABLED and _runtime_god_mode
+
+
+static func toggle_god_mode() -> bool:
+	if not ENABLED:
+		return false
+	_runtime_god_mode = not _runtime_god_mode
+	return _runtime_god_mode
 
 
 static func get_start_round(total_rounds: int) -> int:

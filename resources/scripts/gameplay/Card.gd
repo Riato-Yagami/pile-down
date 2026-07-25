@@ -6,15 +6,8 @@ signal drag_started(card)
 signal drag_released(card, release_position)
 signal entrance_became_interactive(card)
 
-const COLORS := [
-	Color("#4D82C2"),
-	Color("#4EA3A2"),
-	Color("#739A62"),
-	Color("#D0A13A"),
-	Color("#E06455"),
-	Color("#8772B5"),
-]
 const TINY_REGULAR_FONT := preload("res://resources/fonts/Tiny5-Regular.ttf")
+const Settings := preload("res://resources/scripts/core/settings.gd")
 
 @export var card_value := 0
 
@@ -359,6 +352,7 @@ func _on_face_input(event: InputEvent) -> void:
 		await flip_up(true)
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
+			drag_target = get_global_mouse_position()
 			card_selected.emit(self)
 			drag_started.emit(self)
 		else:
@@ -369,6 +363,7 @@ func _on_face_input(event: InputEvent) -> void:
 		face.accept_event()
 	elif event is InputEventScreenTouch:
 		if event.pressed:
+			drag_target = event.position
 			card_selected.emit(self)
 			drag_started.emit(self)
 		else:
@@ -412,7 +407,7 @@ func _animate_pose(target_scale: Vector2, y_offset: float) -> void:
 func _update_appearance() -> void:
 	if not is_node_ready():
 		return
-	var color: Color = COLORS[card_value % COLORS.size()]
+	var color: Color = Settings.TILE_COLORS[card_value % Settings.TILE_COLORS.size()]
 	face_sprite.visible = face_up
 	back_sprite.visible = not face_up
 	var tile_material := face_sprite.material as ShaderMaterial

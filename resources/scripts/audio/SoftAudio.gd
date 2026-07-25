@@ -2,6 +2,8 @@ class_name SoftAudio
 extends Node
 
 const SAMPLE_RATE := 22050
+const Settings := preload("res://resources/scripts/core/settings.gd")
+const SFX_BUS_NAME := &"SFX"
 
 
 func toggle_mute() -> bool:
@@ -14,7 +16,14 @@ func toggle_mute() -> bool:
 
 
 func is_muted() -> bool:
-	return AudioServer.is_bus_mute(AudioServer.get_bus_index("Master"))
+	var music_bus := AudioServer.get_bus_index("Music")
+	var sfx_bus := AudioServer.get_bus_index(SFX_BUS_NAME)
+	if music_bus < 0 or sfx_bus < 0:
+		return AudioServer.is_bus_mute(AudioServer.get_bus_index("Master"))
+	return (
+		AudioServer.is_bus_mute(music_bus)
+		and AudioServer.is_bus_mute(sfx_bus)
+	)
 
 
 func play_tone(frequency: float, duration := 0.075, volume := 0.12) -> void:
@@ -36,19 +45,28 @@ func play_tone(frequency: float, duration := 0.075, volume := 0.12) -> void:
 	var player := AudioStreamPlayer.new()
 	add_child(player)
 	player.stream = stream
+	player.bus = SFX_BUS_NAME
+	player.volume_db = Settings.SFX_VOLUME_DB
 	player.finished.connect(player.queue_free)
 	player.play()
 
 
 func play_error() -> void:
 	# Deux notes descendantes rendent l'erreur identifiable sans regarder le HUD.
-	play_tone(165.0, 0.14, 0.075)
+	play_tone(165.0, 0.16, 0.16)
 	var delayed_tone := get_tree().create_timer(0.075)
-	delayed_tone.timeout.connect(func() -> void: play_tone(105.0, 0.2, 0.085))
+	delayed_tone.timeout.connect(func() -> void: play_tone(105.0, 0.22, 0.19))
 
 
 func play_start() -> void:
 	_play_sequence([392.0, 523.25], 0.07, 0.07, 0.055)
+
+
+func play_clock_tick(urgency := 0.0) -> void:
+	var intensity := pow(clampf(urgency, 0.0, 1.0), 2.0)
+	var frequency := lerpf(820.0, 980.0, intensity)
+	var volume := lerpf(0.032, 0.048, intensity)
+	play_tone(frequency, 0.03, volume)
 
 
 func play_special_rule() -> void:
