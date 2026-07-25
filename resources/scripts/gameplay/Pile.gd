@@ -7,7 +7,7 @@ signal pile_selected(pile)
 signal pile_completed(pile)
 signal regenerated(pile, delta)
 
-const Settings := preload("res://resources/scripts/core/settings.gd")
+const Settings := preload("res://resources/scripts/settings/settings.gd")
 
 @onready var glow: Panel = %Glow
 @onready var face: Button = %Face

@@ -8,8 +8,8 @@ signal rules_announcement_finished()
 const RuleData := preload("res://resources/scripts/special_rules/SpecialRuleData.gd")
 const Modifiers := preload("res://resources/scripts/core/RoundModifiers.gd")
 const Context := preload("res://resources/scripts/core/RoundContext.gd")
-const Difficulty := preload("res://resources/scripts/core/difficulty.gd")
-const Debug := preload("res://resources/scripts/core/debug.gd")
+const Difficulty := preload("res://resources/scripts/settings/difficulty.gd")
+const Debug := preload("res://resources/scripts/settings/debug.gd")
 
 @onready var announcement: Control = %SpecialRuleAnnouncement
 @onready var flashlight_overlay: FlashlightOverlay = %FlashlightOverlay

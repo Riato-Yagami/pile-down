@@ -23,6 +23,7 @@
 [ext_resource type="Script" uid="uid://cnisbqmpaaunh" path="res://resources/scripts/special_rules/SpecialRuleManager.gd" id="19"]
 [ext_resource type="Script" uid="uid://crqsmcucrpe54" path="res://resources/scripts/ui/VolumeSlider.gd" id="20_volume"]
 [ext_resource type="Texture2D" uid="uid://7xknldn6usde" path="res://resources/sprites/bar.png" id="21_bar"]
+[ext_resource type="Script" uid="uid://cwn1o83ir4ncd" path="res://resources/scripts/ui/HighlightButton.gd" id="22_highlight"]
 
 [sub_resource type="Theme" id="PixelTheme"]
 default_font = ExtResource("12")
@@ -80,21 +81,48 @@ corner_radius_top_right = 5
 corner_radius_bottom_right = 5
 corner_radius_bottom_left = 5
 
-[sub_resource type="StyleBoxFlat" id="SpriteButtonHover"]
-bg_color = Color(0.427, 0.655, 0.898, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.176, 0.373, 0.62, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
-expand_margin_left = 1.0
-expand_margin_top = 1.0
-expand_margin_right = 1.0
-expand_margin_bottom = 1.0
+[sub_resource type="Shader" id="ButtonHighlightShader"]
+code = "shader_type canvas_item;
+
+uniform vec4 base_color : source_color = vec4(0.302, 0.51, 0.761, 1.0);
+uniform vec4 highlight_color : source_color = vec4(0.427, 0.655, 0.898, 1.0);
+
+void fragment() {
+	vec4 texture_color = texture(TEXTURE, UV);
+	vec4 source = texture_color * COLOR;
+	bool base_fill_pixel = (
+		texture_color.a > 0.0
+		&& distance(texture_color.rgb, base_color.rgb) < 0.01
+	);
+	if (base_fill_pixel) {
+		source.rgb = highlight_color.rgb;
+	}
+	COLOR = source;
+}"
+
+[sub_resource type="ShaderMaterial" id="OverlayButtonHighlightMaterial"]
+resource_local_to_scene = true
+shader = SubResource("ButtonHighlightShader")
+shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
+shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+
+[sub_resource type="ShaderMaterial" id="PlayButtonHighlightMaterial"]
+resource_local_to_scene = true
+shader = SubResource("ButtonHighlightShader")
+shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
+shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+
+[sub_resource type="ShaderMaterial" id="EndlessButtonHighlightMaterial"]
+resource_local_to_scene = true
+shader = SubResource("ButtonHighlightShader")
+shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
+shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+
+[sub_resource type="AtlasTexture" id="TransparentSliderGrabber"]
+atlas = ExtResource("21_bar")
+region = Rect2(0, 0, 1, 1)
+
+[sub_resource type="StyleBoxEmpty" id="EmptySliderStyle"]
 
 [sub_resource type="Shader" id="VolumeBarShader"]
 code = "shader_type canvas_item;
@@ -125,12 +153,6 @@ shader = SubResource("VolumeBarShader")
 shader_parameter/progress = 1.0
 shader_parameter/fill_color = Color(0.302, 0.51, 0.761, 1)
 shader_parameter/empty_color = Color(0.725, 0.765, 0.812, 1)
-
-[sub_resource type="StyleBoxEmpty" id="EmptySliderStyle"]
-
-[sub_resource type="AtlasTexture" id="TransparentSliderGrabber"]
-atlas = ExtResource("21_bar")
-region = Rect2(0, 0, 1, 1)
 
 [node name="Game" type="Control" unique_id=694228927]
 layout_mode = 3
@@ -525,12 +547,13 @@ custom_minimum_size = Vector2(86, 31)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_hover_color = Color(1, 1, 0.72, 1)
 theme_override_font_sizes/font_size = 20
 theme_override_styles/normal = SubResource("SpriteButton")
 theme_override_styles/pressed = SubResource("SpriteButtonPressed")
-theme_override_styles/hover = SubResource("SpriteButtonHover")
+theme_override_styles/hover = SubResource("SpriteButton")
 text = "REPLAY"
+script = ExtResource("22_highlight")
+highlight_material = SubResource("OverlayButtonHighlightMaterial")
 
 [node name="Splash" type="Control" parent="." unique_id=1259278219]
 unique_name_in_owner = true
@@ -560,7 +583,7 @@ grow_vertical = 2
 
 [node name="Content" type="VBoxContainer" parent="Splash/Center" unique_id=583057275]
 layout_mode = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 6
 alignment = 1
 
 [node name="Title" type="RichTextLabel" parent="Splash/Center/Content" unique_id=1442216190]
@@ -602,16 +625,15 @@ scroll_active = false
 
 [node name="SplashHighScoreTime" type="Label" parent="Splash/Center/Content" unique_id=2067517804]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(220, 14)
+custom_minimum_size = Vector2(220, 20.255)
 layout_mode = 2
+size_flags_stretch_ratio = 0.0
 offset_transform_enabled = true
-offset_transform_position = Vector2(0, -19.49)
 theme_override_colors/font_color = Color(0.541, 0.533, 0.51, 1)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 12
 text = "in 1 min 12 s 323 ms"
 horizontal_alignment = 1
-vertical_alignment = 1
 
 [node name="SplashButton" type="Button" parent="Splash/Center/Content" unique_id=522904768]
 unique_name_in_owner = true
@@ -619,14 +641,29 @@ custom_minimum_size = Vector2(86, 31)
 layout_mode = 2
 size_flags_horizontal = 4
 offset_transform_enabled = true
-offset_transform_position = Vector2(0, -17.875)
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_hover_color = Color(1, 1, 0.72, 1)
 theme_override_font_sizes/font_size = 20
 theme_override_styles/normal = SubResource("SpriteButton")
 theme_override_styles/pressed = SubResource("SpriteButtonPressed")
-theme_override_styles/hover = SubResource("SpriteButtonHover")
+theme_override_styles/hover = SubResource("SpriteButton")
 text = "PLAY"
+script = ExtResource("22_highlight")
+highlight_material = SubResource("PlayButtonHighlightMaterial")
+
+[node name="EndlessButton" type="Button" parent="Splash/Center/Content" unique_id=298842998]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(86, 31)
+layout_mode = 2
+size_flags_horizontal = 4
+offset_transform_position = Vector2(0, -17.875)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("SpriteButton")
+theme_override_styles/pressed = SubResource("SpriteButtonPressed")
+theme_override_styles/hover = SubResource("SpriteButton")
+text = "ENDLESS"
+script = ExtResource("22_highlight")
+highlight_material = SubResource("EndlessButtonHighlightMaterial")
 
 [node name="AudioControls" type="VBoxContainer" parent="Splash" unique_id=2084179241]
 layout_mode = 1
@@ -660,11 +697,11 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_override_icons/grabber = SubResource("TransparentSliderGrabber")
-theme_override_icons/grabber_disabled = SubResource("TransparentSliderGrabber")
 theme_override_icons/grabber_highlight = SubResource("TransparentSliderGrabber")
+theme_override_icons/grabber_disabled = SubResource("TransparentSliderGrabber")
+theme_override_styles/slider = SubResource("EmptySliderStyle")
 theme_override_styles/grabber_area = SubResource("EmptySliderStyle")
 theme_override_styles/grabber_area_highlight = SubResource("EmptySliderStyle")
-theme_override_styles/slider = SubResource("EmptySliderStyle")
 value = 100.0
 script = ExtResource("20_volume")
 
@@ -700,11 +737,11 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_override_icons/grabber = SubResource("TransparentSliderGrabber")
-theme_override_icons/grabber_disabled = SubResource("TransparentSliderGrabber")
 theme_override_icons/grabber_highlight = SubResource("TransparentSliderGrabber")
+theme_override_icons/grabber_disabled = SubResource("TransparentSliderGrabber")
+theme_override_styles/slider = SubResource("EmptySliderStyle")
 theme_override_styles/grabber_area = SubResource("EmptySliderStyle")
 theme_override_styles/grabber_area_highlight = SubResource("EmptySliderStyle")
-theme_override_styles/slider = SubResource("EmptySliderStyle")
 value = 100.0
 script = ExtResource("20_volume")
 

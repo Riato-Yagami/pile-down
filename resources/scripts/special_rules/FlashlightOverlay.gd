@@ -1,7 +1,7 @@
 class_name FlashlightOverlay
 extends ColorRect
 
-const Difficulty := preload("res://resources/scripts/core/difficulty.gd")
+const Difficulty := preload("res://resources/scripts/settings/difficulty.gd")
 
 var flashlight_radius := Difficulty.LIGHTS_OUT_RADIUS
 @export var flashlight_softness := 14.0

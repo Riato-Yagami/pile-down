@@ -6,9 +6,14 @@ signal mistake_made()
 signal round_completed()
 signal game_over()
 
+enum GameMode {
+	STANDARD,
+	ENDLESS,
+}
+
 const PILE_SCENE := preload("res://resources/scenes/Pile.tscn")
-const Difficulty := preload("res://resources/scripts/core/difficulty.gd")
-const Debug := preload("res://resources/scripts/core/debug.gd")
+const Difficulty := preload("res://resources/scripts/settings/difficulty.gd")
+const Debug := preload("res://resources/scripts/settings/debug.gd")
 const MUSIC_BUS_NAME := &"Music"
 const SFX_BUS_NAME := &"SFX"
 const AUDIO_CONFIG_PATH := "user://pile_down.cfg"
@@ -43,6 +48,7 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var overlay_high_score: RichTextLabel = %OverlayHighScore
 @onready var splash: Control = %Splash
 @onready var splash_button: Button = %SplashButton
+@onready var endless_button: Button = %EndlessButton
 @onready var splash_high_score: RichTextLabel = %SplashHighScore
 @onready var splash_high_score_time: Label = %SplashHighScoreTime
 @onready var splash_debug_mode: Label = %SplashDebugMode
@@ -61,6 +67,10 @@ var turn_time: float = Difficulty.START_TURN_TIME
 var round_number: int = Difficulty.TOTAL_ROUNDS
 var best_rounds_left := -1
 var best_score_time_ms := -1
+var endless_unlocked := false
+var endless_best_round := -1
+var endless_best_time_ms := -1
+var game_mode := GameMode.STANDARD
 var game_started_msec := 0
 var round_reached_time_ms := 0
 var mistakes_left := 3
@@ -95,6 +105,11 @@ func _ready() -> void:
 	timer_manager.time_expired.connect(_on_time_expired)
 	overlay_button.pressed.connect(_on_overlay_pressed)
 	splash_button.pressed.connect(_on_splash_pressed)
+	endless_button.pressed.connect(_on_endless_pressed)
+	endless_button.mouse_entered.connect(_show_endless_high_score)
+	endless_button.mouse_exited.connect(_refresh_high_score)
+	endless_button.focus_entered.connect(_show_endless_high_score)
+	endless_button.focus_exited.connect(_refresh_high_score)
 	special_rule_manager.rules_announcing.connect(_on_special_rules_announcing)
 	special_rule_manager.rules_announcement_finished.connect(
 		_on_special_rules_announcement_finished
@@ -210,7 +225,11 @@ func _handle_global_shortcut(event: InputEvent) -> bool:
 			return true
 		KEY_SPACE:
 			if splash.visible or (overlay.visible and overlay_mode == "restart"):
-				start_game()
+				start_game(
+					game_mode == GameMode.ENDLESS
+					if overlay.visible
+					else false
+				)
 				return true
 		KEY_M:
 			_toggle_audio_sliders()
@@ -272,16 +291,24 @@ func _debug_reset_game() -> void:
 	input_locked = true
 	timer_manager.stop_countdown()
 	await special_rule_manager.end_round(piles)
-	start_game()
+	start_game(game_mode == GameMode.ENDLESS)
 	_debug_action_in_progress = false
 
 
 func _debug_reset_high_score() -> void:
 	best_rounds_left = -1
 	best_score_time_ms = -1
+	endless_best_round = -1
+	endless_best_time_ms = -1
 	var config := ConfigFile.new()
 	if config.load("user://pile_down.cfg") == OK:
-		for key in ["best_rounds_left", "best_score_time_ms", "best_time_ms"]:
+		for key in [
+			"best_rounds_left",
+			"best_score_time_ms",
+			"best_time_ms",
+			"endless_best_round",
+			"endless_best_time_ms",
+		]:
 			if config.has_section_key("progress", key):
 				config.erase_section_key("progress", key)
 		config.save("user://pile_down.cfg")
@@ -303,7 +330,8 @@ func _refresh_debug_help() -> void:
 	)
 
 
-func start_game() -> void:
+func start_game(endless_mode := false) -> void:
+	game_mode = GameMode.ENDLESS if endless_mode else GameMode.STANDARD
 	soft_audio.play_start()
 	music_manager.set_low_pass_enabled(false, true)
 	_hand_cycle_generation += 1
@@ -313,12 +341,12 @@ func start_game() -> void:
 	start_value = Difficulty.START_CARD_VALUE
 	turn_time = Difficulty.START_TURN_TIME
 	tier_reliefs_applied = 0
-	round_number = (
-		Difficulty.TOTAL_ROUNDS
-		- Debug.get_start_round(Difficulty.TOTAL_ROUNDS)
-		+ 1
-	)
-	_apply_debug_progression(Debug.get_start_round(Difficulty.TOTAL_ROUNDS))
+	if game_mode == GameMode.ENDLESS:
+		round_number = 1
+	else:
+		var debug_start_round := Debug.get_start_round(Difficulty.TOTAL_ROUNDS)
+		round_number = Difficulty.TOTAL_ROUNDS - debug_start_round + 1
+		_apply_debug_progression(debug_start_round)
 	music_manager.reset_game_sections(tier_reliefs_applied + 1)
 	music_manager.transition_to_game_music()
 	game_started_msec = Time.get_ticks_msec()
@@ -660,10 +688,13 @@ func _finish_round() -> void:
 	round_completed.emit()
 	soft_audio.play_tone(680.0, 0.16, 0.055)
 	await _show_round_wave()
-	round_number -= 1
+	if game_mode == GameMode.ENDLESS:
+		round_number += 1
+	else:
+		round_number -= 1
 	round_reached_time_ms = _total_time_milliseconds()
 	_update_hud()
-	if round_number <= 0:
+	if game_mode == GameMode.STANDARD and round_number <= 0:
 		await _finish_game(true)
 		return
 	var change := _advance_difficulty(_progression_round())
@@ -701,16 +732,30 @@ func _finish_game(completed_all_rounds := false) -> void:
 	timer_manager.stop_countdown()
 	await special_rule_manager.end_round(piles)
 	music_manager.set_low_pass_enabled(true)
-	if completed_all_rounds:
+	if completed_all_rounds and game_mode == GameMode.STANDARD:
 		soft_audio.play_victory()
+		_unlock_endless_mode()
 	else:
 		soft_audio.play_game_over()
-	var formatted_time := _format_duration(round_reached_time_ms)
-	var high_score_kind := _update_high_score(round_number, round_reached_time_ms)
+	var score_time_ms := (
+		_total_time_milliseconds()
+		if game_mode == GameMode.ENDLESS
+		else round_reached_time_ms
+	)
+	var formatted_time := _format_duration(score_time_ms)
+	var high_score_kind := (
+		_update_endless_high_score(round_number, score_time_ms)
+		if game_mode == GameMode.ENDLESS
+		else _update_high_score(round_number, score_time_ms)
+	)
 	game_over.emit()
 	overlay_high_score.visible = not high_score_kind.is_empty()
 	if not high_score_kind.is_empty():
-		var rounds_text := "%d ROUNDS LEFT" % round_number
+		var rounds_text := (
+			"ROUND %d" % round_number
+			if game_mode == GameMode.ENDLESS
+			else "%d ROUNDS LEFT" % round_number
+		)
 		var time_text := "in %s" % formatted_time
 		if high_score_kind == "ROUND":
 			rounds_text = "[color=#4D82C2]%s[/color]" % rounds_text
@@ -718,8 +763,11 @@ func _finish_game(completed_all_rounds := false) -> void:
 			time_text = "[color=#4D82C2]%s[/color]" % time_text
 		overlay_title.text = "[center]%s[/center]" % rounds_text
 		overlay_details.text = "[center]%s[/center]" % time_text
-	elif completed_all_rounds:
+	elif completed_all_rounds and game_mode == GameMode.STANDARD:
 		overlay_title.text = "[center]YOU WON[/center]"
+		overlay_details.text = "[center]in %s[/center]" % formatted_time
+	elif game_mode == GameMode.ENDLESS:
+		overlay_title.text = "[center]ROUND %d[/center]" % round_number
 		overlay_details.text = "[center]in %s[/center]" % formatted_time
 	else:
 		overlay_title.text = "[center]%d ROUNDS LEFT[/center]" % round_number
@@ -731,11 +779,15 @@ func _finish_game(completed_all_rounds := false) -> void:
 
 func _on_overlay_pressed() -> void:
 	if overlay_mode == "restart":
-		start_game()
+		start_game(game_mode == GameMode.ENDLESS)
 
 
 func _on_splash_pressed() -> void:
 	start_game()
+
+
+func _on_endless_pressed() -> void:
+	start_game(true)
 
 
 func _on_special_rules_announcing(_rules: Array[SpecialRuleData]) -> void:
@@ -751,7 +803,7 @@ func _increase_difficulty(first_upgrade_override := -1) -> String:
 	var first_upgrade := (
 		first_upgrade_override == 1
 		if first_upgrade_override >= 0
-		else round_number == Difficulty.TOTAL_ROUNDS - 1
+		else _progression_round() == 2
 	)
 	var options: Array[String] = []
 	var weights: Array[float] = []
@@ -993,6 +1045,42 @@ func _save_high_score() -> void:
 	config.save("user://pile_down.cfg")
 
 
+func _update_endless_high_score(reached_round: int, elapsed_time_ms: int) -> String:
+	var is_better_progress := (
+		endless_best_round < 0 or reached_round > endless_best_round
+	)
+	var is_faster_tie := (
+		reached_round == endless_best_round
+		and (
+			endless_best_time_ms < 0
+			or elapsed_time_ms < endless_best_time_ms
+		)
+	)
+	if not is_better_progress and not is_faster_tie:
+		return ""
+	endless_best_round = reached_round
+	endless_best_time_ms = elapsed_time_ms
+	_save_endless_progress()
+	return "ROUND" if is_better_progress else "TIME"
+
+
+func _unlock_endless_mode() -> void:
+	if endless_unlocked:
+		return
+	endless_unlocked = true
+	endless_button.visible = true
+	_save_endless_progress()
+
+
+func _save_endless_progress() -> void:
+	var config := ConfigFile.new()
+	config.load("user://pile_down.cfg")
+	config.set_value("progress", "endless_unlocked", endless_unlocked)
+	config.set_value("progress", "endless_best_round", endless_best_round)
+	config.set_value("progress", "endless_best_time_ms", endless_best_time_ms)
+	config.save("user://pile_down.cfg")
+
+
 func _load_high_score() -> void:
 	var config := ConfigFile.new()
 	if config.load("user://pile_down.cfg") == OK:
@@ -1004,6 +1092,17 @@ func _load_high_score() -> void:
 			if legacy_best_time > 0:
 				best_rounds_left = 0
 				best_score_time_ms = legacy_best_time
+		endless_unlocked = bool(
+			config.get_value("progress", "endless_unlocked", false)
+		)
+		endless_best_round = int(
+			config.get_value("progress", "endless_best_round", -1)
+		)
+		endless_best_time_ms = int(
+			config.get_value("progress", "endless_best_time_ms", -1)
+		)
+	endless_unlocked = endless_unlocked or Debug.unlock_endless_mode()
+	endless_button.visible = endless_unlocked
 	_refresh_high_score()
 
 
@@ -1019,5 +1118,21 @@ func _refresh_high_score() -> void:
 	splash_high_score_time.visible = true
 
 
+func _show_endless_high_score() -> void:
+	if endless_best_round < 0 or endless_best_time_ms < 0:
+		splash_high_score.text = "[center]ENDLESS HIGHSCORE\n--[/center]"
+		splash_high_score_time.visible = false
+		return
+	splash_high_score.text = (
+		"[center]ENDLESS HIGHSCORE\nround %d[/center]" % endless_best_round
+	)
+	splash_high_score_time.text = (
+		"in %s" % _format_duration(endless_best_time_ms)
+	)
+	splash_high_score_time.visible = true
+
+
 func _progression_round() -> int:
+	if game_mode == GameMode.ENDLESS:
+		return round_number
 	return Difficulty.TOTAL_ROUNDS - round_number + 1

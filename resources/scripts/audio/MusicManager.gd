@@ -3,7 +3,7 @@ extends AudioStreamPlayer
 
 const MENU_MUSIC_PATH := "res://resources/audio/musics/menu.wav"
 const GAME_SECTION_PATH := "res://resources/audio/musics/section-%d.wav"
-const Settings := preload("res://resources/scripts/core/settings.gd")
+const Settings := preload("res://resources/scripts/settings/settings.gd")
 const MUSIC_BUS_NAME := &"Music"
 
 var game_music_requested := false

@@ -4,3 +4,5 @@
 build/linux/
 build/web/
 build/windows/
+build/.godot_config/
+build/.godot_data/

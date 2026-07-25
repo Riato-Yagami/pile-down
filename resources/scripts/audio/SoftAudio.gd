@@ -2,7 +2,7 @@ class_name SoftAudio
 extends Node
 
 const SAMPLE_RATE := 22050
-const Settings := preload("res://resources/scripts/core/settings.gd")
+const Settings := preload("res://resources/scripts/settings/settings.gd")
 const SFX_BUS_NAME := &"SFX"
 
 

@@ -21,6 +21,13 @@ Le menu d'accueil propose des curseurs séparés pour régler le volume de la
 musique et celui des effets sonores. Ces préférences sont sauvegardées dans
 `user://pile_down.cfg`.
 
+Terminer une partie normale débloque définitivement le mode `ENDLESS`. Son
+bouton apparaît alors dans le menu principal. Les rounds y sont comptés vers
+le haut à partir de 1 et la partie continue jusqu'à la défaite. Ce mode possède
+son propre high score, affiché à la place du score normal lorsque le bouton
+`ENDLESS` est survolé ou sélectionné. Le déblocage et le score infini sont
+sauvegardés dans `user://pile_down.cfg`.
+
 Le meilleur score privilégie le plus petit nombre de rounds restants, puis le
 temps le plus court en cas d'égalité. Le temps enregistré est celui du passage
 au round atteint, pas celui de la défaite sur ce round. Le score est sauvegardé
@@ -130,7 +137,7 @@ musical de cinq secondes en cours. Si cette section n'existe pas, la section
 courante continue en boucle.
 L'apparition de chaque nouvelle main et le départ de son chronomètre sont
 alignés sur la grille musicale. Ce comportement se configure dans
-`resources/scripts/core/settings.gd` : `SYNC_HANDS_TO_MUSIC` l'active ou le
+`resources/scripts/settings/settings.gd` : `SYNC_HANDS_TO_MUSIC` l'active ou le
 désactive, et `HAND_BEAT_INTERVAL` vaut `1.0` pour un beat ou `0.5` pour un
 demi-beat. `MUSIC_VOLUME_DB` règle le niveau de la musique et `SFX_VOLUME_DB`
 le niveau global des effets sonores. `TILE_COLORS` contient les dix couleurs
@@ -239,7 +246,7 @@ forme `in 1 min 12 s 323 ms`.
 
 ## Régler la difficulté
 
-Tous les réglages sont centralisés dans `resources/scripts/core/difficulty.gd` :
+Tous les réglages sont centralisés dans `resources/scripts/settings/difficulty.gd` :
 
 - valeurs initiales de piles, cartes, valeur de départ et timer ;
 - limites maximales, ainsi que le temps minimal ;
@@ -258,7 +265,7 @@ participent pas à ce tirage.
 
 ## Debug
 
-Les options de développement sont centralisées dans `resources/scripts/core/debug.gd`.
+Les options de développement sont centralisées dans `resources/scripts/settings/debug.gd`.
 `ENABLED` est l'interrupteur global : lorsqu'il vaut `false`, toutes les autres
 options sont ignorées. Lorsqu'il vaut `true`, le menu principal affiche
 `DEBUG MODE` en rouge.
@@ -289,10 +296,14 @@ jeu :
 - `R` réinitialise immédiatement la partie avec les valeurs de départ ;
 - `H` efface le high score sauvegardé.
 
+Dans `resources/scripts/settings/debug.gd`, `UNLOCK_ENDLESS_MODE` permet d'afficher
+le mode infini sans avoir préalablement terminé le jeu lorsque le debug est
+activé.
+
 ## Special Rules
 
 Un modificateur temporaire peut être sélectionné au début de chaque round de
-progression. Les réglages se trouvent également dans `resources/scripts/core/difficulty.gd` :
+progression. Les réglages se trouvent également dans `resources/scripts/settings/difficulty.gd` :
 
 ```gdscript
 const FIRST_SPECIAL_RULE_ROUND := 4

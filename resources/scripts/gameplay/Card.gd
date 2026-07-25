@@ -7,7 +7,7 @@ signal drag_released(card, release_position)
 signal entrance_became_interactive(card)
 
 const TINY_REGULAR_FONT := preload("res://resources/fonts/Tiny5-Regular.ttf")
-const Settings := preload("res://resources/scripts/core/settings.gd")
+const Settings := preload("res://resources/scripts/settings/settings.gd")
 
 @export var card_value := 0
 
