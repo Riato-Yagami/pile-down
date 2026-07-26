@@ -30,6 +30,27 @@ const FIRST_ADD_PILE_WEIGHT := 70.0
 const FIRST_ADD_CARD_WEIGHT := 30.0
 
 # Special Rules.
+# Comment a line to remove that rule from every automatic selection.
+const ENABLED_SPECIAL_RULES: Array[StringName] = [
+	&"shell_game",
+	&"merry_go_stack",
+	&"free_range_cards",
+	&"pile_up",
+	&"lights_out",
+	&"peek_a_card",
+	&"stack_attack",
+	&"roman_holiday",
+	&"musical_stacks",
+	&"sticky_fingers",
+	&"hot_potatoes",
+	&"blind_delivery",
+	&"mirror_match",
+	&"sudden_death",
+	&"grace_period",
+	&"colorblind",
+	#&"floor_is_lava",
+]
+
 const FIRST_SPECIAL_RULE_ROUND := 4
 const EXTRA_SPECIAL_RULE_CHANCE := 0.75
 const MAX_COMBINED_RULES := 5
@@ -37,7 +58,20 @@ const THREE_PILE_SHELL_GAME_ROUND := 30
 const REGENERATING_PILE_RATIO := 0.35
 const REGENERATION_DURATION := 8.0
 const LIGHTS_OUT_RADIUS := 60.0
+const HOT_POTATO_DURATION := 1
+const STICKY_HOT_POTATO_DURATION := 2
+# During Grace Period, reveal the running clock this many seconds before expiry.
+const GRACE_PERIOD_REVEAL_TIME := 1.25
+
+# Mirror Match variants. These are relative weights and do not need to total 100.
+const MIRROR_HORIZONTAL_WEIGHT := 75.0
+const MIRROR_VERTICAL_WEIGHT := 20.0
+const MIRROR_BOTH_AXES_WEIGHT := 5.0
 
 
 static func special_rule_milestone(rule_count: int) -> int:
 	return (FIRST_SPECIAL_RULE_ROUND + rule_count - 1) * rule_count
+
+
+static func is_special_rule_enabled(rule_id: StringName) -> bool:
+	return ENABLED_SPECIAL_RULES.has(rule_id)

@@ -99,6 +99,7 @@ texture = ExtResource("2")
 [node name="BackSprite" type="TextureRect" parent="." unique_id=1336485702]
 unique_name_in_owner = true
 visible = false
+material = SubResource("TileColorMaterial")
 texture_filter = 1
 layout_mode = 1
 anchors_preset = 15

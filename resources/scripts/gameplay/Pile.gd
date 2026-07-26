@@ -29,6 +29,7 @@ var regeneration_timer: Timer
 var regeneration_enabled := false
 var _hovered_for_drop := false
 var _visual_tween: Tween
+var colorblind_enabled := false
 
 
 func _ready() -> void:
@@ -44,12 +45,14 @@ func setup(
 	index: int,
 	value: int,
 	direction := RoundModifiers.StackDirection.DOWN,
-	use_roman_numerals := false
+	use_roman_numerals := false,
+	colorblind := false
 ) -> void:
 	pile_index = index
 	start_value = value
 	stack_direction = direction
 	roman_numerals_enabled = use_roman_numerals
+	colorblind_enabled = colorblind
 	current_value = 0 if stack_direction == RoundModifiers.StackDirection.UP else value
 	completed = false
 	face_up = true
@@ -68,6 +71,13 @@ func expected_value() -> int:
 
 func can_accept(value: int) -> bool:
 	return not completed and value == expected_value()
+
+
+func contains_global_point(global_point: Vector2, margin: float = 0.0) -> bool:
+	# Test in pile-local coordinates so Mirror Match's pivot and negative axes
+	# affect the visual and its drop area identically.
+	var local_point := get_global_transform().affine_inverse() * global_point
+	return Rect2(Vector2.ZERO, size).grow(margin).has_point(local_point)
 
 
 func place(value: int) -> void:
@@ -275,11 +285,15 @@ func _refresh() -> void:
 	if not is_node_ready():
 		return
 	var color: Color = Settings.TILE_COLORS[current_value % Settings.TILE_COLORS.size()]
+	var visual_color := Color("#8B8B8B") if colorblind_enabled else color
 	face_sprite.visible = face_up
 	back_sprite.visible = not face_up
+	back_sprite.modulate = Color.WHITE
 	_update_regeneration_ring_visibility()
 	var tile_material := face_sprite.material as ShaderMaterial
-	tile_material.set_shader_parameter("tile_color", color)
+	tile_material.set_shader_parameter("tile_color", visual_color)
+	var back_tile_material := back_sprite.material as ShaderMaterial
+	back_tile_material.set_shader_parameter("tile_color", visual_color)
 	value_label.visible = face_up
 	value_label.text = RoundModifiers.format_value(current_value, roman_numerals_enabled)
 	value_label.add_theme_font_size_override(
@@ -290,4 +304,12 @@ func _refresh() -> void:
 		value_label.add_theme_font_override("font", TINY_REGULAR_FONT)
 	else:
 		value_label.remove_theme_font_override("font")
-	value_label.add_theme_color_override("font_color", color.darkened(0.35))
+	value_label.add_theme_color_override(
+		"font_color",
+		Settings.COLORBLIND_VALUE_COLOR if colorblind_enabled else color.darkened(0.35)
+	)
+
+
+func set_colorblind_enabled(enabled: bool) -> void:
+	colorblind_enabled = enabled
+	_refresh()

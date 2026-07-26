@@ -12,19 +12,31 @@ func _run() -> void:
 	root.add_child(game)
 	game.start_game()
 	await _wait_until_unlocked(game)
+	if game.round_modifiers.wandering_hand_cards:
+		game.round_modifiers.wandering_hand_cards = false
+		for generated_card in game.hand_manager.current_cards:
+			generated_card.disable_wandering()
+			generated_card.free_range_card = false
+			generated_card.reparent(game.hand_container)
+		game.hand_container.queue_sort()
+		await process_frame
+		await process_frame
 
 	var original_hand := game.hand_manager.current_cards.duplicate()
 	var card := original_hand[0] as PlayingCard
 	var pile := game.piles[0] as MemoryPile
 	var original_mistakes := game.mistakes_left
+	card.hover_reveal_enabled = true
+	card.face_up = true
 	game._on_card_drag_started(card)
 	card.finish_drag()
-	game._handle_mistake(pile)
-	await create_timer(0.2).timeout
+	await game._handle_mistake(pile)
 
 	assert(game.mistakes_left == original_mistakes - 1)
 	assert(game.hand_manager.current_cards == original_hand)
 	assert(card.get_parent() == game.hand_container)
+	assert(card.scale.is_equal_approx(Vector2.ONE))
+	assert(not card.face_up)
 	assert(card.selectable)
 	assert(not game.input_locked)
 	assert(game.timer_manager.running)
@@ -34,13 +46,23 @@ func _run() -> void:
 	var timed_out_card := game.hand_manager.current_cards[0] as PlayingCard
 	var mistakes_before_timeout := game.mistakes_left
 	game._on_card_drag_started(timed_out_card)
-	game._on_time_expired()
-	await create_timer(0.2).timeout
+	await game._on_time_expired()
 	assert(game.mistakes_left == mistakes_before_timeout - 1)
 	assert(timed_out_card.get_parent() == game.hand_container)
 	assert(not timed_out_card.dragging)
 	assert(timed_out_card.selectable)
 	assert(not game.input_locked)
+
+	assert(game.mistakes_left == 1)
+	game._handle_mistake(game.piles[0])
+	await create_timer(0.25).timeout
+	assert(game.mistakes_left == 0)
+	assert(not game.overlay.visible)
+	assert(game.music_manager.low_pass_enabled)
+	await create_timer(0.55).timeout
+	assert(game.overlay.visible)
+	assert(game.overlay_mode == "restart")
+	assert(game.input_locked)
 
 	print("Mistake retry integration test passed.")
 	game.queue_free()

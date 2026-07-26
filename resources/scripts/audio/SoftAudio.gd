@@ -58,6 +58,15 @@ func play_error() -> void:
 	delayed_tone.timeout.connect(func() -> void: play_tone(105.0, 0.22, 0.19))
 
 
+func play_timeout_error() -> void:
+	# A short alarm followed by a low impact distinguishes timeouts from bad drops.
+	play_tone(980.0, 0.08, 0.11)
+	var second_alarm := get_tree().create_timer(0.065)
+	second_alarm.timeout.connect(func() -> void: play_tone(720.0, 0.09, 0.13))
+	var impact := get_tree().create_timer(0.14)
+	impact.timeout.connect(func() -> void: play_tone(92.0, 0.24, 0.2))
+
+
 func play_start() -> void:
 	_play_sequence([392.0, 523.25], 0.07, 0.07, 0.055)
 

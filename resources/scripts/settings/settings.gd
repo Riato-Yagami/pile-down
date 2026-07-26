@@ -9,6 +9,8 @@ const MUSIC_VOLUME_DB := -15.0
 const MUSIC_LOW_PASS_CUTOFF_HZ := 800.0
 const MUSIC_LOW_PASS_RELEASE_SECONDS := 0.35
 const SFX_VOLUME_DB := 6.0
+# Matches the question mark pixels in resources/sprites/tiles/tile-back.png.
+const COLORBLIND_VALUE_COLOR := Color("#B4B4B2")
 
 #const TILE_COLORS: Array[Color] = [
 	#Color("#4D82C2"),

@@ -19,11 +19,15 @@
 [ext_resource type="Texture2D" uid="uid://b1sacjkn0r8mw" path="res://resources/sprites/pop-up.png" id="15"]
 [ext_resource type="PackedScene" path="res://resources/scenes/SpecialRuleAnnouncement.tscn" id="16"]
 [ext_resource type="PackedScene" path="res://resources/scenes/FlashlightOverlay.tscn" id="17"]
-[ext_resource type="Script" uid="uid://cjc0st8mtcvw6" path="res://resources/scripts/special_rules/MovingPilePattern.gd" id="18"]
+[ext_resource type="Script" uid="uid://cjc0st8mtcvw6" path="res://resources/scripts/special_rules/rules/MovingPilePattern.gd" id="18"]
 [ext_resource type="Script" uid="uid://cnisbqmpaaunh" path="res://resources/scripts/special_rules/SpecialRuleManager.gd" id="19"]
 [ext_resource type="Script" uid="uid://crqsmcucrpe54" path="res://resources/scripts/ui/VolumeSlider.gd" id="20_volume"]
 [ext_resource type="Texture2D" uid="uid://7xknldn6usde" path="res://resources/sprites/bar.png" id="21_bar"]
 [ext_resource type="Script" uid="uid://cwn1o83ir4ncd" path="res://resources/scripts/ui/HighlightButton.gd" id="22_highlight"]
+[ext_resource type="Script" uid="uid://2c5oj66i5mwr" path="res://resources/scripts/gameplay/PileManager.gd" id="23_pile_manager"]
+[ext_resource type="Script" uid="uid://rwcvnmthxu04" path="res://resources/scripts/special_rules/rules/LavaRuleController.gd" id="24_lava_controller"]
+[ext_resource type="Script" uid="uid://cio7iabsofnac" path="res://resources/scripts/special_rules/rules/StickyFingersRuleController.gd" id="25_sticky_controller"]
+[ext_resource type="Script" uid="uid://dfiwboprme6qb" path="res://resources/scripts/special_rules/rules/MirrorMatchRuleController.gd" id="26_mirror_controller"]
 
 [sub_resource type="Theme" id="PixelTheme"]
 default_font = ExtResource("12")
@@ -382,10 +386,24 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
+[node name="LavaLayer" type="Control" parent="." unique_id=1312685521]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
 [node name="HandManager" type="Node" parent="." unique_id=366759602]
 unique_name_in_owner = true
 script = ExtResource("2")
 card_scene = ExtResource("3")
+
+[node name="PileManager" type="Node" parent="." unique_id=1303065016]
+unique_name_in_owner = true
+script = ExtResource("23_pile_manager")
 
 [node name="TimerManager" type="Node" parent="." unique_id=1745576884]
 unique_name_in_owner = true
@@ -406,6 +424,18 @@ script = ExtResource("18")
 [node name="SpecialRuleManager" type="Node" parent="." unique_id=718505913]
 unique_name_in_owner = true
 script = ExtResource("19")
+
+[node name="LavaRuleController" type="Node" parent="." unique_id=426819816]
+unique_name_in_owner = true
+script = ExtResource("24_lava_controller")
+
+[node name="StickyFingersRuleController" type="Node" parent="." unique_id=1567677447]
+unique_name_in_owner = true
+script = ExtResource("25_sticky_controller")
+
+[node name="MirrorMatchRuleController" type="Node" parent="." unique_id=1447248504]
+unique_name_in_owner = true
+script = ExtResource("26_mirror_controller")
 
 [node name="FlashlightLayer" type="CanvasLayer" parent="." unique_id=781875756]
 layer = 10
@@ -534,7 +564,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_colors/default_color = Color(0.541, 0.533, 0.51, 1)
 theme_override_fonts/normal_font = ExtResource("6_1vynq")
-theme_override_font_sizes/normal_font_size = 12
+theme_override_font_sizes/normal_font_size = 16
 bbcode_enabled = true
 text = "in 01 h 23 min 45 s 678 ms"
 fit_content = true
@@ -557,6 +587,7 @@ highlight_material = SubResource("OverlayButtonHighlightMaterial")
 
 [node name="Splash" type="Control" parent="." unique_id=1259278219]
 unique_name_in_owner = true
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -631,7 +662,7 @@ size_flags_stretch_ratio = 0.0
 offset_transform_enabled = true
 theme_override_colors/font_color = Color(0.541, 0.533, 0.51, 1)
 theme_override_fonts/font = ExtResource("6_1vynq")
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 16
 text = "in 1 min 12 s 323 ms"
 horizontal_alignment = 1
 

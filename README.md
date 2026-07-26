@@ -172,6 +172,7 @@ pile-down/
 │   │   ├── core/
 │   │   ├── gameplay/
 │   │   ├── special_rules/
+│   │   │   └── rules/
 │   │   └── ui/
 │   └── sprites/
 │       ├── hand/
@@ -194,6 +195,8 @@ pile-down/
   animations.
 - `resources/scripts/gameplay/HandManager.gd` : génération des mains avec garantie d'une carte
   jouable.
+- `resources/scripts/special_rules/rules/` : implémentations et contrôleurs propres
+  aux règles spéciales (lave, Sticky Fingers, lampe, mouvements et anneaux).
 - `resources/scripts/gameplay/TimerManager.gd` : compte à rebours indépendant.
 
 Les composants communiquent par signaux afin de rester faiblement couplés.
@@ -282,7 +285,9 @@ const LOCK_SPECIAL_RULES: Array[StringName] = []
   les améliorations des rounds précédents sont alors tirées et appliquées
   comme pendant une partie normale, y compris les allègements de palier ;
 - `LOCK_SPECIAL_RULES` force une ou plusieurs règles à chaque round, y compris
-  avant leurs paliers normaux. Par exemple, utiliser
+  avant leurs paliers normaux et même si elles sont normalement incompatibles.
+  Les contraintes de règles requises sont également ignorées afin de permettre
+  le test de n’importe quelle combinaison. Par exemple, utiliser
   `[&"peek_a_card", &"lights_out"]`. Une liste vide restaure la sélection
   normale. Les doublons et identifiants inconnus sont ignorés avec un
   avertissement.
@@ -306,11 +311,41 @@ Un modificateur temporaire peut être sélectionné au début de chaque round de
 progression. Les réglages se trouvent également dans `resources/scripts/settings/difficulty.gd` :
 
 ```gdscript
+const ENABLED_SPECIAL_RULES: Array[StringName] = [
+    &"shell_game",
+    &"merry_go_stack",
+    &"free_range_cards",
+    &"pile_up",
+    &"lights_out",
+    &"peek_a_card",
+    &"stack_attack",
+    &"roman_holiday",
+    &"musical_stacks",
+    &"sticky_fingers",
+    &"hot_potatoes",
+    &"blind_delivery",
+    &"mirror_match",
+    &"sudden_death",
+    &"grace_period",
+    &"colorblind",
+    &"floor_is_lava",
+]
+
 const FIRST_SPECIAL_RULE_ROUND := 4
 const EXTRA_SPECIAL_RULE_CHANCE := 0.75
 const MAX_COMBINED_RULES := 5
-const LIGHTS_OUT_RADIUS := 54.0
+const LIGHTS_OUT_RADIUS := 60.0
+const HOT_POTATO_DURATION := 1.0
+const STICKY_HOT_POTATO_DURATION := 2.0
+const GRACE_PERIOD_REVEAL_TIME := 1.25
+const MIRROR_HORIZONTAL_WEIGHT := 75.0
+const MIRROR_VERTICAL_WEIGHT := 20.0
+const MIRROR_BOTH_AXES_WEIGHT := 5.0
 ```
+
+Pour désactiver une règle dans les tirages automatiques, il suffit de commenter
+sa ligne dans `ENABLED_SPECIAL_RULES`. Les verrouillages explicites de
+`debug.gd` continuent de contourner ce filtre afin de permettre les tests.
 
 Le numéro utilisé pour ces paliers commence à 1 et augmente, même si le HUD
 affiche le nombre de rounds restants de 100 vers 0. Aucune règle spéciale
@@ -366,15 +401,48 @@ Les règles disponibles sont :
   ne peut pas se régénérer davantage ;
 - `ROMAN HOLIDAY` : valeurs de cartes et de piles en chiffres romains ; `VII`
   et `VIII` utilisent la police `Tiny5 Regular` avec une taille réduite afin de
-  rester dans les tuiles.
+  rester dans les tuiles ;
+- `MUSICAL STACKS` : rotation cyclique et animée des piles encore actives après
+  chaque placement correct ;
+- `STICKY FINGERS` : une carte relâchée dans le vide reste attachée au pointeur
+  jusqu'à son dépôt ou un retour forcé ;
+- `HOT POTATOES` : un timer de drag de 1,5 seconde force le retour de la carte
+  sans consommer d'erreur ni redémarrer le timer du tour ;
+- `BLIND DELIVERY` : une carte visible se retourne dès son survol ou son
+  premier contact tactile et reste cachée pendant le drag ;
+- `MIRROR MATCH` : toute l'image du jeu est retournée horizontalement,
+  verticalement ou sur les deux axes. Les probabilités relatives des trois
+  variantes se règlent avec `MIRROR_HORIZONTAL_WEIGHT`,
+  `MIRROR_VERTICAL_WEIGHT` et `MIRROR_BOTH_AXES_WEIGHT` ;
+- `SUDDEN DEATH` : le round ne possède qu'un seul indicateur d'erreur ;
+- `GRACE PERIOD` : le timer réel continue de tourner, mais son affichage est
+  masqué entre les mains et apparaît seulement
+  `GRACE_PERIOD_REVEAL_TIME` secondes avant la fin, avec une transition animée ;
+- `COLORBLIND` : les couleurs permanentes des cartes et piles sont remplacées
+  par une palette grise, sans supprimer les feedbacks temporaires ;
+- `THE FLOOR IS LAVA` : une grande masse corail part des bords de l'écran et
+  entoure une baie centrale sûre ouverte vers la main, comme une île de jeu.
+  Son contour repose sur quelques points d'ancrage reliés par des courbes de
+  Bézier légèrement déformées. Deux versions fixes existent : le contour du
+  mockup de référence avec sa langue de lave à droite, et son miroir exact avec
+  la langue à gauche. La baie est ajustée depuis l'emplacement réel des piles et
+  des cartes de la main. Sa collision conserve les creux concaves et son contact
+  force le retour d'une carte sans consommer d'erreur.
 
-`SpecialRuleManager.gd` sélectionne les règles pondérées sans doublon. Les
-combinaisons difficiles restent autorisées ; seule `LIGHTS OUT` est
-incompatible avec les règles déplaçant les piles (`SHELL GAME` et
-`MERRY-GO-STACK`). `RoundModifiers.gd` constitue l'unique état consulté par le
-gameplay. Chaque `SpecialRuleData` expose `activate()` et `deactivate()` sur un
-`RoundContext`. La fin du round restaure les positions, arrête les timers,
-masque la lampe et réinitialise tous les modificateurs.
+`SpecialRuleRegistry.gd` déclare toutes les règles, leurs poids, leurs rounds
+minimums et leurs incompatibilités. `SpecialRuleManager.gd` effectue ensuite
+la sélection pondérée sans doublon. Ensemble, `BLIND DELIVERY` et
+`PEEK-A-CARD` gardent les cartes cachées sauf pendant leur survol dans la
+main ; elles sont de nouveau masquées pendant le drag. Avant le round 25,
+`SUDDEN DEATH` n'est pas combiné avec
+`LIGHTS OUT`, `STICKY FINGERS` ou `THE FLOOR IS LAVA`.
+
+`SpecialRule.gd` fournit la classe de base commune et `SpecialRuleData` en
+hérite. `RoundModifiers.gd` reste l'unique état consulté par le gameplay et
+chaque règle agit par `activate()` et `deactivate()` sur un `RoundContext`.
+Le nettoyage central de fin de round annule les drags et timers de carte,
+restaure les faces et couleurs, arrête les piles, supprime la lave et réaffiche
+le timer.
 
 Certaines paires reçoivent un titre spécial dans l'annonce, y compris
 lorsqu'elles font partie d'une combinaison plus grande :
@@ -385,17 +453,28 @@ lorsqu'elles font partie d'une combinaison plus grande :
 - `SHELL GAME + ROMAN HOLIDAY` : `ET TU, STACK?` ;
 - `FREE-RANGE CARDS + PEEK-A-CARD` : `CARDIO TRAINING` ;
 - `LIGHTS OUT + STACK ATTACK` : `FEAR OF THE STACK`.
+- `MUSICAL STACKS + MIRROR MATCH` : `DANCE LIKE NOBODY'S WATCHING` ;
+- `STICKY FINGERS + HOT POTATOES` : `HANDS FULL` ;
+- `BLIND DELIVERY + PEEK-A-CARD` : `LOOK, DON'T CARRY` ;
+- `BLIND DELIVERY + MIRROR MATCH` : `WRONG ADDRESS` ;
+- `SUDDEN DEATH + GRACE PERIOD` : `SURPRISE EXAM` ;
+- `COLORBLIND + MIRROR MATCH` : `GREY MATTER` ;
+- `THE FLOOR IS LAVA + HOT POTATOES` : `TOO HOT TO HANDLE` ;
+- `THE FLOOR IS LAVA + STICKY FINGERS` : `COMMITMENT ISSUES` ;
+- `MUSICAL STACKS + THE FLOOR IS LAVA` : `DANCE FLOOR`.
 
 Les scènes spécialisées sont :
 
 - `SpecialRuleAnnouncement.tscn` pour l'annonce en anglais ;
 - `FlashlightOverlay.tscn` pour `LIGHTS OUT` ;
 - `RegenerationRing.tscn` pour les timers de `STACK ATTACK`.
+- `LavaZone.tscn` pour les zones réutilisables de `THE FLOOR IS LAVA`.
 
 Les contrôles automatisés peuvent être lancés avec :
 
 ```sh
 godot --headless --path . --script res://tests/test_special_rules.gd
 godot --headless --path . --script res://tests/test_special_rule_effects.gd
+godot --headless --path . --script res://tests/test_new_special_rules.gd
 godot --headless --path . --script res://tests/test_game_start.gd
 ```

@@ -6,6 +6,7 @@ signal rules_announcing(rules: Array[SpecialRuleData])
 signal rules_announcement_finished()
 
 const RuleData := preload("res://resources/scripts/special_rules/SpecialRuleData.gd")
+const Registry := preload("res://resources/scripts/special_rules/SpecialRuleRegistry.gd")
 const Modifiers := preload("res://resources/scripts/core/RoundModifiers.gd")
 const Context := preload("res://resources/scripts/core/RoundContext.gd")
 const Difficulty := preload("res://resources/scripts/settings/difficulty.gd")
@@ -21,21 +22,7 @@ var context := RoundContext.new(1, modifiers)
 var rng := RandomNumberGenerator.new()
 var _last_special_rule_round := -1000
 
-var _rules: Array[SpecialRuleData] = [
-	RuleData.new(&"shell_game", "SHELL GAME", "Now you see it..."),
-	RuleData.new(&"merry_go_stack", "MERRY-GO-STACK", "Please remain seated."),
-	RuleData.new(&"free_range_cards", "FREE-RANGE CARDS", "They escaped again."),
-	RuleData.new(&"pile_up", "PILE UP", "Wrong way. Keep going."),
-	RuleData.new(
-		&"lights_out",
-		"LIGHTS OUT",
-		"Hope you brought a mouse.",
-		[&"shell_game", &"merry_go_stack"]
-	),
-	RuleData.new(&"peek_a_card", "PEEK-A-CARD", "No peeking. Except peeking."),
-	RuleData.new(&"stack_attack", "STACK ATTACK", "Progress is temporary."),
-	RuleData.new(&"roman_holiday", "ROMAN HOLIDAY", "When in Rome..."),
-]
+var _rules: Array[SpecialRuleData] = Registry.create_all_rules()
 
 
 func _ready() -> void:
@@ -103,6 +90,12 @@ func begin_round(round_number: int) -> RoundModifiers:
 		_last_special_rule_round = round_number
 	modifiers = RoundModifiers.new()
 	context = RoundContext.new(round_number, modifiers)
+	context.game_manager = get_parent() as GameManager
+	context.hand_manager = get_node_or_null("../HandManager") as HandManager
+	context.pile_manager = get_node_or_null("../PileManager") as PileManager
+	context.timer_manager = get_node_or_null("../TimerManager") as CountdownManager
+	context.interface = get_parent() as Control
+	context.rng = rng
 	for rule in active_rules:
 		rule.activate(context)
 	if flashlight_overlay != null:
@@ -120,7 +113,7 @@ func begin_round(round_number: int) -> RoundModifiers:
 
 func _select_locked_rules(
 	rule_ids: Array[StringName],
-	round_number: int
+	_round_number: int
 ) -> Array[SpecialRuleData]:
 	var selected: Array[SpecialRuleData] = []
 	for rule_id in rule_ids:
@@ -135,12 +128,8 @@ func _select_locked_rules(
 		if candidate == null:
 			push_warning("Special Rules debug lock: unknown rule id '%s'." % rule_id)
 			continue
-		if not _is_compatible(candidate, selected):
-			push_warning(
-				"Special Rules debug lock: incompatible rule id '%s' skipped."
-				% rule_id
-			)
-			continue
+		# Debug locks intentionally bypass minimum rounds, required rules and
+		# incompatibilities so problematic combinations can be tested directly.
 		selected.append(candidate)
 	return selected
 
@@ -207,12 +196,15 @@ func select_special_rules(round_number: int, requested_count: int) -> Array[Spec
 	var selected: Array[SpecialRuleData] = []
 	var candidates: Array[SpecialRuleData] = []
 	for rule in _rules:
-		if round_number >= rule.minimum_round:
+		if (
+			Difficulty.is_special_rule_enabled(rule.id)
+			and round_number >= rule.minimum_round
+		):
 			candidates.append(rule)
 	while selected.size() < requested_count and not candidates.is_empty():
 		var candidate := _weighted_pick(candidates)
 		candidates.erase(candidate)
-		if _is_compatible(candidate, selected):
+		if _is_compatible(candidate, selected, round_number):
 			selected.append(candidate)
 	if selected.size() < requested_count:
 		push_warning(
@@ -238,7 +230,8 @@ func _weighted_pick(candidates: Array[SpecialRuleData]) -> SpecialRuleData:
 
 func _is_compatible(
 	candidate: SpecialRuleData,
-	selected: Array[SpecialRuleData]
+	selected: Array[SpecialRuleData],
+	round_number := 999
 ) -> bool:
 	for required in candidate.required_rules:
 		if not selected.any(func(rule: SpecialRuleData) -> bool: return rule.id == required):
@@ -246,4 +239,15 @@ func _is_compatible(
 	for rule in selected:
 		if candidate.incompatible_rules.has(rule.id) or rule.incompatible_rules.has(candidate.id):
 			return false
+		if round_number < 25:
+			var pair := [candidate.id, rule.id]
+			if (
+				pair.has(&"sudden_death")
+				and (
+					pair.has(&"sticky_fingers")
+					or pair.has(&"floor_is_lava")
+					or pair.has(&"lights_out")
+				)
+			):
+				return false
 	return true

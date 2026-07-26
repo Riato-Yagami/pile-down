@@ -5,6 +5,7 @@ signal card_selected(card)
 signal card_drag_started(card)
 signal card_drag_released(card, release_position)
 signal card_entered_screen(card)
+signal card_forced_return_requested(card, reason)
 
 @export var card_scene: PackedScene
 var rng := RandomNumberGenerator.new()
@@ -25,7 +26,8 @@ func generate_hand(
 	use_roman_numerals := false,
 	animate_draw := true,
 	clear_existing := true,
-	enter_from_right := false
+	enter_from_right := false,
+	modifiers: RoundModifiers = null
 ) -> void:
 	if clear_existing:
 		clear_hand(container)
@@ -38,11 +40,10 @@ func generate_hand(
 		values.append(rng.randi_range(1 if pile_up else 0, start_value if pile_up else start_value - 1))
 	var guaranteed_position := rng.randi_range(0, hand_size - 1)
 	values[guaranteed_position] = guaranteed_value
-
 	for value in values:
 		var card := card_scene.instantiate() as PlayingCard
 		container.add_child(card)
-		card.setup(value, true, hover_reveal, use_roman_numerals)
+		card.setup(value, true, hover_reveal, use_roman_numerals, modifiers)
 		card.card_selected.connect(_on_card_selected)
 		card.drag_started.connect(func(dragged_card: PlayingCard) -> void: card_drag_started.emit(dragged_card))
 		card.drag_released.connect(
@@ -53,9 +54,14 @@ func generate_hand(
 			func(entered_card: PlayingCard) -> void:
 				card_entered_screen.emit(entered_card)
 		)
+		card.forced_return_requested.connect(
+			func(forced_card: PlayingCard, reason: int) -> void:
+				card_forced_return_requested.emit(forced_card, reason)
+		)
 		current_cards.append(card)
 		if animate_draw:
 			if enter_from_right:
+				card.set_selectable(false)
 				card.call_deferred("play_draw_from_right", (current_cards.size() - 1) * 0.045)
 			else:
 				card.call_deferred("play_draw", (current_cards.size() - 1) * 0.045)
@@ -117,14 +123,54 @@ func lock_hand() -> void:
 
 func unlock_hand() -> void:
 	for card in current_cards:
-		if is_instance_valid(card) and card.visible:
+		if (
+			is_instance_valid(card)
+			and card.visible
+			and not card._entrance_animation_running
+		):
 			card.set_selectable(true)
+
+
+func finish_all_card_entrances(except_card: PlayingCard = null) -> void:
+	for card in current_cards:
+		if is_instance_valid(card) and card != except_card:
+			card.finish_entrance_immediately()
+
+
+func lock_all_cards_except(active_card: PlayingCard) -> void:
+	for card in current_cards:
+		if is_instance_valid(card) and card != active_card:
+			card.set_selectable(false)
 
 
 func clear_selection() -> void:
 	for card in current_cards:
 		if is_instance_valid(card):
 			card.set_selected_visual(false)
+
+
+func cancel_all_drags() -> void:
+	for card in current_cards:
+		if is_instance_valid(card):
+			card.finish_drag()
+
+
+func stop_all_card_timers() -> void:
+	for card in current_cards:
+		if is_instance_valid(card):
+			card.cancel_drag_timers()
+
+
+func reveal_all_hand_cards() -> void:
+	for card in current_cards:
+		if is_instance_valid(card):
+			card.reveal_for_cleanup()
+
+
+func refresh_all_card_themes(colorblind_enabled: bool) -> void:
+	for card in current_cards:
+		if is_instance_valid(card):
+			card.set_colorblind_enabled(colorblind_enabled)
 
 
 func select_card(selected_card: PlayingCard) -> void:

@@ -5,6 +5,22 @@ signal card_selected(card)
 signal drag_started(card)
 signal drag_released(card, release_position)
 signal entrance_became_interactive(card)
+signal forced_return_requested(card, reason)
+
+enum DragState {
+	IDLE,
+	DRAGGING,
+	RETURNING,
+	LOCKED_OUT,
+}
+
+enum ForcedReturnReason {
+	NONE,
+	LAVA,
+	HOT_POTATO,
+	ROUND_END,
+	MANUAL_CANCEL,
+}
 
 const TINY_REGULAR_FONT := preload("res://resources/fonts/Tiny5-Regular.ttf")
 const Settings := preload("res://resources/scripts/settings/settings.gd")
@@ -15,6 +31,9 @@ const Settings := preload("res://resources/scripts/settings/settings.gd")
 @onready var face_sprite: TextureRect = %FaceSprite
 @onready var back_sprite: TextureRect = %BackSprite
 @onready var value_label: Label = %ValueLabel
+@onready var drag_timer: Timer = %DragTimer
+@onready var drag_timer_ring: RegenerationRing = %DragTimerRing
+@onready var drag_collision_area: Area2D = %DragCollisionArea
 
 var face_up := true
 var selectable := true
@@ -35,10 +54,21 @@ var wandering_speed := 1.0
 var wandering_radius := Vector2(24.0, 9.0)
 var _hide_generation := 0
 var _flip_in_progress := false
+var _flip_tween: Tween
+var _flip_original_y := 0.0
+var _drag_starting := false
 var _entrance_unlock_pending := false
 var _entrance_animation_running := false
 var _entrance_tween: Tween
 var _entrance_home_positions: Dictionary = {}
+var drag_state := DragState.IDLE
+var drag_origin := Vector2.ZERO
+var placement_confirmed := false
+var forced_return_in_progress := false
+var pointer_inside := false
+var hidden_by_blind_delivery := false
+var round_modifiers: RoundModifiers
+var colorblind_enabled := false
 
 
 func _ready() -> void:
@@ -48,18 +78,12 @@ func _ready() -> void:
 	face.gui_input.connect(_on_face_input)
 	face.mouse_entered.connect(_on_mouse_entered)
 	face.mouse_exited.connect(_on_mouse_exited)
+	drag_timer.timeout.connect(_on_drag_timer_timeout)
 	resized.connect(func() -> void: pivot_offset = size * 0.5)
 	_update_appearance()
 
 
 func _process(delta: float) -> void:
-	if (
-		_entrance_unlock_pending
-		and Rect2(Vector2.ZERO, get_viewport_rect().size).intersects(face.get_global_rect())
-	):
-		_entrance_unlock_pending = false
-		set_selectable(true)
-		entrance_became_interactive.emit(self)
 	if wandering_enabled and not dragging:
 		wandering_phase += delta * wandering_speed
 		global_position = (
@@ -67,9 +91,30 @@ func _process(delta: float) -> void:
 			+ Vector2(sin(wandering_phase), sin(wandering_phase * 1.7 + card_value)) * wandering_radius
 		).round()
 	if not dragging:
+		if not drag_timer.is_stopped():
+			drag_timer.stop()
+			drag_timer_ring.visible = false
 		return
+	if not drag_timer.is_stopped():
+		drag_timer_ring.ratio = drag_timer.time_left / maxf(drag_timer.wait_time, 0.001)
 	var previous := global_position
-	global_position = global_position.lerp(drag_target - _pointer_offset, minf(delta * 20.0, 1.0))
+	# Keep the exact grabbed point under the pointer. Its global offset includes
+	# Mirror Match's negative axes, unlike a simple position subtraction.
+	var drag_parent := get_parent() as CanvasItem
+	if drag_parent != null:
+		var pointer_in_parent := (
+			drag_parent.get_global_transform().affine_inverse() * drag_target
+		)
+		var grab_offset := get_transform().basis_xform(_pointer_offset)
+		var desired_position := pointer_in_parent - grab_offset
+		position = position.lerp(desired_position, minf(delta * 20.0, 1.0))
+	else:
+		var grab_offset := get_global_transform().basis_xform(_pointer_offset)
+		var desired_position := drag_target - grab_offset
+		global_position = global_position.lerp(
+			desired_position,
+			minf(delta * 20.0, 1.0)
+		)
 	var velocity := (drag_target - _last_target) / maxf(delta, 0.001)
 	rotation = lerpf(rotation, clampf(velocity.x * 0.00004, -0.07, 0.07), minf(delta * 12.0, 1.0))
 	_last_target = drag_target
@@ -81,13 +126,18 @@ func setup(
 	value: int,
 	can_select: bool = true,
 	hover_reveal := false,
-	use_roman_numerals := false
+	use_roman_numerals := false,
+	modifiers: RoundModifiers = null
 ) -> void:
+	round_modifiers = modifiers
 	card_value = value
 	hover_reveal_enabled = hover_reveal
 	roman_numerals_enabled = use_roman_numerals
 	set_selectable(can_select)
 	face_up = not hover_reveal_enabled
+	colorblind_enabled = (
+		round_modifiers != null and round_modifiers.colorblind_enabled
+	)
 	_update_appearance()
 
 
@@ -130,29 +180,131 @@ func set_selected_visual(is_selected: bool) -> void:
 func begin_external_drag(pointer_position: Vector2) -> void:
 	_materialize_entrance_for_drag()
 	wandering_enabled = false
-	if hover_reveal_enabled:
+	if (
+		round_modifiers != null
+		and round_modifiers.blind_delivery_enabled
+	):
+		# Mouse press can arrive before the hover flip tween has completed.
+		# Hide synchronously so the value is never visible during the drag.
+		hidden_by_blind_delivery = true
+		face_up = false
+		_update_appearance()
+	elif hover_reveal_enabled:
 		face_up = true
 		_update_appearance()
 	dragging = true
+	_drag_starting = false
+	drag_collision_area.monitorable = true
+	drag_state = DragState.DRAGGING
+	drag_origin = global_position
+	placement_confirmed = false
 	home_global_position = global_position
 	drag_target = pointer_position
 	_last_target = pointer_position
-	_pointer_offset = pointer_position - global_position
+	_pointer_offset = get_global_transform().affine_inverse() * pointer_position
 	z_index = 100
 	_animate_pose(Vector2(1.06, 1.06), -2.0)
+	if (
+		round_modifiers != null
+		and round_modifiers.hot_potatoes_enabled
+		and round_modifiers.hot_potato_drag_duration > 0.0
+	):
+		drag_timer.start(round_modifiers.hot_potato_drag_duration)
+		drag_timer_ring.ratio = 1.0
+		drag_timer_ring.visible = true
+
+
+func prepare_external_drag() -> void:
+	_drag_starting = true
+	# A hover flip animates this Control's local Y position. It must finish
+	# before reparenting, otherwise its cleanup writes the old hand-local Y
+	# into DragLayer and makes the card jump across a mirrored board.
+	_cancel_flip_animation()
+	if (
+		round_modifiers != null
+		and round_modifiers.blind_delivery_enabled
+	):
+		hidden_by_blind_delivery = true
+		face_up = false
+		_update_appearance()
 
 
 func finish_drag() -> void:
 	dragging = false
+	drag_collision_area.monitorable = false
+	drag_state = DragState.IDLE
+	cancel_drag_timers()
 	z_index = 0
 	rotation = 0.0
 
 
+func keep_attached_to_pointer() -> void:
+	dragging = true
+	drag_state = DragState.LOCKED_OUT
+	z_index = 100
+
+
+func confirm_drop() -> void:
+	placement_confirmed = true
+	drag_collision_area.monitorable = false
+	cancel_drag_timers()
+
+
+func cancel_drag_timers() -> void:
+	drag_timer.stop()
+	drag_timer_ring.visible = false
+
+
+func request_forced_return(reason: ForcedReturnReason) -> void:
+	if forced_return_in_progress or placement_confirmed:
+		return
+	forced_return_in_progress = true
+	cancel_drag_timers()
+	forced_return_requested.emit(self, reason)
+
+
+func complete_forced_return() -> void:
+	forced_return_in_progress = false
+	drag_state = DragState.IDLE
+
+
 func animate_return(destination: Vector2, duration := 0.26) -> void:
-	finish_drag()
+	drag_state = DragState.RETURNING
+	dragging = false
+	drag_collision_area.monitorable = false
+	cancel_drag_timers()
+	z_index = 0
+	rotation = 0.0
 	var tween := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(self, "global_position", destination, duration)
 	await tween.finished
+	drag_state = DragState.IDLE
+	if hover_reveal_enabled:
+		await flip_down(true)
+	elif (
+		round_modifiers != null
+		and round_modifiers.blind_delivery_enabled
+	):
+		pointer_inside = get_global_rect().abs().has_point(
+			get_global_mouse_position()
+		)
+		hidden_by_blind_delivery = pointer_inside
+		if pointer_inside:
+			await flip_down(true)
+		else:
+			await flip_up(true)
+
+
+func reset_hand_pose() -> void:
+	if _visual_tween != null and _visual_tween.is_valid():
+		_visual_tween.kill()
+	scale = Vector2.ONE
+	rotation = 0.0
+	face_sprite.position.y = 0.0
+	back_sprite.position.y = 0.0
+	value_label.position.y = 0.0
+	drag_timer_ring.visible = false
+	z_index = 0
 
 
 func animate_valid_drop(destination: Vector2) -> void:
@@ -178,6 +330,11 @@ func play_draw_from_right(delay: float) -> void:
 	set_selectable(false)
 	_entrance_unlock_pending = true
 	_entrance_animation_running = true
+	# Wait until the hand container has assigned the final slot. Computing the
+	# entrance offset earlier can use the previous card's layout position.
+	await get_tree().process_frame
+	if not is_inside_tree():
+		return
 	_entrance_home_positions.clear()
 	var entrance_offset := get_viewport_rect().size.x + size.x + 12.0 - global_position.x
 	var visuals: Array[Control] = [face, face_sprite, back_sprite, value_label]
@@ -247,7 +404,7 @@ func play_wandering_entrance(
 	_entrance_tween.tween_callback(func() -> void:
 		_entrance_animation_running = false
 		enable_wandering(index, true)
-		set_selectable(true)
+		_complete_entrance_interaction()
 	)
 
 
@@ -273,6 +430,29 @@ func _finish_entrance_animation() -> void:
 		(visual as Control).position = _entrance_home_positions[visual]
 	_entrance_home_positions.clear()
 	_entrance_animation_running = false
+	_complete_entrance_interaction()
+
+
+func finish_entrance_immediately() -> void:
+	if not _entrance_animation_running:
+		return
+	if _entrance_tween != null and _entrance_tween.is_valid():
+		_entrance_tween.kill()
+	for visual in _entrance_home_positions:
+		(visual as Control).position = _entrance_home_positions[visual]
+	_entrance_home_positions.clear()
+	_entrance_animation_running = false
+	modulate.a = 1.0
+	rotation = 0.0
+	_complete_entrance_interaction()
+
+
+func _complete_entrance_interaction() -> void:
+	if not _entrance_unlock_pending:
+		return
+	_entrance_unlock_pending = false
+	set_selectable(true)
+	entrance_became_interactive.emit(self)
 
 
 func play_wandering_exit(screen_width: float, delay: float) -> float:
@@ -298,18 +478,18 @@ func flip_down(animated: bool = true) -> void:
 		return
 	if animated:
 		_flip_in_progress = true
-		var original_y := position.y
-		var tween := create_tween().set_trans(Tween.TRANS_SINE)
-		tween.tween_property(self, "scale:x", 0.02, 0.07)
-		tween.parallel().tween_property(self, "position:y", original_y - 3.0, 0.07)
-		tween.tween_callback(func() -> void:
+		_flip_original_y = position.y
+		_flip_tween = create_tween().set_trans(Tween.TRANS_SINE)
+		_flip_tween.tween_property(self, "scale:x", 0.02, 0.07)
+		_flip_tween.parallel().tween_property(self, "position:y", _flip_original_y - 3.0, 0.07)
+		_flip_tween.tween_callback(func() -> void:
 			face_up = false
 			_update_appearance()
 		)
-		tween.tween_property(self, "scale:x", 1.0, 0.07)
-		tween.parallel().tween_property(self, "position:y", original_y, 0.07)
-		await tween.finished
-		position.y = original_y
+		_flip_tween.tween_property(self, "scale:x", 1.0, 0.07)
+		_flip_tween.parallel().tween_property(self, "position:y", _flip_original_y, 0.07)
+		await _flip_tween.finished
+		position.y = _flip_original_y
 		_flip_in_progress = false
 	else:
 		face_up = false
@@ -321,14 +501,15 @@ func flip_up(animated: bool = true) -> void:
 		return
 	if animated:
 		_flip_in_progress = true
-		var tween := create_tween().set_trans(Tween.TRANS_SINE)
-		tween.tween_property(self, "scale:x", 0.02, 0.07)
-		tween.tween_callback(func() -> void:
+		_flip_original_y = position.y
+		_flip_tween = create_tween().set_trans(Tween.TRANS_SINE)
+		_flip_tween.tween_property(self, "scale:x", 0.02, 0.07)
+		_flip_tween.tween_callback(func() -> void:
 			face_up = true
 			_update_appearance()
 		)
-		tween.tween_property(self, "scale:x", 1.0, 0.07)
-		await tween.finished
+		_flip_tween.tween_property(self, "scale:x", 1.0, 0.07)
+		await _flip_tween.finished
 		_flip_in_progress = false
 	else:
 		face_up = true
@@ -336,19 +517,25 @@ func flip_up(animated: bool = true) -> void:
 
 
 func flash_error() -> void:
-	var original_x := position.x
+	if _visual_tween != null and _visual_tween.is_valid():
+		_visual_tween.kill()
 	var tween := create_tween()
-	face_sprite.modulate = Color("#F3B2AA")
-	for offset in [-6.0, 6.0, -4.0, 4.0, 0.0]:
-		tween.tween_property(self, "position:x", original_x + offset, 0.04)
-	tween.tween_callback(func() -> void: face_sprite.modulate = Color.WHITE)
+	tween.tween_property(face_sprite, "modulate", Color("#F3B2AA"), 0.08)
+	tween.tween_property(face_sprite, "modulate", Color.WHITE, 0.12)
+	tween.tween_callback(func() -> void:
+		face_sprite.modulate = Color.WHITE
+	)
 	await tween.finished
 
 
 func _on_face_input(event: InputEvent) -> void:
 	if not selectable:
 		return
-	if hover_reveal_enabled and not face_up:
+	var blind_delivery_enabled := (
+		round_modifiers != null
+		and round_modifiers.blind_delivery_enabled
+	)
+	if hover_reveal_enabled and not blind_delivery_enabled and not face_up:
 		await flip_up(true)
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
@@ -363,6 +550,14 @@ func _on_face_input(event: InputEvent) -> void:
 		face.accept_event()
 	elif event is InputEventScreenTouch:
 		if event.pressed:
+			if (
+				round_modifiers != null
+				and round_modifiers.blind_delivery_enabled
+				and face_up
+			):
+				hidden_by_blind_delivery = true
+				await flip_down(true)
+				await get_tree().create_timer(0.08).timeout
 			drag_target = event.position
 			card_selected.emit(self)
 			drag_started.emit(self)
@@ -375,15 +570,23 @@ func _on_face_input(event: InputEvent) -> void:
 
 
 func _on_mouse_entered() -> void:
+	pointer_inside = true
 	if selectable and not dragging:
 		_hide_generation += 1
 		if hover_reveal_enabled:
 			flip_up(true)
+		elif (
+			round_modifiers != null
+			and round_modifiers.blind_delivery_enabled
+		):
+			hidden_by_blind_delivery = true
+			flip_down(true)
 		_animate_pose(Vector2(1.035, 1.035), -1.0)
 
 
 func _on_mouse_exited() -> void:
-	if selectable and not dragging:
+	pointer_inside = false
+	if selectable and not dragging and not _drag_starting:
 		if hover_reveal_enabled:
 			_hide_generation += 1
 			var generation := _hide_generation
@@ -391,7 +594,22 @@ func _on_mouse_exited() -> void:
 				if generation == _hide_generation and not dragging:
 					flip_down(true)
 			)
+		elif (
+			round_modifiers != null
+			and round_modifiers.blind_delivery_enabled
+		):
+			hidden_by_blind_delivery = false
+			flip_up(true)
 		_animate_pose(Vector2.ONE, 0.0)
+
+
+func _cancel_flip_animation() -> void:
+	if _flip_tween != null and _flip_tween.is_valid():
+		_flip_tween.kill()
+	if _flip_in_progress:
+		position.y = _flip_original_y
+		scale.x = 1.0
+	_flip_in_progress = false
 
 
 func _animate_pose(target_scale: Vector2, y_offset: float) -> void:
@@ -408,10 +626,14 @@ func _update_appearance() -> void:
 	if not is_node_ready():
 		return
 	var color: Color = Settings.TILE_COLORS[card_value % Settings.TILE_COLORS.size()]
+	var visual_color := Color("#8B8B8B") if colorblind_enabled else color
 	face_sprite.visible = face_up
 	back_sprite.visible = not face_up
+	back_sprite.modulate = Color.WHITE
 	var tile_material := face_sprite.material as ShaderMaterial
-	tile_material.set_shader_parameter("tile_color", color)
+	tile_material.set_shader_parameter("tile_color", visual_color)
+	var back_tile_material := back_sprite.material as ShaderMaterial
+	back_tile_material.set_shader_parameter("tile_color", visual_color)
 	value_label.visible = face_up
 	value_label.text = RoundModifiers.format_value(card_value, roman_numerals_enabled)
 	value_label.add_theme_font_size_override(
@@ -422,4 +644,25 @@ func _update_appearance() -> void:
 		value_label.add_theme_font_override("font", TINY_REGULAR_FONT)
 	else:
 		value_label.remove_theme_font_override("font")
-	value_label.add_theme_color_override("font_color", color.darkened(0.35))
+	value_label.add_theme_color_override(
+		"font_color",
+		Settings.COLORBLIND_VALUE_COLOR if colorblind_enabled else color.darkened(0.35)
+	)
+
+
+func set_colorblind_enabled(enabled: bool) -> void:
+	colorblind_enabled = enabled
+	_update_appearance()
+
+
+func reveal_for_cleanup() -> void:
+	hidden_by_blind_delivery = false
+	cancel_drag_timers()
+	if not face_up:
+		flip_up(false)
+
+
+func _on_drag_timer_timeout() -> void:
+	if placement_confirmed or not dragging:
+		return
+	request_forced_return(ForcedReturnReason.HOT_POTATO)

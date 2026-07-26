@@ -8,6 +8,11 @@ const AnnouncementScript := preload(
 
 func _init() -> void:
 	var manager := ManagerScript.new() as SpecialRuleManager
+	for enabled_rule_id in DifficultySettings.ENABLED_SPECIAL_RULES:
+		assert(manager._rules.any(
+			func(rule: SpecialRuleData) -> bool:
+				return rule.id == enabled_rule_id
+		))
 	assert(DifficultySettings.FIRST_SPECIAL_RULE_ROUND == 4)
 	assert(DifficultySettings.special_rule_milestone(1) == 4)
 	assert(DifficultySettings.special_rule_milestone(2) == 10)
@@ -51,13 +56,30 @@ func _init() -> void:
 	assert(debug_selection[0].id == &"shell_game")
 	assert(debug_selection[1].id == &"merry_go_stack")
 	assert(debug_selection[2].id == &"roman_holiday")
+	var forbidden_debug_combo: Array[StringName] = [
+		&"shell_game",
+		&"lights_out",
+	]
+	var forbidden_debug_selection := manager._select_locked_rules(
+		forbidden_debug_combo,
+		1
+	)
+	assert(forbidden_debug_selection.size() == 2)
+	assert(forbidden_debug_selection[0].id == &"shell_game")
+	assert(forbidden_debug_selection[1].id == &"lights_out")
 	var lights_out := manager._rules[4]
 	var shell_game_rules: Array[SpecialRuleData] = [manager._rules[0]]
 	var moving_stack_rules: Array[SpecialRuleData] = [manager._rules[1]]
 	var peek_rules: Array[SpecialRuleData] = [manager._rules[5]]
+	var blind_delivery_rule: SpecialRuleData
+	for rule in manager._rules:
+		if rule.id == &"blind_delivery":
+			blind_delivery_rule = rule
+			break
 	assert(not manager._is_compatible(lights_out, shell_game_rules))
 	assert(not manager._is_compatible(lights_out, moving_stack_rules))
 	assert(manager._is_compatible(lights_out, peek_rules))
+	assert(manager._is_compatible(blind_delivery_rule, peek_rules))
 
 	for round_number in [10, 18, 28, 40, 50]:
 		for iteration in 40:
@@ -82,6 +104,7 @@ func _init() -> void:
 		"ET TU, STACK?": [&"roman_holiday", &"shell_game"],
 		"CARDIO TRAINING": [&"peek_a_card", &"free_range_cards"],
 		"FEAR OF THE STACK": [&"stack_attack", &"lights_out"],
+		"LOOK, DON'T CARRY": [&"blind_delivery", &"peek_a_card"],
 	}
 	for expected_title: String in named_combinations:
 		var combination_rules: Array[SpecialRuleData] = []

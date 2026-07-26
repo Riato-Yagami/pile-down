@@ -2,7 +2,7 @@ class_name DebugSettings
 extends RefCounted
 
 # Master switch. Every option below is ignored while this is false.
-const ENABLED := true
+const ENABLED := false
 
 # Mistakes still play their feedback, but never consume a life.
 const GOD_MODE := false
@@ -13,11 +13,17 @@ const START_AT_ROUND := 1
 # Shows the endless-mode button without requiring a completed normal run.
 const UNLOCK_ENDLESS_MODE := true
 
-# Keep empty for normal rule selection. Add several ids to lock a combination.
+# Keep empty for normal rule selection. Debug locks bypass incompatibilities,
+# required-rule constraints and minimum rounds so any combination can be tested.
 # Valid ids:
 # shell_game, merry_go_stack, free_range_cards, pile_up, lights_out,
-# peek_a_card, stack_attack, roman_holiday.
-const LOCK_SPECIAL_RULES: Array[StringName] = []
+# peek_a_card, stack_attack, roman_holiday, musical_stacks, sticky_fingers,
+# hot_potatoes, blind_delivery, mirror_match, sudden_death, grace_period,
+# colorblind, floor_is_lava.
+const LOCK_SPECIAL_RULES: Array[StringName] = [
+	#"floor_is_lava",
+	#"peek_a_card"
+]
 
 static var _runtime_god_mode := GOD_MODE
 

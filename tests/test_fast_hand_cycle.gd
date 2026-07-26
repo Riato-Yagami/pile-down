@@ -12,6 +12,9 @@ func _run() -> void:
 	root.add_child(game)
 	game.start_game()
 	await _wait_until_unlocked(game)
+	# This test measures the normal refill path independently from any rule
+	# forced through DebugSettings.
+	game.round_modifiers.musical_stacks_enabled = false
 
 	var playable_card: PlayingCard
 	var target_pile: MemoryPile
@@ -53,15 +56,19 @@ func _run() -> void:
 
 	assert(interaction_delay < 650)
 	assert(target_pile.face_up)
-	var entrance_still_running := false
 	for card in game.hand_manager.current_cards:
-		if card.modulate.a < 1.0 or not card.selectable:
-			entrance_still_running = true
-			break
-	assert(entrance_still_running)
+		assert(card.modulate.a >= 1.0)
+		assert(card.selectable)
+		assert(not card._entrance_animation_running)
 	assert(not game.hand_manager.current_cards.is_empty())
 
 	await create_timer(1.0).timeout
+	var previous_x := -INF
+	for card in game.hand_manager.current_cards:
+		assert(card.get_parent() == game.hand_container)
+		assert(card.global_position.x > previous_x)
+		assert(card._entrance_home_positions.is_empty())
+		previous_x = card.global_position.x
 	print("Fast hand cycle integration test passed.")
 	game.queue_free()
 	quit()

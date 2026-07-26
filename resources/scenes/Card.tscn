@@ -1,9 +1,10 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://resources/scripts/gameplay/Card.gd" id="1"]
 [ext_resource type="Texture2D" path="res://resources/sprites/tiles/tile-face.png" id="2"]
 [ext_resource type="Texture2D" path="res://resources/sprites/tiles/tile-back.png" id="3"]
 [ext_resource type="FontFile" path="res://resources/fonts/VCR_OSD_MONO_1.001.ttf" id="4"]
+[ext_resource type="PackedScene" path="res://resources/scenes/RegenerationRing.tscn" id="5"]
 
 [sub_resource type="Shader" id="TileColorShader"]
 code = "shader_type canvas_item;
@@ -19,6 +20,9 @@ void fragment() {
 [sub_resource type="ShaderMaterial" id="TileColorMaterial"]
 resource_local_to_scene = true
 shader = SubResource("TileColorShader")
+
+[sub_resource type="RectangleShape2D" id="DragCollisionShape"]
+size = Vector2(28, 31)
 
 [node name="Card" type="Control"]
 custom_minimum_size = Vector2(34, 37)
@@ -43,6 +47,7 @@ texture = ExtResource("2")
 [node name="BackSprite" type="TextureRect" parent="."]
 unique_name_in_owner = true
 visible = false
+material = SubResource("TileColorMaterial")
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -81,3 +86,25 @@ theme_override_font_sizes/font_size = 20
 text = "1"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="DragTimer" type="Timer" parent="."]
+unique_name_in_owner = true
+one_shot = true
+
+[node name="DragTimerRing" parent="." instance=ExtResource("5")]
+unique_name_in_owner = true
+visible = false
+offset_left = -4.0
+offset_top = -5.0
+offset_right = 5.0
+offset_bottom = 4.0
+
+[node name="DragCollisionArea" type="Area2D" parent="."]
+unique_name_in_owner = true
+position = Vector2(17, 18.5)
+collision_layer = 8
+collision_mask = 16
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DragCollisionArea"]
+shape = SubResource("DragCollisionShape")
