@@ -6,3 +6,4 @@ build/web/
 build/windows/
 build/.godot_config/
 build/.godot_data/
+build/.template_cache/

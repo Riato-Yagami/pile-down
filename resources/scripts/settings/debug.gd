@@ -8,7 +8,7 @@ const ENABLED := false
 const GOD_MODE := false
 
 # Progression round shown when starting a new game, from 1 to TOTAL_ROUNDS.
-const START_AT_ROUND := 1
+const START_AT_ROUND := 10
 
 # Shows the endless-mode button without requiring a completed normal run.
 const UNLOCK_ENDLESS_MODE := true
@@ -21,9 +21,21 @@ const UNLOCK_ENDLESS_MODE := true
 # hot_potatoes, blind_delivery, mirror_match, sudden_death, grace_period,
 # colorblind, floor_is_lava.
 const LOCK_SPECIAL_RULES: Array[StringName] = [
-	#"floor_is_lava",
-	#"peek_a_card"
+	"shell_game",
+	#"merry_go_stack",
+	"grace_period"
 ]
+
+# Bonuses granted at the start of every debug run. The value is the locked
+# level, clamped to the bonus maximum. Comment a line to disable that bonus.
+# Valid ids:
+# open_book, quick_peek, last_reminder, mistake_reveal, wild_card, redraw,
+# lucky_hand, time_bank, slow_start, spare_life, safety_net, clean_slate,
+# rule_breaker, adaptation.
+const LOCK_BONUSES: Dictionary = {
+	&"wild_card": 3,
+	#&"safety_net": 1,
+}
 
 static var _runtime_god_mode := GOD_MODE
 
@@ -59,3 +71,9 @@ static func get_locked_special_rules() -> Array[StringName]:
 	var locked_rules: Array[StringName] = []
 	locked_rules.assign(LOCK_SPECIAL_RULES)
 	return locked_rules
+
+
+static func get_locked_bonuses() -> Dictionary:
+	if not ENABLED:
+		return {}
+	return LOCK_BONUSES.duplicate()

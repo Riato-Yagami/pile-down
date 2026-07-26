@@ -30,8 +30,7 @@ static func create_all_rules() -> Array[SpecialRuleData]:
 			"Everybody switch seats.",
 			[&"shell_game", &"merry_go_stack"],
 			[],
-			1.0,
-			5
+			1.0
 		),
 		RuleData.new(
 			&"sticky_fingers",
@@ -39,8 +38,7 @@ static func create_all_rules() -> Array[SpecialRuleData]:
 			"No take-backs.",
 			[],
 			[],
-			0.8,
-			10
+			0.8
 		),
 		RuleData.new(
 			&"hot_potatoes",
@@ -48,8 +46,7 @@ static func create_all_rules() -> Array[SpecialRuleData]:
 			"Keep it moving.",
 			[],
 			[],
-			1.0,
-			5
+			1.0
 		),
 		RuleData.new(
 			&"blind_delivery",
@@ -57,8 +54,7 @@ static func create_all_rules() -> Array[SpecialRuleData]:
 			"Remember the package.",
 			[],
 			[],
-			0.9,
-			10
+			0.9
 		),
 		RuleData.new(
 			&"mirror_match",
@@ -66,8 +62,7 @@ static func create_all_rules() -> Array[SpecialRuleData]:
 			"Turn the whole picture around.",
 			[],
 			[],
-			0.8,
-			5
+			0.8
 		),
 		RuleData.new(
 			&"sudden_death",
@@ -84,8 +79,7 @@ static func create_all_rules() -> Array[SpecialRuleData]:
 			"The deadline is a surprise.",
 			[],
 			[],
-			1.0,
-			5
+			1.0
 		),
 		RuleData.new(
 			&"colorblind",
@@ -93,8 +87,7 @@ static func create_all_rules() -> Array[SpecialRuleData]:
 			"Fifty shades of stack.",
 			[],
 			[],
-			1.1,
-			5
+			1.1
 		),
 		RuleData.new(
 			&"floor_is_lava",

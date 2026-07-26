@@ -69,6 +69,8 @@ var pointer_inside := false
 var hidden_by_blind_delivery := false
 var round_modifiers: RoundModifiers
 var colorblind_enabled := false
+var is_joker := false
+var _joker_phase := 0.0
 
 
 func _ready() -> void:
@@ -84,6 +86,20 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if is_joker:
+		_joker_phase = fmod(_joker_phase + delta * 0.35, 1.0)
+		var palette_position := _joker_phase * Settings.TILE_COLORS.size()
+		var first_index := int(floor(palette_position)) % Settings.TILE_COLORS.size()
+		var second_index := (first_index + 1) % Settings.TILE_COLORS.size()
+		var joker_color := Settings.TILE_COLORS[first_index].lerp(
+			Settings.TILE_COLORS[second_index],
+			fmod(palette_position, 1.0)
+		)
+		var joker_material := face_sprite.material as ShaderMaterial
+		joker_material.set_shader_parameter("tile_color", joker_color)
+		# The glyph follows the exact same interpolated palette position as the
+		# border, keeping both parts of the joker visually synchronized.
+		value_label.add_theme_color_override("font_color", joker_color)
 	if wandering_enabled and not dragging:
 		wandering_phase += delta * wandering_speed
 		global_position = (
@@ -141,11 +157,21 @@ func setup(
 	_update_appearance()
 
 
+func set_joker(enabled: bool) -> void:
+	is_joker = enabled
+	_update_appearance()
+
+
 func enable_wandering(index: int, keep_current_position := false) -> void:
 	free_range_card = true
 	wandering_enabled = true
 	wandering_phase = float(index) * 1.7
-	wandering_speed = 0.65 + index * 0.11
+	var movement_intensity := (
+		round_modifiers.special_rule_intensity_multiplier
+		if round_modifiers != null
+		else 1.0
+	)
+	wandering_speed = (0.65 + index * 0.11) * movement_intensity
 	wandering_radius = Vector2(25.0 + index * 3.0, 8.0 + index * 2.0)
 	if keep_current_position:
 		var initial_offset := (
@@ -635,7 +661,11 @@ func _update_appearance() -> void:
 	var back_tile_material := back_sprite.material as ShaderMaterial
 	back_tile_material.set_shader_parameter("tile_color", visual_color)
 	value_label.visible = face_up
-	value_label.text = RoundModifiers.format_value(card_value, roman_numerals_enabled)
+	value_label.text = (
+		"J"
+		if is_joker
+		else RoundModifiers.format_value(card_value, roman_numerals_enabled)
+	)
 	value_label.add_theme_font_size_override(
 		"font_size",
 		RoundModifiers.value_font_size(card_value, roman_numerals_enabled)

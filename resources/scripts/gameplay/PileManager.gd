@@ -17,7 +17,7 @@ func configure(
 	pile_slots.assign(slots)
 
 
-func rotate_active_piles(direction := 1) -> void:
+func rotate_active_piles(direction := 1, duration := 0.4) -> void:
 	var perimeter_slots := _get_perimeter_slots()
 	if perimeter_slots.size() < 2:
 		return
@@ -49,7 +49,7 @@ func rotate_active_piles(direction := 1) -> void:
 			movable_piles[index],
 			"position",
 			destination_positions[index],
-			0.4
+			duration
 		)
 	await tween.finished
 	_movement_tweens.clear()

@@ -8,6 +8,7 @@ var elapsed := 0.0
 var piles: Array[MemoryPile] = []
 var base_positions: Dictionary = {}
 var pattern_index := 0
+var speed_multiplier := 1.0
 
 
 func _process(delta: float) -> void:
@@ -19,7 +20,10 @@ func _process(delta: float) -> void:
 		if not is_instance_valid(pile) or pile.completed:
 			continue
 		var base: Vector2 = base_positions.get(pile, pile.position)
-		var phase := elapsed * 0.8 + float(index) * TAU / maxf(piles.size(), 1)
+		var phase := (
+			elapsed * 0.8 * speed_multiplier
+			+ float(index) * TAU / maxf(piles.size(), 1)
+		)
 		var offset := Vector2.ZERO
 		match pattern_index:
 			0:
@@ -52,9 +56,14 @@ func _process(delta: float) -> void:
 		pile.position = (base + offset).round()
 
 
-func start(round_piles: Array[MemoryPile], round_number: int) -> void:
+func start(
+	round_piles: Array[MemoryPile],
+	round_number: int,
+	movement_speed_multiplier := 1.0
+) -> void:
 	active = true
 	elapsed = 0.0
+	speed_multiplier = movement_speed_multiplier
 	pattern_index = round_number % PATTERN_COUNT
 	piles.assign(round_piles)
 	base_positions.clear()

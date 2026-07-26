@@ -27,57 +27,114 @@ func generate_hand(
 	animate_draw := true,
 	clear_existing := true,
 	enter_from_right := false,
-	modifiers: RoundModifiers = null
+	modifiers: RoundModifiers = null,
+	joker_chance := 0.0,
+	force_joker := false,
+	lucky_hand_chance := 0.0
 ) -> void:
 	if clear_existing:
 		clear_hand(container)
 	if playable_values.is_empty():
 		return
 
+	var existing_card_count := 0
+	for existing in current_cards:
+		if is_instance_valid(existing) and existing.visible:
+			existing_card_count += 1
+	var cards_to_create := maxi(hand_size - existing_card_count, 0)
+	if cards_to_create == 0:
+		return
+	var already_has_joker := current_cards.any(
+		func(existing: PlayingCard) -> bool:
+			return is_instance_valid(existing) and existing.is_joker and existing.visible
+	)
+	var should_create_joker := (
+		not already_has_joker
+		and (force_joker or (joker_chance > 0.0 and rng.randf() < joker_chance))
+	)
 	var guaranteed_value := playable_values[rng.randi_range(0, playable_values.size() - 1)]
 	var values: Array[int] = []
-	for i in hand_size:
+	for i in cards_to_create:
 		values.append(rng.randi_range(1 if pile_up else 0, start_value if pile_up else start_value - 1))
-	var guaranteed_position := rng.randi_range(0, hand_size - 1)
+	var guaranteed_position := rng.randi_range(0, cards_to_create - 1)
 	values[guaranteed_position] = guaranteed_value
-	for value in values:
-		var card := card_scene.instantiate() as PlayingCard
-		container.add_child(card)
-		card.setup(value, true, hover_reveal, use_roman_numerals, modifiers)
-		card.card_selected.connect(_on_card_selected)
-		card.drag_started.connect(func(dragged_card: PlayingCard) -> void: card_drag_started.emit(dragged_card))
-		card.drag_released.connect(
-			func(dragged_card: PlayingCard, release_position: Vector2) -> void:
-				card_drag_released.emit(dragged_card, release_position)
+	if lucky_hand_chance > 0.0 and rng.randf() < lucky_hand_chance:
+		values.fill(guaranteed_value)
+	var joker_position := -1
+	if should_create_joker:
+		joker_position = rng.randi_range(0, cards_to_create - 1)
+		# Preserve a regular guaranteed answer whenever the hand has room for
+		# both it and the joker.
+		if cards_to_create > 1 and joker_position == guaranteed_position:
+			joker_position = (joker_position + 1) % cards_to_create
+	for index in values.size():
+		_create_card(
+			container, values[index], index == joker_position,
+			hover_reveal, use_roman_numerals,
+			modifiers, animate_draw, enter_from_right
 		)
-		card.entrance_became_interactive.connect(
-			func(entered_card: PlayingCard) -> void:
-				card_entered_screen.emit(entered_card)
-		)
-		card.forced_return_requested.connect(
-			func(forced_card: PlayingCard, reason: int) -> void:
-				card_forced_return_requested.emit(forced_card, reason)
-		)
-		current_cards.append(card)
-		if animate_draw:
-			if enter_from_right:
-				card.set_selectable(false)
-				card.call_deferred("play_draw_from_right", (current_cards.size() - 1) * 0.045)
-			else:
-				card.call_deferred("play_draw", (current_cards.size() - 1) * 0.045)
 
 
-func discard_hand(_container: Control, exit_layer: Control = null) -> void:
+func _create_card(
+	container: Control,
+	value: int,
+	joker: bool,
+	hover_reveal: bool,
+	use_roman_numerals: bool,
+	modifiers: RoundModifiers,
+	animate_draw: bool,
+	enter_from_right: bool
+) -> void:
+	var card := card_scene.instantiate() as PlayingCard
+	container.add_child(card)
+	card.setup(value, true, hover_reveal, use_roman_numerals, modifiers)
+	card.set_joker(joker)
+	card.card_selected.connect(_on_card_selected)
+	card.drag_started.connect(func(dragged_card: PlayingCard) -> void: card_drag_started.emit(dragged_card))
+	card.drag_released.connect(
+		func(dragged_card: PlayingCard, release_position: Vector2) -> void:
+			card_drag_released.emit(dragged_card, release_position)
+	)
+	card.entrance_became_interactive.connect(
+		func(entered_card: PlayingCard) -> void:
+			card_entered_screen.emit(entered_card)
+	)
+	card.forced_return_requested.connect(
+		func(forced_card: PlayingCard, reason: int) -> void:
+			card_forced_return_requested.emit(forced_card, reason)
+	)
+	current_cards.append(card)
+	if animate_draw:
+		if enter_from_right:
+			card.set_selectable(false)
+			card.call_deferred("play_draw_from_right", (current_cards.size() - 1) * 0.045)
+		else:
+			card.call_deferred("play_draw", (current_cards.size() - 1) * 0.045)
+
+
+func discard_hand(container: Control, exit_layer: Control = null) -> void:
 	var cards_to_discard: Array[PlayingCard] = []
+	var retained_jokers: Array[PlayingCard] = []
 	for card in current_cards:
 		if is_instance_valid(card) and card.visible:
+			if card.is_joker and not card.placement_confirmed:
+				card.finish_drag()
+				card.reset_hand_pose()
+				if card.get_parent() != container:
+					var joker_global_position := card.global_position
+					card.reparent(container, false)
+					card.global_position = joker_global_position
+				retained_jokers.append(card)
+				continue
 			card.disable_wandering()
 			if exit_layer != null and card.get_parent() != exit_layer:
 				var previous_global_position := card.global_position
 				card.reparent(exit_layer, false)
 				card.global_position = previous_global_position
 			cards_to_discard.append(card)
-	current_cards.clear()
+	current_cards.assign(retained_jokers)
+	for index in retained_jokers.size():
+		container.move_child(retained_jokers[index], index)
 	if cards_to_discard.is_empty():
 		return
 

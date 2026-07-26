@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/bonuses/ActiveBonusBadge.gd" id="1"]
+
+[node name="ActiveBonusBadge" type="Label"]
+custom_minimum_size = Vector2(18, 14)
+mouse_filter = 1
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 10
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+script = ExtResource("1")

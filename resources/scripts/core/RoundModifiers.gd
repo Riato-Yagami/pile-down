@@ -30,6 +30,7 @@ var maximum_mistakes_override := -1
 var grace_period_duration := 0.0
 var hot_potato_drag_duration := 0.0
 var musical_stacks_direction := 1
+var special_rule_intensity_multiplier := 1.0
 
 
 func reset() -> void:
@@ -56,6 +57,7 @@ func reset() -> void:
 	grace_period_duration = 0.0
 	hot_potato_drag_duration = 0.0
 	musical_stacks_direction = 1
+	special_rule_intensity_multiplier = 1.0
 
 
 static func format_value(value: int, use_roman_numerals: bool) -> String:

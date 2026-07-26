@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/special_rules/RuleDeleteButton.gd" id="1"]
+
+[node name="RuleDeleteButton" type="Button"]
+custom_minimum_size = Vector2(220, 28)
+size_flags_horizontal = 4
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+flat = true
+text = "MUSICAL STACKS"
+script = ExtResource("1")

@@ -86,10 +86,29 @@ Le build Linux x86_64 et son archive versionnée sont produits dans
 ./build/build_linux.sh
 ```
 
-Pour produire les versions Web et Linux en une seule commande :
+Le build Windows x86_64 produit `pile-down.exe` et une archive versionnée dans
+`build/windows/` avec :
+
+```sh
+./build/build_windows.sh
+```
+
+Pour produire les versions Web, Linux et Windows en une seule commande :
 
 ```sh
 ./build/build_all.sh
+```
+
+La description HTML prête à intégrer à la page itch.io se trouve dans
+`publishing/itch-description.html`, avec les images de publication. Les cinq
+screenshots itch.io couvrent le menu, le plateau, une combinaison de règles,
+la sélection d'un bonus et l'écran de fin. Ils peuvent être régénérés en
+512 × 640, sans lissage, avec :
+
+```sh
+godot --display-driver x11 --rendering-driver opengl3 \
+  --audio-driver Dummy --path . --resolution 512x640 \
+  --script tests/capture_publishing_screenshots.gd
 ```
 
 ## Commandes
@@ -477,4 +496,72 @@ godot --headless --path . --script res://tests/test_special_rules.gd
 godot --headless --path . --script res://tests/test_special_rule_effects.gd
 godot --headless --path . --script res://tests/test_new_special_rules.gd
 godot --headless --path . --script res://tests/test_game_start.gd
+```
+
+## Bonus de partie
+
+Tous les `BONUS_INTERVAL` rounds terminés (5 par défaut), le chrono s'arrête et
+deux bonus persistants de catégories différentes sont proposés. Un doublon
+améliore le bonus jusqu'au niveau III et un bonus au niveau maximal quitte le
+pool. Les constantes de fréquence, de nombre de choix et de types actifs se
+trouvent dans `resources/scripts/settings/difficulty.gd`.
+
+Les bonus disponibles sont :
+
+- mémoire : `OPEN BOOK`, `QUICK PEEK`, `LAST REMINDER`, `LESSON LEARNED` ;
+- main : `WILD CARD`, `REDRAW`, `LUCKY HAND` ;
+- temps : `TIME BANK`, `WARM-UP` ;
+- survie : `SPARE LIFE`, `SAFETY NET`, `CLEAN SLATE` ;
+- règles spéciales : `RULE BREAKER`, `ADAPTATION`.
+
+`WILD CARD` remplace une carte de la main par un joker `J`, sans dépasser la
+taille normale de la main. Lorsque la main contient au moins deux cartes, le
+joker ne remplace pas la carte jouable garantie. Un joker non joué est conservé
+à gauche et le remplissage suivant génère une carte de moins.
+Le bouton de `REDRAW` utilise `redraw.png`, effectue une rotation complète lors
+de son utilisation et affiche les relances restantes à partir du niveau II.
+`LESSON LEARNED` possède trois niveaux et reprend les durées de flash de
+`QUICK PEEK` : 0,25, 0,4 puis 0,6 seconde.
+Tant que `SAFETY NET` est disponible, tous les points de vie utilisent un
+shader métallique argenté. Sa consommation joue une rupture visuelle et un
+son métallique propres avant de restaurer les couleurs normales.
+
+Au lancement d'une partie, le menu glisse vers le bas tandis que le timer, le
+round, le plateau puis la main apparaissent successivement derrière lui. Les
+durées, le décalage entre éléments et l'échelle initiale sont exposés dans la
+section `Start Transition` de `GameManager` dans l'Inspector.
+
+En mode debug, `F1` masque ou réaffiche la cheatsheet des raccourcis.
+`RULE BREAKER` affiche toutes les règles d'une combinaison et permet d'en
+retirer une avant son activation. Il réutilise l'écran d'annonce spécial,
+affiche `DELETE N`, barre la règle survolée puis attend le clic avant de la
+faire disparaître. Après la dernière suppression, une courte pause précède le
+round. Au niveau I, il supprime une règle uniquement lorsqu'il en reste au
+moins une autre. Au niveau II, il supprime toujours une seule règle mais peut
+retirer l'unique règle du round. Au niveau III, il permet deux suppressions et
+peut également vider complètement le round. `ADAPTATION` réduit leur intensité
+de 20, 30 ou 40 %. Elle élargit la lumière de `LIGHTS OUT`, allonge le délai de
+`HOT POTATOES` et la régénération de `STACK ATTACK`, fait réapparaître plus tôt
+le timer de `GRACE PERIOD`, puis ralentit les déplacements de
+`MUSICAL STACKS`, `SHELL GAME`, `MERRY-GO-STACK` et `FREE-RANGE CARDS`.
+
+Les données statiques sont dans `resources/scripts/bonuses/BonusRegistry.gd`.
+Tous les réglages d'équilibrage des bonus sont regroupés à la fin de
+`resources/scripts/settings/difficulty.gd`, notamment les probabilités du
+joker et de `LUCKY HAND`, les durées de révélation et les valeurs de chaque
+niveau. La barre récapitulative des bonus possédés est réservée au mode debug ;
+les bonus restent actifs lorsqu'elle est masquée.
+`BonusManager.gd` conserve l'état de la partie et pilote
+`BonusSelection.tscn`. Les propositions, le titre, le fond, les colonnes et les
+valeurs d'animation sont éditables dans cette scène, également ouverte comme
+instance éditable dans `Game.tscn`. `BonusChoiceCard.tscn` contient le sprite
+et le shader des boutons, tandis que `ActiveBonusBadge.tscn` définit les
+indicateurs de la barre. Une nouvelle partie réinitialise toujours les bonus.
+Pour les tests, `LOCK_BONUSES` dans `resources/scripts/settings/debug.gd`
+accepte des entrées `bonus_id: niveau`. Ces bonus sont accordés au lancement
+et retirés du tirage afin de conserver exactement le niveau demandé.
+Le test autonome se lance avec :
+
+```sh
+godot --headless --path . --script res://tests/test_bonus_system.gd
 ```

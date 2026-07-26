@@ -106,6 +106,30 @@ func _run() -> void:
 	for card in discarded_cards:
 		assert(not is_instance_valid(card))
 
+	hand_manager.generate_hand(
+		free_range_layer, 3, 5, [4], false, false, false, false,
+		true, false, null, 0.0, true
+	)
+	assert(hand_manager.current_cards.size() == 3)
+	assert(
+		hand_manager.current_cards.filter(
+			func(card: PlayingCard) -> bool: return card.is_joker
+		).size() == 1
+	)
+	await hand_manager.discard_hand(free_range_layer)
+	assert(hand_manager.current_cards.size() == 1)
+	assert(hand_manager.current_cards[0].is_joker)
+	hand_manager.generate_hand(
+		free_range_layer, 3, 5, [4], false, false, false, false,
+		false, false, null, 1.0, false
+	)
+	assert(hand_manager.current_cards.size() == 3)
+	assert(
+		hand_manager.current_cards.filter(
+			func(card: PlayingCard) -> bool: return card.is_joker
+		).size() == 1
+	)
+
 	var flashlight := FlashlightScene.instantiate() as FlashlightOverlay
 	stage.add_child(flashlight)
 	assert(

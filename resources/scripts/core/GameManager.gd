@@ -33,12 +33,14 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 
 @onready var piles_board: Control = %PilesBoard
 @onready var hand_container: HBoxContainer = %HandContainer
+@onready var hand_tray: TextureRect = %HandTray
 @onready var drag_layer: Control = %DragLayer
 @onready var hand_manager: HandManager = %HandManager
 @onready var pile_manager: PileManager = %PileManager
 @onready var timer_manager: CountdownManager = %TimerManager
 @onready var timer_label: Label = %TimerLabel
 @onready var timer_ring: CountdownRing = %TimerRing
+@onready var round_panel: TextureRect = %RoundPanel
 @onready var round_label: Label = %RoundLabel
 @onready var run_time_label: Label = %RunTimeLabel
 @onready var mistakes_dots: RoundDots = %MistakesDots
@@ -62,11 +64,13 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var soft_audio: SoftAudio = %SoftAudio
 @onready var music_manager: MusicManager = %MusicManager
 @onready var special_rule_manager: SpecialRuleManager = %SpecialRuleManager
+@onready var bonus_manager: BonusManager = %BonusManager
 @onready var lava_rule_controller: LavaRuleController = %LavaRuleController
 @onready var sticky_fingers_controller: StickyFingersRuleController = %StickyFingersRuleController
 @onready var mirror_match_controller: MirrorMatchRuleController = %MirrorMatchRuleController
 @onready var flashlight_overlay: FlashlightOverlay = %FlashlightOverlay
 @onready var lava_layer: Control = %LavaLayer
+@onready var redraw_button: RedrawBonusButton = %RedrawButton
 
 var pile_count: int = Difficulty.START_PILES
 var hand_size: int = Difficulty.START_HAND_SIZE
@@ -94,9 +98,11 @@ var overlay_mode := ""
 var _last_clock_second := -1
 var _urgent_tick_index := 0
 var _clock_flash_tween: Tween
+var _menu_exit_tween: Tween
 var round_modifiers := RoundModifiers.new()
 var tier_reliefs_applied := 0
 var _debug_action_in_progress := false
+var _debug_help_enabled := true
 var _hand_cycle_generation := 0
 var _pending_interactive_generation := -1
 var _regeneration_hand_check_pending := false
@@ -104,6 +110,13 @@ var _music_volume_before_mute := 100.0
 var _sound_volume_before_mute := 100.0
 var _timer_display_hidden := false
 var _timer_visibility_tween: Tween
+var _last_reminder_pile: MemoryPile
+
+@export_category("Start Transition")
+@export var menu_swipe_duration := 0.62
+@export var gameplay_pop_duration := 0.24
+@export var gameplay_pop_stagger := 0.1
+@export var gameplay_pop_scale := 0.82
 
 
 func _ready() -> void:
@@ -128,6 +141,7 @@ func _ready() -> void:
 	special_rule_manager.rules_announcement_finished.connect(
 		_on_special_rules_announcement_finished
 	)
+	redraw_button.pressed.connect(_on_redraw_pressed)
 	resized.connect(_layout_piles)
 	_setup_audio_controls()
 	_load_high_score()
@@ -181,7 +195,12 @@ func _apply_bus_volume(bus_name: StringName, linear_volume: float) -> void:
 
 
 func _process(_delta: float) -> void:
-	debug_help.visible = Debug.is_enabled() and not splash.visible and not overlay.visible
+	debug_help.visible = (
+		Debug.is_enabled()
+		and _debug_help_enabled
+		and not splash.visible
+		and not overlay.visible
+	)
 	if run_time_label.visible:
 		run_time_label.text = _format_duration(_total_time_milliseconds())
 	if _regeneration_hand_check_pending and not input_locked:
@@ -296,6 +315,9 @@ func _handle_debug_shortcut(event: InputEvent) -> bool:
 	if not key_event.pressed or key_event.echo or _debug_action_in_progress:
 		return false
 	match key_event.keycode:
+		KEY_F1:
+			_debug_help_enabled = not _debug_help_enabled
+			return true
 		KEY_S:
 			if splash.visible or overlay.visible:
 				return false
@@ -358,11 +380,13 @@ func _refresh_debug_help() -> void:
 		+ "[H] CLEAR HIGH SCORE\n"
 		+ "[T] SHOW RUN TIME\n"
 		+ "[M] MUTE AUDIO\n"
+		+ "[F1] HIDE DEBUG HELP\n"
 		+ "[ESC] BACK TO MENU"
 	)
 
 
 func start_game(endless_mode := false) -> void:
+	var animate_menu_exit := splash.visible
 	game_mode = GameMode.ENDLESS if endless_mode else GameMode.STANDARD
 	soft_audio.play_start()
 	music_manager.set_low_pass_enabled(false, true)
@@ -384,10 +408,73 @@ func start_game(endless_mode := false) -> void:
 	game_started_msec = Time.get_ticks_msec()
 	round_reached_time_ms = 0
 	run_time_label.visible = false
-	splash.visible = false
 	overlay.visible = false
 	overlay_mode = ""
+	bonus_manager.begin_run()
+	if animate_menu_exit:
+		_prepare_gameplay_start_reveal()
+		_update_hud()
+		_finish_animated_game_start()
+	else:
+		splash.visible = false
+		start_round()
+
+
+func _finish_animated_game_start() -> void:
+	await _play_start_game_transition()
 	start_round()
+
+
+func _prepare_gameplay_start_reveal() -> void:
+	for element in _start_transition_elements():
+		element.pivot_offset = element.size * 0.5
+		element.modulate.a = 0.0
+		element.scale = Vector2.ONE * gameplay_pop_scale
+
+
+func _play_start_game_transition() -> void:
+	if _menu_exit_tween != null and _menu_exit_tween.is_valid():
+		_menu_exit_tween.kill()
+	var splash_origin := splash.position
+	_menu_exit_tween = (
+		create_tween()
+		.set_trans(Tween.TRANS_QUAD)
+		.set_ease(Tween.EASE_IN)
+	)
+	_menu_exit_tween.tween_property(
+		splash,
+		"position:y",
+		splash_origin.y + size.y + 8.0,
+		menu_swipe_duration
+	)
+	var elements := _start_transition_elements()
+	for index in elements.size():
+		var element := elements[index]
+		var reveal := (
+			element.create_tween()
+			.set_parallel()
+			.set_trans(Tween.TRANS_BACK)
+			.set_ease(Tween.EASE_OUT)
+		)
+		reveal.tween_property(
+			element,
+			"modulate:a",
+			1.0,
+			gameplay_pop_duration
+		).set_delay(index * gameplay_pop_stagger)
+		reveal.tween_property(
+			element,
+			"scale",
+			Vector2.ONE,
+			gameplay_pop_duration
+		).set_delay(index * gameplay_pop_stagger)
+	await _menu_exit_tween.finished
+	splash.visible = false
+	splash.position = splash_origin
+
+
+func _start_transition_elements() -> Array[Control]:
+	return [timer_ring, round_panel, piles_board, hand_tray]
 
 
 func start_round() -> void:
@@ -408,7 +495,12 @@ func start_round() -> void:
 	for child in piles_board.get_children():
 		child.queue_free()
 	piles.clear()
+	_last_reminder_pile = null
+	bonus_manager.begin_round()
 	round_modifiers = await special_rule_manager.begin_round(_progression_round())
+	var rule_intensity := bonus_manager.adaptation_multiplier()
+	if round_modifiers.hot_potatoes_enabled:
+		round_modifiers.hot_potato_drag_duration /= rule_intensity
 	sticky_fingers_controller.begin_round(
 		round_modifiers.sticky_fingers_enabled
 	)
@@ -417,10 +509,18 @@ func start_round() -> void:
 	maximum_mistakes = (
 		round_modifiers.maximum_mistakes_override
 		if round_modifiers.maximum_mistakes_override > 0
-		else 3
+		else 3 + bonus_manager.spare_lives()
 	)
 	mistakes_left = maximum_mistakes
 	mistakes_dots.set_maximum(maximum_mistakes)
+	mistakes_dots.set_reinforced_count(
+		0
+		if round_modifiers.sudden_death_enabled
+		else bonus_manager.spare_lives()
+	)
+	mistakes_dots.set_safety_net_active(
+		bonus_manager.safety_net_available
+	)
 
 	for index in pile_count:
 		var pile := PILE_SCENE.instantiate() as MemoryPile
@@ -438,6 +538,12 @@ func start_round() -> void:
 	_layout_piles()
 	for index in piles.size():
 		piles[index].play_entrance(index * 0.055)
+	var open_book_count := bonus_manager.level(&"open_book")
+	if open_book_count > 0:
+		var open_book_candidates := piles.duplicate()
+		open_book_candidates.shuffle()
+		for index in mini(open_book_count, open_book_candidates.size()):
+			open_book_candidates[index].keep_face_up = true
 	special_rule_manager.activate_board_effects(piles, _progression_round())
 	if round_modifiers.floor_is_lava_enabled:
 		lava_rule_controller.generate(
@@ -484,6 +590,8 @@ func _begin_turn(hand_prepared := false, enter_from_right := false) -> void:
 			_generate_next_hand(_hand_cycle_generation, true, true)
 		else:
 			await _prepare_next_hand(true, false)
+	if bonus_manager.has_bonus(&"quick_peek"):
+		return
 	input_locked = false
 	hand_manager.unlock_hand()
 
@@ -513,11 +621,24 @@ func _generate_next_hand(
 		not wandering_cards,
 		clear_existing,
 		enter_from_right,
-		round_modifiers
+		round_modifiers,
+		bonus_manager.joker_chance(),
+		bonus_manager.consume_forced_joker(),
+		bonus_manager.lucky_hand_chance()
 	)
 	if wandering_cards:
 		_draw_wandering_hand()
-	_start_turn_countdown()
+	redraw_button.visible = bonus_manager.redraws_left > 0 and not wandering_cards
+	redraw_button.set_remaining(
+		bonus_manager.redraws_left,
+		bonus_manager.level(&"redraw") >= 2
+	)
+	if bonus_manager.has_bonus(&"quick_peek"):
+		input_locked = true
+		hand_manager.lock_hand()
+		call_deferred("_run_quick_peek")
+	else:
+		_start_turn_countdown(bonus_manager.next_hand_time(turn_time))
 
 
 func _draw_wandering_hand() -> void:
@@ -560,8 +681,14 @@ func _on_card_selected(card: PlayingCard) -> void:
 		selected_card != null
 		and is_instance_valid(selected_card)
 		and selected_card != card
-		and selected_card.drag_state == PlayingCard.DragState.LOCKED_OUT
+		and (
+			selected_card.drag_state == PlayingCard.DragState.LOCKED_OUT
+			or selected_card.dragging
+			or selected_card._drag_starting
+			or selected_card.get_parent() == drag_layer
+		)
 	):
+		hand_manager.select_card(selected_card)
 		return
 	selected_card = card
 
@@ -580,6 +707,23 @@ func _on_card_entered_screen(card: PlayingCard) -> void:
 
 func _on_card_drag_started(card: PlayingCard) -> void:
 	if input_locked:
+		return
+	# A single hand may only own one drag transition. Without this guard,
+	# rapid presses can reparent several cards before the first release and
+	# leave them outside the container's layout.
+	if card.drag_state != PlayingCard.DragState.IDLE or card._drag_starting:
+		return
+	if (
+		selected_card != null
+		and is_instance_valid(selected_card)
+		and selected_card != card
+		and (
+			selected_card.dragging
+			or selected_card._drag_starting
+			or selected_card.get_parent() == drag_layer
+		)
+	):
+		card.flash_error()
 		return
 	# A Sticky Fingers card remains under the pointer. Every click therefore
 	# reaches its button again, but must not create another hand placeholder.
@@ -607,6 +751,7 @@ func _on_card_drag_started(card: PlayingCard) -> void:
 		drag_placeholder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		hand_container.add_child(drag_placeholder)
 		hand_container.move_child(drag_placeholder, drag_home_index)
+	hand_manager.lock_all_cards_except(card)
 	card.prepare_external_drag()
 	var start_position := card.global_position
 	if card.get_parent() != drag_layer:
@@ -632,7 +777,10 @@ func _on_card_drag_released(card: PlayingCard, release_position: Vector2) -> voi
 		card.finish_drag()
 		await _return_card_to_hand(card)
 		card.set_selectable(true)
-	elif target.can_accept(card.card_value):
+		selected_card = null
+		hand_manager.clear_selection()
+		hand_manager.unlock_hand()
+	elif card.is_joker or target.can_accept(card.card_value):
 		card.finish_drag()
 		await _place_selected_card(target)
 	else:
@@ -704,13 +852,26 @@ func _place_selected_card(pile: MemoryPile) -> void:
 	_hand_cycle_generation += 1
 	var placement_generation := _hand_cycle_generation
 	input_locked = true
+	bonus_manager.bank_remaining_time(timer_manager.time_left)
 	timer_manager.stop_countdown()
 	hand_manager.lock_hand()
 	var card := selected_card
 	card.confirm_drop()
 	var destination := pile.global_position + (pile.size - card.size) * 0.5
 	await card.animate_valid_drop(destination)
-	pile.place(card.card_value)
+	var placed_value := pile.expected_value() if card.is_joker else card.card_value
+	pile.place(placed_value)
+	if bonus_manager.has_bonus(&"last_reminder") and not pile.is_complete_value():
+		if (
+			_last_reminder_pile != null
+			and is_instance_valid(_last_reminder_pile)
+			and _last_reminder_pile != pile
+			and not _last_reminder_pile.bonus_highlight
+		):
+			_last_reminder_pile.keep_face_up = false
+			_last_reminder_pile.set_bonus_revealed(false)
+		pile.keep_face_up = true
+		_last_reminder_pile = pile
 	card_placed.emit(card, pile)
 	soft_audio.play_tone(610.0, 0.075, 0.055)
 	card.visible = false
@@ -727,6 +888,13 @@ func _place_selected_card(pile: MemoryPile) -> void:
 	if pile.is_complete_value():
 		soft_audio.play_tone(760.0, 0.14, 0.06)
 		await pile.complete_animation()
+		var recovered := bonus_manager.recover_on_completed_pile(
+			mistakes_left,
+			maximum_mistakes
+		)
+		if recovered != mistakes_left:
+			mistakes_left = recovered
+			_update_hud()
 		await _after_valid_card_played()
 		if _all_piles_complete():
 			await _finish_round()
@@ -744,7 +912,8 @@ func _after_valid_card_played() -> void:
 	await special_rule_manager.after_card_played(piles, _progression_round())
 	if round_modifiers.musical_stacks_enabled:
 		await pile_manager.rotate_active_piles(
-			round_modifiers.musical_stacks_direction
+			round_modifiers.musical_stacks_direction,
+			0.4 / bonus_manager.adaptation_multiplier()
 		)
 
 
@@ -757,16 +926,22 @@ func _handle_mistake(
 	input_locked = true
 	timer_manager.stop_countdown()
 	hand_manager.lock_hand()
-	if not Debug.is_god_mode_enabled():
+	var protected_by_safety_net := bonus_manager.consume_safety_net()
+	if not Debug.is_god_mode_enabled() and not protected_by_safety_net:
 		mistakes_left -= 1
 	mistake_made.emit()
-	if caused_by_timeout:
+	if protected_by_safety_net:
+		soft_audio.play_safety_net_break()
+	elif caused_by_timeout:
 		soft_audio.play_timeout_error()
 	else:
 		soft_audio.play_error()
 	if mistakes_left <= 0:
 		music_manager.set_low_pass_enabled(true)
-	await mistakes_dots.play_damage(mistakes_left)
+	if protected_by_safety_net:
+		await mistakes_dots.play_safety_net_break()
+	else:
+		await mistakes_dots.play_damage(mistakes_left)
 	_update_hud()
 	if selected_card != null and is_instance_valid(selected_card) and selected_card.get_parent() == drag_layer:
 		await _return_card_to_hand(selected_card, 0.14)
@@ -777,6 +952,12 @@ func _handle_mistake(
 	else:
 		selected_card = null
 		hand_manager.clear_selection()
+		if bonus_manager.has_bonus(&"mistake_reveal"):
+			await _run_bonus_pile_flash(
+				Difficulty.MISTAKE_REVEAL_DURATIONS[
+					bonus_manager.level(&"mistake_reveal")
+				]
+			)
 		input_locked = false
 		hand_manager.unlock_hand()
 		_start_turn_countdown()
@@ -851,6 +1032,22 @@ func _on_lava_card_entered(card: PlayingCard) -> void:
 		card.request_forced_return(PlayingCard.ForcedReturnReason.LAVA)
 
 
+func _on_redraw_pressed() -> void:
+	if input_locked or not bonus_manager.consume_redraw():
+		return
+	input_locked = true
+	redraw_button.set_remaining(
+		bonus_manager.redraws_left,
+		bonus_manager.level(&"redraw") >= 2
+	)
+	redraw_button.play_used_animation()
+	timer_manager.stop_countdown()
+	_hand_cycle_generation += 1
+	await _discard_current_hand()
+	await _begin_turn(false, true)
+	redraw_button.visible = bonus_manager.redraws_left > 0
+
+
 func cleanup_special_rule_state() -> void:
 	input_locked = true
 	sticky_fingers_controller.end_round()
@@ -875,6 +1072,7 @@ func cleanup_special_rule_state() -> void:
 
 func _finish_round() -> void:
 	input_locked = true
+	var completed_round_number := _progression_round()
 	timer_manager.stop_countdown()
 	await cleanup_special_rule_state()
 	await special_rule_manager.end_round(piles)
@@ -890,6 +1088,7 @@ func _finish_round() -> void:
 	if game_mode == GameMode.STANDARD and round_number <= 0:
 		await _finish_game(true)
 		return
+	await bonus_manager.offer_if_due(completed_round_number)
 	var change := _advance_difficulty(_progression_round())
 	if change == "TIER RELIEF":
 		music_manager.request_next_section()
@@ -1155,14 +1354,17 @@ func _all_piles_complete() -> bool:
 	return not piles.is_empty()
 
 
-func _start_turn_countdown() -> void:
+func _start_turn_countdown(duration_override := -1.0) -> void:
+	var effective_turn_time := (
+		duration_override if duration_override > 0.0 else turn_time
+	)
 	# Le premier tick correspond au passage à la seconde suivante, pas à
 	# l'initialisation du chronomètre.
-	_last_clock_second = ceili(turn_time)
+	_last_clock_second = ceili(effective_turn_time)
 	_urgent_tick_index = 0
 	while (
 		_urgent_tick_index < URGENT_TICK_THRESHOLDS.size()
-		and URGENT_TICK_THRESHOLDS[_urgent_tick_index] >= turn_time
+		and URGENT_TICK_THRESHOLDS[_urgent_tick_index] >= effective_turn_time
 	):
 		_urgent_tick_index += 1
 	if _clock_flash_tween != null and _clock_flash_tween.is_valid():
@@ -1170,12 +1372,54 @@ func _start_turn_countdown() -> void:
 	timer_ring.flash_strength = 0.0
 	var grace_duration := 0.0
 	if round_modifiers.grace_period_enabled:
+		var adapted_reveal_time := (
+			Difficulty.GRACE_PERIOD_REVEAL_TIME
+			/ maxf(round_modifiers.special_rule_intensity_multiplier, 0.01)
+		)
 		grace_duration = maxf(
-			turn_time - maxf(Difficulty.GRACE_PERIOD_REVEAL_TIME, 0.0),
+			effective_turn_time - maxf(adapted_reveal_time, 0.0),
 			0.0
 		)
 		round_modifiers.grace_period_duration = grace_duration
-	timer_manager.start_countdown(turn_time, grace_duration)
+	timer_manager.start_countdown(effective_turn_time, grace_duration)
+
+
+func _reveal_all_piles(duration: float) -> void:
+	var revealed: Array[MemoryPile] = []
+	for pile in piles:
+		if is_instance_valid(pile) and not pile.completed and not pile.face_up:
+			pile.set_bonus_revealed(true)
+			revealed.append(pile)
+	if revealed.is_empty():
+		return
+	await get_tree().create_timer(duration).timeout
+	for pile in revealed:
+		if is_instance_valid(pile):
+			pile.set_bonus_revealed(false)
+
+
+func _run_quick_peek() -> void:
+	await _run_bonus_pile_flash(
+		Difficulty.QUICK_PEEK_DURATIONS[bonus_manager.level(&"quick_peek")]
+	)
+	if _all_piles_complete():
+		return
+	_start_turn_countdown(bonus_manager.next_hand_time(turn_time))
+	input_locked = false
+	hand_manager.unlock_hand()
+
+
+func _run_bonus_pile_flash(duration: float) -> void:
+	var flashed_piles: Array[MemoryPile] = []
+	for pile in piles:
+		if is_instance_valid(pile) and not pile.completed and not pile.face_up:
+			flashed_piles.append(pile)
+			pile.show_quick_peek_flash()
+	await get_tree().create_timer(duration).timeout
+	for pile in flashed_piles:
+		if is_instance_valid(pile):
+			pile.hide_quick_peek_flash()
+	await get_tree().create_timer(0.07).timeout
 
 
 func _on_time_updated(time_left: float) -> void:

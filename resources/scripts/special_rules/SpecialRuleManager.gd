@@ -12,7 +12,7 @@ const Context := preload("res://resources/scripts/core/RoundContext.gd")
 const Difficulty := preload("res://resources/scripts/settings/difficulty.gd")
 const Debug := preload("res://resources/scripts/settings/debug.gd")
 
-@onready var announcement: Control = %SpecialRuleAnnouncement
+@onready var announcement: SpecialRuleAnnouncement = %SpecialRuleAnnouncement
 @onready var flashlight_overlay: FlashlightOverlay = %FlashlightOverlay
 @onready var moving_pile_pattern: Node = %MovingPilePattern
 
@@ -86,6 +86,36 @@ func begin_round(round_number: int) -> RoundModifiers:
 		active_rules = select_special_rules(round_number, requested_count)
 	else:
 		active_rules = _select_locked_rules(locked_rule_ids, round_number)
+	var bonus_manager := get_node_or_null("../BonusManager") as BonusManager
+	var rule_breaker_used := false
+	var rule_breaker_level := (
+		bonus_manager.level(&"rule_breaker")
+		if bonus_manager != null
+		else 0
+	)
+	if (
+		bonus_manager != null
+		and rule_breaker_level > 0
+		and (
+			active_rules.size() > 1
+			or (
+				bonus_manager.rule_breaker_can_delete_last_rule()
+				and active_rules.size() == 1
+			)
+		)
+		and announcement != null
+	):
+		var removed_indices := await announcement.choose_rules_to_delete(
+			active_rules,
+			bonus_manager.rule_breaker_deletion_count(),
+			bonus_manager.rule_breaker_can_delete_last_rule()
+		)
+		removed_indices.sort()
+		removed_indices.reverse()
+		for removed_index in removed_indices:
+			if removed_index >= 0 and removed_index < active_rules.size():
+				active_rules.remove_at(removed_index)
+		rule_breaker_used = not removed_indices.is_empty()
 	if not active_rules.is_empty():
 		_last_special_rule_round = round_number
 	modifiers = RoundModifiers.new()
@@ -98,12 +128,28 @@ func begin_round(round_number: int) -> RoundModifiers:
 	context.rng = rng
 	for rule in active_rules:
 		rule.activate(context)
+	var adaptation_intensity := (
+		bonus_manager.adaptation_multiplier()
+		if bonus_manager != null
+		else 1.0
+	)
+	modifiers.special_rule_intensity_multiplier = adaptation_intensity
 	if flashlight_overlay != null:
+		# Set the adapted target before close_in() creates its tween. Changing
+		# the property afterwards does not alter a target already captured by
+		# Tween.tween_property().
+		flashlight_overlay.flashlight_radius = (
+			Difficulty.LIGHTS_OUT_RADIUS / adaptation_intensity
+		)
 		if modifiers.flashlight_enabled:
 			flashlight_overlay.close_in()
 		else:
 			flashlight_overlay.visible = false
-	if not active_rules.is_empty() and announcement != null:
+	if (
+		not active_rules.is_empty()
+		and announcement != null
+		and not rule_breaker_used
+	):
 		rules_announcing.emit(active_rules)
 		await announcement.show_rules(active_rules)
 		rules_announcement_finished.emit()
@@ -136,8 +182,14 @@ func _select_locked_rules(
 
 func activate_board_effects(piles: Array[MemoryPile], round_number: int) -> void:
 	context.piles.assign(piles)
+	var bonus_manager := get_node_or_null("../BonusManager") as BonusManager
+	var intensity := (
+		bonus_manager.adaptation_multiplier()
+		if bonus_manager != null
+		else 1.0
+	)
 	if modifiers.moving_pile_pattern and moving_pile_pattern != null:
-		moving_pile_pattern.start(piles, round_number)
+		moving_pile_pattern.start(piles, round_number, intensity)
 	if modifiers.regeneration_enabled:
 		var candidates: Array[MemoryPile] = []
 		for pile in piles:
@@ -146,7 +198,9 @@ func activate_board_effects(piles: Array[MemoryPile], round_number: int) -> void
 		candidates.shuffle()
 		var count := maxi(1, ceili(candidates.size() * Difficulty.REGENERATING_PILE_RATIO))
 		for index in mini(count, candidates.size()):
-			candidates[index].enable_regeneration(Difficulty.REGENERATION_DURATION)
+			candidates[index].enable_regeneration(
+				Difficulty.REGENERATION_DURATION / intensity
+			)
 
 
 func after_card_played(piles: Array[MemoryPile], round_number: int) -> void:
@@ -167,13 +221,21 @@ func after_card_played(piles: Array[MemoryPile], round_number: int) -> void:
 	for pile in moving:
 		destinations.append(pile.position)
 	var tweens: Array[Tween] = []
+	var movement_duration := (
+		0.55 / modifiers.special_rule_intensity_multiplier
+	)
 	for index in moving.size():
 		var tween: Tween = (
 			moving[index].create_tween()
 			.set_trans(Tween.TRANS_SINE)
 			.set_ease(Tween.EASE_IN_OUT)
 		)
-		tween.tween_property(moving[index], "position", destinations[(index + 1) % moving.size()], 0.55)
+		tween.tween_property(
+			moving[index],
+			"position",
+			destinations[(index + 1) % moving.size()],
+			movement_duration
+		)
 		tweens.append(tween)
 	await tweens[0].finished
 

@@ -28,6 +28,12 @@ for PILE_DOWN_PLATFORM in "$@"; do
 				"linux_release.x86_64"
 			)
 			;;
+		windows)
+			PILE_DOWN_REQUIRED_TEMPLATES+=(
+				"windows_debug_x86_64.exe"
+				"windows_release_x86_64.exe"
+			)
+			;;
 		*)
 			echo "Unknown export-template platform: ${PILE_DOWN_PLATFORM}" >&2
 			exit 1

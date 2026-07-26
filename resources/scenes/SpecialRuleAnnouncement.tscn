@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://resources/scripts/special_rules/SpecialRuleAnnouncement.gd" id="1"]
+[ext_resource type="PackedScene" path="res://resources/scenes/RuleDeleteButton.tscn" id="2"]
 
 [node name="SpecialRuleAnnouncement" type="Control"]
 visible = false
@@ -12,6 +13,12 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1")
+fade_duration = 0.2
+display_duration = 1.15
+rule_breaker_final_delay = 1.0
+rule_delete_confirmation_delay = 0.38
+rule_delete_fade_duration = 0.18
+delete_counter_fade_duration = 0.25
 
 [node name="Scrim" type="ColorRect" parent="."]
 layout_mode = 1
@@ -59,3 +66,21 @@ theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
 theme_override_font_sizes/font_size = 20
 horizontal_alignment = 1
 autowrap_mode = 2
+
+[node name="DeleteLabel" type="Label" parent="Center/Content"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
+theme_override_font_sizes/font_size = 16
+text = "DELETE 1"
+horizontal_alignment = 1
+
+[node name="RuleDeleteChoices" type="VBoxContainer" parent="Center/Content"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="RuleDeleteButtonPreview" parent="Center/Content/RuleDeleteChoices" instance=ExtResource("2")]
+visible = false

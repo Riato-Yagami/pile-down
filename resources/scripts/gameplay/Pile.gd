@@ -30,6 +30,8 @@ var regeneration_enabled := false
 var _hovered_for_drop := false
 var _visual_tween: Tween
 var colorblind_enabled := false
+var keep_face_up := false
+var bonus_highlight := false
 
 
 func _ready() -> void:
@@ -62,6 +64,8 @@ func setup(
 	modulate = Color.WHITE
 	scale = Vector2.ONE
 	rotation = 0.0
+	keep_face_up = false
+	bonus_highlight = false
 	_refresh()
 
 
@@ -196,7 +200,7 @@ func _show_floating_text(text_value: String) -> void:
 
 
 func hide_value(animated: bool = true) -> void:
-	if completed:
+	if completed or keep_face_up:
 		return
 	if animated:
 		var tween := create_tween().set_trans(Tween.TRANS_SINE)
@@ -212,6 +216,59 @@ func hide_value(animated: bool = true) -> void:
 		_refresh()
 
 
+func set_bonus_highlight(enabled: bool) -> void:
+	bonus_highlight = enabled
+	if enabled:
+		glow.visible = true
+		glow.modulate = Color("#D9A514", 0.4)
+	elif not _hovered_for_drop:
+		glow.visible = false
+
+
+func set_bonus_revealed(revealed: bool) -> void:
+	if completed or (not revealed and keep_face_up):
+		return
+	face_up = revealed
+	_refresh()
+
+
+func show_quick_peek_flash() -> void:
+	if completed or face_up:
+		return
+	if _visual_tween != null and _visual_tween.is_valid():
+		_visual_tween.kill()
+	face_up = true
+	_refresh()
+	scale = Vector2(0.9, 0.9)
+	modulate = Color(1.25, 1.25, 1.25, 0.35)
+	glow.visible = bonus_highlight
+	_visual_tween = (
+		create_tween()
+		.set_parallel()
+		.set_trans(Tween.TRANS_BACK)
+		.set_ease(Tween.EASE_OUT)
+	)
+	_visual_tween.tween_property(self, "scale", Vector2.ONE, 0.09)
+	_visual_tween.tween_property(self, "modulate", Color.WHITE, 0.07)
+
+
+func hide_quick_peek_flash() -> void:
+	if completed or keep_face_up:
+		return
+	if _visual_tween != null and _visual_tween.is_valid():
+		_visual_tween.kill()
+	_visual_tween = create_tween().set_parallel().set_trans(Tween.TRANS_QUAD)
+	_visual_tween.tween_property(face_sprite, "modulate:a", 0.0, 0.06)
+	_visual_tween.tween_property(self, "scale", Vector2(1.04, 1.04), 0.06)
+	await _visual_tween.finished
+	face_up = false
+	face_sprite.modulate = Color.WHITE
+	scale = Vector2.ONE
+	modulate = Color.WHITE
+	_refresh()
+	glow.visible = bonus_highlight
+
+
 func set_drop_feedback(active: bool) -> void:
 	if completed or (_hovered_for_drop == active and not active):
 		return
@@ -225,7 +282,9 @@ func set_drop_feedback(active: bool) -> void:
 		_visual_tween.tween_property(self, "scale", Vector2(1.04, 1.04), 0.12)
 		_visual_tween.tween_property(face, "position:y", -3.0, 0.12)
 	else:
-		glow.visible = false
+		glow.visible = bonus_highlight
+		if bonus_highlight:
+			glow.modulate = Color("#D9A514", 0.4)
 		_visual_tween.tween_property(self, "scale", Vector2.ONE, 0.12)
 		_visual_tween.tween_property(face, "position:y", 0.0, 0.12)
 
@@ -247,7 +306,9 @@ func impact() -> void:
 	tween.tween_property(self, "scale", Vector2.ONE, 0.12)
 	tween.parallel().tween_property(glow, "modulate:a", 0.0, 0.24)
 	await tween.finished
-	glow.visible = false
+	glow.visible = bonus_highlight
+	if bonus_highlight:
+		glow.modulate = Color("#D9A514", 0.4)
 
 
 func complete_animation() -> void:
