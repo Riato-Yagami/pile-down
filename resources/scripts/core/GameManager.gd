@@ -73,6 +73,8 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var lava_layer: Control = %LavaLayer
 @onready var redraw_button: RedrawBonusButton = %RedrawButton
 @onready var active_bonus_bar: HBoxContainer = %ActiveBonusBar
+@onready var back_button: Button = %BackButton
+@onready var overlay_back_button: Button = %OverlayBackButton
 
 var pile_count: int = Difficulty.START_PILES
 var hand_size: int = Difficulty.START_HAND_SIZE
@@ -157,6 +159,8 @@ func _ready() -> void:
 		_on_special_rules_announcement_finished
 	)
 	redraw_button.pressed.connect(_on_redraw_pressed)
+	back_button.pressed.connect(_return_to_menu)
+	overlay_back_button.pressed.connect(_return_to_menu)
 	resized.connect(_layout_piles)
 	_setup_audio_controls()
 	_load_high_score()
@@ -316,7 +320,7 @@ func _handle_global_shortcut(event: InputEvent) -> bool:
 				if not OS.has_feature("web"):
 					get_tree().quit()
 			else:
-				get_tree().reload_current_scene()
+				_return_to_menu()
 			return true
 		KEY_SPACE:
 			if splash.visible or (overlay.visible and overlay_mode == "restart"):
@@ -336,6 +340,10 @@ func _handle_global_shortcut(event: InputEvent) -> bool:
 					run_time_label.text = _format_duration(_total_time_milliseconds())
 				return true
 	return false
+
+
+func _return_to_menu() -> void:
+	get_tree().reload_current_scene()
 
 
 func _toggle_audio_sliders() -> void:

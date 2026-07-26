@@ -32,6 +32,7 @@
 [ext_resource type="PackedScene" path="res://resources/scenes/BonusSelection.tscn" id="28_bonus_selection"]
 [ext_resource type="Texture2D" uid="uid://cc872b4lvubrh" path="res://resources/sprites/redraw.png" id="29_redraw"]
 [ext_resource type="Script" uid="uid://8hkg1ucpu274" path="res://resources/scripts/bonuses/RedrawBonusButton.gd" id="30_redraw_button"]
+[ext_resource type="Texture2D" uid="uid://dw63pb4j4qbyf" path="res://resources/sprites/escape.png" id="31_escape"]
 
 [sub_resource type="Theme" id="PixelTheme"]
 default_font = ExtResource("12")
@@ -67,6 +68,31 @@ shader_parameter/progress_color = Color(0.302, 0.51, 0.761, 1)
 shader_parameter/flash_color = Color(0.878, 0.392, 0.333, 1)
 shader_parameter/flash_strength = 0.0
 
+[sub_resource type="Shader" id="Shader_cw3lv"]
+code = "shader_type canvas_item;
+
+uniform vec4 base_color : source_color = vec4(0.302, 0.51, 0.761, 1.0);
+uniform vec4 highlight_color : source_color = vec4(0.427, 0.655, 0.898, 1.0);
+
+void fragment() {
+	vec4 texture_color = texture(TEXTURE, UV);
+	vec4 source = texture_color * COLOR;
+	bool base_fill_pixel = (
+		texture_color.a > 0.0
+		&& distance(texture_color.rgb, base_color.rgb) < 0.01
+	);
+	if (base_fill_pixel) {
+		source.rgb = highlight_color.rgb;
+	}
+	COLOR = source;
+}"
+
+[sub_resource type="ShaderMaterial" id="EscapeButtonHighlightMaterial"]
+resource_local_to_scene = true
+shader = SubResource("Shader_cw3lv")
+shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
+shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+
 [sub_resource type="StyleBoxFlat" id="Wave"]
 bg_color = Color(0.31, 0.64, 0.63, 0.04)
 border_width_left = 2
@@ -98,7 +124,7 @@ void fragment() {
 	COLOR = source;
 }"
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_cw3lv"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_nrxn2"]
 resource_local_to_scene = true
 shader = SubResource("ButtonHighlightShader")
 shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
@@ -113,25 +139,6 @@ corner_radius_top_left = 5
 corner_radius_top_right = 5
 corner_radius_bottom_right = 5
 corner_radius_bottom_left = 5
-
-[sub_resource type="Shader" id="Shader_cw3lv"]
-code = "shader_type canvas_item;
-
-uniform vec4 base_color : source_color = vec4(0.302, 0.51, 0.761, 1.0);
-uniform vec4 highlight_color : source_color = vec4(0.427, 0.655, 0.898, 1.0);
-
-void fragment() {
-	vec4 texture_color = texture(TEXTURE, UV);
-	vec4 source = texture_color * COLOR;
-	bool base_fill_pixel = (
-		texture_color.a > 0.0
-		&& distance(texture_color.rgb, base_color.rgb) < 0.01
-	);
-	if (base_fill_pixel) {
-		source.rgb = highlight_color.rgb;
-	}
-	COLOR = source;
-}"
 
 [sub_resource type="ShaderMaterial" id="OverlayButtonHighlightMaterial"]
 resource_local_to_scene = true
@@ -283,6 +290,19 @@ theme_override_font_sizes/font_size = 16
 text = "1 min 12 s 323 ms"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="BackButton" type="Button" parent="." unique_id=1727911038]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 212.0
+offset_top = 37.0
+offset_right = 243.0
+offset_bottom = 58.0
+mouse_default_cursor_shape = 2
+icon = ExtResource("31_escape")
+flat = true
+script = ExtResource("22_highlight")
+highlight_material = SubResource("EscapeButtonHighlightMaterial")
 
 [node name="PilesBoard" type="Control" parent="." unique_id=1086969405]
 unique_name_in_owner = true
@@ -546,7 +566,7 @@ theme_override_font_sizes/normal_font_size = 40
 layout_mode = 2
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 14
-highlight_material = SubResource("ShaderMaterial_cw3lv")
+highlight_material = SubResource("ShaderMaterial_nrxn2")
 
 [node name="DebugHelp" type="Label" parent="." unique_id=920061710]
 unique_name_in_owner = true
@@ -576,7 +596,6 @@ text = "[S] NEXT MUSIC SECTION
 
 [node name="Overlay" type="Control" parent="." unique_id=1498983076]
 unique_name_in_owner = true
-visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -629,6 +648,20 @@ custom_minimum_size = Vector2(256, 192)
 layout_mode = 2
 mouse_filter = 2
 texture = ExtResource("15")
+
+[node name="OverlayBackButton" type="Button" parent="Overlay/Center/Panel" unique_id=152869561]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 177.0
+offset_top = 123.0
+offset_right = 208.0
+offset_bottom = 144.0
+mouse_default_cursor_shape = 2
+icon = ExtResource("31_escape")
+flat = true
+script = ExtResource("22_highlight")
+highlight_material = SubResource("EscapeButtonHighlightMaterial")
 
 [node name="Content" type="VBoxContainer" parent="Overlay/Center/Panel" unique_id=1887149846]
 layout_mode = 1
@@ -706,6 +739,7 @@ highlight_material = SubResource("OverlayButtonHighlightMaterial")
 
 [node name="Splash" type="Control" parent="." unique_id=1259278219]
 unique_name_in_owner = true
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -843,7 +877,7 @@ vertical_alignment = 1
 
 [node name="MusicVolumeSlider" type="HSlider" parent="Splash/AudioControls/MusicRow" unique_id=1338331245]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(84, 6)
+custom_minimum_size = Vector2(84, 16)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -859,9 +893,12 @@ script = ExtResource("20_volume")
 [node name="Bar" type="TextureRect" parent="Splash/AudioControls/MusicRow/MusicVolumeSlider" unique_id=241571226]
 material = SubResource("MusicVolumeBarMaterial")
 layout_mode = 1
-anchors_preset = 15
+anchors_preset = 14
+anchor_top = 0.5
 anchor_right = 1.0
-anchor_bottom = 1.0
+anchor_bottom = 0.5
+offset_top = -3.0
+offset_bottom = 3.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -883,7 +920,7 @@ vertical_alignment = 1
 
 [node name="SoundVolumeSlider" type="HSlider" parent="Splash/AudioControls/SoundRow" unique_id=1751041834]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(84, 6)
+custom_minimum_size = Vector2(84, 16)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -899,9 +936,12 @@ script = ExtResource("20_volume")
 [node name="Bar" type="TextureRect" parent="Splash/AudioControls/SoundRow/SoundVolumeSlider" unique_id=212451574]
 material = SubResource("SoundVolumeBarMaterial")
 layout_mode = 1
-anchors_preset = 15
+anchors_preset = 14
+anchor_top = 0.5
 anchor_right = 1.0
-anchor_bottom = 1.0
+anchor_bottom = 0.5
+offset_top = -3.0
+offset_bottom = 3.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2

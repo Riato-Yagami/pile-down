@@ -151,8 +151,10 @@ ou plus hauts utilisent la même couleur beige que le fond du jeu. La scène
 `Main.tscn` fournit ce cadre adaptatif autour de la scène de jeu, directement
 dans le canvas principal afin de conserver des coordonnées tactiles exactes.
 
-La touche `Échap` revient à l'écran d'accueil depuis le jeu. Sur cet écran,
-elle ferme l'application desktop et reste sans effet dans la version Web. La
+La touche `Échap` ou le petit bouton `ESC` en haut de l'écran revient à l'écran
+d'accueil depuis le jeu. Le bouton fournit notamment ce contrôle aux écrans
+tactiles. Sur l'écran d'accueil, `Échap` ferme l'application desktop et reste
+sans effet dans la version Web. La
 barre d'espace lance la partie depuis l'accueil et relance une partie depuis
 l'écran de fin. La touche `M` coupe ou réactive tous les sons. Pendant une
 partie, `T` affiche ou masque le temps total écoulé.
