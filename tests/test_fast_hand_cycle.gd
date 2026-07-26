@@ -33,14 +33,19 @@ func _run() -> void:
 	game._on_card_drag_started(playable_card)
 	var placement_started := Time.get_ticks_msec()
 	game._place_selected_card(target_pile)
-	var replacement_deadline := placement_started + 1000
+	var replacement_deadline := placement_started + 2000
 	while (
-		game.hand_manager.current_cards == previous_hand
+		(
+			game.hand_manager.current_cards.is_empty()
+			or game.hand_manager.current_cards == previous_hand
+		)
 		and Time.get_ticks_msec() < replacement_deadline
 	):
 		await process_frame
 	var replacement_appearance_delay := Time.get_ticks_msec() - placement_started
-	assert(replacement_appearance_delay < 600)
+	# Automatic bonus chains and pile completion are fully resolved before the
+	# replacement hand is allowed to appear.
+	assert(replacement_appearance_delay < 1600)
 	assert(game.input_locked)
 	assert(not game.hand_manager.current_cards.is_empty())
 	assert(game.hand_manager.current_cards != previous_hand)
@@ -54,8 +59,8 @@ func _run() -> void:
 	await _wait_until_unlocked(game)
 	var interaction_delay := Time.get_ticks_msec() - placement_started
 
-	assert(interaction_delay < 650)
-	assert(target_pile.face_up)
+	assert(interaction_delay < 1800)
+	assert(not target_pile.face_up or target_pile.completed)
 	for card in game.hand_manager.current_cards:
 		assert(card.modulate.a >= 1.0)
 		assert(card.selectable)

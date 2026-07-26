@@ -56,10 +56,11 @@ func _run() -> void:
 	press.index = 0
 	press.position = touch_position
 	press.pressed = true
-	card._on_face_input(press)
+	game._input(press)
 	assert(game.selected_card == card)
 	assert(card.dragging)
 	assert(card.drag_target.is_equal_approx(touch_position))
+	assert(game._card_touch_index == 0)
 
 	var drag := InputEventScreenDrag.new()
 	drag.index = 0

@@ -17,13 +17,29 @@ static func create_all() -> Array[BonusData]:
 		BonusData.new(&"safety_net", "SAFETY NET", "Ignore the first mistake.", BonusData.Category.SURVIVAL),
 		BonusData.new(&"clean_slate", "CLEAN SLATE", "Finish a stack, recover a mistake.", BonusData.Category.SURVIVAL, 3),
 		BonusData.new(
+			&"bring_a_friend", "BRING A FRIEND", "Nearby tiles come along for the ride.",
+			BonusData.Category.HAND, 3, 0.65, 1, BonusData.Rarity.RARE
+		),
+		BonusData.new(
+			&"pile_mover", "PILE MOVER", "Rearrange the board.",
+			BonusData.Category.MEMORY, 1, 0.65, 1, BonusData.Rarity.RARE
+		),
+		BonusData.new(
+			&"double_down", "DOUBLE DOWN", "Keep the sequence going.",
+			BonusData.Category.HAND, 3, 0.55, 1, BonusData.Rarity.RARE
+		),
+		BonusData.new(
+			&"deja_vu", "DEJA VU", "Seen this one before.",
+			BonusData.Category.HAND, 3, 0.55, 1, BonusData.Rarity.RARE
+		),
+		BonusData.new(
 			&"rule_breaker", "RULE BREAKER", "Cancel one special rule.",
-			BonusData.Category.SPECIAL_RULE, 
-			#3, 0.55, 10, BonusData.Rarity.LEGENDARY
+			BonusData.Category.SPECIAL_RULE,
+			3, 0.55, 10, BonusData.Rarity.LEGENDARY
 		),
 		BonusData.new(
 			&"adaptation", "ADAPTATION", "Special rules become slightly easier.",
-			BonusData.Category.SPECIAL_RULE, 
-			#3, 0.75, 5, BonusData.Rarity.RARE
+			BonusData.Category.SPECIAL_RULE,
+			3, 0.75, 5, BonusData.Rarity.RARE
 		),
 	]

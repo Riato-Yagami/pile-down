@@ -14,7 +14,7 @@ const Debug := preload("res://resources/scripts/settings/debug.gd")
 
 @onready var announcement: SpecialRuleAnnouncement = %SpecialRuleAnnouncement
 @onready var flashlight_overlay: FlashlightOverlay = %FlashlightOverlay
-@onready var moving_pile_pattern: Node = %MovingPilePattern
+@onready var moving_pile_pattern: MovingPilePattern = %MovingPilePattern
 
 var active_rules: Array[SpecialRuleData] = []
 var modifiers := RoundModifiers.new()

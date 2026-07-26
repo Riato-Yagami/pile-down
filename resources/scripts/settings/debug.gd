@@ -8,7 +8,7 @@ const ENABLED := false
 const GOD_MODE := false
 
 # Progression round shown when starting a new game, from 1 to TOTAL_ROUNDS.
-const START_AT_ROUND := 10
+const START_AT_ROUND := 1
 
 # Shows the endless-mode button without requiring a completed normal run.
 const UNLOCK_ENDLESS_MODE := true
@@ -21,9 +21,9 @@ const UNLOCK_ENDLESS_MODE := true
 # hot_potatoes, blind_delivery, mirror_match, sudden_death, grace_period,
 # colorblind, floor_is_lava.
 const LOCK_SPECIAL_RULES: Array[StringName] = [
-	"shell_game",
+	#"mirror_match",
 	#"merry_go_stack",
-	"grace_period"
+	#"grace_period"
 ]
 
 # Bonuses granted at the start of every debug run. The value is the locked
@@ -31,10 +31,12 @@ const LOCK_SPECIAL_RULES: Array[StringName] = [
 # Valid ids:
 # open_book, quick_peek, last_reminder, mistake_reveal, wild_card, redraw,
 # lucky_hand, time_bank, slow_start, spare_life, safety_net, clean_slate,
-# rule_breaker, adaptation.
+# bring_a_friend, pile_mover, double_down, deja_vu, rule_breaker, adaptation.
 const LOCK_BONUSES: Dictionary = {
-	&"wild_card": 3,
-	#&"safety_net": 1,
+	&"pile_mover": 1,
+	#&"bring_a_friend": 3,
+	#&"double_down": 3,
+	#&"deja_vu":3,
 }
 
 static var _runtime_god_mode := GOD_MODE

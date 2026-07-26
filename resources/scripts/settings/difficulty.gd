@@ -80,6 +80,29 @@ static func is_special_rule_enabled(rule_id: StringName) -> bool:
 # Persistent run bonuses.
 # Keep every bonus gameplay setting in this final section so the complete
 # balance can be adjusted without searching through gameplay scripts.
+# Comment a line to remove that bonus from every automatic selection. Debug
+# locks still bypass this list, just like LOCK_SPECIAL_RULES.
+const ENABLED_BONUSES: Array[StringName] = [
+	&"open_book",
+	&"quick_peek",
+	&"last_reminder",
+	&"mistake_reveal",
+	&"wild_card",
+	&"redraw",
+	&"lucky_hand",
+	&"time_bank",
+	&"slow_start",
+	&"spare_life",
+	&"safety_net",
+	&"clean_slate",
+	&"bring_a_friend",
+	&"pile_mover",
+	&"double_down",
+	&"deja_vu",
+	&"rule_breaker",
+	&"adaptation",
+]
+
 const BONUS_INTERVAL := 4
 const BONUS_CHOICE_COUNT := 2
 const MAX_ACTIVE_BONUS_TYPES := 999
@@ -102,3 +125,13 @@ const CLEAN_SLATE_FULL_RESTORE_LEVEL := 3
 const ADAPTATION_MULTIPLIERS := [1.0, 0.8, 0.7, 0.6]
 const RULE_BREAKER_DELETION_COUNTS := [0, 1, 1, 2]
 const RULE_BREAKER_DELETE_LAST_MINIMUM_LEVEL := 2
+const MINIMUM_PILE_DISTANCE := 44.0
+const AUTOMATIC_PLACEMENT_DURATION := 0.14
+const BONUS_CHAIN_PLACEMENT_DURATION := 0.32
+# The regular board step is 44 px. This reaches north/south/east/west
+# neighbours while leaving the 62 px corner-to-corner diagonal outside.
+const BRING_A_FRIEND_NEIGHBOR_RADIUS := 56.0
+
+
+static func is_bonus_enabled(bonus_id: StringName) -> bool:
+	return ENABLED_BONUSES.has(bonus_id)

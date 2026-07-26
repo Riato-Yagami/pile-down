@@ -71,6 +71,7 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var flashlight_overlay: FlashlightOverlay = %FlashlightOverlay
 @onready var lava_layer: Control = %LavaLayer
 @onready var redraw_button: RedrawBonusButton = %RedrawButton
+@onready var active_bonus_bar: HBoxContainer = %ActiveBonusBar
 
 var pile_count: int = Difficulty.START_PILES
 var hand_size: int = Difficulty.START_HAND_SIZE
@@ -111,6 +112,17 @@ var _sound_volume_before_mute := 100.0
 var _timer_display_hidden := false
 var _timer_visibility_tween: Tween
 var _last_reminder_pile: MemoryPile
+var drag_companions: Array[PlayingCard] = []
+var _companion_offsets: Dictionary = {}
+var _companion_home_positions: Dictionary = {}
+var _root_action_id := 0
+var moving_pile: MemoryPile
+var _moving_pile_offset := Vector2.ZERO
+var _moving_pile_last_valid_position := Vector2.ZERO
+var _moving_pile_pointer := Vector2.ZERO
+var _pile_touch_index := -1
+var _pile_touch_local_grab := Vector2.ZERO
+var _card_touch_index := -1
 
 @export_category("Start Transition")
 @export var menu_swipe_duration := 0.62
@@ -206,8 +218,22 @@ func _process(_delta: float) -> void:
 	if _regeneration_hand_check_pending and not input_locked:
 		_regeneration_hand_check_pending = false
 		_reroll_unplayable_hand()
+	if (
+		moving_pile != null
+		and is_instance_valid(moving_pile)
+		and _pile_touch_index < 0
+	):
+		moving_pile.global_position = (
+			_moving_pile_pointer - _moving_pile_offset
+		).round()
 	if selected_card == null or not is_instance_valid(selected_card) or not selected_card.dragging:
 		return
+	for companion in drag_companions:
+		if is_instance_valid(companion):
+			companion.global_position = (
+				selected_card.global_position
+				+ (_companion_offsets.get(companion, Vector2.ZERO) as Vector2)
+			).round()
 	if round_modifiers.floor_is_lava_enabled:
 		if lava_rule_controller.touches_card(selected_card):
 			selected_card.request_forced_return(
@@ -234,6 +260,27 @@ func _input(event: InputEvent) -> void:
 	if round_modifiers.flashlight_enabled:
 		if event is InputEventScreenTouch or event is InputEventScreenDrag:
 			flashlight_overlay.follow_touch(event.position)
+	if _handle_pile_touch_input(event):
+		get_viewport().set_input_as_handled()
+		return
+	if _handle_card_touch_input(event):
+		get_viewport().set_input_as_handled()
+		return
+	if moving_pile != null and is_instance_valid(moving_pile):
+		if event is InputEventMouseMotion or event is InputEventScreenDrag:
+			_moving_pile_pointer = event.position
+			moving_pile.global_position = (event.position - _moving_pile_offset).round()
+		elif (
+			(event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed)
+			or (event is InputEventScreenTouch and not event.pressed)
+		):
+			_moving_pile_pointer = event.position
+			moving_pile.global_position = (
+				event.position - _moving_pile_offset
+			).round()
+			_finish_pile_move()
+			get_viewport().set_input_as_handled()
+		return
 	if selected_card == null or not is_instance_valid(selected_card) or not selected_card.dragging:
 		return
 	if (
@@ -250,11 +297,6 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		selected_card.drag_target = event.position
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
-		_on_card_drag_released(selected_card, event.position)
-		get_viewport().set_input_as_handled()
-	elif event is InputEventScreenDrag:
-		selected_card.drag_target = event.position
-	elif event is InputEventScreenTouch and not event.pressed:
 		_on_card_drag_released(selected_card, event.position)
 		get_viewport().set_input_as_handled()
 
@@ -533,6 +575,8 @@ func start_round() -> void:
 			round_modifiers.colorblind_enabled
 		)
 		pile.pile_selected.connect(_on_pile_selected)
+		pile.drag_requested.connect(_on_pile_drag_requested)
+		pile.drag_released.connect(_on_pile_drag_released)
 		pile.regenerated.connect(_on_pile_regenerated)
 		piles.append(pile)
 	_layout_piles()
@@ -591,6 +635,9 @@ func _begin_turn(hand_prepared := false, enter_from_right := false) -> void:
 		else:
 			await _prepare_next_hand(true, false)
 	if bonus_manager.has_bonus(&"quick_peek"):
+		return
+	if enter_from_right:
+		_pending_interactive_generation = _hand_cycle_generation
 		return
 	input_locked = false
 	hand_manager.unlock_hand()
@@ -745,13 +792,17 @@ func _on_card_drag_started(card: PlayingCard) -> void:
 		drag_home_index = -1
 		_clear_drag_placeholder()
 	else:
+		_remove_orphan_drag_placeholders()
 		drag_home_index = card.get_index()
 		drag_placeholder = Control.new()
+		drag_placeholder.name = "DragPlaceholder"
+		drag_placeholder.set_meta(&"hand_drag_placeholder", true)
 		drag_placeholder.custom_minimum_size = card.size
 		drag_placeholder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		hand_container.add_child(drag_placeholder)
 		hand_container.move_child(drag_placeholder, drag_home_index)
 	hand_manager.lock_all_cards_except(card)
+	_prepare_drag_companions(card)
 	card.prepare_external_drag()
 	var start_position := card.global_position
 	if card.get_parent() != drag_layer:
@@ -761,9 +812,137 @@ func _on_card_drag_started(card: PlayingCard) -> void:
 	soft_audio.play_tone(330.0, 0.045, 0.035)
 
 
+func _prepare_drag_companions(main_card: PlayingCard) -> void:
+	drag_companions.clear()
+	_companion_offsets.clear()
+	_companion_home_positions.clear()
+	var level := bonus_manager.level(&"bring_a_friend")
+	if level <= 0 or round_modifiers.wandering_hand_cards:
+		return
+	var cards := hand_manager.active_cards()
+	var main_index := cards.find(main_card)
+	if main_index < 0:
+		return
+	var candidates: Array[PlayingCard] = []
+	if level == 1:
+		if main_index + 1 < cards.size():
+			candidates.append(cards[main_index + 1])
+		elif main_index > 0:
+			candidates.append(cards[main_index - 1])
+	elif level == 2:
+		if main_index > 0:
+			candidates.append(cards[main_index - 1])
+		if main_index + 1 < cards.size():
+			candidates.append(cards[main_index + 1])
+	else:
+		for card in cards:
+			if card != main_card:
+				candidates.append(card)
+	for index in candidates.size():
+		var companion := candidates[index]
+		_companion_home_positions[companion] = companion.hand_return_position()
+		companion.set_selectable(false)
+		companion.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var start_position := companion.global_position
+		companion.reparent(drag_layer, false)
+		companion.global_position = start_position
+		drag_layer.move_child(companion, 0)
+		drag_companions.append(companion)
+		var centered_x := (float(index) - float(candidates.size() - 1) * 0.5) * 23.0
+		_companion_offsets[companion] = Vector2(centered_x, 16.0 + absf(centered_x) * 0.08)
+
+
+func _resolve_companion_drops(anchor_pile: MemoryPile) -> Array[MemoryPile]:
+	var placed_piles: Array[MemoryPile] = []
+	var companions := drag_companions.duplicate()
+	drag_companions.clear()
+	for companion_variant in companions:
+		var companion := companion_variant as PlayingCard
+		if not is_instance_valid(companion) or companion.placement_confirmed:
+			continue
+		var target := _find_nearby_companion_pile(
+			companion, anchor_pile, placed_piles
+		)
+		if target != null:
+			await _stack_card(
+				companion, target,
+				PlacementContext.new(PlacementContext.Source.BRING_A_FRIEND, _root_action_id)
+			)
+			placed_piles.append(target)
+		else:
+			await _return_companion_to_hand(companion)
+	_restore_hand_child_order()
+	hand_container.queue_sort()
+	await get_tree().process_frame
+	_record_stable_hand_layout()
+	_companion_offsets.clear()
+	_companion_home_positions.clear()
+	return placed_piles
+
+
+func _find_nearby_companion_pile(
+	companion: PlayingCard,
+	anchor_pile: MemoryPile,
+	already_used: Array[MemoryPile]
+) -> MemoryPile:
+	if anchor_pile == null or not is_instance_valid(anchor_pile):
+		return null
+	var anchor_center := anchor_pile.global_position + anchor_pile.size * 0.5
+	var compatible := pile_manager.find_piles_accepting_value(companion.card_value)
+	compatible.erase(anchor_pile)
+	for used_pile in already_used:
+		compatible.erase(used_pile)
+	compatible = compatible.filter(
+		func(candidate: MemoryPile) -> bool:
+			var candidate_center := candidate.global_position + candidate.size * 0.5
+			return (
+				candidate_center.distance_to(anchor_center)
+				<= Difficulty.BRING_A_FRIEND_NEIGHBOR_RADIUS
+			)
+	)
+	compatible.sort_custom(
+		func(first: MemoryPile, second: MemoryPile) -> bool:
+			var first_center := first.global_position + first.size * 0.5
+			var second_center := second.global_position + second.size * 0.5
+			var first_distance := first_center.distance_squared_to(anchor_center)
+			var second_distance := second_center.distance_squared_to(anchor_center)
+			if is_equal_approx(first_distance, second_distance):
+				return first.pile_index < second.pile_index
+			return first_distance < second_distance
+	)
+	return compatible.front() if not compatible.is_empty() else null
+
+
+func _return_drag_companions() -> void:
+	var companions := drag_companions.duplicate()
+	drag_companions.clear()
+	for companion_variant in companions:
+		var companion := companion_variant as PlayingCard
+		if is_instance_valid(companion):
+			await _return_companion_to_hand(companion)
+	_restore_hand_child_order()
+	hand_container.queue_sort()
+	await get_tree().process_frame
+	_record_stable_hand_layout()
+	_companion_offsets.clear()
+	_companion_home_positions.clear()
+
+
+func _return_companion_to_hand(card: PlayingCard) -> void:
+	var destination := (
+		_companion_home_positions.get(card, card.hand_return_position()) as Vector2
+	)
+	await card.animate_return(destination, 0.2)
+	card.reparent(hand_container, false)
+	card.mouse_filter = Control.MOUSE_FILTER_PASS
+	card.reset_hand_pose()
+	card.set_selectable(not input_locked)
+
+
 func _on_card_drag_released(card: PlayingCard, release_position: Vector2) -> void:
 	if input_locked or card != selected_card or not card.dragging:
 		return
+	_card_touch_index = -1
 	var target := _pile_at(release_position)
 	if hovered_pile != null and is_instance_valid(hovered_pile):
 		hovered_pile.set_drop_feedback(false)
@@ -775,6 +954,7 @@ func _on_card_drag_released(card: PlayingCard, release_position: Vector2) -> voi
 			hand_manager.lock_all_cards_except(card)
 			return
 		card.finish_drag()
+		await _return_drag_companions()
 		await _return_card_to_hand(card)
 		card.set_selectable(true)
 		selected_card = null
@@ -785,6 +965,7 @@ func _on_card_drag_released(card: PlayingCard, release_position: Vector2) -> voi
 		await _place_selected_card(target)
 	else:
 		card.finish_drag()
+		await _return_drag_companions()
 		await _handle_mistake(target)
 
 
@@ -802,6 +983,286 @@ func _on_pile_selected(pile: MemoryPile) -> void:
 	)
 
 
+func _on_pile_drag_requested(pile: MemoryPile, pointer_position: Vector2) -> void:
+	if (
+		input_locked
+		or not bonus_manager.has_bonus(&"pile_mover")
+		or selected_card != null
+		or pile.completed
+		or moving_pile != null
+	):
+		return
+	moving_pile = pile
+	_pile_touch_index = -1
+	_moving_pile_pointer = pointer_position
+	_moving_pile_offset = pointer_position - pile.global_position
+	_moving_pile_last_valid_position = pile.position
+	special_rule_manager.moving_pile_pattern.begin_manual_move(pile)
+	pile.move_to_front()
+
+
+func _on_pile_drag_released(pile: MemoryPile, pointer_position: Vector2) -> void:
+	if pile == moving_pile:
+		_moving_pile_pointer = pointer_position
+		moving_pile.global_position = (
+			pointer_position - _moving_pile_offset
+		).round()
+		_finish_pile_move()
+
+
+func _finish_pile_move() -> void:
+	if moving_pile == null or not is_instance_valid(moving_pile):
+		moving_pile = null
+		_pile_touch_index = -1
+		return
+	var requested_position := moving_pile.position
+	moving_pile.position = _nearest_valid_pile_position(
+		moving_pile,
+		requested_position,
+		_moving_pile_last_valid_position
+	)
+	pile_manager.refresh_slots_from_current_positions()
+	special_rule_manager.moving_pile_pattern.finish_manual_move(moving_pile)
+	moving_pile = null
+	_pile_touch_index = -1
+
+
+func _nearest_valid_pile_position(
+	pile: MemoryPile,
+	requested_position: Vector2,
+	fallback_position: Vector2
+) -> Vector2:
+	var movement_bounds := _pile_movement_bounds(pile)
+	var minimum := movement_bounds.position
+	var maximum := movement_bounds.end
+	var clamped_request := Vector2(
+		clampf(requested_position.x, minimum.x, maximum.x),
+		clampf(requested_position.y, minimum.y, maximum.y)
+	)
+	pile.position = clamped_request.round()
+	if _is_valid_pile_position(pile):
+		return pile.position
+
+	# A coarse board-wide pass finds the closest legal region without making
+	# release time depend on the distance from an invalid drop. The local
+	# pixel pass below then removes the small grid approximation.
+	const SEARCH_STEP := 4
+	var found := false
+	var best_position := fallback_position
+	var best_distance_squared := INF
+	for y in range(floori(minimum.y), ceili(maximum.y) + 1, SEARCH_STEP):
+		for x in range(floori(minimum.x), ceili(maximum.x) + 1, SEARCH_STEP):
+			var candidate := Vector2(x, y)
+			var distance_squared := candidate.distance_squared_to(clamped_request)
+			if distance_squared >= best_distance_squared:
+				continue
+			pile.position = candidate
+			if _is_valid_pile_position(pile):
+				found = true
+				best_position = candidate
+				best_distance_squared = distance_squared
+
+	if found:
+		var refine_minimum := (best_position - Vector2.ONE * SEARCH_STEP).max(minimum)
+		var refine_maximum := (best_position + Vector2.ONE * SEARCH_STEP).min(maximum)
+		for y in range(floori(refine_minimum.y), ceili(refine_maximum.y) + 1):
+			for x in range(floori(refine_minimum.x), ceili(refine_maximum.x) + 1):
+				var candidate := Vector2(x, y)
+				var distance_squared := candidate.distance_squared_to(clamped_request)
+				if distance_squared >= best_distance_squared:
+					continue
+				pile.position = candidate
+				if _is_valid_pile_position(pile):
+					best_position = candidate
+					best_distance_squared = distance_squared
+		return best_position
+
+	pile.position = fallback_position
+	return fallback_position
+
+
+func _pile_movement_bounds(pile: MemoryPile) -> Rect2:
+	# PilesBoard is a direct child of the game Control and does not clip its
+	# children. Negative/local positions therefore safely expose the margins
+	# around the original compact board.
+	const SCREEN_MARGIN := 2.0
+	var minimum := -piles_board.position + Vector2.ONE * SCREEN_MARGIN
+	var maximum := (
+		size
+		- piles_board.position
+		- pile.size
+		- Vector2.ONE * SCREEN_MARGIN
+	)
+	return Rect2(minimum, (maximum - minimum).max(Vector2.ZERO))
+
+
+func _is_valid_pile_position(pile: MemoryPile) -> bool:
+	var candidate_rect := _transformed_control_rect(pile)
+	var screen_rect := _transformed_control_rect(self).grow(-2.0)
+	if not screen_rect.encloses(candidate_rect):
+		return false
+	var forbidden_controls: Array[Control] = [
+		hand_tray,
+	]
+	for forbidden in forbidden_controls:
+		if (
+			forbidden.visible
+			and candidate_rect.intersects(_transformed_control_rect(forbidden))
+		):
+			return false
+	for other in piles:
+		if not is_instance_valid(other) or other == pile or other.completed:
+			continue
+		var center := candidate_rect.get_center()
+		var other_center := _transformed_control_rect(other).get_center()
+		if center.distance_to(other_center) < Difficulty.MINIMUM_PILE_DISTANCE:
+			return false
+	if round_modifiers.floor_is_lava_enabled and lava_rule_controller.touches_rect(candidate_rect):
+		return false
+	return true
+
+
+func _handle_pile_touch_input(event: InputEvent) -> bool:
+	if event is InputEventScreenTouch:
+		var touch := event as InputEventScreenTouch
+		if touch.pressed:
+			if moving_pile != null:
+				return _pile_touch_index == touch.index
+			if (
+				input_locked
+				or not bonus_manager.has_bonus(&"pile_mover")
+				or selected_card != null
+			):
+				return false
+			var touched_pile := _pile_at(touch.position)
+			if touched_pile == null:
+				return false
+			moving_pile = touched_pile
+			_pile_touch_index = touch.index
+			_moving_pile_pointer = touch.position
+			_moving_pile_last_valid_position = touched_pile.position
+			_pile_touch_local_grab = (
+				touched_pile.get_global_transform().affine_inverse()
+				* touch.position
+			)
+			special_rule_manager.moving_pile_pattern.begin_manual_move(
+				touched_pile
+			)
+			touched_pile.move_to_front()
+			return true
+		if (
+			moving_pile != null
+			and is_instance_valid(moving_pile)
+			and _pile_touch_index == touch.index
+		):
+			_update_touch_pile_position(touch.position)
+			_finish_pile_move()
+			return true
+	elif event is InputEventScreenDrag:
+		var drag := event as InputEventScreenDrag
+		if (
+			moving_pile != null
+			and is_instance_valid(moving_pile)
+			and _pile_touch_index == drag.index
+		):
+			_update_touch_pile_position(drag.position)
+			return true
+	return false
+
+
+func _update_touch_pile_position(pointer_position: Vector2) -> void:
+	if moving_pile == null or not is_instance_valid(moving_pile):
+		return
+	_moving_pile_pointer = pointer_position
+	var parent_item := moving_pile.get_parent() as CanvasItem
+	if parent_item == null:
+		return
+	var pointer_in_parent := (
+		parent_item.get_global_transform().affine_inverse()
+		* pointer_position
+	)
+	var grab_offset := moving_pile.get_transform().basis_xform(
+		_pile_touch_local_grab
+	)
+	moving_pile.position = pointer_in_parent - grab_offset
+
+
+func _handle_card_touch_input(event: InputEvent) -> bool:
+	if event is InputEventScreenTouch:
+		var touch := event as InputEventScreenTouch
+		if touch.pressed:
+			if selected_card != null and is_instance_valid(selected_card):
+				return _card_touch_index == touch.index
+			if input_locked:
+				return false
+			var touched_card := _card_at_touch_position(touch.position)
+			if touched_card == null:
+				return false
+			_card_touch_index = touch.index
+			touched_card.drag_target = touch.position
+			_on_card_selected(touched_card)
+			_on_card_drag_started(touched_card)
+			if not touched_card.dragging:
+				_card_touch_index = -1
+				return false
+			return true
+		if (
+			selected_card != null
+			and is_instance_valid(selected_card)
+			and selected_card.dragging
+			and _card_touch_index == touch.index
+		):
+			selected_card.update_touch_drag(touch.position)
+			_on_card_drag_released(selected_card, touch.position)
+			return true
+	elif event is InputEventScreenDrag:
+		var drag := event as InputEventScreenDrag
+		if (
+			selected_card != null
+			and is_instance_valid(selected_card)
+			and selected_card.dragging
+			and _card_touch_index == drag.index
+		):
+			selected_card.update_touch_drag(drag.position)
+			return true
+	return false
+
+
+func _card_at_touch_position(touch_position: Vector2) -> PlayingCard:
+	for index in range(hand_manager.current_cards.size() - 1, -1, -1):
+		var card := hand_manager.current_cards[index]
+		if (
+			not is_instance_valid(card)
+			or not card.visible
+			or not card.selectable
+			or card.placement_confirmed
+		):
+			continue
+		var local_point := (
+			card.get_global_transform().affine_inverse()
+			* touch_position
+		)
+		if Rect2(Vector2.ZERO, card.size).has_point(local_point):
+			return card
+	return null
+
+
+func _transformed_control_rect(control: Control) -> Rect2:
+	var transform := control.get_global_transform()
+	var corners: Array[Vector2] = [
+		transform * Vector2.ZERO,
+		transform * Vector2(control.size.x, 0.0),
+		transform * control.size,
+		transform * Vector2(0.0, control.size.y),
+	]
+	var minimum := corners[0]
+	var maximum := corners[0]
+	for corner in corners:
+		minimum = minimum.min(corner)
+		maximum = maximum.max(corner)
+	return Rect2(minimum, maximum - minimum)
+
+
 func _on_card_forced_return_requested(card: PlayingCard, _reason: int) -> void:
 	if (
 		input_locked
@@ -811,9 +1272,11 @@ func _on_card_forced_return_requested(card: PlayingCard, _reason: int) -> void:
 	):
 		return
 	input_locked = true
+	_card_touch_index = -1
 	if hovered_pile != null and is_instance_valid(hovered_pile):
 		hovered_pile.set_drop_feedback(false)
 	hovered_pile = null
+	await _return_drag_companions()
 	await _return_card_to_hand(card, 0.2)
 	card.complete_forced_return()
 	card.set_selectable(true)
@@ -856,9 +1319,60 @@ func _place_selected_card(pile: MemoryPile) -> void:
 	timer_manager.stop_countdown()
 	hand_manager.lock_hand()
 	var card := selected_card
+	var placed_value := pile.expected_value() if card.is_joker else card.card_value
+	var origin := card.global_position
+	_root_action_id += 1
+	var context := PlacementContext.new(PlacementContext.Source.PLAYER, _root_action_id)
+	var affected_piles: Array[MemoryPile] = []
+	await _stack_card(card, pile, context)
+	# The main card has left the logical hand. Its spacer must leave the HBox
+	# before companions are restored, otherwise it becomes a permanent gap.
+	_clear_drag_placeholder()
+	affected_piles.append(pile)
+	var companion_piles := await _resolve_companion_drops(pile)
+	for companion_pile in companion_piles:
+		if not affected_piles.has(companion_pile):
+			affected_piles.append(companion_pile)
+	if bonus_manager.has_bonus(&"deja_vu"):
+		var deja_piles := await _resolve_deja_vu(
+			placed_value, pile, bonus_manager.level(&"deja_vu"), origin, context.root_action_id
+		)
+		for deja_pile in deja_piles:
+			if not affected_piles.has(deja_pile):
+				affected_piles.append(deja_pile)
+	if bonus_manager.has_bonus(&"double_down") and not pile.completed:
+		await _resolve_double_down(
+			pile, bonus_manager.level(&"double_down"), origin, context.root_action_id
+		)
+	if not affected_piles.has(pile):
+		affected_piles.append(pile)
+	await _finalize_placement_action(affected_piles)
+	if _all_piles_complete():
+		await _finish_round()
+		return
+	_start_discard_current_hand()
+	if placement_generation == _hand_cycle_generation:
+		await _begin_turn(false, true)
+
+
+func _stack_card(
+	card: PlayingCard,
+	pile: MemoryPile,
+	context: PlacementContext
+) -> void:
+	if not is_instance_valid(card) or not is_instance_valid(pile) or pile.completed:
+		return
 	card.confirm_drop()
 	var destination := pile.global_position + (pile.size - card.size) * 0.5
-	await card.animate_valid_drop(destination)
+	var placement_duration := (
+		Difficulty.BONUS_CHAIN_PLACEMENT_DURATION
+		if (
+			context.source == PlacementContext.Source.DOUBLE_DOWN
+			or context.source == PlacementContext.Source.DEJA_VU
+		)
+		else Difficulty.AUTOMATIC_PLACEMENT_DURATION
+	)
+	await card.animate_valid_drop(destination, placement_duration)
 	var placed_value := pile.expected_value() if card.is_joker else card.card_value
 	pile.place(placed_value)
 	if bonus_manager.has_bonus(&"last_reminder") and not pile.is_complete_value():
@@ -875,37 +1389,89 @@ func _place_selected_card(pile: MemoryPile) -> void:
 	card_placed.emit(card, pile)
 	soft_audio.play_tone(610.0, 0.075, 0.055)
 	card.visible = false
+	hand_manager.forget_card(card)
 	card.queue_free()
-	_start_discard_current_hand()
-	var next_hand_prepared := (
-		not _playable_values().is_empty()
-		and not round_modifiers.musical_stacks_enabled
-	)
-	if next_hand_prepared:
-		_pending_interactive_generation = placement_generation
-		_generate_next_hand(placement_generation, false, true)
 
-	if pile.is_complete_value():
-		soft_audio.play_tone(760.0, 0.14, 0.06)
-		await pile.complete_animation()
-		var recovered := bonus_manager.recover_on_completed_pile(
-			mistakes_left,
-			maximum_mistakes
+
+func _resolve_deja_vu(
+	played_value: int,
+	original_pile: MemoryPile,
+	maximum_copies: int,
+	origin: Vector2,
+	root_action_id: int
+) -> Array[MemoryPile]:
+	var matching_cards := hand_manager.find_cards_with_value(played_value)
+	var compatible_piles := pile_manager.find_piles_accepting_value(played_value)
+	compatible_piles.erase(original_pile)
+	matching_cards.sort_custom(
+		func(first: PlayingCard, second: PlayingCard) -> bool:
+			return first.global_position.distance_squared_to(origin) < second.global_position.distance_squared_to(origin)
+	)
+	var used: Array[MemoryPile] = []
+	for card in matching_cards:
+		if used.size() >= maximum_copies or compatible_piles.is_empty():
+			break
+		compatible_piles.sort_custom(
+			func(first: MemoryPile, second: MemoryPile) -> bool:
+				var card_center := card.global_position + card.size * 0.5
+				var first_distance := card_center.distance_squared_to(first.global_position + first.size * 0.5)
+				var second_distance := card_center.distance_squared_to(second.global_position + second.size * 0.5)
+				if is_equal_approx(first_distance, second_distance):
+					return first.pile_index < second.pile_index
+				return first_distance < second_distance
 		)
-		if recovered != mistakes_left:
-			mistakes_left = recovered
-			_update_hud()
-		await _after_valid_card_played()
-		if _all_piles_complete():
-			await _finish_round()
-			return
-	else:
-		await get_tree().create_timer(0.32).timeout
-		await pile.hide_value(true)
-		await _after_valid_card_played()
-		await get_tree().create_timer(0.12).timeout
-	if not next_hand_prepared and placement_generation == _hand_cycle_generation:
-		await _begin_turn(false, true)
+		var target := compatible_piles.pop_front() as MemoryPile
+		await _stack_card(
+			card, target,
+			PlacementContext.new(PlacementContext.Source.DEJA_VU, root_action_id)
+		)
+		used.append(target)
+	return used
+
+
+func _resolve_double_down(
+	pile: MemoryPile,
+	maximum_bonus_cards: int,
+	origin: Vector2,
+	root_action_id: int
+) -> void:
+	var played_count := 0
+	while played_count < maximum_bonus_cards and not pile.is_complete_value():
+		var matching_card := hand_manager.find_card_with_value(pile.expected_value(), origin)
+		if matching_card == null:
+			break
+		await _stack_card(
+			matching_card, pile,
+			PlacementContext.new(PlacementContext.Source.DOUBLE_DOWN, root_action_id)
+		)
+		played_count += 1
+
+
+func _finalize_placement_action(affected_piles: Array[MemoryPile]) -> void:
+	for pile in affected_piles:
+		if not is_instance_valid(pile):
+			continue
+		if pile.is_complete_value() and not pile.completed:
+			await _complete_pile(pile)
+	for pile in affected_piles:
+		if is_instance_valid(pile) and not pile.completed:
+			await get_tree().create_timer(0.08).timeout
+			await pile.hide_value(true)
+	await _after_valid_card_played()
+
+
+func _complete_pile(pile: MemoryPile) -> void:
+	if pile.completed:
+		return
+	soft_audio.play_tone(760.0, 0.14, 0.06)
+	await pile.complete_animation()
+	var recovered := bonus_manager.recover_on_completed_pile(
+		mistakes_left,
+		maximum_mistakes
+	)
+	if recovered != mistakes_left:
+		mistakes_left = recovered
+		_update_hud()
 
 
 func _after_valid_card_played() -> void:
@@ -943,6 +1509,7 @@ func _handle_mistake(
 	else:
 		await mistakes_dots.play_damage(mistakes_left)
 	_update_hud()
+	await _return_drag_companions()
 	if selected_card != null and is_instance_valid(selected_card) and selected_card.get_parent() == drag_layer:
 		await _return_card_to_hand(selected_card, 0.14)
 	if mistakes_left <= 0:
@@ -972,7 +1539,7 @@ func _reveal_mistake_pile(pile: MemoryPile) -> void:
 
 
 func _return_card_to_hand(card: PlayingCard, duration := 0.26) -> void:
-	var destination := drag_placeholder.global_position if is_instance_valid(drag_placeholder) else card.home_global_position
+	var destination := card.hand_return_position()
 	await card.animate_return(destination, duration)
 	if round_modifiers.wandering_hand_cards:
 		_clear_drag_placeholder()
@@ -980,14 +1547,17 @@ func _return_card_to_hand(card: PlayingCard, duration := 0.26) -> void:
 		card.set_selectable(not input_locked)
 		card.enable_wandering(maxi(hand_manager.current_cards.find(card), 0), true)
 		return
-	card.reparent(hand_container, false)
-	hand_container.move_child(card, clampi(drag_home_index, 0, hand_container.get_child_count() - 1))
+	# Remove the spacer synchronously before putting the card back. Otherwise
+	# both controls occupy the HBox for one frame and rapid drags can capture
+	# that transient, shifted layout as a new home position.
 	_clear_drag_placeholder()
+	card.reparent(hand_container, false)
+	_restore_hand_child_order()
 	hand_container.queue_sort()
 	await get_tree().process_frame
 	card.reset_hand_pose()
 	card.position.y = 0.0
-	card.home_global_position = card.global_position
+	card.record_hand_position()
 	card.set_selectable(not input_locked)
 	if round_modifiers.wandering_hand_cards:
 		card.call_deferred("enable_wandering", maxi(card.get_index(), 0))
@@ -995,9 +1565,48 @@ func _return_card_to_hand(card: PlayingCard, duration := 0.26) -> void:
 
 func _clear_drag_placeholder() -> void:
 	if is_instance_valid(drag_placeholder):
+		if drag_placeholder.get_parent() != null:
+			drag_placeholder.get_parent().remove_child(drag_placeholder)
 		drag_placeholder.queue_free()
 	drag_placeholder = null
 	drag_home_index = -1
+
+
+func _remove_orphan_drag_placeholders() -> void:
+	for child in hand_container.get_children():
+		if (
+			child != drag_placeholder
+			and child.has_meta(&"hand_drag_placeholder")
+		):
+			hand_container.remove_child(child)
+			child.queue_free()
+	hand_container.queue_sort()
+
+
+func _restore_hand_child_order() -> void:
+	var child_index := 0
+	for logical_card in hand_manager.current_cards:
+		if not is_instance_valid(logical_card) or not logical_card.visible:
+			continue
+		if logical_card == selected_card and is_instance_valid(drag_placeholder):
+			if drag_placeholder.get_parent() == hand_container:
+				hand_container.move_child(drag_placeholder, child_index)
+				child_index += 1
+			continue
+		if logical_card.get_parent() == hand_container:
+			hand_container.move_child(logical_card, child_index)
+			child_index += 1
+
+
+func _record_stable_hand_layout() -> void:
+	for card in hand_manager.current_cards:
+		if (
+			is_instance_valid(card)
+			and card.visible
+			and card.get_parent() == hand_container
+			and not card.dragging
+		):
+			card.record_hand_position()
 
 
 func _discard_current_hand() -> void:
@@ -1053,6 +1662,12 @@ func cleanup_special_rule_state() -> void:
 	sticky_fingers_controller.end_round()
 	mirror_match_controller.end_round(self)
 	timer_manager.stop_countdown()
+	await _return_drag_companions()
+	if moving_pile != null and is_instance_valid(moving_pile):
+		moving_pile.position = _moving_pile_last_valid_position
+	moving_pile = null
+	_pile_touch_index = -1
+	_card_touch_index = -1
 	if selected_card != null and is_instance_valid(selected_card):
 		selected_card.cancel_drag_timers()
 		if selected_card.get_parent() == drag_layer:

@@ -93,7 +93,32 @@ Le build Windows x86_64 produit `pile-down.exe` et une archive versionnée dans
 ./build/build_windows.sh
 ```
 
-Pour produire les versions Web, Linux et Windows en une seule commande :
+Le preset `Android` produit un APK ARM64 en mode portrait. Le build par défaut
+est signé avec une clé de debug locale générée dans `build/.android/` et peut
+être installé directement sur un appareil :
+
+```sh
+./build/build_android.sh
+```
+
+L'APK versionné est écrit dans
+`build/android/pile-down-android-<version>.apk`. L'export Android nécessite
+OpenJDK 17 et un SDK Android configuré dans les paramètres d'éditeur Godot.
+Le SDK doit notamment contenir Platform-Tools 35+, Build-Tools 35.0.1 et la
+plateforme Android 35.
+
+Pour produire un APK release, fournir la clé de signature hors du dépôt :
+
+```sh
+PILE_DOWN_ANDROID_EXPORT_MODE=release \
+GODOT_ANDROID_KEYSTORE_RELEASE_PATH=/chemin/vers/pile-down.keystore \
+GODOT_ANDROID_KEYSTORE_RELEASE_USER=pile_down \
+GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=mot_de_passe \
+./build/build_android.sh
+```
+
+Pour produire les versions Web, Linux, Windows et Android en une seule
+commande :
 
 ```sh
 ./build/build_all.sh
@@ -500,7 +525,7 @@ godot --headless --path . --script res://tests/test_game_start.gd
 
 ## Bonus de partie
 
-Tous les `BONUS_INTERVAL` rounds terminés (5 par défaut), le chrono s'arrête et
+Tous les `BONUS_INTERVAL` rounds terminés (4 par défaut), le chrono s'arrête et
 deux bonus persistants de catégories différentes sont proposés. Un doublon
 améliore le bonus jusqu'au niveau III et un bonus au niveau maximal quitte le
 pool. Les constantes de fréquence, de nombre de choix et de types actifs se
@@ -508,8 +533,8 @@ trouvent dans `resources/scripts/settings/difficulty.gd`.
 
 Les bonus disponibles sont :
 
-- mémoire : `OPEN BOOK`, `QUICK PEEK`, `LAST REMINDER`, `LESSON LEARNED` ;
-- main : `WILD CARD`, `REDRAW`, `LUCKY HAND` ;
+- mémoire : `OPEN BOOK`, `QUICK PEEK`, `LAST REMINDER`, `LESSON LEARNED`, `PILE MOVER` ;
+- main : `WILD CARD`, `REDRAW`, `LUCKY HAND`, `BRING A FRIEND`, `DOUBLE DOWN`, `DEJA VU` ;
 - temps : `TIME BANK`, `WARM-UP` ;
 - survie : `SPARE LIFE`, `SAFETY NET`, `CLEAN SLATE` ;
 - règles spéciales : `RULE BREAKER`, `ADAPTATION`.
@@ -525,6 +550,36 @@ de son utilisation et affiche les relances restantes à partir du niveau II.
 Tant que `SAFETY NET` est disponible, tous les points de vie utilisent un
 shader métallique argenté. Sa consommation joue une rupture visuelle et un
 son métallique propres avant de restaurer les couleurs normales.
+
+`BRING A FRIEND` emporte une voisine au niveau I (celle de droite en priorité),
+les deux voisines au niveau II, puis toute la main au niveau III. Au dépôt, la
+carte principale suit les règles normales tandis que chaque accompagnatrice
+cherche automatiquement une pile compatible dans le voisinage immédiat de la
+pile visée. Le rayon couvre les voisines au nord, au sud, à l'est et à l'ouest
+du placement standard, mais pas les diagonales plus éloignées. Une
+accompagnatrice qui ne trouve rien revient sans provoquer d'erreur ; chaque
+pile ne peut en recevoir qu'une par dépôt. Si le placement principal est
+incorrect, l'erreur annule immédiatement tout le groupe et aucune
+accompagnatrice n'est jouée. Le timer de `HOT POTATOES` et la lave ne
+surveillent que la carte principale et renvoient tout le groupe.
+
+`PILE MOVER` permet de glisser une pile lorsque aucune carte n'est sélectionnée.
+La zone autorisée couvre presque toute la fenêtre, y compris les marges autour
+du plateau compact. Seuls les chevauchements avec la main, une autre pile ou la
+lave sont interdits. Le timer, le compteur de round, l'aide debug et la barre
+de bonus debug sont purement informatifs et ne bloquent pas les piles. Si une
+pile est relâchée dans une zone interdite ou hors écran, elle est replacée à la
+position autorisée la plus proche du dépôt. Sa dernière position valide ne
+sert de repli que si aucune place n'est disponible. Les positions validées
+deviennent les slots de la rotation suivante de `MUSICAL STACKS`.
+
+Après un placement manuel, `DEJA VU` distribue jusqu'à une, deux ou trois copies
+de la même valeur sur autant de piles compatibles distinctes. `DOUBLE DOWN`
+enchaîne ensuite jusqu'à une, deux ou trois valeurs attendues sur la pile
+initiale. Les deux bonus utilisent la même animation volontairement plus lente
+pour laisser le temps de lire l'évolution du plateau. Ces placements
+automatiques ne coûtent ni temps ni erreur et une seule nouvelle main est
+générée à la fin de l'action complète.
 
 Au lancement d'une partie, le menu glisse vers le bas tandis que le timer, le
 round, le plateau puis la main apparaissent successivement derrière lui. Les
@@ -549,7 +604,11 @@ Les données statiques sont dans `resources/scripts/bonuses/BonusRegistry.gd`.
 Tous les réglages d'équilibrage des bonus sont regroupés à la fin de
 `resources/scripts/settings/difficulty.gd`, notamment les probabilités du
 joker et de `LUCKY HAND`, les durées de révélation et les valeurs de chaque
-niveau. La barre récapitulative des bonus possédés est réservée au mode debug ;
+niveau. La liste `ENABLED_BONUSES` permet de retirer un bonus de toutes les
+sélections automatiques en commentant simplement son identifiant, comme
+`ENABLED_SPECIAL_RULES` pour les règles. Les bonus verrouillés par le mode
+debug peuvent toujours contourner cette liste. La barre récapitulative des
+bonus possédés est réservée au mode debug ;
 les bonus restent actifs lorsqu'elle est masquée.
 `BonusManager.gd` conserve l'état de la partie et pilote
 `BonusSelection.tscn`. Les propositions, le titre, le fond, les colonnes et les

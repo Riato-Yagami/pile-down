@@ -34,6 +34,12 @@ for PILE_DOWN_PLATFORM in "$@"; do
 				"windows_release_x86_64.exe"
 			)
 			;;
+		android)
+			PILE_DOWN_REQUIRED_TEMPLATES+=(
+				"android_debug.apk"
+				"android_release.apk"
+			)
+			;;
 		*)
 			echo "Unknown export-template platform: ${PILE_DOWN_PLATFORM}" >&2
 			exit 1

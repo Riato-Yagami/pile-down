@@ -4,12 +4,19 @@ extends SceneTree
 func _init() -> void:
 	var manager := BonusManager.new()
 	manager.rng.seed = 42
-	assert(manager.definitions.size() == 14)
+	assert(manager.definitions.size() == 18)
+	for definition in manager.definitions:
+		assert(DifficultySettings.is_bonus_enabled(definition.id))
 	var choices := manager.generate_choices(20)
 	assert(choices.size() == DifficultySettings.BONUS_CHOICE_COUNT)
 	assert(choices[0].id != choices[1].id)
 	assert(choices[0].category != choices[1].category)
 	assert(_find(manager, &"rule_breaker").max_level == 3)
+	assert(_find(manager, &"bring_a_friend").max_level == 3)
+	assert(_find(manager, &"pile_mover").max_level == 1)
+	assert(_find(manager, &"double_down").max_level == 3)
+	assert(_find(manager, &"deja_vu").max_level == 3)
+	assert(_find(manager, &"bring_a_friend").rarity == BonusData.Rarity.RARE)
 	var rule_breaker := _find(manager, &"rule_breaker")
 	manager._add_or_upgrade(rule_breaker)
 	assert(manager.rule_breaker_deletion_count() == 1)

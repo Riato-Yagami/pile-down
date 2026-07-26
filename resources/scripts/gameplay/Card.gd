@@ -39,6 +39,8 @@ var face_up := true
 var selectable := true
 var dragging := false
 var home_global_position := Vector2.ZERO
+var stable_hand_global_position := Vector2.ZERO
+var has_stable_hand_position := false
 var drag_target := Vector2.ZERO
 var _pointer_offset := Vector2.ZERO
 var _last_target := Vector2.ZERO
@@ -224,7 +226,9 @@ func begin_external_drag(pointer_position: Vector2) -> void:
 	drag_state = DragState.DRAGGING
 	drag_origin = global_position
 	placement_confirmed = false
-	home_global_position = global_position
+	if not has_stable_hand_position:
+		record_hand_position()
+	home_global_position = stable_hand_global_position
 	drag_target = pointer_position
 	_last_target = pointer_position
 	_pointer_offset = get_global_transform().affine_inverse() * pointer_position
@@ -253,6 +257,22 @@ func prepare_external_drag() -> void:
 		hidden_by_blind_delivery = true
 		face_up = false
 		_update_appearance()
+
+
+func update_touch_drag(pointer_position: Vector2) -> void:
+	drag_target = pointer_position
+	if not dragging:
+		return
+	var drag_parent := get_parent() as CanvasItem
+	if drag_parent == null:
+		return
+	var pointer_in_parent := (
+		drag_parent.get_global_transform().affine_inverse()
+		* pointer_position
+	)
+	var grab_offset := get_transform().basis_xform(_pointer_offset)
+	position = pointer_in_parent - grab_offset
+	_last_target = pointer_position
 
 
 func finish_drag() -> void:
@@ -333,16 +353,29 @@ func reset_hand_pose() -> void:
 	z_index = 0
 
 
-func animate_valid_drop(destination: Vector2) -> void:
+func record_hand_position() -> void:
+	stable_hand_global_position = global_position
+	home_global_position = stable_hand_global_position
+	has_stable_hand_position = true
+
+
+func hand_return_position() -> Vector2:
+	return stable_hand_global_position if has_stable_hand_position else home_global_position
+
+
+func animate_valid_drop(destination: Vector2, duration := 0.14) -> void:
 	finish_drag()
 	var tween := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(self, "global_position", destination, 0.14)
+	tween.tween_property(self, "global_position", destination, duration)
 	tween.parallel().tween_property(self, "scale", Vector2(0.94, 0.94), 0.08)
 	tween.tween_property(self, "scale", Vector2.ONE, 0.08)
 	await tween.finished
 
 
 func play_draw(delay: float) -> void:
+	# Capture the HBox slot before the entrance offset is applied. A press
+	# during the tween must still return to the stable layout position.
+	record_hand_position()
 	modulate.a = 0.0
 	position.y += 9.0
 	var destination_y := position.y - 9.0
@@ -361,6 +394,7 @@ func play_draw_from_right(delay: float) -> void:
 	await get_tree().process_frame
 	if not is_inside_tree():
 		return
+	record_hand_position()
 	_entrance_home_positions.clear()
 	var entrance_offset := get_viewport_rect().size.x + size.x + 12.0 - global_position.x
 	var visuals: Array[Control] = [face, face_sprite, back_sprite, value_label]
@@ -573,25 +607,6 @@ func _on_face_input(event: InputEvent) -> void:
 		face.accept_event()
 	elif event is InputEventMouseMotion and dragging:
 		drag_target = get_global_mouse_position()
-		face.accept_event()
-	elif event is InputEventScreenTouch:
-		if event.pressed:
-			if (
-				round_modifiers != null
-				and round_modifiers.blind_delivery_enabled
-				and face_up
-			):
-				hidden_by_blind_delivery = true
-				await flip_down(true)
-				await get_tree().create_timer(0.08).timeout
-			drag_target = event.position
-			card_selected.emit(self)
-			drag_started.emit(self)
-		else:
-			drag_released.emit(self, event.position)
-		face.accept_event()
-	elif event is InputEventScreenDrag and dragging:
-		drag_target = event.position
 		face.accept_event()
 
 

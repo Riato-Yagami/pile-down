@@ -236,6 +236,38 @@ func select_card(selected_card: PlayingCard) -> void:
 			card.set_selected_visual(card == selected_card)
 
 
+func active_cards() -> Array[PlayingCard]:
+	var result: Array[PlayingCard] = []
+	for card in current_cards:
+		if is_instance_valid(card) and card.visible and not card.placement_confirmed:
+			result.append(card)
+	return result
+
+
+func find_card_with_value(value: int, origin: Vector2 = Vector2.INF) -> PlayingCard:
+	var matches := find_cards_with_value(value)
+	if matches.is_empty():
+		return null
+	if origin != Vector2.INF:
+		matches.sort_custom(
+			func(first: PlayingCard, second: PlayingCard) -> bool:
+				return first.global_position.distance_squared_to(origin) < second.global_position.distance_squared_to(origin)
+		)
+	return matches.front()
+
+
+func find_cards_with_value(value: int) -> Array[PlayingCard]:
+	var matches: Array[PlayingCard] = []
+	for card in active_cards():
+		if not card.is_joker and card.card_value == value:
+			matches.append(card)
+	return matches
+
+
+func forget_card(card: PlayingCard) -> void:
+	current_cards.erase(card)
+
+
 func _on_card_selected(card: PlayingCard) -> void:
 	select_card(card)
 	card_selected.emit(card)

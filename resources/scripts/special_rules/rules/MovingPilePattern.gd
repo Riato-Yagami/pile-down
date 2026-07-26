@@ -9,6 +9,7 @@ var piles: Array[MemoryPile] = []
 var base_positions: Dictionary = {}
 var pattern_index := 0
 var speed_multiplier := 1.0
+var manually_moving_pile: MemoryPile
 
 
 func _process(delta: float) -> void:
@@ -17,7 +18,11 @@ func _process(delta: float) -> void:
 	elapsed += delta
 	for index in piles.size():
 		var pile := piles[index]
-		if not is_instance_valid(pile) or pile.completed:
+		if (
+			not is_instance_valid(pile)
+			or pile.completed
+			or pile == manually_moving_pile
+		):
 			continue
 		var base: Vector2 = base_positions.get(pile, pile.position)
 		var phase := (
@@ -86,6 +91,21 @@ func stop() -> void:
 		await longest_tween.finished
 	piles.clear()
 	base_positions.clear()
+	manually_moving_pile = null
+
+
+func begin_manual_move(pile: MemoryPile) -> void:
+	if active and piles.has(pile):
+		manually_moving_pile = pile
+
+
+func finish_manual_move(pile: MemoryPile) -> void:
+	if pile == manually_moving_pile:
+		if active and is_instance_valid(pile):
+			# The manually chosen location becomes the center of this pile's
+			# ongoing movement pattern.
+			base_positions[pile] = pile.position
+		manually_moving_pile = null
 
 
 func _square_path(progress: float, extent: Vector2) -> Vector2:

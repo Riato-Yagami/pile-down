@@ -132,3 +132,27 @@ func refresh_all_card_themes(colorblind_enabled: bool) -> void:
 	for pile in active_piles:
 		if is_instance_valid(pile):
 			pile.set_colorblind_enabled(colorblind_enabled)
+
+
+func refresh_slots_from_current_positions() -> void:
+	pile_slots.clear()
+	var ordered: Array[MemoryPile] = []
+	for pile in active_piles:
+		if is_instance_valid(pile) and not pile.completed:
+			ordered.append(pile)
+	ordered.sort_custom(
+		func(first: MemoryPile, second: MemoryPile) -> bool:
+			if not is_equal_approx(first.position.y, second.position.y):
+				return first.position.y < second.position.y
+			return first.position.x < second.position.x
+	)
+	for pile in ordered:
+		pile_slots.append(pile.position)
+
+
+func find_piles_accepting_value(value: int) -> Array[MemoryPile]:
+	var compatible: Array[MemoryPile] = []
+	for pile in active_piles:
+		if is_instance_valid(pile) and pile.visible and pile.can_accept(value):
+			compatible.append(pile)
+	return compatible

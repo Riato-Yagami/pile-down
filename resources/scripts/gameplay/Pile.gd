@@ -4,6 +4,8 @@ extends Control
 const TINY_REGULAR_FONT := preload("res://resources/fonts/Tiny5-Regular.ttf")
 
 signal pile_selected(pile)
+signal drag_requested(pile, pointer_position)
+signal drag_released(pile, pointer_position)
 signal pile_completed(pile)
 signal regenerated(pile, delta)
 
@@ -39,8 +41,17 @@ func _ready() -> void:
 	pivot_offset = custom_minimum_size * 0.5
 	face.focus_mode = Control.FOCUS_NONE
 	face.pressed.connect(func() -> void: pile_selected.emit(self))
+	face.gui_input.connect(_on_face_gui_input)
 	resized.connect(func() -> void: pivot_offset = size * 0.5)
 	_refresh()
+
+
+func _on_face_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			drag_requested.emit(self, get_global_mouse_position())
+		else:
+			drag_released.emit(self, get_global_mouse_position())
 
 
 func setup(

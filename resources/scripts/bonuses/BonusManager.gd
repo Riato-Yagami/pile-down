@@ -67,6 +67,8 @@ func offer_if_due(completed_round_number: int) -> bool:
 func generate_choices(round_number: int) -> Array[BonusData]:
 	var pool: Array[BonusData] = []
 	for data in definitions:
+		if not Difficulty.is_bonus_enabled(data.id):
+			continue
 		if _debug_locked_bonus_ids.has(data.id):
 			continue
 		if round_number < data.minimum_round or level(data.id) >= data.max_level:

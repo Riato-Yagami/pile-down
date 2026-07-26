@@ -69,6 +69,23 @@ func touches_card(card: PlayingCard) -> bool:
 	return false
 
 
+func touches_rect(global_rect: Rect2) -> bool:
+	var points: Array[Vector2] = [
+		global_rect.get_center(),
+		global_rect.position,
+		Vector2(global_rect.end.x, global_rect.position.y),
+		global_rect.end,
+		Vector2(global_rect.position.x, global_rect.end.y),
+	]
+	for zone in zones:
+		if not is_instance_valid(zone):
+			continue
+		for point in points:
+			if zone.contains_global_point(point):
+				return true
+	return false
+
+
 func _control_rect_in_layer(control: Control, layer: Control) -> Rect2:
 	var global_transform := control.get_global_transform()
 	var layer_inverse := layer.get_global_transform().affine_inverse()
