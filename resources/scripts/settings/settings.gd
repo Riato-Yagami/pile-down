@@ -2,7 +2,7 @@ class_name GameSettings
 extends RefCounted
 
 # Aligne l'apparition des mains et le départ du chrono sur la grille musicale.
-const SYNC_HANDS_TO_MUSIC := true
+const SYNC_HANDS_TO_MUSIC := false
 const MUSIC_BPM := 60.0
 const MUSIC_SEGMENT_SECONDS := 5.0
 const MUSIC_VOLUME_DB := -15.0

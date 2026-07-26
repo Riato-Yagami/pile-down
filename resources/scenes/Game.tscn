@@ -670,7 +670,13 @@ fit_content = true
 scroll_active = false
 horizontal_alignment = 1
 
-[node name="OverlayButton" type="Button" parent="Overlay/Center/Panel/Content" unique_id=1335381635]
+[node name="OverlayButtons" type="HBoxContainer" parent="Overlay/Center/Panel/Content" unique_id=993013322]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="OverlayButton" type="Button" parent="Overlay/Center/Panel/Content/OverlayButtons" unique_id=1335381635]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(86, 31)
 layout_mode = 2
@@ -684,9 +690,22 @@ text = "REPLAY"
 script = ExtResource("22_highlight")
 highlight_material = SubResource("OverlayButtonHighlightMaterial")
 
-[node name="Splash" type="Control" parent="." unique_id=1259278219]
+[node name="OverlayEndlessButton" type="Button" parent="Overlay/Center/Panel/Content/OverlayButtons" unique_id=1277210770]
 unique_name_in_owner = true
 visible = false
+custom_minimum_size = Vector2(86, 31)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("SpriteButton")
+theme_override_styles/pressed = SubResource("SpriteButtonPressed")
+theme_override_styles/hover = SubResource("SpriteButton")
+text = "INFINITE"
+script = ExtResource("22_highlight")
+highlight_material = SubResource("OverlayButtonHighlightMaterial")
+
+[node name="Splash" type="Control" parent="." unique_id=1259278219]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -746,6 +765,7 @@ custom_minimum_size = Vector2(220, 40)
 layout_mode = 2
 mouse_filter = 2
 theme_override_colors/default_color = Color(0.541, 0.533, 0.51, 1)
+theme_override_constants/line_separation = 4
 theme_override_font_sizes/normal_font_size = 20
 bbcode_enabled = true
 text = "[center]HIGHSCORE
@@ -759,6 +779,7 @@ custom_minimum_size = Vector2(220, 20.255)
 layout_mode = 2
 size_flags_stretch_ratio = 0.0
 offset_transform_enabled = true
+offset_transform_position = Vector2(0, -5)
 theme_override_colors/font_color = Color(0.541, 0.533, 0.51, 1)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16

@@ -152,7 +152,10 @@ func begin_round(round_number: int) -> RoundModifiers:
 		and not rule_breaker_used
 	):
 		rules_announcing.emit(active_rules)
-		await announcement.show_rules(active_rules)
+		await announcement.show_rules(
+			active_rules,
+			get_guaranteed_rule_count(round_number) > 0
+		)
 		rules_announcement_finished.emit()
 	rules_selected.emit(active_rules)
 	return modifiers

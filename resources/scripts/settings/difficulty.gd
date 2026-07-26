@@ -13,6 +13,11 @@ const MAX_HAND_SIZE := 4
 const MAX_CARD_VALUE := 9
 const MIN_TURN_TIME := 3.0
 
+#const MAX_PILES := 1
+#const MAX_HAND_SIZE := 1
+#const MAX_CARD_VALUE := 2
+#const MIN_TURN_TIME := 3.0
+
 # The counter starts here and reaches zero after this many cleared rounds.
 const TOTAL_ROUNDS := 50
 

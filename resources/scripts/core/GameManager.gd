@@ -49,6 +49,7 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var overlay_title: RichTextLabel = %OverlayTitle
 @onready var overlay_details: RichTextLabel = %OverlayDetails
 @onready var overlay_button: Button = %OverlayButton
+@onready var overlay_endless_button: Button = %OverlayEndlessButton
 @onready var overlay_high_score: RichTextLabel = %OverlayHighScore
 @onready var overlay_scrim: ColorRect = $Overlay/Scrim
 @onready var overlay_panel: TextureRect = $Overlay/Center/Panel
@@ -144,6 +145,7 @@ func _ready() -> void:
 	timer_manager.time_expired.connect(_on_time_expired)
 	timer_manager.timer_visibility_requested.connect(_on_timer_visibility_requested)
 	overlay_button.pressed.connect(_on_overlay_pressed)
+	overlay_endless_button.pressed.connect(_on_overlay_endless_pressed)
 	splash_button.pressed.connect(_on_splash_pressed)
 	endless_button.pressed.connect(_on_endless_pressed)
 	endless_button.mouse_entered.connect(_show_endless_high_score)
@@ -361,6 +363,11 @@ func _handle_debug_shortcut(event: InputEvent) -> bool:
 		KEY_F1:
 			_debug_help_enabled = not _debug_help_enabled
 			return true
+		KEY_E:
+			if splash.visible or overlay.visible or input_locked:
+				return false
+			_debug_win_round()
+			return true
 		KEY_S:
 			if splash.visible or overlay.visible:
 				return false
@@ -380,6 +387,12 @@ func _handle_debug_shortcut(event: InputEvent) -> bool:
 			_debug_reset_high_score()
 			return true
 	return false
+
+
+func _debug_win_round() -> void:
+	_debug_action_in_progress = true
+	await _finish_round()
+	_debug_action_in_progress = false
 
 
 func _debug_reset_game() -> void:
@@ -417,7 +430,8 @@ func _refresh_debug_help() -> void:
 		debug_help.visible = false
 		return
 	debug_help.text = (
-		"[S] NEXT MUSIC SECTION\n"
+		"[E] WIN CURRENT ROUND\n"
+		+ "[S] NEXT MUSIC SECTION\n"
 		+ "[G] GOD MODE: %s\n" % ("ON" if Debug.is_god_mode_enabled() else "OFF")
 		+ "[R] RESET GAME\n"
 		+ "[H] CLEAR HIGH SCORE\n"
@@ -1849,7 +1863,12 @@ func _finish_game(completed_all_rounds := false) -> void:
 	)
 	game_over.emit()
 	overlay_high_score.visible = not high_score_kind.is_empty()
-	if not high_score_kind.is_empty():
+	if completed_all_rounds and game_mode == GameMode.STANDARD:
+		overlay_title.text = (
+			"[center][color=#FFD700][wave amp=35.0 freq=4.0 connected=1]YOU WIN ![/wave][/color][/center]"
+		)
+		overlay_details.text = "[center]in %s[/center]" % formatted_time
+	elif not high_score_kind.is_empty():
 		var rounds_text := (
 			"ROUND %d" % round_number
 			if game_mode == GameMode.ENDLESS
@@ -1862,9 +1881,6 @@ func _finish_game(completed_all_rounds := false) -> void:
 			time_text = "[color=#4D82C2]%s[/color]" % time_text
 		overlay_title.text = "[center]%s[/center]" % rounds_text
 		overlay_details.text = "[center]%s[/center]" % time_text
-	elif completed_all_rounds and game_mode == GameMode.STANDARD:
-		overlay_title.text = "[center]YOU WON[/center]"
-		overlay_details.text = "[center]in %s[/center]" % formatted_time
 	elif game_mode == GameMode.ENDLESS:
 		overlay_title.text = "[center]ROUND %d[/center]" % round_number
 		overlay_details.text = "[center]in %s[/center]" % formatted_time
@@ -1872,6 +1888,10 @@ func _finish_game(completed_all_rounds := false) -> void:
 		overlay_title.text = "[center]%d ROUNDS LEFT[/center]" % round_number
 		overlay_details.text = "[center]in %s[/center]" % formatted_time
 	overlay_button.text = "REPLAY"
+	overlay_endless_button.visible = (
+		completed_all_rounds
+		and game_mode == GameMode.STANDARD
+	)
 	overlay_mode = "restart"
 	_show_game_over_overlay(not completed_all_rounds)
 	# Cleanup can include rule-specific animations. Run it only after the result
@@ -1905,6 +1925,10 @@ func _show_game_over_overlay(animate_death: bool) -> void:
 func _on_overlay_pressed() -> void:
 	if overlay_mode == "restart":
 		start_game(game_mode == GameMode.ENDLESS)
+
+
+func _on_overlay_endless_pressed() -> void:
+	start_game(true)
 
 
 func _on_splash_pressed() -> void:
@@ -2337,6 +2361,13 @@ func _refresh_high_score() -> void:
 	if best_rounds_left < 0 or best_score_time_ms < 0:
 		splash_high_score.text = "[center]HIGHSCORE\n--[/center]"
 		splash_high_score_time.visible = false
+		return
+	if best_rounds_left == 0:
+		splash_high_score.text = (
+			"[center]HIGHSCORE\nWIN[/center]"
+		)
+		splash_high_score_time.text = "in %s" % _format_duration(best_score_time_ms)
+		splash_high_score_time.visible = true
 		return
 	splash_high_score.text = (
 		"[center]HIGHSCORE\n%d rounds left[/center]" % best_rounds_left

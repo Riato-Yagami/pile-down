@@ -10,6 +10,7 @@ const RULE_DELETE_BUTTON_SCENE := preload(
 @export_category("Timing")
 @export var fade_duration := 0.2
 @export var display_duration := 1.15
+@export var milestone_display_duration := 1.85
 @export var rule_breaker_final_delay := 1.0
 @export var rule_delete_confirmation_delay := 0.38
 @export var rule_delete_fade_duration := 0.18
@@ -22,7 +23,10 @@ const RULE_DELETE_BUTTON_SCENE := preload(
 @onready var rule_delete_choices: VBoxContainer = %RuleDeleteChoices
 
 
-func show_rules(rules: Array[SpecialRuleData]) -> void:
+func show_rules(
+	rules: Array[SpecialRuleData],
+	is_rule_count_milestone := false
+) -> void:
 	if rules.is_empty():
 		return
 	combo_label.text = _combination_title(rules)
@@ -36,7 +40,11 @@ func show_rules(rules: Array[SpecialRuleData]) -> void:
 	modulate.a = 0.0
 	var tween := create_tween()
 	tween.tween_property(self, "modulate:a", 1.0, fade_duration)
-	tween.tween_interval(display_duration)
+	tween.tween_interval(
+		milestone_display_duration
+		if is_rule_count_milestone
+		else display_duration
+	)
 	tween.tween_property(self, "modulate:a", 0.0, fade_duration)
 	await tween.finished
 	visible = false
