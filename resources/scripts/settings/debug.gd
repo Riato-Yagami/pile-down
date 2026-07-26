@@ -33,7 +33,7 @@ const LOCK_SPECIAL_RULES: Array[StringName] = [
 # lucky_hand, time_bank, slow_start, spare_life, safety_net, clean_slate,
 # bring_a_friend, pile_mover, double_down, deja_vu, rule_breaker, adaptation.
 const LOCK_BONUSES: Dictionary = {
-	&"pile_mover": 1,
+	&"wild_card": 1,
 	#&"bring_a_friend": 3,
 	#&"double_down": 3,
 	#&"deja_vu":3,

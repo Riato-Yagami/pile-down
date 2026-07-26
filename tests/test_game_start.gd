@@ -70,7 +70,7 @@ func _run() -> void:
 		if game._is_special_tier_relief_round(progression_round):
 			expected_reliefs += 1
 	assert(game.tier_reliefs_applied == expected_reliefs)
-	for relief_round in [10, 18, 28, 40, 54, 70, 88]:
+	for relief_round in [4, 10, 18, 28, 40, 54, 70, 88]:
 		assert(game._is_special_tier_relief_round(relief_round))
 	assert(not game._is_special_tier_relief_round(41))
 	assert(
@@ -82,13 +82,21 @@ func _run() -> void:
 	game.start_value = 9
 	game.turn_time = 2.0
 	game.tier_reliefs_applied = 0
-	assert(game._advance_difficulty(10) == "TIER RELIEF")
+	assert(game._advance_difficulty(4) == "TIER RELIEF")
 	var relieved_stats := 0
 	relieved_stats += int(game.pile_count == 9)
 	relieved_stats += int(game.hand_size == 3)
 	relieved_stats += int(game.start_value == 8)
 	relieved_stats += int(is_equal_approx(game.turn_time, 3.0))
 	assert(relieved_stats == 1)
+	game.pile_count = DifficultySettings.START_PILES + 1
+	game.hand_size = DifficultySettings.START_HAND_SIZE
+	game.start_value = DifficultySettings.START_CARD_VALUE
+	game.turn_time = DifficultySettings.START_TURN_TIME
+	game.tier_reliefs_applied = 0
+	game._apply_special_tier_relief()
+	assert(game.pile_count == DifficultySettings.START_PILES)
+	assert(game.tier_reliefs_applied == 1)
 	game.pile_count = DifficultySettings.MAX_PILES
 	game.hand_size = DifficultySettings.MAX_HAND_SIZE
 	game.start_value = DifficultySettings.MAX_CARD_VALUE

@@ -27,6 +27,7 @@ const Settings := preload("res://resources/scripts/settings/settings.gd")
 
 @export var card_value := 0
 
+@onready var visual_root: Control = %VisualRoot
 @onready var face: Button = %Face
 @onready var face_sprite: TextureRect = %FaceSprite
 @onready var back_sprite: TextureRect = %BackSprite
@@ -397,7 +398,7 @@ func play_draw_from_right(delay: float) -> void:
 	record_hand_position()
 	_entrance_home_positions.clear()
 	var entrance_offset := get_viewport_rect().size.x + size.x + 12.0 - global_position.x
-	var visuals: Array[Control] = [face, face_sprite, back_sprite, value_label]
+	var visuals: Array[Control] = [visual_root]
 	for visual in visuals:
 		_entrance_home_positions[visual] = visual.position
 		visual.position.x += entrance_offset
@@ -471,11 +472,14 @@ func play_wandering_entrance(
 func _materialize_entrance_for_drag() -> void:
 	if not _entrance_animation_running:
 		return
-	var visual_global_position := face.global_position
+	var visual_global_position := visual_root.global_position
 	if _entrance_tween != null and _entrance_tween.is_valid():
 		_entrance_tween.kill()
 	if not _entrance_home_positions.is_empty():
-		global_position = visual_global_position - (_entrance_home_positions[face] as Vector2)
+		global_position = (
+			visual_global_position
+			- (_entrance_home_positions[visual_root] as Vector2)
+		)
 		for visual in _entrance_home_positions:
 			(visual as Control).position = _entrance_home_positions[visual]
 	_entrance_home_positions.clear()

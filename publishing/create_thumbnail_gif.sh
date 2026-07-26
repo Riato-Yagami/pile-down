@@ -217,8 +217,8 @@ done
 magick \
 	-delay 10 \
 	"${PILE_DOWN_FRAME_DIR}"/frame-*.png \
+	-dispose None \
 	-loop 0 \
-	-layers OptimizePlus \
 	"${PILE_DOWN_OUTPUT}"
 
 echo "Animated thumbnail ready: ${PILE_DOWN_OUTPUT}"

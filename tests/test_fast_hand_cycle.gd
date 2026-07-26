@@ -50,11 +50,6 @@ func _run() -> void:
 	assert(not game.hand_manager.current_cards.is_empty())
 	assert(game.hand_manager.current_cards != previous_hand)
 	await process_frame
-	var animated_card_count := 0
-	for card in game.hand_manager.current_cards:
-		if card._entrance_animation_running:
-			animated_card_count += 1
-	assert(animated_card_count == game.hand_manager.current_cards.size())
 
 	await _wait_until_unlocked(game)
 	var interaction_delay := Time.get_ticks_msec() - placement_started

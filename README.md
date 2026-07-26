@@ -173,7 +173,10 @@ droite. Ces animations se jouent en parallèle du rappel complet de la pile,
 sans raccourcir celui-ci. La nouvelle main devient draggable dès qu'elle entre
 dans l'écran, même si son animation continue. Des signatures sonores courtes
 accompagnent aussi le lancement ou replay, l'annonce d'une règle spéciale, la
-défaite et la victoire. La musique du menu joue en boucle sur l'accueil.
+défaite et la victoire. Quand toutes les piles sont terminées, les cartes
+restantes, jokers compris, sont défaussées vers le bas avant l'animation de
+victoire.
+La musique du menu joue en boucle sur l'accueil.
 Lorsqu'une partie démarre, sa boucle en cours se termine avant que la musique
 du jeu ne prenne le relais. Le jeu commence avec `section-1.wav`, puis passe à
 la section numérotée suivante après chaque `TIER RELIEF`, à la fin du segment
@@ -407,13 +410,15 @@ garantie précisément sur chacun de ces rounds ; le round précédent reste san
 règle afin de préserver l'alternance.
 
 À chaque palier théorique de règles combinables, un `TIER RELIEF` allège une
-statistique choisie aléatoirement au premier palier,
+statistique encore modifiable, choisie aléatoirement au premier palier,
 deux statistiques distinctes au deuxième, puis trois et enfin quatre. Un
 allègement retire une pile, une carte en main ou une valeur de départ, ou ajoute
 une seconde au timer. Ce round de palier remplace entièrement l'augmentation de
 difficulté habituelle : aucune statistique n'est d'abord augmentée. Chaque
 valeur reste bornée par sa valeur initiale. Le démarrage debug à un round avancé
-rejoue ces allègements dans leur ordre normal.
+rejoue ces allègements dans leur ordre normal. Le premier relief correspond au
+premier palier de règle spéciale, soit `FIRST_SPECIAL_RULE_ROUND` (`4` par
+défaut), puis les suivants arrivent aux rounds 10, 18, 28 et 40.
 
 Après la limite de cinq règles simultanées, les paliers théoriques continuent
 de déclencher des `TIER RELIEF` selon la même formule, sans augmenter cette
@@ -542,7 +547,9 @@ Les bonus disponibles sont :
 `WILD CARD` remplace une carte de la main par un joker `J`, sans dépasser la
 taille normale de la main. Lorsque la main contient au moins deux cartes, le
 joker ne remplace pas la carte jouable garantie. Un joker non joué est conservé
-à gauche et le remplissage suivant génère une carte de moins.
+à gauche et le remplissage suivant génère une carte de moins. Chaque nouveau
+remplissage conserve néanmoins sa probabilité de générer un autre joker, tant
+qu'une place reste disponible dans la main.
 Le bouton de `REDRAW` utilise `redraw.png`, effectue une rotation complète lors
 de son utilisation et affiche les relances restantes à partir du niveau II.
 `LESSON LEARNED` possède trois niveaux et reprend les durées de flash de

@@ -94,6 +94,7 @@ var input_locked := true
 var rng := RandomNumberGenerator.new()
 var hovered_pile: MemoryPile
 var drag_placeholder: Control
+var _hand_slot_placeholders: Dictionary = {}
 var drag_home_index := -1
 var overlay_mode := ""
 var _last_clock_second := -1
@@ -638,6 +639,21 @@ func _begin_turn(hand_prepared := false, enter_from_right := false) -> void:
 		return
 	if enter_from_right:
 		_pending_interactive_generation = _hand_cycle_generation
+		# Deferred entrance methods mark themselves running after layout. Wait
+		# one frame before deciding that a hand contains retained cards only.
+		await get_tree().process_frame
+		if _pending_interactive_generation != _hand_cycle_generation:
+			return
+		if not hand_manager.current_cards.any(
+			func(card: PlayingCard) -> bool:
+				return (
+					is_instance_valid(card)
+					and card._entrance_animation_running
+				)
+		):
+			_pending_interactive_generation = -1
+			input_locked = false
+			hand_manager.unlock_hand()
 		return
 	input_locked = false
 	hand_manager.unlock_hand()
@@ -657,6 +673,8 @@ func _generate_next_hand(
 	if requested_generation != _hand_cycle_generation or _all_piles_complete():
 		return
 	var wandering_cards := round_modifiers.wandering_hand_cards
+	if clear_existing:
+		_clear_all_hand_slot_placeholders()
 	hand_manager.generate_hand(
 		drag_layer if wandering_cards else hand_container,
 		hand_size,
@@ -794,13 +812,7 @@ func _on_card_drag_started(card: PlayingCard) -> void:
 	else:
 		_remove_orphan_drag_placeholders()
 		drag_home_index = card.get_index()
-		drag_placeholder = Control.new()
-		drag_placeholder.name = "DragPlaceholder"
-		drag_placeholder.set_meta(&"hand_drag_placeholder", true)
-		drag_placeholder.custom_minimum_size = card.size
-		drag_placeholder.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		hand_container.add_child(drag_placeholder)
-		hand_container.move_child(drag_placeholder, drag_home_index)
+		drag_placeholder = _create_hand_slot_placeholder(card)
 	hand_manager.lock_all_cards_except(card)
 	_prepare_drag_companions(card)
 	card.prepare_external_drag()
@@ -841,6 +853,7 @@ func _prepare_drag_companions(main_card: PlayingCard) -> void:
 	for index in candidates.size():
 		var companion := candidates[index]
 		_companion_home_positions[companion] = companion.hand_return_position()
+		_create_hand_slot_placeholder(companion)
 		companion.set_selectable(false)
 		companion.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var start_position := companion.global_position
@@ -871,7 +884,6 @@ func _resolve_companion_drops(anchor_pile: MemoryPile) -> Array[MemoryPile]:
 			placed_piles.append(target)
 		else:
 			await _return_companion_to_hand(companion)
-	_restore_hand_child_order()
 	hand_container.queue_sort()
 	await get_tree().process_frame
 	_record_stable_hand_layout()
@@ -920,7 +932,6 @@ func _return_drag_companions() -> void:
 		var companion := companion_variant as PlayingCard
 		if is_instance_valid(companion):
 			await _return_companion_to_hand(companion)
-	_restore_hand_child_order()
 	hand_container.queue_sort()
 	await get_tree().process_frame
 	_record_stable_hand_layout()
@@ -932,8 +943,17 @@ func _return_companion_to_hand(card: PlayingCard) -> void:
 	var destination := (
 		_companion_home_positions.get(card, card.hand_return_position()) as Vector2
 	)
+	var placeholder := _valid_hand_slot_placeholder(card)
+	var slot_index := (
+		placeholder.get_index()
+		if is_instance_valid(placeholder) and placeholder.get_parent() == hand_container
+		else -1
+	)
 	await card.animate_return(destination, 0.2)
+	_remove_hand_slot_placeholder(card)
 	card.reparent(hand_container, false)
+	if slot_index >= 0:
+		hand_container.move_child(card, mini(slot_index, hand_container.get_child_count() - 1))
 	card.mouse_filter = Control.MOUSE_FILTER_PASS
 	card.reset_hand_pose()
 	card.set_selectable(not input_locked)
@@ -1325,9 +1345,6 @@ func _place_selected_card(pile: MemoryPile) -> void:
 	var context := PlacementContext.new(PlacementContext.Source.PLAYER, _root_action_id)
 	var affected_piles: Array[MemoryPile] = []
 	await _stack_card(card, pile, context)
-	# The main card has left the logical hand. Its spacer must leave the HBox
-	# before companions are restored, otherwise it becomes a permanent gap.
-	_clear_drag_placeholder()
 	affected_piles.append(pile)
 	var companion_piles := await _resolve_companion_drops(pile)
 	for companion_pile in companion_piles:
@@ -1362,6 +1379,11 @@ func _stack_card(
 ) -> void:
 	if not is_instance_valid(card) or not is_instance_valid(pile) or pile.completed:
 		return
+	if card.get_parent() == hand_container:
+		var previous_global_position := card.global_position
+		_create_hand_slot_placeholder(card)
+		card.reparent(drag_layer, false)
+		card.global_position = previous_global_position
 	card.confirm_drop()
 	var destination := pile.global_position + (pile.size - card.size) * 0.5
 	var placement_duration := (
@@ -1565,9 +1587,71 @@ func _return_card_to_hand(card: PlayingCard, duration := 0.26) -> void:
 
 func _clear_drag_placeholder() -> void:
 	if is_instance_valid(drag_placeholder):
+		var placeholder_card_id := 0
+		for card_id in _hand_slot_placeholders:
+			var stored_placeholder: Variant = _hand_slot_placeholders[card_id]
+			if (
+				is_instance_valid(stored_placeholder)
+				and stored_placeholder == drag_placeholder
+			):
+				placeholder_card_id = int(card_id)
+				break
+		if placeholder_card_id != 0:
+			_hand_slot_placeholders.erase(placeholder_card_id)
 		if drag_placeholder.get_parent() != null:
 			drag_placeholder.get_parent().remove_child(drag_placeholder)
 		drag_placeholder.queue_free()
+	drag_placeholder = null
+	drag_home_index = -1
+
+
+func _create_hand_slot_placeholder(card: PlayingCard) -> Control:
+	var existing := _valid_hand_slot_placeholder(card)
+	if existing != null:
+		return existing
+	var placeholder := Control.new()
+	placeholder.name = "HandSlotPlaceholder"
+	placeholder.set_meta(&"hand_drag_placeholder", true)
+	placeholder.custom_minimum_size = card.size
+	placeholder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var slot_index := card.get_index()
+	hand_container.add_child(placeholder)
+	hand_container.move_child(placeholder, slot_index)
+	_hand_slot_placeholders[card.get_instance_id()] = placeholder
+	return placeholder
+
+
+func _remove_hand_slot_placeholder(card: PlayingCard) -> void:
+	var placeholder := _valid_hand_slot_placeholder(card)
+	_hand_slot_placeholders.erase(card.get_instance_id())
+	if placeholder == null:
+		return
+	if placeholder == drag_placeholder:
+		drag_placeholder = null
+		drag_home_index = -1
+	if placeholder.get_parent() != null:
+		placeholder.get_parent().remove_child(placeholder)
+	placeholder.queue_free()
+
+
+func _valid_hand_slot_placeholder(card: PlayingCard) -> Control:
+	var placeholder_variant: Variant = _hand_slot_placeholders.get(
+		card.get_instance_id()
+	)
+	if not is_instance_valid(placeholder_variant):
+		return null
+	return placeholder_variant as Control
+
+
+func _clear_all_hand_slot_placeholders() -> void:
+	for placeholder_variant in _hand_slot_placeholders.values():
+		if not is_instance_valid(placeholder_variant):
+			continue
+		var placeholder := placeholder_variant as Control
+		if placeholder.get_parent() != null:
+			placeholder.get_parent().remove_child(placeholder)
+		placeholder.queue_free()
+	_hand_slot_placeholders.clear()
 	drag_placeholder = null
 	drag_home_index = -1
 
@@ -1580,6 +1664,9 @@ func _remove_orphan_drag_placeholders() -> void:
 		):
 			hand_container.remove_child(child)
 			child.queue_free()
+	_hand_slot_placeholders.clear()
+	if is_instance_valid(drag_placeholder) and selected_card != null:
+		_hand_slot_placeholders[selected_card.get_instance_id()] = drag_placeholder
 	hand_container.queue_sort()
 
 
@@ -1609,8 +1696,12 @@ func _record_stable_hand_layout() -> void:
 			card.record_hand_position()
 
 
-func _discard_current_hand() -> void:
-	await hand_manager.discard_hand(hand_container, drag_layer)
+func _discard_current_hand(preserve_unused_jokers := true) -> void:
+	await hand_manager.discard_hand(
+		hand_container,
+		drag_layer,
+		preserve_unused_jokers
+	)
 	_clear_drag_placeholder()
 
 
@@ -1690,6 +1781,10 @@ func _finish_round() -> void:
 	var completed_round_number := _progression_round()
 	timer_manager.stop_countdown()
 	await cleanup_special_rule_state()
+	# Clear the remaining hand as part of the victory sequence. Jokers persist
+	# between hands, but never carry over into the next round.
+	await _discard_current_hand(false)
+	_clear_all_hand_slot_placeholders()
 	await special_rule_manager.end_round(piles)
 	round_completed.emit()
 	soft_audio.play_tone(680.0, 0.16, 0.055)
@@ -1912,7 +2007,7 @@ func _advance_difficulty(next_progression_round: int, first_upgrade_override := 
 
 func _is_special_tier_relief_round(progression_round: int) -> bool:
 	# Reliefs keep following the combo milestone curve after the five-rule cap.
-	var theoretical_rule_count := 2
+	var theoretical_rule_count := 1
 	while true:
 		var milestone := Difficulty.special_rule_milestone(
 			theoretical_rule_count
@@ -1925,13 +2020,21 @@ func _is_special_tier_relief_round(progression_round: int) -> bool:
 
 func _apply_special_tier_relief() -> void:
 	var relief_count := mini(tier_reliefs_applied + 1, 4)
-	var stats: Array[StringName] = [&"piles", &"hand", &"value", &"time"]
+	var stats: Array[StringName] = []
+	if pile_count > Difficulty.START_PILES:
+		stats.append(&"piles")
+	if hand_size > Difficulty.START_HAND_SIZE:
+		stats.append(&"hand")
+	if start_value > Difficulty.START_CARD_VALUE:
+		stats.append(&"value")
+	if turn_time < Difficulty.START_TURN_TIME:
+		stats.append(&"time")
 	for index in range(stats.size() - 1, 0, -1):
 		var swap_index := rng.randi_range(0, index)
 		var temporary := stats[index]
 		stats[index] = stats[swap_index]
 		stats[swap_index] = temporary
-	for index in relief_count:
+	for index in mini(relief_count, stats.size()):
 		match stats[index]:
 			&"piles":
 				pile_count = maxi(pile_count - 1, Difficulty.START_PILES)

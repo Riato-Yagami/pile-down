@@ -21,6 +21,7 @@ var modifiers := RoundModifiers.new()
 var context := RoundContext.new(1, modifiers)
 var rng := RandomNumberGenerator.new()
 var _last_special_rule_round := -1000
+var _previous_drawn_rule_ids: Array[StringName] = []
 
 var _rules: Array[SpecialRuleData] = Registry.create_all_rules()
 
@@ -256,24 +257,49 @@ func end_round(piles_to_clean: Array[MemoryPile] = []) -> void:
 
 func select_special_rules(round_number: int, requested_count: int) -> Array[SpecialRuleData]:
 	var selected: Array[SpecialRuleData] = []
-	var candidates: Array[SpecialRuleData] = []
+	var fresh_candidates: Array[SpecialRuleData] = []
+	var repeated_candidates: Array[SpecialRuleData] = []
 	for rule in _rules:
 		if (
 			Difficulty.is_special_rule_enabled(rule.id)
 			and round_number >= rule.minimum_round
 		):
-			candidates.append(rule)
-	while selected.size() < requested_count and not candidates.is_empty():
-		var candidate := _weighted_pick(candidates)
-		candidates.erase(candidate)
-		if _is_compatible(candidate, selected, round_number):
-			selected.append(candidate)
+			if _previous_drawn_rule_ids.has(rule.id):
+				repeated_candidates.append(rule)
+			else:
+				fresh_candidates.append(rule)
+	# Prefer every eligible rule that was absent from the previous draw.
+	# Previous rules only become available again when fresh compatible options
+	# cannot fill the requested combination.
+	_append_compatible_rules(
+		selected, fresh_candidates, requested_count, round_number
+	)
+	_append_compatible_rules(
+		selected, repeated_candidates, requested_count, round_number
+	)
+	if not selected.is_empty():
+		_previous_drawn_rule_ids.clear()
+		for rule in selected:
+			_previous_drawn_rule_ids.append(rule.id)
 	if selected.size() < requested_count:
 		push_warning(
 			"Special Rules: requested %d compatible rules, selected %d."
 			% [requested_count, selected.size()]
 		)
 	return selected
+
+
+func _append_compatible_rules(
+	selected: Array[SpecialRuleData],
+	candidates: Array[SpecialRuleData],
+	requested_count: int,
+	round_number: int
+) -> void:
+	while selected.size() < requested_count and not candidates.is_empty():
+		var candidate := _weighted_pick(candidates)
+		candidates.erase(candidate)
+		if _is_compatible(candidate, selected, round_number):
+			selected.append(candidate)
 
 
 func _weighted_pick(candidates: Array[SpecialRuleData]) -> SpecialRuleData:

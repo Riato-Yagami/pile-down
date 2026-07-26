@@ -33,7 +33,7 @@ func generate_hand(
 	lucky_hand_chance := 0.0
 ) -> void:
 	if clear_existing:
-		clear_hand(container)
+		clear_hand(container, true)
 	if playable_values.is_empty():
 		return
 
@@ -44,13 +44,9 @@ func generate_hand(
 	var cards_to_create := maxi(hand_size - existing_card_count, 0)
 	if cards_to_create == 0:
 		return
-	var already_has_joker := current_cards.any(
-		func(existing: PlayingCard) -> bool:
-			return is_instance_valid(existing) and existing.is_joker and existing.visible
-	)
 	var should_create_joker := (
-		not already_has_joker
-		and (force_joker or (joker_chance > 0.0 and rng.randf() < joker_chance))
+		force_joker
+		or (joker_chance > 0.0 and rng.randf() < joker_chance)
 	)
 	var guaranteed_value := playable_values[rng.randi_range(0, playable_values.size() - 1)]
 	var values: Array[int] = []
@@ -107,17 +103,29 @@ func _create_card(
 	if animate_draw:
 		if enter_from_right:
 			card.set_selectable(false)
+			# The HBox needs one frame to assign the final slot before Card can
+			# calculate its off-screen entrance offset. Hide it synchronously so
+			# that slot is never rendered before the entrance starts.
+			card.modulate.a = 0.0
 			card.call_deferred("play_draw_from_right", (current_cards.size() - 1) * 0.045)
 		else:
 			card.call_deferred("play_draw", (current_cards.size() - 1) * 0.045)
 
 
-func discard_hand(container: Control, exit_layer: Control = null) -> void:
+func discard_hand(
+	container: Control,
+	exit_layer: Control = null,
+	preserve_unused_jokers := true
+) -> void:
 	var cards_to_discard: Array[PlayingCard] = []
 	var retained_jokers: Array[PlayingCard] = []
 	for card in current_cards:
 		if is_instance_valid(card) and card.visible:
-			if card.is_joker and not card.placement_confirmed:
+			if (
+				preserve_unused_jokers
+				and card.is_joker
+				and not card.placement_confirmed
+			):
 				card.finish_drag()
 				card.reset_hand_pose()
 				if card.get_parent() != container:
@@ -166,10 +174,32 @@ func discard_hand(container: Control, exit_layer: Control = null) -> void:
 			card.queue_free()
 
 
-func clear_hand(container: Control) -> void:
-	current_cards.clear()
+func clear_hand(container: Control, preserve_unused_jokers := false) -> void:
+	var retained_jokers: Array[PlayingCard] = []
+	if preserve_unused_jokers:
+		for card in current_cards:
+			if (
+				is_instance_valid(card)
+				and card.is_joker
+				and card.visible
+				and not card.placement_confirmed
+			):
+				card.finish_drag()
+				card.finish_entrance_immediately()
+				card.reset_hand_pose()
+				if card.get_parent() != container:
+					var previous_global_position := card.global_position
+					card.reparent(container, false)
+					card.global_position = previous_global_position
+				retained_jokers.append(card)
+	current_cards.assign(retained_jokers)
 	for child in container.get_children():
-		child.queue_free()
+		if not retained_jokers.has(child):
+			child.queue_free()
+	for index in retained_jokers.size():
+		container.move_child(retained_jokers[index], index)
+	if container is Container:
+		(container as Container).queue_sort()
 
 
 func lock_hand() -> void:

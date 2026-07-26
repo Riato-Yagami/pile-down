@@ -127,8 +127,17 @@ func _run() -> void:
 	assert(
 		hand_manager.current_cards.filter(
 			func(card: PlayingCard) -> bool: return card.is_joker
-		).size() == 1
+		).size() == 2
 	)
+	var used_joker := hand_manager.current_cards.filter(
+		func(card: PlayingCard) -> bool: return card.is_joker
+	).front() as PlayingCard
+	used_joker.confirm_drop()
+	await hand_manager.discard_hand(free_range_layer)
+	assert(hand_manager.current_cards.size() == 1)
+	assert(hand_manager.current_cards[0].is_joker)
+	await hand_manager.discard_hand(free_range_layer, null, false)
+	assert(hand_manager.current_cards.is_empty())
 
 	var flashlight := FlashlightScene.instantiate() as FlashlightOverlay
 	stage.add_child(flashlight)

@@ -81,6 +81,14 @@ func _init() -> void:
 	assert(manager._is_compatible(lights_out, peek_rules))
 	assert(manager._is_compatible(blind_delivery_rule, peek_rules))
 
+	manager._previous_drawn_rule_ids = [&"shell_game"]
+	for iteration in 20:
+		var non_repeating_selection := manager.select_special_rules(10, 1)
+		assert(non_repeating_selection.size() == 1)
+		assert(non_repeating_selection[0].id != &"shell_game")
+		manager._previous_drawn_rule_ids = [&"shell_game"]
+	manager._previous_drawn_rule_ids.clear()
+
 	for round_number in [10, 18, 28, 40, 50]:
 		for iteration in 40:
 			var selected := manager.select_special_rules(
