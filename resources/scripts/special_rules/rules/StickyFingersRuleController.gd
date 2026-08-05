@@ -1,7 +1,7 @@
 class_name StickyFingersRuleController
 extends Node
 
-const STICKY_CURSOR := preload("res://resources/sprites/sticky-cursor.svg")
+const STICKY_CURSOR := preload("res://resources/sprites/ui/icons/sticky-cursor.svg")
 
 var cursor_enabled := false
 

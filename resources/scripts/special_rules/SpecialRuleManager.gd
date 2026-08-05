@@ -121,11 +121,11 @@ func begin_round(round_number: int) -> RoundModifiers:
 		_last_special_rule_round = round_number
 	modifiers = RoundModifiers.new()
 	context = RoundContext.new(round_number, modifiers)
-	context.game_manager = get_parent() as GameManager
+	context.game_manager = get_parent().get_parent() as GameManager
 	context.hand_manager = get_node_or_null("../HandManager") as HandManager
 	context.pile_manager = get_node_or_null("../PileManager") as PileManager
 	context.timer_manager = get_node_or_null("../TimerManager") as CountdownManager
-	context.interface = get_parent() as Control
+	context.interface = get_parent().get_parent() as Control
 	context.rng = rng
 	for rule in active_rules:
 		rule.activate(context)
@@ -193,7 +193,9 @@ func activate_board_effects(piles: Array[MemoryPile], round_number: int) -> void
 		else 1.0
 	)
 	if modifiers.moving_pile_pattern and moving_pile_pattern != null:
-		moving_pile_pattern.start(piles, round_number, intensity)
+		await moving_pile_pattern.start(
+			piles, round_number, intensity, modifiers.moving_pile_pattern_id
+		)
 	if modifiers.regeneration_enabled:
 		var candidates: Array[MemoryPile] = []
 		for pile in piles:
@@ -228,6 +230,13 @@ func after_card_played(piles: Array[MemoryPile], round_number: int) -> void:
 	var movement_duration := (
 		0.55 / modifiers.special_rule_intensity_multiplier
 	)
+	if modifiers.moving_pile_pattern and moving_pile_pattern != null:
+		await moving_pile_pattern.permute_paths(
+			moving,
+			1,
+			movement_duration
+		)
+		return
 	for index in moving.size():
 		var tween: Tween = (
 			moving[index].create_tween()

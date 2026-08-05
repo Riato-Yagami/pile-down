@@ -106,6 +106,14 @@ L'APK versionné est écrit dans
 OpenJDK 17 et un SDK Android configuré dans les paramètres d'éditeur Godot.
 Le SDK doit notamment contenir Platform-Tools 35+, Build-Tools 35.0.1 et la
 plateforme Android 35.
+Le preset utilise les icônes Android dédiées de
+`resources/sprites/android/` : une icône adaptative dont le motif reste dans
+la zone sûre des masques de lanceur, ainsi qu'une silhouette monochrome pour
+les icônes thématiques. Leur motif reprend directement les rendus pixel-art
+des tuiles `3`, `2` et `1` du jeu, sans lissage.
+Les exports Web, Linux et Windows utilisent la même pile de vraies tuiles via
+`resources/sprites/branding/game-icon.png`, sur fond transparent et sans les couches
+adaptatives propres à Android.
 
 Pour produire un APK release, fournir la clé de signature hors du dépôt :
 
@@ -224,11 +232,16 @@ pile-down/
 │   │   │   └── rules/
 │   │   └── ui/
 │   └── sprites/
+│       ├── android/
+│       ├── backgrounds/
+│       ├── branding/
 │       ├── hand/
 │       ├── tiles/
-│       ├── background.png
-│       ├── clock.png
-│       └── round-background.png
+│       └── ui/
+│           ├── buttons/
+│           ├── icons/
+│           │   └── arrows/
+│           └── panels/
 ├── project.godot
 └── README.md
 ```
@@ -269,18 +282,22 @@ subpixel et le fallback système sont désactivés pour la police. Son raster
 utilise un oversampling fixe de 1 et un hinting entier afin d'aligner les
 contours des glyphes sur la grille avant l'agrandissement global.
 
-Les boutons `PLAY` et `REPLAY` utilisent `resources/sprites/button.png` à sa taille
-native 86×31. L'écran final utilise `resources/sprites/pop-up.png` à sa taille native
+Les boutons `PLAY` et `REPLAY` utilisent
+`resources/sprites/ui/buttons/button.png` à sa taille native 86×31. L'écran
+final utilise `resources/sprites/ui/panels/pop-up.png` à sa taille native
 256×192. Les tuiles utilisent leur format natif 34×37.
 
-Le contour de progression de `resources/sprites/clock.png` est piloté par un shader :
+Le contour de progression de `resources/sprites/ui/icons/clock.png` est piloté
+par un shader :
 les pixels-clés du cercle sont remplis dans le sens horaire selon le temps
 restant. Aucun arc vectoriel n'est dessiné par-dessus le pixel-art.
 
 Les éléments visuels principaux sont positionnables directement dans
 `resources/scenes/Game.tscn`. `TimerRing`, `RoundPanel`, `PilesBoard` et `HandTray`
-peuvent être déplacés depuis l'éditeur 2D. Les trois vies sont des
-`TextureRect` séparés sous `HandTray/MistakesDots` : le groupe ou chaque point
+peuvent être déplacés depuis l'éditeur 2D. La racine de cette scène est rangée
+en branches repliables : `Artwork`, `Gameplay`, `Managers`,
+`PresentationLayers` et `Screens`. Les trois vies sont des `TextureRect`
+séparés sous `Gameplay/HandTray/MistakesDots` : le groupe ou chaque point
 peut donc être replacé visuellement sans modifier de script.
 
 Au lancement, un splash screen affiche `PILE DOWN` et attend une pression sur
@@ -322,12 +339,59 @@ Les options de développement sont centralisées dans `resources/scripts/setting
 options sont ignorées. Lorsqu'il vaut `true`, le menu principal affiche
 `DEBUG MODE` en rouge.
 
+En mode debug, la touche `H` efface toute la progression globale : highscores,
+Endless, checkpoints, découvertes, achievements présents ou ajoutés dans une
+future version, et polices débloquées. Les volumes audio ne sont pas modifiés.
+
 ```gdscript
 const ENABLED := false
 const GOD_MODE := false
 const START_AT_ROUND := 1
 const LOCK_SPECIAL_RULES: Array[StringName] = []
 ```
+
+Les annonces non interactives de progression, de checkpoint, de règle spéciale
+et de combinaison peuvent être terminées immédiatement avec un clic, un toucher,
+`Espace` ou `Entrée`. L'événement est consommé et ne déclenche jamais l'élément
+de jeu situé dessous. Les écrans demandant un choix restent non skippables.
+
+Le bouton illustré `ui/icons/stats.png`, placé en haut à droite du menu
+principal, ouvre
+les pages `HIGHSCORES`,
+`ACHIEVEMENTS`, `BONUSES`, `SPECIAL RULES` et `FONTS`. Les entrées encore
+inconnues restent masquées. La page des scores regroupe Classic, Endless et les
+runs Checkpoint. Les polices débloquées peuvent être sélectionnées directement
+depuis leur page ; chaque bouton conserve le nom de la police et une unique
+rangée d'aperçu en bas utilise le vrai sprite coloré des tuiles à sa taille
+native de 34×37 pixels. Les chiffres reprennent leur couleur de jeu et la ligne
+peut défiler horizontalement. Elle affiche
+les valeurs `1` à `N`, où `N` se règle avec `Font Preview Tile Count` dans
+l'inspecteur de `ProgressionMenu`. Le choix actif reprend la
+teinte bleue de la navigation. La liste `Tile Fonts > Available Fonts` du nœud
+`Game` permet de choisir les polices proposées depuis l'inspecteur et la
+propriété `Tile Font Size` de chaque entrée ajuste la taille des chiffres dans
+le jeu et dans l'aperçu. La
+police choisie s'applique uniquement aux valeurs des cartes et des piles, sans
+modifier les textes de l'interface. Les cinq pages utilisent les
+icônes sans panneau du dossier `resources/sprites/ui/icons/` (`stats.png`,
+`trophies.png`, `bonuses.png`, `rules.png` et `fonts.png`) dans la
+navigation. Tous les boutons fonctionnent à la souris, au clavier et au
+tactile ; la touche `Escape` ou le bouton illustré `escape.png` ferme le menu.
+Les pages Achievements, Bonuses, Special Rules et Fonts proposent un filtre
+`BOTH`, `UNLOCKED` ou `LOCKED` ; la page Highscores n'affiche pas ce filtre.
+La mise en page reste contenue dans la fenêtre logique minimale de 256×320 et
+les listes longues défilent dans leur zone dédiée.
+Les boutons illustrés utilisent tous `TextureHighlightButton.gd` et le shader
+de surbrillance bleu commun au reste de l'interface.
+La page `SPECIAL RULES` affiche une courte description fonctionnelle de chaque
+règle découverte, distincte du texte d'ambiance utilisé pendant son annonce.
+Les états débloqués et verrouillés des achievements, bonus et règles utilisent
+les sprites `ui/check/checked.png` et `ui/check/unchecked.png` plutôt que des
+marqueurs textuels.
+`ProgressionMenu.tscn` fournit un aperçu directement dans l'éditeur. Les
+propriétés `Editor Preview/Enabled` et `Editor Preview/Page` permettent
+d'afficher chacune des cinq pages. La section `Entry Style` expose les polices
+et tailles des titres et descriptions générés avec une actualisation immédiate.
 
 - `GOD_MODE` conserve les trois vies après une erreur ;
 - `START_AT_ROUND` choisit le round de progression initial entre 1 et 100 ;
@@ -363,6 +427,8 @@ progression. Les réglages se trouvent également dans `resources/scripts/settin
 const ENABLED_SPECIAL_RULES: Array[StringName] = [
     &"shell_game",
     &"merry_go_stack",
+    &"shaking_piles",
+    &"wavy_baby",
     &"free_range_cards",
     &"pile_up",
     &"lights_out",
@@ -387,10 +453,47 @@ const LIGHTS_OUT_RADIUS := 60.0
 const HOT_POTATO_DURATION := 1.0
 const STICKY_HOT_POTATO_DURATION := 2.0
 const GRACE_PERIOD_REVEAL_TIME := 1.25
+const MERRY_GO_STACK_SPEED := 0.35
+const MERRY_GO_STACK_SETUP_DURATION := 0.45
+const MERRY_GO_STACK_MINIMUM_RADIUS := 58.0
+const MERRY_GO_STACK_RADIUS_PADDING := 4.0
+const SHAKING_PILES_AMPLITUDE_X := 4.0
+const SHAKING_PILES_AMPLITUDE_Y := 4.0
+const SHAKING_PILES_FREQUENCY_X := 1.8
+const SHAKING_PILES_FREQUENCY_Y := 2.15
+const SHAKING_PILES_PHASE_STEP_X := 1.73
+const SHAKING_PILES_PHASE_STEP_Y := 2.31
+const MOVING_PILES_SAFETY_SEARCH_ITERATIONS := 10
+const MOVING_PILES_VISUAL_GAP := 2.0
+const WAVY_BABY_AMPLITUDE := 12.0
+const WAVY_BABY_SPEED := 1.6
+const WAVY_BABY_PHASE := 0.0
+const WAVY_BABY_HORIZONTAL_PHASE_SPACING := 0.06
 const MIRROR_HORIZONTAL_WEIGHT := 75.0
 const MIRROR_VERTICAL_WEIGHT := 20.0
 const MIRROR_BOTH_AXES_WEIGHT := 5.0
 ```
+
+`MERRY-GO-STACK` répartit régulièrement les piles sur une orbite autour de la
+pile centrale. Son rayon respecte `MERRY_GO_STACK_MINIMUM_RADIUS` et grandit
+automatiquement avec le nombre de piles pour conserver la distance minimale ;
+`MERRY_GO_STACK_RADIUS_PADDING` ajoute une marge visuelle. Après leur entrée,
+les piles rejoignent cette formation pendant
+`MERRY_GO_STACK_SETUP_DURATION`, puis la rotation commence. `SHAKING PILES`
+applique à chaque pile des phases horizontales et verticales différentes.
+`WAVY BABY` utilise une phase commune décalée uniquement par la position
+horizontale de chaque pile. Cela forme une vague globale continue qui traverse
+le plateau de gauche à droite. Pour ces deux derniers mouvements, l'amplitude
+est automatiquement réduite avant une
+sortie du plateau ou un rapprochement inférieur à `MINIMUM_PILE_DISTANCE`.
+Les amplitudes règlent la distance maximale sur chaque axe, les fréquences la
+vitesse des oscillations et les `PHASE_STEP` le décalage entre deux piles.
+`MOVING_PILES_SAFETY_SEARCH_ITERATIONS` contrôle la précision du calcul
+continu de réduction de l'amplitude. Les positions de Wavy Baby restent
+subpixel pendant le mouvement afin d'éviter des sauts d'un pixel entre deux
+frames. `MOVING_PILES_VISUAL_GAP` conserve une petite séparation entre les
+rectangles visibles, tandis que les limites sont celles de l'écran plutôt que
+celles du conteneur logique du plateau.
 
 Pour désactiver une règle dans les tirages automatiques, il suffit de commenter
 sa ligne dans `ENABLED_SPECIAL_RULES`. Les verrouillages explicites de
@@ -431,17 +534,19 @@ Les règles disponibles sont :
 
 - `SHELL GAME` : échange animé de deux piles, puis de trois après le palier
   configurable ;
-- `MERRY-GO-STACK` : mouvement continu, lent et déterministe des piles parmi
-  six motifs : ellipse, pendule horizontal, figure en huit, orbites
-  concentriques, vague verticale et circuit par points fixes ;
+- `MERRY-GO-STACK` : orbite continue et régulière autour d'une pile centrale ;
+- `SHAKING PILES` : oscillations locales désynchronisées autour des positions
+  logiques des piles ;
+- `WAVY BABY` : onde verticale continue dont la phase progresse horizontalement ;
 - `FREE-RANGE CARDS` : entrée depuis le bord le plus proche de chaque position
   libre tirée aléatoirement, déplacement pseudo-aléatoire hors du plateau,
   puis sortie animée vers le bord le plus proche ;
 - `PILE UP` : progression inversée de 0 vers S ;
-- `LIGHTS OUT` : calque sombre avec lampe circulaire suivant le pointeur ; le
-  cercle lumineux se referme progressivement à l'activation et se rouvre à la
-  fin du round. Son rayon en pixels se règle avec `LIGHTS_OUT_RADIUS` dans
-  `difficulty.gd` ;
+- `LIGHTS OUT` : calque sombre avec lampe circulaire suivant le pointeur ou le
+  doigt. Sur écran tactile, elle suit immédiatement la dernière position
+  touchée sans revenir à une position de souris inactive. Le cercle lumineux
+  se referme progressivement à l'activation et se rouvre à la fin du round.
+  Son rayon en pixels se règle avec `LIGHTS_OUT_RADIUS` dans `difficulty.gd` ;
 - `PEEK-A-CARD` : cartes cachées révélées au survol ou au premier toucher ;
 - `STACK ATTACK` : régénération temporisée d'une sélection de piles, affichée
   avec le masque pixel-art `resources/sprites/tiles/tile-regen.png`. Une main
@@ -454,7 +559,8 @@ Les règles disponibles sont :
   et `VIII` utilisent la police `Tiny5 Regular` avec une taille réduite afin de
   rester dans les tuiles ;
 - `MUSICAL STACKS` : rotation cyclique et animée des piles encore actives après
-  chaque placement correct ;
+  chaque placement correct. Elle est incompatible avec `MERRY-GO-STACK`,
+  `SHAKING PILES` et `WAVY BABY` ;
 - `STICKY FINGERS` : une carte relâchée dans le vide reste attachée au pointeur
   jusqu'à son dépôt ou un retour forcé ;
 - `HOT POTATOES` : un timer de drag de 1,5 seconde force le retour de la carte
@@ -554,8 +660,49 @@ remplissage conserve néanmoins sa probabilité de générer un autre joker, tan
 qu'une place reste disponible dans la main.
 Le bouton de `REDRAW` utilise `redraw.png`, effectue une rotation complète lors
 de son utilisation et affiche les relances restantes à partir du niveau II.
+`LUCKY HAND` construit jusqu'à trois cartes utiles à partir des piles actives.
+Le niveau I cible directement la pile la plus avancée. Le niveau II ajoute la
+suite de cette pile avec `DOUBLE DOWN`, ou la prochaine valeur immédiatement
+jouable. Le niveau III ajoute une seconde carte de chaîne lorsque le niveau de
+`DOUBLE DOWN` le permet, sinon la valeur attendue par le plus de piles.
+Avec `DEJA VU`, les copies sont limitées à son niveau et au nombre réel de
+piles compatibles. Les jokers et la carte jouable garantie utilisent des
+emplacements protégés et la taille normale de la main ne change jamais.
 `LESSON LEARNED` possède trois niveaux et reprend les durées de flash de
-`QUICK PEEK` : 0,25, 0,4 puis 0,6 seconde.
+`QUICK PEEK` se déclenche périodiquement : toutes les 4, 3 ou 2 mains selon
+son niveau, pendant respectivement 0,10, 0,20 ou 0,25 seconde. Le timer est
+suspendu pendant la révélation.
+
+La progression des statistiques utilise un pity configurable
+(`STAT_PITY_RATE`, `MAX_STAT_DROUGHT`, `STARTER_STAT_MULTIPLIER`). Les compteurs
+sont plafonnés, restaurés avec les checkpoints et donnent la priorité à une
+statistique éligible après une sécheresse maximale. Les checkpoints permanents
+sont espacés par `CHECKPOINT_INTERVAL` et peuvent être
+désactivés avec `ENABLE_CHECKPOINTS`.
+
+Les mouvements continus sont séparés en trois règles : `MERRY-GO-STACK` utilise
+des orbites prévisibles, `SHAKING PILES` conserve l'ancien mouvement local
+irrégulier et `WAVY BABY` applique une onde verticale. Leurs amplitudes et
+vitesses sont centralisées dans `difficulty.gd`.
+
+Après la première victoire d'un round correspondant à `CHECKPOINT_INTERVAL`,
+ou à l'un de ses multiples, son checkpoint est
+conservé dans `user://pile_down.cfg` uniquement si aucune vie n'a été perdue
+depuis le dernier checkpoint franchi (ou depuis le début de la run pour le
+premier). Une erreur absorbée sans dégât ne bloque pas le déblocage. Le bouton
+`FROM <round>`, placé à droite
+de `PLAY`, lance le palier sélectionné. Les petites flèches, la molette ou les
+touches haut/bas changent ce palier ; ses
+statistiques permanentes sont restaurées et
+les choix de bonus dus avant ce round sont proposés avant le lancement du
+timer. Un départ inférieur ou égal à `TOTAL_ROUNDS` conserve le compteur visuel
+descendant et un highscore partagé en rounds restants. Un checkpoint situé
+au-delà de `TOTAL_ROUNDS` continue comme Endless et utilise un highscore partagé
+en round atteint. Aucun classement checkpoint n'utilise le temps.
+
+Les checkpoints sont séquentiels : le checkpoint `N` exige que `N - 1` soit
+déjà débloqué. Plusieurs checkpoints peuvent néanmoins être obtenus pendant
+une même run si chaque section qui les sépare est terminée sans perdre de vie.
 Tant que `SAFETY NET` est disponible, tous les points de vie utilisent un
 shader métallique argenté. Sa consommation joue une rupture visuelle et un
 son métallique propres avant de restaurer les couleurs normales.
@@ -627,7 +774,10 @@ et le shader des boutons, tandis que `ActiveBonusBadge.tscn` définit les
 indicateurs de la barre. Une nouvelle partie réinitialise toujours les bonus.
 Pour les tests, `LOCK_BONUSES` dans `resources/scripts/settings/debug.gd`
 accepte des entrées `bonus_id: niveau`. Ces bonus sont accordés au lancement
-et retirés du tirage afin de conserver exactement le niveau demandé.
+et retirés du tirage afin de conserver exactement le niveau demandé. Un niveau
+négatif force en plus les activations probabilistes à 100 %, tout en utilisant
+les statistiques du niveau correspondant : `-1` conserve le niveau I, `-2` le
+niveau II, etc. La valeur absolue est bornée au niveau maximal du bonus.
 Le test autonome se lance avec :
 
 ```sh

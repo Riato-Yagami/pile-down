@@ -8,6 +8,9 @@ const AnnouncementScript := preload(
 
 func _init() -> void:
 	var manager := ManagerScript.new() as SpecialRuleManager
+	for rule in manager._rules:
+		assert(not rule.description.is_empty())
+		assert(rule.description != rule.subtitle)
 	for enabled_rule_id in DifficultySettings.ENABLED_SPECIAL_RULES:
 		assert(manager._rules.any(
 			func(rule: SpecialRuleData) -> bool:
@@ -67,10 +70,20 @@ func _init() -> void:
 	assert(forbidden_debug_selection.size() == 2)
 	assert(forbidden_debug_selection[0].id == &"shell_game")
 	assert(forbidden_debug_selection[1].id == &"lights_out")
-	var lights_out := manager._rules[4]
-	var shell_game_rules: Array[SpecialRuleData] = [manager._rules[0]]
-	var moving_stack_rules: Array[SpecialRuleData] = [manager._rules[1]]
-	var peek_rules: Array[SpecialRuleData] = [manager._rules[5]]
+	var find_rule := func(id: StringName) -> SpecialRuleData:
+		for rule in manager._rules:
+			if rule.id == id:
+				return rule
+		return null
+	var lights_out: SpecialRuleData = find_rule.call(&"lights_out")
+	var shell_game_rules: Array[SpecialRuleData] = [find_rule.call(&"shell_game")]
+	var moving_stack_rules: Array[SpecialRuleData] = [find_rule.call(&"merry_go_stack")]
+	var shaking_rule: SpecialRuleData = find_rule.call(&"shaking_piles")
+	var wavy_rule: SpecialRuleData = find_rule.call(&"wavy_baby")
+	var shaking_rules: Array[SpecialRuleData] = [shaking_rule]
+	var shell_rule: SpecialRuleData = find_rule.call(&"shell_game")
+	var musical_rule: SpecialRuleData = find_rule.call(&"musical_stacks")
+	var peek_rules: Array[SpecialRuleData] = [find_rule.call(&"peek_a_card")]
 	var blind_delivery_rule: SpecialRuleData
 	for rule in manager._rules:
 		if rule.id == &"blind_delivery":
@@ -80,6 +93,24 @@ func _init() -> void:
 	assert(not manager._is_compatible(lights_out, moving_stack_rules))
 	assert(manager._is_compatible(lights_out, peek_rules))
 	assert(manager._is_compatible(blind_delivery_rule, peek_rules))
+	assert(not manager._is_compatible(shaking_rule, moving_stack_rules))
+	assert(not manager._is_compatible(wavy_rule, moving_stack_rules))
+	assert(not manager._is_compatible(wavy_rule, shaking_rules))
+	for movement_rule in [moving_stack_rules[0], shaking_rule, wavy_rule]:
+		var movement_rules: Array[SpecialRuleData] = [movement_rule]
+		assert(manager._is_compatible(shell_rule, movement_rules))
+		assert(not manager._is_compatible(musical_rule, movement_rules))
+	assert(manager._is_compatible(musical_rule, shell_game_rules))
+	assert(DifficultySettings.MERRY_GO_STACK_SPEED > 0.0)
+	assert(
+		DifficultySettings.MERRY_GO_STACK_MINIMUM_RADIUS
+		> DifficultySettings.MINIMUM_PILE_DISTANCE
+	)
+	assert(DifficultySettings.SHAKING_PILES_AMPLITUDE_X > 0.0)
+	assert(DifficultySettings.SHAKING_PILES_AMPLITUDE_Y > 0.0)
+	assert(DifficultySettings.SHAKING_PILES_FREQUENCY_X > 0.0)
+	assert(DifficultySettings.SHAKING_PILES_FREQUENCY_Y > 0.0)
+	assert(DifficultySettings.WAVY_BABY_AMPLITUDE == 12.0)
 
 	manager._previous_drawn_rule_ids = [&"shell_game"]
 	for iteration in 20:
@@ -123,9 +154,9 @@ func _init() -> void:
 					break
 		assert(announcement._combination_title(combination_rules) == expected_title)
 	var larger_combination: Array[SpecialRuleData] = [
-		manager._rules[4],
-		manager._rules[5],
-		manager._rules[7],
+		find_rule.call(&"lights_out"),
+		find_rule.call(&"peek_a_card"),
+		find_rule.call(&"roman_holiday"),
 	]
 	assert(announcement._combination_title(larger_combination) == "BLIND DATE")
 

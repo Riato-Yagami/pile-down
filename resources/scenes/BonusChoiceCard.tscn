@@ -1,7 +1,7 @@
 [gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://resources/scripts/bonuses/BonusChoiceCard.gd" id="1"]
-[ext_resource type="Texture2D" path="res://resources/sprites/button.png" id="2"]
+[ext_resource type="Texture2D" path="res://resources/sprites/ui/buttons/button.png" id="2"]
 
 [sub_resource type="StyleBoxTexture" id="SpriteButton"]
 texture = ExtResource("2")

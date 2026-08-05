@@ -28,6 +28,13 @@ func activate(context: RoundContext) -> void:
 			context.modifiers.swap_piles_after_play = true
 		&"merry_go_stack":
 			context.modifiers.moving_pile_pattern = true
+			context.modifiers.moving_pile_pattern_id = &"orbit"
+		&"shaking_piles":
+			context.modifiers.moving_pile_pattern = true
+			context.modifiers.moving_pile_pattern_id = &"shake"
+		&"wavy_baby":
+			context.modifiers.moving_pile_pattern = true
+			context.modifiers.moving_pile_pattern_id = &"wave"
 		&"free_range_cards":
 			context.modifiers.wandering_hand_cards = true
 		&"pile_up":
@@ -93,6 +100,10 @@ func deactivate(context: RoundContext) -> void:
 			context.modifiers.swap_piles_after_play = false
 		&"merry_go_stack":
 			context.modifiers.moving_pile_pattern = false
+			context.modifiers.moving_pile_pattern_id = &""
+		&"shaking_piles", &"wavy_baby":
+			context.modifiers.moving_pile_pattern = false
+			context.modifiers.moving_pile_pattern_id = &""
 		&"free_range_cards":
 			context.modifiers.wandering_hand_cards = false
 		&"pile_up":

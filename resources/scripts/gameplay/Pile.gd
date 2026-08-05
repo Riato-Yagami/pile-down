@@ -34,6 +34,9 @@ var _visual_tween: Tween
 var colorblind_enabled := false
 var keep_face_up := false
 var bonus_highlight := false
+var movable := false
+var _value_font: Font
+var _value_font_size := 20
 
 
 func _ready() -> void:
@@ -44,6 +47,13 @@ func _ready() -> void:
 	face.gui_input.connect(_on_face_gui_input)
 	resized.connect(func() -> void: pivot_offset = size * 0.5)
 	_refresh()
+
+
+func set_value_font(font: Font, font_size := 20) -> void:
+	_value_font = font
+	_value_font_size = clampi(font_size, 8, 32)
+	if is_node_ready():
+		_refresh()
 
 
 func _on_face_gui_input(event: InputEvent) -> void:
@@ -78,6 +88,13 @@ func setup(
 	keep_face_up = false
 	bonus_highlight = false
 	_refresh()
+
+
+func set_movable(enabled: bool) -> void:
+	movable = enabled
+	face.mouse_default_cursor_shape = (
+		Control.CURSOR_POINTING_HAND if movable else Control.CURSOR_ARROW
+	)
 
 
 func expected_value() -> int:
@@ -370,10 +387,15 @@ func _refresh() -> void:
 	value_label.text = RoundModifiers.format_value(current_value, roman_numerals_enabled)
 	value_label.add_theme_font_size_override(
 		"font_size",
-		RoundModifiers.value_font_size(current_value, roman_numerals_enabled)
+		int(round(
+			_value_font_size
+			* (0.7 if roman_numerals_enabled and current_value in [7, 8] else 1.0)
+		))
 	)
 	if roman_numerals_enabled and current_value in [7, 8]:
 		value_label.add_theme_font_override("font", TINY_REGULAR_FONT)
+	elif _value_font != null:
+		value_label.add_theme_font_override("font", _value_font)
 	else:
 		value_label.remove_theme_font_override("font")
 	value_label.add_theme_color_override(

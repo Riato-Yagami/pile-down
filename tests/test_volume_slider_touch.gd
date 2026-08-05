@@ -11,8 +11,23 @@ func _init() -> void:
 	slider.size = Vector2(100.0, 16.0)
 	var bar := TextureRect.new()
 	bar.name = "Bar"
+	var shader := Shader.new()
+	shader.code = (
+		"shader_type canvas_item; "
+		+ "uniform float progress = 1.0; "
+		+ "uniform float highlighted = 0.0;"
+	)
+	var material := ShaderMaterial.new()
+	material.shader = shader
+	bar.material = material
 	slider.add_child(bar)
 	root.add_child(slider)
+	await process_frame
+	assert(slider.mouse_default_cursor_shape == Control.CURSOR_POINTING_HAND)
+	slider._hover_interaction.show()
+	assert(is_equal_approx(material.get_shader_parameter("highlighted"), 1.0))
+	slider._hover_interaction.hide()
+	assert(is_equal_approx(material.get_shader_parameter("highlighted"), 0.0))
 
 	var press := InputEventScreenTouch.new()
 	press.index = 2

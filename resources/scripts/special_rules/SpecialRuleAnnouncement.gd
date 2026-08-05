@@ -1,5 +1,5 @@
 class_name SpecialRuleAnnouncement
-extends Control
+extends SkippableSequence
 
 signal rule_delete_requested(index: int)
 
@@ -46,7 +46,9 @@ func show_rules(
 		else display_duration
 	)
 	tween.tween_property(self, "modulate:a", 0.0, fade_duration)
+	begin(tween)
 	await tween.finished
+	finish()
 	visible = false
 
 

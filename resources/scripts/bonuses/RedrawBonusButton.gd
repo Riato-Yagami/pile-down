@@ -1,5 +1,5 @@
 class_name RedrawBonusButton
-extends Button
+extends HighlightButton
 
 @export_category("Use Animation")
 @export var spin_duration := 0.32
@@ -11,6 +11,7 @@ var _spin_tween: Tween
 
 
 func _ready() -> void:
+	super._ready()
 	redraw_icon.pivot_offset = redraw_icon.size * 0.5
 	redraw_icon.resized.connect(
 		func() -> void:

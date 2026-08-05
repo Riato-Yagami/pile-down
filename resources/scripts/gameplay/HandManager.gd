@@ -10,6 +10,8 @@ signal card_forced_return_requested(card, reason)
 @export var card_scene: PackedScene
 var rng := RandomNumberGenerator.new()
 var current_cards: Array[PlayingCard] = []
+var value_font: Font
+var value_font_size := 20
 
 
 func _ready() -> void:
@@ -30,7 +32,11 @@ func generate_hand(
 	modifiers: RoundModifiers = null,
 	joker_chance := 0.0,
 	force_joker := false,
-	lucky_hand_chance := 0.0
+	lucky_hand_chance := 0.0,
+	lucky_hand_level := 0,
+	double_down_level := 0,
+	deja_vu_level := 0,
+	active_piles: Array[MemoryPile] = []
 ) -> void:
 	if clear_existing:
 		clear_hand(container, true)
@@ -48,27 +54,193 @@ func generate_hand(
 		force_joker
 		or (joker_chance > 0.0 and rng.randf() < joker_chance)
 	)
+	var joker_position := (
+		rng.randi_range(0, cards_to_create - 1)
+		if should_create_joker
+		else -1
+	)
 	var guaranteed_value := playable_values[rng.randi_range(0, playable_values.size() - 1)]
 	var values: Array[int] = []
 	for i in cards_to_create:
 		values.append(rng.randi_range(1 if pile_up else 0, start_value if pile_up else start_value - 1))
-	var guaranteed_position := rng.randi_range(0, cards_to_create - 1)
-	values[guaranteed_position] = guaranteed_value
-	if lucky_hand_chance > 0.0 and rng.randf() < lucky_hand_chance:
-		values.fill(guaranteed_value)
-	var joker_position := -1
-	if should_create_joker:
-		joker_position = rng.randi_range(0, cards_to_create - 1)
-		# Preserve a regular guaranteed answer whenever the hand has room for
-		# both it and the joker.
-		if cards_to_create > 1 and joker_position == guaranteed_position:
-			joker_position = (joker_position + 1) % cards_to_create
+	var regular_slots: Array[int] = []
+	for index in cards_to_create:
+		if index != joker_position:
+			regular_slots.append(index)
+	var lucky_hand_triggered := (
+		lucky_hand_chance > 0.0
+		and rng.randf() < lucky_hand_chance
+	)
+	var guaranteed_position := (
+		(
+			regular_slots[0]
+			if lucky_hand_triggered
+			else regular_slots[rng.randi_range(0, regular_slots.size() - 1)]
+		)
+		if not regular_slots.is_empty()
+		else -1
+	)
+	if guaranteed_position >= 0:
+		values[guaranteed_position] = guaranteed_value
+	var protected_slots: Array[int] = []
+	if joker_position >= 0:
+		protected_slots.append(joker_position)
+	if (
+		guaranteed_position >= 0
+		and lucky_hand_triggered
+	):
+		_apply_lucky_hand(
+			values, playable_values, guaranteed_position, pile_up, start_value,
+			lucky_hand_level, double_down_level, deja_vu_level,
+			protected_slots, active_piles
+		)
 	for index in values.size():
 		_create_card(
 			container, values[index], index == joker_position,
 			hover_reveal, use_roman_numerals,
 			modifiers, animate_draw, enter_from_right
 		)
+
+
+func _apply_lucky_hand(
+	values: Array[int],
+	playable_values: Array[int],
+	guaranteed_position: int,
+	pile_up: bool,
+	maximum_value: int,
+	lucky_level: int,
+	double_down_level: int,
+	deja_vu_level: int,
+	protected_slots: Array[int] = [],
+	active_piles: Array[MemoryPile] = []
+) -> void:
+	if values.is_empty() or playable_values.is_empty():
+		return
+	var lucky_slots: Array[int] = []
+	if not protected_slots.has(guaranteed_position):
+		lucky_slots.append(guaranteed_position)
+	for index in values.size():
+		if index != guaranteed_position and not protected_slots.has(index):
+			lucky_slots.append(index)
+	var lucky_count := mini(clampi(lucky_level, 1, 3), lucky_slots.size())
+	if lucky_count <= 0:
+		return
+	var advanced_pile := get_most_advanced_pile(active_piles, pile_up)
+	var target := (
+		advanced_pile.expected_value()
+		if advanced_pile != null
+		else get_most_advanced_value(playable_values, pile_up)
+	)
+	var plan: Array[int] = [target]
+	if lucky_count >= 2:
+		var chain_value := target + (1 if pile_up else -1)
+		if (
+			double_down_level > 0
+			and chain_value >= (1 if pile_up else 0)
+			and chain_value <= maximum_value
+		):
+			plan.append(chain_value)
+		else:
+			plan.append(_next_immediately_playable_value(
+				playable_values, target, pile_up
+			))
+	if lucky_count >= 3:
+		var second_chain_value := target + (2 if pile_up else -2)
+		if (
+			double_down_level >= 2
+			and second_chain_value >= (1 if pile_up else 0)
+			and second_chain_value <= maximum_value
+		):
+			plan.append(second_chain_value)
+		else:
+			plan.append(get_most_shared_expected_value(playable_values, pile_up))
+
+	# Deja Vu needs one played card plus at most `level` automatic copies, and
+	# never more cards than compatible piles waiting for that value.
+	if deja_vu_level > 0 and lucky_count >= 2:
+		var shared := get_most_shared_expected_value(playable_values, pile_up)
+		var copy_count := mini(
+			lucky_count,
+			mini(playable_values.count(shared), deja_vu_level + 1)
+		)
+		if copy_count >= 2:
+			for index in copy_count:
+				plan[index] = shared
+			for index in range(copy_count, lucky_count):
+				if plan[index] == shared:
+					plan[index] = _next_immediately_playable_value(
+						playable_values, shared, pile_up
+					)
+
+	for index in lucky_count:
+		values[lucky_slots[index]] = plan[index]
+
+
+func _next_immediately_playable_value(
+	playable_values: Array[int],
+	target: int,
+	pile_up: bool
+) -> int:
+	var ordered := playable_values.duplicate()
+	ordered.sort()
+	if pile_up:
+		ordered.reverse()
+	# The most advanced target is already present. Prefer a different expected
+	# value, then fall back to a useful duplicate if every pile expects target.
+	for value in ordered:
+		if value != target:
+			return value
+	return target
+
+
+func get_most_advanced_value(playable_values: Array[int], pile_up: bool) -> int:
+	var result := playable_values[0]
+	for value in playable_values:
+		if (pile_up and value > result) or (not pile_up and value < result):
+			result = value
+	return result
+
+
+func get_most_advanced_pile(
+	active_piles: Array[MemoryPile],
+	pile_up: bool
+) -> MemoryPile:
+	var result: MemoryPile
+	for pile in active_piles:
+		if not is_instance_valid(pile) or pile.completed or not pile.visible:
+			continue
+		if (
+			result == null
+			or (pile_up and pile.current_value > result.current_value)
+			or (not pile_up and pile.current_value < result.current_value)
+		):
+			result = pile
+	return result
+
+
+func get_most_shared_expected_value(
+	playable_values: Array[int],
+	pile_up := false
+) -> int:
+	var counts: Dictionary = {}
+	for value in playable_values:
+		counts[value] = int(counts.get(value, 0)) + 1
+	if playable_values.is_empty():
+		return 0
+	var maximum_count := 0
+	var tied: Array[int] = []
+	for value_variant in counts:
+		var value := int(value_variant)
+		var count := int(counts[value])
+		if count > maximum_count:
+			maximum_count = count
+			tied.assign([value])
+		elif count == maximum_count:
+			tied.append(value)
+	var advanced := get_most_advanced_value(playable_values, pile_up)
+	if tied.has(advanced):
+		return advanced
+	return tied[rng.randi_range(0, tied.size() - 1)]
 
 
 func _create_card(
@@ -83,6 +255,7 @@ func _create_card(
 ) -> void:
 	var card := card_scene.instantiate() as PlayingCard
 	container.add_child(card)
+	card.set_value_font(value_font, value_font_size)
 	card.setup(value, true, hover_reveal, use_roman_numerals, modifiers)
 	card.set_joker(joker)
 	card.card_selected.connect(_on_card_selected)

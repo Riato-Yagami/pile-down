@@ -15,12 +15,14 @@ func _run() -> void:
 	while game.input_locked and Time.get_ticks_msec() < deadline:
 		await process_frame
 	assert(not game.input_locked)
+	var pile := game.piles[0] as MemoryPile
+	assert(pile.face.mouse_default_cursor_shape == Control.CURSOR_ARROW)
 
 	for definition in game.bonus_manager.definitions:
 		if definition.id == &"pile_mover":
 			game.bonus_manager._add_or_upgrade(definition)
 			break
-	var pile := game.piles[0] as MemoryPile
+	assert(pile.face.mouse_default_cursor_shape == Control.CURSOR_POINTING_HAND)
 	game.mirror_match_controller.end_round(game)
 	game.round_modifiers.floor_is_lava_enabled = false
 	game.lava_rule_controller.clear()

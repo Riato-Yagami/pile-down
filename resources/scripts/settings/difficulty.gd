@@ -29,6 +29,14 @@ const ADD_START_VALUE_WEIGHT := 15.0
 const REDUCE_TURN_TIME_WEIGHT := 5.0
 const NO_DIFFICULTY_CHANGE_WEIGHT := 10.0
 
+const STAT_PITY_RATE := 0.25
+const MAX_STAT_DROUGHT := 5
+const STARTER_STAT_MULTIPLIER := 2.0
+
+# Permanent progression checkpoints use the internal, increasing round number.
+const CHECKPOINT_INTERVAL := 2
+const ENABLE_CHECKPOINTS := true
+
 # The first round uses these pile/card weights independently from the regular
 # weights above. NO_DIFFICULTY_CHANGE_WEIGHT remains available.
 const FIRST_ADD_PILE_WEIGHT := 70.0
@@ -39,6 +47,8 @@ const FIRST_ADD_CARD_WEIGHT := 30.0
 const ENABLED_SPECIAL_RULES: Array[StringName] = [
 	&"shell_game",
 	&"merry_go_stack",
+	&"shaking_piles",
+	&"wavy_baby",
 	&"free_range_cards",
 	&"pile_up",
 	&"lights_out",
@@ -67,6 +77,24 @@ const HOT_POTATO_DURATION := 1
 const STICKY_HOT_POTATO_DURATION := 2
 # During Grace Period, reveal the running clock this many seconds before expiry.
 const GRACE_PERIOD_REVEAL_TIME := 1.25
+
+# Continuous pile movement rules, tuned for the native 256 x 320 viewport.
+const MERRY_GO_STACK_SPEED := 0.35
+const MERRY_GO_STACK_SETUP_DURATION := 0.45
+const MERRY_GO_STACK_MINIMUM_RADIUS := 58.0
+const MERRY_GO_STACK_RADIUS_PADDING := 4.0
+const SHAKING_PILES_AMPLITUDE_X := 1.0
+const SHAKING_PILES_AMPLITUDE_Y := 1.0
+const SHAKING_PILES_FREQUENCY_X := 10
+const SHAKING_PILES_FREQUENCY_Y := 10
+const SHAKING_PILES_PHASE_STEP_X := 1.73
+const SHAKING_PILES_PHASE_STEP_Y := 2.31
+const MOVING_PILES_SAFETY_SEARCH_ITERATIONS := 10
+const MOVING_PILES_VISUAL_GAP := 2.0
+const WAVY_BABY_AMPLITUDE := 12.0
+const WAVY_BABY_SPEED := 1.6
+const WAVY_BABY_PHASE := 0.0
+const WAVY_BABY_HORIZONTAL_PHASE_SPACING := 0.06
 
 # Mirror Match variants. These are relative weights and do not need to total 100.
 const MIRROR_HORIZONTAL_WEIGHT := 75.0
@@ -112,8 +140,15 @@ const BONUS_INTERVAL := 4
 const BONUS_CHOICE_COUNT := 2
 const MAX_ACTIVE_BONUS_TYPES := 999
 
-const QUICK_PEEK_DURATIONS := [0.0, 0.25, 0.4, 0.6]
+const QUICK_PEEK_HAND_INTERVALS: Array[int] = [4, 3, 2]
+const QUICK_PEEK_DURATIONS: Array[float] = [0.10, 0.20, 0.25]
 const MISTAKE_REVEAL_DURATIONS := [0.0, 0.25, 0.4, 0.6]
+
+const TOUCH_PEEK_DRAG_DELAY := 0.12
+const TOUCH_PEEK_VISIBLE_GRACE := 0.18
+const TOUCH_DRAG_DISTANCE := 5.0
+
+const DUST_PARTICLE_COUNT := 48
 
 const WILD_CARD_CHANCES := [0.0, 0.05, 0.1, 0.15]
 const LUCKY_HAND_CHANCES := [0.0, 0.2, 0.35, 0.45]

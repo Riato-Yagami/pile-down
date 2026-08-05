@@ -9,6 +9,7 @@ enum StackDirection {
 var stack_direction := StackDirection.DOWN
 var swap_piles_after_play := false
 var moving_pile_pattern := false
+var moving_pile_pattern_id: StringName = &""
 var wandering_hand_cards := false
 var flashlight_enabled := false
 var hover_reveal_enabled := false
@@ -37,6 +38,7 @@ func reset() -> void:
 	stack_direction = StackDirection.DOWN
 	swap_piles_after_play = false
 	moving_pile_pattern = false
+	moving_pile_pattern_id = &""
 	wandering_hand_cards = false
 	flashlight_enabled = false
 	hover_reveal_enabled = false

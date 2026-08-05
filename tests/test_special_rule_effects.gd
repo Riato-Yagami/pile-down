@@ -150,6 +150,12 @@ func _run() -> void:
 	flashlight.close_in()
 	assert(flashlight.visible)
 	assert(flashlight.animated_radius > flashlight.flashlight_radius)
+	var touch_light_position := Vector2(42.0, 196.0)
+	flashlight.follow_touch(touch_light_position)
+	assert(flashlight.target_position == touch_light_position)
+	assert(flashlight.light_position == touch_light_position)
+	flashlight._process(1.0)
+	assert(flashlight.light_position == touch_light_position)
 	await create_timer(0.7).timeout
 	assert(is_equal_approx(flashlight.animated_radius, flashlight.flashlight_radius))
 	await flashlight.open_out()

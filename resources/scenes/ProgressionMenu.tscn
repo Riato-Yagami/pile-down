@@ -1,0 +1,262 @@
+[gd_scene format=3 uid="uid://c05lrwawno2fu"]
+
+[ext_resource type="Script" uid="uid://b1kvd53np8om4" path="res://resources/scripts/ui/ProgressionMenu.gd" id="1"]
+[ext_resource type="FontFile" uid="uid://camkk5gui0ppq" path="res://resources/fonts/Tiny5-Regular.ttf" id="3_p3cah"]
+[ext_resource type="Texture2D" uid="uid://lnly0s8wwgpd" path="res://resources/sprites/ui/icons/stats.png" id="3_stats"]
+[ext_resource type="Texture2D" uid="uid://d2wec4p1fbanl" path="res://resources/sprites/ui/icons/trophies.png" id="4_trophies"]
+[ext_resource type="Texture2D" uid="uid://yn8jhdelviqd" path="res://resources/sprites/ui/icons/bonuses.png" id="5_bonuses"]
+[ext_resource type="Texture2D" uid="uid://bv570rb4pjqhq" path="res://resources/sprites/ui/icons/rules.png" id="6_rules"]
+[ext_resource type="Texture2D" uid="uid://dw63pb4j4qbyf" path="res://resources/sprites/ui/buttons/escape.png" id="7_escape"]
+[ext_resource type="Texture2D" uid="uid://c5frbcwecqyrr" path="res://resources/sprites/ui/icons/fonts.png" id="8_fonts"]
+[ext_resource type="Script" uid="uid://dnwlhbj4lgun" path="res://resources/scripts/ui/TextureHighlightButton.gd" id="9_texture_highlight"]
+[ext_resource type="Texture2D" uid="uid://kvt15wncwlow" path="res://resources/sprites/ui/buttons/button.png" id="10_button"]
+
+[sub_resource type="StyleBoxTexture" id="FontButtonStyle"]
+texture = ExtResource("10_button")
+
+[sub_resource type="Shader" id="ProgressionButtonHighlightShader"]
+code = "shader_type canvas_item;
+
+uniform vec4 base_color : source_color = vec4(0.302, 0.51, 0.761, 1.0);
+uniform vec4 highlight_color : source_color = vec4(0.427, 0.655, 0.898, 1.0);
+
+void fragment() {
+	vec4 texture_color = texture(TEXTURE, UV);
+	vec4 source = texture_color * COLOR;
+	bool base_fill_pixel = (
+		texture_color.a > 0.0
+		&& distance(texture_color.rgb, base_color.rgb) < 0.01
+	);
+	if (base_fill_pixel) {
+		source.rgb = highlight_color.rgb;
+	}
+	COLOR = source;
+}"
+
+[sub_resource type="ShaderMaterial" id="FontButtonHighlightMaterial"]
+resource_local_to_scene = true
+shader = SubResource("ProgressionButtonHighlightShader")
+shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
+shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+
+[sub_resource type="Shader" id="FontPreviewTileShader"]
+code = "shader_type canvas_item;
+
+uniform vec4 tile_color : source_color = vec4(0.302, 0.51, 0.761, 1.0);
+
+void fragment() {
+	vec4 source = texture(TEXTURE, UV);
+	bool is_green = source.g > 0.6 && source.g > source.r * 1.35 && source.g > source.b * 1.35;
+	COLOR = is_green ? vec4(tile_color.rgb, source.a * tile_color.a) : source;
+}
+"
+
+[sub_resource type="ShaderMaterial" id="FontPreviewTileMaterial"]
+resource_local_to_scene = true
+shader = SubResource("FontPreviewTileShader")
+shader_parameter/tile_color = Color(0.302, 0.51, 0.761, 1)
+
+[sub_resource type="ShaderMaterial" id="ProgressionButtonHighlightMaterial"]
+resource_local_to_scene = true
+shader = SubResource("ProgressionButtonHighlightShader")
+shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
+shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+
+[node name="ProgressionMenu" type="Control" unique_id=2009484719]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+entry_heading_font = ExtResource("3_p3cah")
+entry_heading_font_size = 16
+entry_details_font = ExtResource("3_p3cah")
+entry_details_font_size = 16
+font_button_style = SubResource("FontButtonStyle")
+font_button_highlight_material = SubResource("FontButtonHighlightMaterial")
+font_preview_tile_count = 5
+font_preview_tile_material = SubResource("FontPreviewTileMaterial")
+
+[node name="Background" type="ColorRect" parent="." unique_id=21778321]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.969, 0.965, 0.949, 1)
+
+[node name="Margin" type="MarginContainer" parent="." unique_id=1176737436]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Layout" type="VBoxContainer" parent="Margin" unique_id=1598849077]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="HBoxContainer" parent="Margin/Layout" unique_id=68601913]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Margin/Layout/Header" unique_id=1369754182]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_font_sizes/font_size = 20
+text = "PROGRESSION"
+
+[node name="Body" type="HBoxContainer" parent="Margin/Layout" unique_id=675370899]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="Navigation" type="VBoxContainer" parent="Margin/Layout/Body" unique_id=6028854]
+custom_minimum_size = Vector2(34, 0)
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HighscoresButton" type="TextureButton" parent="Margin/Layout/Body/Navigation" unique_id=1230825144]
+unique_name_in_owner = true
+texture_filter = 1
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("3_stats")
+ignore_texture_size = true
+stretch_mode = 3
+script = ExtResource("9_texture_highlight")
+highlight_material = SubResource("ProgressionButtonHighlightMaterial")
+
+[node name="AchievementsButton" type="TextureButton" parent="Margin/Layout/Body/Navigation" unique_id=1749087960]
+unique_name_in_owner = true
+modulate = Color(0.3019608, 0.50980395, 0.7607843, 1)
+texture_filter = 1
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("4_trophies")
+ignore_texture_size = true
+stretch_mode = 3
+script = ExtResource("9_texture_highlight")
+highlight_material = SubResource("ProgressionButtonHighlightMaterial")
+
+[node name="BonusesButton" type="TextureButton" parent="Margin/Layout/Body/Navigation" unique_id=1852810262]
+unique_name_in_owner = true
+texture_filter = 1
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("5_bonuses")
+ignore_texture_size = true
+stretch_mode = 3
+script = ExtResource("9_texture_highlight")
+highlight_material = SubResource("ProgressionButtonHighlightMaterial")
+
+[node name="SpecialRulesButton" type="TextureButton" parent="Margin/Layout/Body/Navigation" unique_id=1024762404]
+unique_name_in_owner = true
+texture_filter = 1
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("6_rules")
+ignore_texture_size = true
+stretch_mode = 3
+script = ExtResource("9_texture_highlight")
+highlight_material = SubResource("ProgressionButtonHighlightMaterial")
+
+[node name="FontsButton" type="TextureButton" parent="Margin/Layout/Body/Navigation" unique_id=1990545340]
+unique_name_in_owner = true
+texture_filter = 1
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("8_fonts")
+ignore_texture_size = true
+stretch_mode = 3
+script = ExtResource("9_texture_highlight")
+highlight_material = SubResource("ProgressionButtonHighlightMaterial")
+
+[node name="Page" type="VBoxContainer" parent="Margin/Layout/Body" unique_id=749041497]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="PageTitle" type="Label" parent="Margin/Layout/Body/Page" unique_id=5675702]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
+theme_override_font_sizes/font_size = 20
+text = "ACHIEVEMENTS"
+
+[node name="FilterButton" type="OptionButton" parent="Margin/Layout/Body/Page" unique_id=1147425081]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(86, 25)
+layout_mode = 2
+size_flags_horizontal = 0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_font_sizes/font_size = 14
+selected = 0
+item_count = 3
+popup/item_0/text = "BOTH"
+popup/item_0/id = 0
+popup/item_1/text = "UNLOCKED"
+popup/item_1/id = 1
+popup/item_2/text = "LOCKED"
+popup/item_2/id = 2
+
+[node name="Scroll" type="ScrollContainer" parent="Margin/Layout/Body/Page" unique_id=345096820]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="PageContent" type="VBoxContainer" parent="Margin/Layout/Body/Page/Scroll" unique_id=249977808]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="FontPreviewScroll" type="ScrollContainer" parent="Margin/Layout/Body/Page" unique_id=1551367649]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 37)
+layout_mode = 2
+vertical_scroll_mode = 0
+
+[node name="FontPreview" type="HBoxContainer" parent="Margin/Layout/Body/Page/FontPreviewScroll" unique_id=1112331725]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 37)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="BackButton" type="TextureButton" parent="." unique_id=1020035895]
+unique_name_in_owner = true
+z_index = 1
+texture_filter = 1
+custom_minimum_size = Vector2(23, 13)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -35.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = 25.0
+grow_horizontal = 0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("7_escape")
+script = ExtResource("9_texture_highlight")
+highlight_material = SubResource("ProgressionButtonHighlightMaterial")

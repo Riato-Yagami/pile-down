@@ -74,6 +74,8 @@ var round_modifiers: RoundModifiers
 var colorblind_enabled := false
 var is_joker := false
 var _joker_phase := 0.0
+var _value_font: Font
+var _value_font_size := 20
 
 
 func _ready() -> void:
@@ -86,6 +88,13 @@ func _ready() -> void:
 	drag_timer.timeout.connect(_on_drag_timer_timeout)
 	resized.connect(func() -> void: pivot_offset = size * 0.5)
 	_update_appearance()
+
+
+func set_value_font(font: Font, font_size := 20) -> void:
+	_value_font = font
+	_value_font_size = clampi(font_size, 8, 32)
+	if is_node_ready():
+		_update_appearance()
 
 
 func _process(delta: float) -> void:
@@ -687,10 +696,15 @@ func _update_appearance() -> void:
 	)
 	value_label.add_theme_font_size_override(
 		"font_size",
-		RoundModifiers.value_font_size(card_value, roman_numerals_enabled)
+		int(round(
+			_value_font_size
+			* (0.7 if roman_numerals_enabled and card_value in [7, 8] else 1.0)
+		))
 	)
 	if roman_numerals_enabled and card_value in [7, 8]:
 		value_label.add_theme_font_override("font", TINY_REGULAR_FONT)
+	elif _value_font != null:
+		value_label.add_theme_font_override("font", _value_font)
 	else:
 		value_label.remove_theme_font_override("font")
 	value_label.add_theme_color_override(

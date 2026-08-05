@@ -2,12 +2,23 @@
 class_name VolumeSlider
 extends HSlider
 
+const HoverInteractionScript := preload(
+	"res://resources/scripts/ui/HoverInteraction.gd"
+)
+
 @onready var bar: TextureRect = get_node("Bar")
 
 var _touch_index := -1
+var _hover_interaction = HoverInteractionScript.new()
 
 
 func _ready() -> void:
+	_hover_interaction.setup(
+		self,
+		self,
+		&"_show_highlight",
+		&"_hide_highlight"
+	)
 	value_changed.connect(_refresh)
 	_refresh()
 
@@ -45,3 +56,20 @@ func _refresh(_value := 0.0) -> void:
 		return
 	var ratio := inverse_lerp(min_value, max_value, value)
 	(bar.material as ShaderMaterial).set_shader_parameter("progress", ratio)
+
+
+func _show_highlight() -> void:
+	_set_highlighted(true)
+
+
+func _hide_highlight() -> void:
+	_set_highlighted(false)
+
+
+func _set_highlighted(highlighted: bool) -> void:
+	if bar == null or not bar.material is ShaderMaterial:
+		return
+	(bar.material as ShaderMaterial).set_shader_parameter(
+		"highlighted",
+		1.0 if highlighted else 0.0
+	)

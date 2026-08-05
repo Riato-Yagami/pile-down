@@ -119,7 +119,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 focus_mode = 0
-mouse_default_cursor_shape = 2
 flat = true
 
 [node name="ValueLabel" type="Label" parent="." unique_id=1994399035]

@@ -2,6 +2,12 @@ extends SceneTree
 
 
 func _init() -> void:
+	var debug_manager := BonusManager.new()
+	debug_manager.begin_run()
+	assert(debug_manager.level(&"lucky_hand") == 1)
+	assert(is_equal_approx(debug_manager.lucky_hand_chance(), 1.0))
+	debug_manager.free()
+
 	var manager := BonusManager.new()
 	manager.rng.seed = 42
 	assert(manager.definitions.size() == 18)

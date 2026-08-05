@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[node name="AchievementPopup" type="PanelContainer"]
+custom_minimum_size = Vector2(220, 42)
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 5
+
+[node name="Text" type="Label" parent="Margin"]
+layout_mode = 2
+text = "ACHIEVEMENT UNLOCKED"
+horizontal_alignment = 1

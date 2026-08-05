@@ -1,5 +1,5 @@
 class_name RuleDeleteButton
-extends Button
+extends HighlightButton
 
 @export var strike_color := Color.WHITE
 @export var strike_width := 2.0
@@ -9,6 +9,7 @@ var struck_through := false
 
 
 func _ready() -> void:
+	super._ready()
 	focus_mode = Control.FOCUS_NONE
 	flat = true
 	mouse_entered.connect(_set_struck.bind(true))

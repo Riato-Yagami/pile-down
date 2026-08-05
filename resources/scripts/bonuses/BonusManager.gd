@@ -2,6 +2,7 @@ class_name BonusManager
 extends Node
 
 signal bonuses_changed()
+signal bonus_selected(bonus_id: StringName)
 
 const Difficulty := preload("res://resources/scripts/settings/difficulty.gd")
 const Debug := preload("res://resources/scripts/settings/debug.gd")
@@ -17,12 +18,14 @@ var definitions: Array[BonusData] = BonusRegistry.create_all()
 var active: Dictionary = {}
 var completed_rounds := 0
 var hands_started_this_round := 0
+var hands_since_quick_peek := 0
 var redraws_left := 0
 var safety_net_available := false
 var clean_slate_uses_left := 0
 var banked_time := 0.0
 var force_next_joker := false
 var _debug_locked_bonus_ids: Array[StringName] = []
+var _debug_forced_activation_bonus_ids: Array[StringName] = []
 
 
 func _ready() -> void:
@@ -40,6 +43,7 @@ func begin_run() -> void:
 
 func begin_round() -> void:
 	hands_started_this_round = 0
+	hands_since_quick_peek = 0
 	safety_net_available = has_bonus(&"safety_net")
 	var redraw_level := level(&"redraw")
 	redraws_left = Difficulty.REDRAW_COUNTS[redraw_level]
@@ -52,6 +56,20 @@ func offer_if_due(completed_round_number: int) -> bool:
 	if completed_round_number % Difficulty.BONUS_INTERVAL != 0:
 		return false
 	var choices := generate_choices(completed_round_number + 1)
+	if choices.size() < 2:
+		return false
+	var levels: Array[int] = []
+	for choice in choices:
+		levels.append(level(choice.id) + 1)
+	active_bar.visible = false
+	var chosen_index := await selection.present(choices, levels)
+	_add_or_upgrade(choices[chosen_index])
+	active_bar.visible = Debug.is_enabled()
+	return true
+
+
+func offer_bonus_choice(round_number: int, _choice_index := 0) -> bool:
+	var choices := generate_choices(round_number)
 	if choices.size() < 2:
 		return false
 	var levels: Array[int] = []
@@ -119,6 +137,7 @@ func _contains_category(
 
 func _apply_debug_locked_bonuses() -> void:
 	_debug_locked_bonus_ids.clear()
+	_debug_forced_activation_bonus_ids.clear()
 	var locked := Debug.get_locked_bonuses()
 	for locked_id_value in locked:
 		var locked_id := StringName(locked_id_value)
@@ -126,16 +145,19 @@ func _apply_debug_locked_bonuses() -> void:
 		if data == null:
 			push_warning("Bonus debug lock: unknown bonus id '%s'." % locked_id)
 			continue
-		var requested_level := int(locked[locked_id_value])
-		if requested_level < 1:
+		var configured_level := int(locked[locked_id_value])
+		if configured_level == 0:
 			push_warning(
-				"Bonus debug lock: level for '%s' must be at least 1." % locked_id
+				"Bonus debug lock: level for '%s' cannot be zero." % locked_id
 			)
 			continue
+		var requested_level := absi(configured_level)
 		var owned := ActiveBonus.new(data)
 		owned.level = clampi(requested_level, 1, data.max_level)
 		active[locked_id] = owned
 		_debug_locked_bonus_ids.append(locked_id)
+		if configured_level < 0:
+			_debug_forced_activation_bonus_ids.append(locked_id)
 		if locked_id == &"wild_card":
 			force_next_joker = true
 
@@ -169,6 +191,7 @@ func _add_or_upgrade(data: BonusData) -> void:
 			force_next_joker = true
 	_refresh_bar()
 	bonuses_changed.emit()
+	bonus_selected.emit(data.id)
 
 
 func has_bonus(id: StringName) -> bool:
@@ -193,6 +216,25 @@ func next_hand_time(base_time: float) -> float:
 	return base_time + extra
 
 
+func should_trigger_quick_peek() -> bool:
+	var quick_peek_level := level(&"quick_peek")
+	if quick_peek_level <= 0:
+		return false
+	hands_since_quick_peek += 1
+	var interval: int = Difficulty.QUICK_PEEK_HAND_INTERVALS[quick_peek_level - 1]
+	if hands_since_quick_peek < interval:
+		return false
+	hands_since_quick_peek = 0
+	return true
+
+
+func quick_peek_duration() -> float:
+	var quick_peek_level := level(&"quick_peek")
+	if quick_peek_level <= 0:
+		return 0.0
+	return Difficulty.QUICK_PEEK_DURATIONS[quick_peek_level - 1]
+
+
 func bank_remaining_time(time_left: float) -> void:
 	banked_time = minf(
 		time_left * Difficulty.TIME_BANK_RATES[level(&"time_bank")],
@@ -201,10 +243,14 @@ func bank_remaining_time(time_left: float) -> void:
 
 
 func joker_chance() -> float:
+	if _debug_forced_activation_bonus_ids.has(&"wild_card"):
+		return 1.0
 	return Difficulty.WILD_CARD_CHANCES[level(&"wild_card")]
 
 
 func lucky_hand_chance() -> float:
+	if _debug_forced_activation_bonus_ids.has(&"lucky_hand"):
+		return 1.0
 	return Difficulty.LUCKY_HAND_CHANCES[level(&"lucky_hand")]
 
 

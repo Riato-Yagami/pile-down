@@ -15,6 +15,8 @@ func _run() -> void:
 
 	assert(game.debug_help.visible)
 	assert(game.debug_help.text.contains("[S] NEXT MUSIC SECTION"))
+	assert(game.debug_help.text.contains("[L] LOSE ONE LIFE"))
+	assert(game.debug_help.text.contains("[K] DIE NOW"))
 	var section_event := InputEventKey.new()
 	section_event.keycode = KEY_S
 	section_event.pressed = true
@@ -39,12 +41,20 @@ func _run() -> void:
 
 	game.best_rounds_left = 12
 	game.best_score_time_ms = 1234
+	game.unlocked_checkpoints.assign([1, 2])
+	game.checkpoint_snapshots = {1: {"start_round": 10}}
+	game.discovered_bonuses.assign([&"wild_card"])
+	game.achievement_manager.unlocked.assign([&"first_steps"])
 	var high_score_event := InputEventKey.new()
 	high_score_event.keycode = KEY_H
 	high_score_event.pressed = true
 	assert(game._handle_debug_shortcut(high_score_event))
 	assert(game.best_rounds_left == -1)
 	assert(game.best_score_time_ms == -1)
+	assert(game.unlocked_checkpoints.is_empty())
+	assert(game.checkpoint_snapshots.is_empty())
+	assert(game.discovered_bonuses.is_empty())
+	assert(game.achievement_manager.unlocked.is_empty())
 	assert(game.splash_high_score.text == "HIGH SCORE\n--")
 
 	print("Debug shortcut integration test passed.")
