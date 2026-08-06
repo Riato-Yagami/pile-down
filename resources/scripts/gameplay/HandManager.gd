@@ -12,6 +12,7 @@ var rng := RandomNumberGenerator.new()
 var current_cards: Array[PlayingCard] = []
 var value_font: Font
 var value_font_size := 20
+var tile_colors: Array[Color] = GameSettings.TILE_COLORS.slice(0, 10)
 
 
 func _ready() -> void:
@@ -256,6 +257,7 @@ func _create_card(
 	var card := card_scene.instantiate() as PlayingCard
 	container.add_child(card)
 	card.set_value_font(value_font, value_font_size)
+	card.set_tile_palette(tile_colors)
 	card.setup(value, true, hover_reveal, use_roman_numerals, modifiers)
 	card.set_joker(joker)
 	card.card_selected.connect(_on_card_selected)

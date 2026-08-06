@@ -16,13 +16,20 @@ const PILE_SCENE := preload("res://resources/scenes/Pile.tscn")
 const HIGHLIGHT_BUTTON_SCRIPT := preload(
 	"res://resources/scripts/ui/HighlightButton.gd"
 )
+const SELECTED_TEXTURE := preload("res://resources/sprites/ui/check/selected.png")
+const UNCHECKED_TEXTURE := preload("res://resources/sprites/ui/check/unchecked.png")
 const Difficulty := preload("res://resources/scripts/settings/difficulty.gd")
 const Debug := preload("res://resources/scripts/settings/debug.gd")
 const MUSIC_BUS_NAME := &"Music"
 const SFX_BUS_NAME := &"SFX"
+const OPTIONS_SELECTED_COLOR := Color("4d82c2")
+const OPTION_SOUND := 0
+const OPTION_GRAPHICS := 1
+const OPTION_SAVE := 2
+const LOCKED_VIEWPORT_SIZE := Vector2i(256, 320)
 const AUDIO_CONFIG_PATH := "user://pile_down.cfg"
 const DEATH_POPUP_DELAY := 0.35
-const SAVE_SCHEMA_VERSION := 2
+const SAVE_SCHEMA_VERSION := 4
 const URGENT_TICK_THRESHOLDS: Array[float] = [
 	2.0,
 	1.6667,
@@ -73,6 +80,28 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var splash_high_score_time: Label = %SplashHighScoreTime
 @onready var splash_debug_mode: Label = %SplashDebugMode
 @onready var progression_button: TextureButton = %ProgressionButton
+@onready var options_button: TextureButton = %OptionsButton
+@onready var options_menu: Control = %OptionsMenu
+@onready var options_back_button: TextureButton = %OptionsBackButton
+@onready var sound_options_button: TextureButton = %SoundOptionsButton
+@onready var graphics_options_button: TextureButton = %GraphicsOptionsButton
+@onready var save_options_button: TextureButton = %SaveOptionsButton
+@onready var options_page_title: Label = %OptionsPageTitle
+@onready var sound_options: Control = %SoundOptions
+@onready var graphics_options: Control = %GraphicsOptions
+@onready var save_options: Control = %SaveOptions
+@onready var adaptive_resolution_button: Button = %AdaptiveResolutionButton
+@onready var locked_resolution_button: Button = %LockedResolutionButton
+@onready var debug_unlock_all_section: Control = %DebugUnlockAllSection
+@onready var debug_unlock_all_button: Button = %DebugUnlockAllButton
+@onready var export_save_button: Button = %ExportSaveButton
+@onready var import_save_button: Button = %ImportSaveButton
+@onready var delete_save_button: Button = %DeleteSaveButton
+@onready var export_save_dialog: FileDialog = %ExportSaveDialog
+@onready var import_save_dialog: FileDialog = %ImportSaveDialog
+@onready var delete_save_confirmation: ConfirmationDialog = %DeleteSaveConfirmation
+@onready var save_status: Label = %SaveStatus
+@onready var save_data_manager: SaveDataManager = %SaveDataManager
 @onready var progression_menu: ProgressionMenu = %ProgressionMenu
 @onready var music_volume_slider: HSlider = %MusicVolumeSlider
 @onready var sound_volume_slider: HSlider = %SoundVolumeSlider
@@ -94,6 +123,7 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 var pile_count: int = Difficulty.START_PILES
 var hand_size: int = Difficulty.START_HAND_SIZE
 var start_value: int = Difficulty.START_CARD_VALUE
+var max_discovered_tile_value: int = Difficulty.START_CARD_VALUE
 var turn_time: float = Difficulty.START_TURN_TIME
 var round_number: int = Difficulty.TOTAL_ROUNDS
 var best_rounds_left := -1
@@ -112,6 +142,10 @@ var difficulty_droughts := {
 	&"time": 0,
 }
 var run_mistake_count := 0
+var run_lives_lost := 0
+var run_completed_rounds := 0
+var run_start_round := 1
+var started_from_checkpoint := false
 var unlocked_checkpoints: Array[int] = []
 var checkpoint_snapshots: Dictionary = {}
 var checkpoint_highscores: Dictionary = {}
@@ -129,7 +163,9 @@ var checkpoint_segment_damage_count := 0
 var _pending_checkpoint_snapshot: CheckpointSnapshot
 var _quick_peek_pending := false
 var discovered_bonuses: Array[StringName] = []
+var seen_bonuses: Array[StringName] = []
 var encountered_special_rules: Array[StringName] = []
+var beaten_special_rules: Array[StringName] = []
 var newly_discovered_bonuses: Array[StringName] = []
 var newly_encountered_rules: Array[StringName] = []
 var newly_unlocked_achievements: Array[StringName] = []
@@ -137,8 +173,11 @@ var newly_unlocked_fonts: Array[StringName] = []
 var newly_unlocked_checkpoints: Array[int] = []
 var achievement_manager := AchievementManager.new()
 var font_manager := FontManager.new()
+var palette_manager := ColorPaletteManager.new()
 var _round_mistakes_at_start := 0
 var game_started_msec := 0
+var run_paused_msec := 0
+var run_pause_started_msec := -1
 var round_reached_time_ms := 0
 var mistakes_left := 3
 var maximum_mistakes := 3
@@ -164,6 +203,8 @@ var _pending_interactive_generation := -1
 var _regeneration_hand_check_pending := false
 var _music_volume_before_mute := 100.0
 var _sound_volume_before_mute := 100.0
+var _options_page := OPTION_SOUND
+var _adaptive_resolution := false
 var _timer_display_hidden := false
 var _timer_visibility_tween: Tween
 var _gameplay_back_cursor_update_queued := false
@@ -186,17 +227,22 @@ var _card_touch_index := -1
 @export var gameplay_pop_stagger := 0.1
 @export var gameplay_pop_scale := 0.82
 
-@export_category("Tile Fonts")
-@export var available_fonts: Array[FontData] = FontRegistry.create_all()
-
 
 func _ready() -> void:
 	rng.randomize()
 	add_child(achievement_manager)
 	add_child(font_manager)
-	font_manager.definitions = available_fonts
+	add_child(palette_manager)
+	font_manager.definitions = progression_menu.get_available_fonts()
+	palette_manager.definitions = progression_menu.get_available_palettes()
+	achievement_manager.definitions = progression_menu.get_achievements()
 	achievement_manager.load_progress()
 	font_manager.load_progress()
+	palette_manager.load_progress()
+	# Unlock newly introduced cosmetic rewards for achievements already earned
+	# by an existing save.
+	for achievement_id in achievement_manager.unlocked:
+		palette_manager.unlock_for_achievement(achievement_id)
 	achievement_manager.achievement_unlocked.connect(_on_achievement_unlocked)
 	hand_manager.card_selected.connect(_on_card_selected)
 	hand_manager.card_drag_started.connect(_on_card_drag_started)
@@ -221,8 +267,23 @@ func _ready() -> void:
 	checkpoint_button.gui_input.connect(_on_checkpoint_button_input)
 	checkpoint_back_button.pressed.connect(_close_checkpoint_menu)
 	progression_button.pressed.connect(_open_progression_menu)
+	options_button.pressed.connect(_open_options_menu)
+	options_back_button.pressed.connect(_close_options_menu)
+	sound_options_button.pressed.connect(_show_options_page.bind(OPTION_SOUND))
+	graphics_options_button.pressed.connect(_show_options_page.bind(OPTION_GRAPHICS))
+	save_options_button.pressed.connect(_show_options_page.bind(OPTION_SAVE))
+	adaptive_resolution_button.pressed.connect(_set_adaptive_resolution.bind(true))
+	locked_resolution_button.pressed.connect(_set_adaptive_resolution.bind(false))
+	debug_unlock_all_button.pressed.connect(_toggle_debug_unlock_everything)
+	export_save_button.pressed.connect(_open_export_save_dialog)
+	import_save_button.pressed.connect(_open_import_save_dialog)
+	delete_save_button.pressed.connect(_open_delete_save_confirmation)
+	export_save_dialog.file_selected.connect(_export_save_json)
+	import_save_dialog.file_selected.connect(_import_save_json)
+	delete_save_confirmation.confirmed.connect(_delete_save)
 	progression_menu.closed.connect(_on_progression_menu_closed)
 	progression_menu.font_selected.connect(_on_progression_font_selected)
+	progression_menu.palette_selected.connect(_on_progression_palette_selected)
 	endless_button.mouse_entered.connect(_show_endless_high_score)
 	endless_button.mouse_exited.connect(_refresh_high_score)
 	endless_button.focus_entered.connect(_show_endless_high_score)
@@ -233,12 +294,16 @@ func _ready() -> void:
 	)
 	special_rule_manager.rules_selected.connect(_on_special_rules_selected)
 	bonus_manager.bonus_selected.connect(_on_bonus_selected)
+	bonus_manager.bonuses_seen.connect(_on_bonuses_seen)
 	redraw_button.pressed.connect(_on_redraw_pressed)
 	back_button.pressed.connect(_return_to_menu)
 	overlay_back_button.pressed.connect(_return_to_menu)
 	resized.connect(_layout_piles)
 	_setup_audio_controls()
+	_setup_graphics_options()
+	_setup_save_dialogs()
 	_load_high_score()
+	_apply_debug_unlock_everything()
 	_apply_debug_checkpoints()
 	_refresh_checkpoint_button()
 	splash_debug_mode.visible = Debug.is_enabled()
@@ -247,6 +312,7 @@ func _ready() -> void:
 	splash.visible = true
 	font_manager.select(font_manager.selected_font)
 	_apply_tile_font()
+	_apply_tile_palette()
 	var debug_checkpoint := Debug.start_from_checkpoint()
 	if debug_checkpoint > 0:
 		call_deferred("start_from_checkpoint", debug_checkpoint)
@@ -273,6 +339,134 @@ func _setup_audio_controls() -> void:
 	)
 	_apply_bus_volume(MUSIC_BUS_NAME, music_volume_slider.value / 100.0)
 	_apply_bus_volume(SFX_BUS_NAME, sound_volume_slider.value / 100.0)
+
+
+func _setup_graphics_options() -> void:
+	var config := ConfigFile.new()
+	config.load(AUDIO_CONFIG_PATH)
+	_adaptive_resolution = bool(config.get_value(
+		"graphics", "adaptive_resolution", false
+	))
+	debug_unlock_all_section.visible = Debug.is_enabled()
+	_apply_resolution_mode()
+	_refresh_debug_unlock_button()
+
+
+func _toggle_debug_unlock_everything() -> void:
+	Debug.toggle_unlock_everything()
+	get_tree().reload_current_scene()
+
+
+func _refresh_debug_unlock_button() -> void:
+	debug_unlock_all_button.icon = (
+		SELECTED_TEXTURE
+		if Debug.is_unlock_everything_enabled()
+		else UNCHECKED_TEXTURE
+	)
+
+
+func _apply_debug_unlock_everything() -> void:
+	if not Debug.is_unlock_everything_enabled():
+		return
+	achievement_manager.unlocked.clear()
+	for achievement in achievement_manager.definitions:
+		achievement_manager.unlocked.append(achievement.id)
+	font_manager.unlocked.clear()
+	for font_data in font_manager.definitions:
+		font_manager.unlocked.append(font_data.id)
+	palette_manager.unlocked.clear()
+	for palette_data in palette_manager.definitions:
+		palette_manager.unlocked.append(palette_data.id)
+	discovered_bonuses.clear()
+	seen_bonuses.clear()
+	for bonus_data in BonusRegistry.create_all():
+		discovered_bonuses.append(bonus_data.id)
+		seen_bonuses.append(bonus_data.id)
+		achievement_manager.bonus_highest_levels[bonus_data.id] = bonus_data.max_level
+		achievement_manager.bonuses_maxed_once[bonus_data.id] = true
+	encountered_special_rules.clear()
+	beaten_special_rules.clear()
+	for rule_data in SpecialRuleRegistry.create_all_rules():
+		encountered_special_rules.append(rule_data.id)
+		beaten_special_rules.append(rule_data.id)
+
+
+func _set_adaptive_resolution(adaptive: bool) -> void:
+	_adaptive_resolution = adaptive
+	var config := ConfigFile.new()
+	config.load(AUDIO_CONFIG_PATH)
+	config.set_value("graphics", "adaptive_resolution", adaptive)
+	config.save(AUDIO_CONFIG_PATH)
+	_apply_resolution_mode()
+
+
+func _apply_resolution_mode() -> void:
+	var window := get_window()
+	# Both modes keep the same logical viewport so sprites retain their scale.
+	# Adaptive only exposes more logical space on screens with a different ratio.
+	window.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
+	window.content_scale_size = LOCKED_VIEWPORT_SIZE
+	window.content_scale_aspect = (
+		Window.CONTENT_SCALE_ASPECT_EXPAND
+		if _adaptive_resolution
+		else Window.CONTENT_SCALE_ASPECT_KEEP
+	)
+	adaptive_resolution_button.modulate = Color.WHITE
+	locked_resolution_button.modulate = Color.WHITE
+	adaptive_resolution_button.icon = (
+		SELECTED_TEXTURE if _adaptive_resolution else UNCHECKED_TEXTURE
+	)
+	locked_resolution_button.icon = (
+		UNCHECKED_TEXTURE if _adaptive_resolution else SELECTED_TEXTURE
+	)
+
+
+func _setup_save_dialogs() -> void:
+	export_save_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	import_save_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	for dialog in [export_save_dialog, import_save_dialog]:
+		dialog.access = FileDialog.ACCESS_FILESYSTEM
+		dialog.filters = PackedStringArray(["*.json ; JSON save files"])
+		dialog.use_native_dialog = true
+	export_save_dialog.current_file = "pile-down-save.json"
+	var confirmation_label := delete_save_confirmation.get_label()
+	confirmation_label.custom_minimum_size.x = 180.0
+	confirmation_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+
+func _open_export_save_dialog() -> void:
+	save_status.text = ""
+	export_save_dialog.popup_centered_ratio(0.85)
+
+
+func _open_import_save_dialog() -> void:
+	save_status.text = ""
+	import_save_dialog.popup_centered_ratio(0.85)
+
+
+func _open_delete_save_confirmation() -> void:
+	delete_save_confirmation.popup_centered(Vector2i(210, 96))
+
+
+func _export_save_json(path: String) -> void:
+	var error := save_data_manager.export_json(path)
+	save_status.text = "SAVE EXPORTED" if error == OK else "EXPORT FAILED"
+
+
+func _import_save_json(path: String) -> void:
+	var error := save_data_manager.import_json(path)
+	if error != OK:
+		save_status.text = "INVALID SAVE FILE"
+		return
+	get_tree().reload_current_scene()
+
+
+func _delete_save() -> void:
+	var error := save_data_manager.delete_save()
+	if error != OK:
+		save_status.text = "DELETE FAILED"
+		return
+	get_tree().reload_current_scene()
 
 
 func _on_volume_changed(value: float, bus_name: StringName, config_key: String) -> void:
@@ -465,6 +659,9 @@ func _handle_global_shortcut(event: InputEvent) -> bool:
 			if progression_menu.visible:
 				progression_menu.close()
 				return true
+			if options_menu.visible:
+				_close_options_menu()
+				return true
 			if checkpoint_menu.visible:
 				_close_checkpoint_menu()
 				return true
@@ -475,7 +672,7 @@ func _handle_global_shortcut(event: InputEvent) -> bool:
 				_return_to_menu()
 			return true
 		KEY_SPACE:
-			if progression_menu.visible:
+			if progression_menu.visible or options_menu.visible:
 				return false
 			if splash.visible or (overlay.visible and overlay_mode == "restart"):
 				if overlay.visible and game_mode == GameMode.CHECKPOINT:
@@ -503,6 +700,48 @@ func _open_progression_menu() -> void:
 	progression_menu.open(_progression_snapshot())
 
 
+func _open_options_menu() -> void:
+	options_menu.visible = true
+	_show_options_page(_options_page)
+	match _options_page:
+		OPTION_SOUND:
+			music_volume_slider.grab_focus()
+		OPTION_GRAPHICS:
+			adaptive_resolution_button.grab_focus()
+		OPTION_SAVE:
+			export_save_button.grab_focus()
+
+
+func _show_options_page(page: int) -> void:
+	_options_page = clampi(page, OPTION_SOUND, OPTION_SAVE)
+	sound_options.visible = _options_page == OPTION_SOUND
+	graphics_options.visible = _options_page == OPTION_GRAPHICS
+	save_options.visible = _options_page == OPTION_SAVE
+	match _options_page:
+		OPTION_SOUND:
+			options_page_title.text = "SOUND"
+		OPTION_GRAPHICS:
+			options_page_title.text = "GRAPHICS"
+		OPTION_SAVE:
+			options_page_title.text = "SAVE DATA"
+	sound_options_button.modulate = (
+		OPTIONS_SELECTED_COLOR if _options_page == OPTION_SOUND else Color.WHITE
+	)
+	graphics_options_button.modulate = (
+		OPTIONS_SELECTED_COLOR if _options_page == OPTION_GRAPHICS else Color.WHITE
+	)
+	save_options_button.modulate = (
+		OPTIONS_SELECTED_COLOR if _options_page == OPTION_SAVE else Color.WHITE
+	)
+
+
+func _close_options_menu() -> void:
+	if not options_menu.visible:
+		return
+	options_menu.visible = false
+	options_button.grab_focus()
+
+
 func _on_progression_menu_closed() -> void:
 	progression_button.grab_focus()
 
@@ -510,6 +749,12 @@ func _on_progression_menu_closed() -> void:
 func _on_progression_font_selected(font_id: StringName) -> void:
 	if font_manager.select(font_id):
 		_apply_tile_font()
+		progression_menu.refresh(_progression_snapshot())
+
+
+func _on_progression_palette_selected(palette_id: StringName) -> void:
+	if palette_manager.select(palette_id):
+		_apply_tile_palette()
 		progression_menu.refresh(_progression_snapshot())
 
 
@@ -527,13 +772,29 @@ func _apply_tile_font() -> void:
 			pile.set_value_font(data.font, data.tile_font_size)
 
 
+func _apply_tile_palette() -> void:
+	var data := palette_manager.find(palette_manager.selected_palette)
+	if data == null:
+		return
+	var colors := data.normalized_colors()
+	hand_manager.tile_colors = colors
+	for card in hand_manager.current_cards:
+		if is_instance_valid(card):
+			card.set_tile_palette(colors)
+	for pile in piles:
+		if is_instance_valid(pile):
+			pile.set_tile_palette(colors)
+
+
 func _progression_snapshot() -> Dictionary:
 	return {
+		"max_discovered_tile_value": max_discovered_tile_value,
 		"highscores": _progression_highscores(),
 		"achievements": _progression_achievements(),
 		"bonuses": _progression_bonuses(),
 		"special_rules": _progression_special_rules(),
 		"fonts": _progression_fonts(),
+		"palettes": _progression_palettes(),
 	}
 
 
@@ -566,11 +827,60 @@ func _progression_highscores() -> Array[Dictionary]:
 func _progression_achievements() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for data in achievement_manager.definitions:
+		var progress := ""
+		var progress_current := 0
+		var progress_target := 0
+		match data.id:
+			&"all_checkpoints":
+				progress_current = unlocked_checkpoints.size()
+				progress_target = AchievementManager.normal_checkpoint_ids().size()
+				progress = "Checkpoints unlocked: %d / %d" % [
+					progress_current, progress_target,
+				]
+			&"all_bonuses_discovered":
+				var discovered_enabled := discovered_bonuses.filter(
+					func(id: StringName) -> bool:
+						return Difficulty.ENABLED_BONUSES.has(id)
+				).size()
+				progress_current = discovered_enabled
+				progress_target = Difficulty.ENABLED_BONUSES.size()
+				progress = "Bonuses discovered: %d / %d" % [
+					progress_current, progress_target,
+				]
+			&"all_bonuses_maxed_once":
+				var maxed_enabled := 0
+				for bonus_id in Difficulty.ENABLED_BONUSES:
+					if bool(achievement_manager.bonuses_maxed_once.get(
+						bonus_id, false
+					)):
+						maxed_enabled += 1
+				progress_current = maxed_enabled
+				progress_target = Difficulty.ENABLED_BONUSES.size()
+				progress = "BONUSES MAXED\n%d / %d" % [
+					progress_current, progress_target,
+				]
+			&"beat_all_special_rules":
+				var beaten_enabled := beaten_special_rules.filter(
+					func(id: StringName) -> bool:
+						return Difficulty.ENABLED_SPECIAL_RULES.has(id)
+				).size()
+				progress_current = beaten_enabled
+				progress_target = Difficulty.ENABLED_SPECIAL_RULES.size()
+				progress = "Special Rules beaten: %d / %d" % [
+					progress_current, progress_target,
+				]
 		result.append({
+			"id": data.id,
 			"title": data.title,
 			"description": data.description,
+			"category": data.category,
 			"hidden": data.hidden,
 			"unlocked": achievement_manager.unlocked.has(data.id),
+			"date": str(achievement_manager.unlock_dates.get(data.id, "")),
+			"reward_font": data.reward_font,
+			"progress": progress,
+			"progress_current": progress_current,
+			"progress_target": progress_target,
 		})
 	return result
 
@@ -581,7 +891,12 @@ func _progression_bonuses() -> Array[Dictionary]:
 		result.append({
 			"title": data.title,
 			"description": data.description,
+			"seen": seen_bonuses.has(data.id) or discovered_bonuses.has(data.id),
 			"discovered": discovered_bonuses.has(data.id),
+			"highest_level": int(
+				achievement_manager.bonus_highest_levels.get(data.id, 0)
+			),
+			"max_level": data.max_level,
 		})
 	return result
 
@@ -593,6 +908,7 @@ func _progression_special_rules() -> Array[Dictionary]:
 			"title": data.title,
 			"description": data.description,
 			"discovered": encountered_special_rules.has(data.id),
+			"obtained": beaten_special_rules.has(data.id),
 		})
 	return result
 
@@ -607,6 +923,19 @@ func _progression_fonts() -> Array[Dictionary]:
 			"font_size": data.tile_font_size,
 			"unlocked": font_manager.unlocked.has(data.id),
 			"selected": font_manager.selected_font == data.id,
+		})
+	return result
+
+
+func _progression_palettes() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for data in palette_manager.definitions:
+		result.append({
+			"id": data.id,
+			"title": data.display_name,
+			"colors": data.normalized_colors(),
+			"unlocked": palette_manager.unlocked.has(data.id),
+			"selected": palette_manager.selected_palette == data.id,
 		})
 	return result
 
@@ -728,15 +1057,28 @@ func _debug_reset_progression() -> void:
 	current_checkpoint_id = 0
 	selected_checkpoint_id = 0
 	discovered_bonuses.clear()
+	max_discovered_tile_value = Difficulty.START_CARD_VALUE
+	seen_bonuses.clear()
 	encountered_special_rules.clear()
+	beaten_special_rules.clear()
 	achievement_manager.unlocked.clear()
+	achievement_manager.unlock_dates.clear()
+	achievement_manager.bonuses_maxed_once.clear()
+	achievement_manager.bonus_highest_levels.clear()
 	font_manager.unlocked.clear()
 	for font_data in font_manager.definitions:
 		if font_data.default_unlocked:
 			font_manager.unlocked.append(font_data.id)
 	font_manager.selected_font = &"press_start_2p"
 	font_manager.select(font_manager.selected_font)
+	palette_manager.unlocked.clear()
+	for palette_data in palette_manager.definitions:
+		if palette_data.default_unlocked:
+			palette_manager.unlocked.append(palette_data.id)
+	palette_manager.selected_palette = &"arcade"
+	palette_manager.select(palette_manager.selected_palette)
 	_apply_tile_font()
+	_apply_tile_palette()
 	var config := ConfigFile.new()
 	if config.load("user://pile_down.cfg") == OK:
 		# Whole sections are removed so achievements and progression fields added
@@ -746,6 +1088,8 @@ func _debug_reset_progression() -> void:
 				config.erase_section(section)
 		if config.has_section_key("settings", "selected_font"):
 			config.erase_section_key("settings", "selected_font")
+		if config.has_section_key("settings", "selected_palette"):
+			config.erase_section_key("settings", "selected_palette")
 		config.save("user://pile_down.cfg")
 	endless_unlocked = Debug.unlock_endless_mode()
 	endless_button.visible = endless_unlocked
@@ -787,6 +1131,9 @@ func start_game(endless_mode := false) -> void:
 	tier_reliefs_applied = 0
 	difficulty_droughts = _new_difficulty_droughts()
 	run_mistake_count = 0
+	run_lives_lost = 0
+	run_completed_rounds = 0
+	started_from_checkpoint = false
 	checkpoint_segment_damage_count = 0
 	newly_discovered_bonuses.clear()
 	newly_encountered_rules.clear()
@@ -797,13 +1144,18 @@ func start_game(endless_mode := false) -> void:
 	_pending_checkpoint_snapshot = null
 	if game_mode == GameMode.ENDLESS:
 		round_number = 1
+		run_start_round = 1
 	else:
 		var debug_start_round := Debug.get_start_round(Difficulty.TOTAL_ROUNDS)
+		started_from_checkpoint = debug_start_round > 1
+		run_start_round = debug_start_round
 		round_number = Difficulty.TOTAL_ROUNDS - debug_start_round + 1
 		_apply_debug_progression(debug_start_round)
 	music_manager.reset_game_sections(tier_reliefs_applied + 1)
 	music_manager.transition_to_game_music()
 	game_started_msec = Time.get_ticks_msec()
+	run_paused_msec = 0
+	run_pause_started_msec = game_started_msec
 	round_reached_time_ms = 0
 	run_time_label.visible = false
 	overlay.visible = false
@@ -883,7 +1235,9 @@ func _start_transition_elements() -> Array[Control]:
 
 
 func start_round() -> void:
+	_resume_run_time()
 	input_locked = true
+	_emit_difficulty_stats()
 	_round_mistakes_at_start = run_mistake_count
 	_capture_checkpoint_candidate()
 	sticky_fingers_controller.end_round()
@@ -932,6 +1286,11 @@ func start_round() -> void:
 	for index in pile_count:
 		var pile := PILE_SCENE.instantiate() as MemoryPile
 		piles_board.add_child(pile)
+		var selected_palette_data := palette_manager.find(
+			palette_manager.selected_palette
+		)
+		if selected_palette_data != null:
+			pile.set_tile_palette(selected_palette_data.normalized_colors())
 		var selected_font_data := font_manager.find(font_manager.selected_font)
 		if selected_font_data != null:
 			pile.set_value_font(
@@ -1721,10 +2080,20 @@ func _place_selected_card(pile: MemoryPile) -> void:
 	var origin := card.global_position
 	_root_action_id += 1
 	var context := PlacementContext.new(PlacementContext.Source.PLAYER, _root_action_id)
+	var combo_summary := HandComboSummary.new()
+	combo_summary.root_action_id = context.root_action_id
+	combo_summary.bonus_levels = bonus_manager.active_levels()
 	var affected_piles: Array[MemoryPile] = []
 	await _stack_card(card, pile, context)
 	affected_piles.append(pile)
+	combo_summary.bring_a_friend_total_companions = drag_companions.size()
 	var companion_piles := await _resolve_companion_drops(pile)
+	combo_summary.bring_a_friend_count = companion_piles.size()
+	combo_summary.bring_a_friend_all_succeeded = (
+		combo_summary.bring_a_friend_total_companions > 0
+		and combo_summary.bring_a_friend_count
+		== combo_summary.bring_a_friend_total_companions
+	)
 	for companion_pile in companion_piles:
 		if not affected_piles.has(companion_pile):
 			affected_piles.append(companion_pile)
@@ -1732,16 +2101,18 @@ func _place_selected_card(pile: MemoryPile) -> void:
 		var deja_piles := await _resolve_deja_vu(
 			placed_value, pile, bonus_manager.level(&"deja_vu"), origin, context.root_action_id
 		)
+		combo_summary.deja_vu_count = deja_piles.size()
 		for deja_pile in deja_piles:
 			if not affected_piles.has(deja_pile):
 				affected_piles.append(deja_pile)
 	if bonus_manager.has_bonus(&"double_down") and not pile.completed:
-		await _resolve_double_down(
+		combo_summary.double_down_count = await _resolve_double_down(
 			pile, bonus_manager.level(&"double_down"), origin, context.root_action_id
 		)
 	if not affected_piles.has(pile):
 		affected_piles.append(pile)
 	await _finalize_placement_action(affected_piles)
+	achievement_manager.hand_combo_resolved.emit(combo_summary)
 	if _all_piles_complete():
 		await _finish_round()
 		return
@@ -1834,7 +2205,7 @@ func _resolve_double_down(
 	maximum_bonus_cards: int,
 	origin: Vector2,
 	root_action_id: int
-) -> void:
+) -> int:
 	var played_count := 0
 	while played_count < maximum_bonus_cards and not pile.is_complete_value():
 		var matching_card := hand_manager.find_card_with_value(pile.expected_value(), origin)
@@ -1845,6 +2216,7 @@ func _resolve_double_down(
 			PlacementContext.new(PlacementContext.Source.DOUBLE_DOWN, root_action_id)
 		)
 		played_count += 1
+	return played_count
 
 
 func _finalize_placement_action(affected_piles: Array[MemoryPile]) -> void:
@@ -1907,7 +2279,9 @@ func _handle_mistake(
 	)
 	if force_damage or (not Debug.is_god_mode_enabled() and not protected_by_safety_net):
 		mistakes_left -= 1
+		run_lives_lost += 1
 		checkpoint_segment_damage_count += 1
+		achievement_manager.life_lost.emit()
 	mistake_made.emit()
 	if protected_by_safety_net:
 		soft_audio.play_safety_net_break()
@@ -2170,6 +2544,10 @@ func cleanup_special_rule_state() -> void:
 func _finish_round() -> void:
 	input_locked = true
 	var completed_round_number := _progression_round()
+	var completed_rule_ids: Array[StringName] = []
+	for rule in special_rule_manager.active_rules:
+		completed_rule_ids.append(rule.id)
+	_pause_run_time()
 	timer_manager.stop_countdown()
 	await cleanup_special_rule_state()
 	# Clear the remaining hand as part of the victory sequence. Jokers persist
@@ -2178,9 +2556,23 @@ func _finish_round() -> void:
 	_clear_all_hand_slot_placeholders()
 	await special_rule_manager.end_round(piles)
 	round_completed.emit()
+	run_completed_rounds += 1
+	for rule_id in completed_rule_ids:
+		if not beaten_special_rules.has(rule_id):
+			beaten_special_rules.append(rule_id)
+	_save_discoveries()
+	achievement_manager.special_rule_round_completed.emit(
+		completed_rule_ids, beaten_special_rules
+	)
+	achievement_manager.round_completed.emit(
+		_build_run_summary(false), completed_round_number, completed_rule_ids
+	)
 	var checkpoint_unlocked := _unlock_completed_checkpoint(completed_round_number)
-	_check_round_achievements(completed_round_number)
 	if checkpoint_unlocked:
+		achievement_manager.checkpoint_unlocked.emit(
+			int(completed_round_number / Difficulty.CHECKPOINT_INTERVAL),
+			unlocked_checkpoints
+		)
 		await _show_checkpoint_unlocked(
 			int(completed_round_number / Difficulty.CHECKPOINT_INTERVAL)
 		)
@@ -2204,6 +2596,7 @@ func _finish_round() -> void:
 		return
 	await bonus_manager.offer_if_due(completed_round_number)
 	var change := _advance_difficulty(_progression_round())
+	_emit_difficulty_stats()
 	if change == "TIER RELIEF":
 		music_manager.request_next_section()
 	if change.is_empty():
@@ -2247,6 +2640,9 @@ func _finish_game(completed_all_rounds := false) -> void:
 	# The death screen represents the whole run, including the round in which
 	# the player died. `round_reached_time_ms` only tracks completed rounds.
 	var score_time_ms := _total_time_milliseconds()
+	achievement_manager.run_completed.emit(
+		_build_run_summary(completed_all_rounds)
+	)
 	var formatted_time := _format_duration(score_time_ms)
 	var high_score_kind := ""
 	match game_mode:
@@ -2511,11 +2907,13 @@ func _show_checkpoint_unlocked(checkpoint_id: int) -> void:
 
 
 func _on_special_rules_announcing(_rules: Array[SpecialRuleData]) -> void:
+	_pause_run_time()
 	music_manager.set_low_pass_enabled(true)
 	soft_audio.play_special_rule()
 
 
 func _on_special_rules_announcement_finished() -> void:
+	_resume_run_time()
 	music_manager.set_low_pass_enabled(false, true)
 
 
@@ -2881,7 +3279,22 @@ func _update_hud() -> void:
 
 
 func _total_time_milliseconds() -> int:
-	return maxi(Time.get_ticks_msec() - game_started_msec, 0)
+	var paused := run_paused_msec
+	if run_pause_started_msec >= 0:
+		paused += Time.get_ticks_msec() - run_pause_started_msec
+	return maxi(Time.get_ticks_msec() - game_started_msec - paused, 0)
+
+
+func _pause_run_time() -> void:
+	if run_pause_started_msec < 0:
+		run_pause_started_msec = Time.get_ticks_msec()
+
+
+func _resume_run_time() -> void:
+	if run_pause_started_msec < 0:
+		return
+	run_paused_msec += Time.get_ticks_msec() - run_pause_started_msec
+	run_pause_started_msec = -1
 
 
 func _format_duration(total_msec: int) -> String:
@@ -3004,8 +3417,22 @@ func _load_high_score() -> void:
 		discovered_bonuses.assign(
 			config.get_value("progression", "discovered_bonuses", [])
 		)
+		max_discovered_tile_value = clampi(
+			int(config.get_value(
+				"progression", "max_discovered_tile_value",
+				Difficulty.START_CARD_VALUE
+			)),
+			Difficulty.START_CARD_VALUE,
+			Difficulty.MAX_CARD_VALUE
+		)
+		seen_bonuses.assign(
+			config.get_value("progression", "seen_bonuses", discovered_bonuses)
+		)
 		encountered_special_rules.assign(
 			config.get_value("progression", "encountered_special_rules", [])
+		)
+		beaten_special_rules.assign(
+			config.get_value("progression", "beaten_special_rules", [])
 		)
 		_load_checkpoint_progress(config)
 		_migrate_save(config)
@@ -3196,6 +3623,10 @@ func start_from_checkpoint(checkpoint_id: int) -> bool:
 	difficulty_droughts = _normalise_droughts(snapshot.difficulty_droughts)
 	endless_unlocked = endless_unlocked or snapshot.unlocked_endless
 	run_mistake_count = 0
+	run_lives_lost = 0
+	run_completed_rounds = 0
+	run_start_round = snapshot.start_round
+	started_from_checkpoint = true
 	checkpoint_segment_damage_count = 0
 	newly_discovered_bonuses.clear()
 	newly_encountered_rules.clear()
@@ -3206,6 +3637,8 @@ func start_from_checkpoint(checkpoint_id: int) -> bool:
 	music_manager.reset_game_sections(1)
 	music_manager.transition_to_game_music()
 	game_started_msec = Time.get_ticks_msec()
+	run_paused_msec = 0
+	run_pause_started_msec = game_started_msec
 	round_reached_time_ms = 0
 	run_time_label.visible = false
 	overlay.visible = false
@@ -3439,6 +3872,20 @@ func _migrate_save(config: ConfigFile) -> void:
 		config.get_value("progression", "discovered_bonuses", [])
 	)
 	config.set_value(
+		"progression", "max_discovered_tile_value",
+		config.get_value(
+			"progression", "max_discovered_tile_value",
+			Difficulty.START_CARD_VALUE
+		)
+	)
+	config.set_value(
+		"progression", "seen_bonuses",
+		config.get_value(
+			"progression", "seen_bonuses",
+			config.get_value("progression", "discovered_bonuses", [])
+		)
+	)
+	config.set_value(
 		"progression", "encountered_special_rules",
 		config.get_value("progression", "encountered_special_rules", [])
 	)
@@ -3450,17 +3897,51 @@ func _migrate_save(config: ConfigFile) -> void:
 		"progression", "unlocked_fonts",
 		config.get_value("progression", "unlocked_fonts", [&"press_start_2p"])
 	)
+	config.set_value(
+		"progression", "beaten_special_rules",
+		config.get_value("progression", "beaten_special_rules", [])
+	)
+	config.set_value(
+		"progression", "achievement_unlock_dates",
+		config.get_value("progression", "achievement_unlock_dates", {})
+	)
+	config.set_value(
+		"progression", "bonuses_maxed_once",
+		config.get_value("progression", "bonuses_maxed_once", {})
+	)
+	config.set_value(
+		"progression", "bonus_highest_levels",
+		config.get_value("progression", "bonus_highest_levels", {})
+	)
 	config.save(AUDIO_CONFIG_PATH)
 
 
 func _on_bonus_selected(bonus_id: StringName) -> void:
+	if not seen_bonuses.has(bonus_id):
+		seen_bonuses.append(bonus_id)
 	if bonus_id == &"pile_mover":
 		_refresh_pile_mover_cursors()
-	if discovered_bonuses.has(bonus_id):
-		return
-	discovered_bonuses.append(bonus_id)
-	newly_discovered_bonuses.append(bonus_id)
-	_save_discoveries()
+	if not discovered_bonuses.has(bonus_id):
+		discovered_bonuses.append(bonus_id)
+		newly_discovered_bonuses.append(bonus_id)
+		_save_discoveries()
+	achievement_manager.bonus_acquired.emit(
+		bonus_id,
+		bonus_manager.level(bonus_id),
+		bonus_manager.active_levels(),
+		discovered_bonuses
+	)
+
+
+func _on_bonuses_seen(bonus_ids: Array[StringName]) -> void:
+	var changed := false
+	for bonus_id in bonus_ids:
+		if seen_bonuses.has(bonus_id):
+			continue
+		seen_bonuses.append(bonus_id)
+		changed = true
+	if changed:
+		_save_discoveries()
 
 
 func _refresh_pile_mover_cursors() -> void:
@@ -3483,31 +3964,55 @@ func _save_discoveries() -> void:
 	var config := ConfigFile.new()
 	config.load(AUDIO_CONFIG_PATH)
 	config.set_value("progression", "discovered_bonuses", discovered_bonuses)
+	config.set_value(
+		"progression", "max_discovered_tile_value", max_discovered_tile_value
+	)
+	config.set_value("progression", "seen_bonuses", seen_bonuses)
 	config.set_value("progression", "encountered_special_rules", encountered_special_rules)
+	config.set_value("progression", "beaten_special_rules", beaten_special_rules)
 	config.save(AUDIO_CONFIG_PATH)
 
 
-func _check_round_achievements(completed_round: int) -> void:
-	achievement_manager.unlock(&"first_steps")
-	if run_mistake_count == _round_mistakes_at_start:
-		achievement_manager.unlock(&"perfect_round")
-	if completed_round >= 10:
-		achievement_manager.unlock(&"ten_down")
-	if not unlocked_checkpoints.is_empty():
-		achievement_manager.unlock(&"checked_in")
-	if special_rule_manager.active_rules.size() >= 3:
-		achievement_manager.unlock(&"rule_of_three")
-	if hand_size >= Difficulty.MAX_HAND_SIZE:
-		achievement_manager.unlock(&"full_house")
-	if completed_round >= 20 and run_mistake_count == 0:
-		achievement_manager.unlock(&"clean_run")
-	if game_mode == GameMode.ENDLESS and completed_round >= 25:
-		achievement_manager.unlock(&"forever_counting")
-	if game_mode == GameMode.STANDARD and completed_round >= Difficulty.TOTAL_ROUNDS:
-		achievement_manager.unlock(&"counted_down")
+func _emit_difficulty_stats() -> void:
+	if start_value > max_discovered_tile_value:
+		max_discovered_tile_value = mini(start_value, Difficulty.MAX_CARD_VALUE)
+		_save_discoveries()
+	achievement_manager.difficulty_stat_changed.emit(&"pile_count", pile_count)
+	achievement_manager.difficulty_stat_changed.emit(&"hand_size", hand_size)
+	achievement_manager.difficulty_stat_changed.emit(&"start_value", start_value)
+	achievement_manager.difficulty_stat_changed.emit(&"turn_time", turn_time)
+
+
+func _build_run_summary(normal_game_completed: bool) -> RunSummary:
+	var summary := RunSummary.new()
+	match game_mode:
+		GameMode.ENDLESS:
+			summary.mode = RunSummary.Mode.ENDLESS
+		GameMode.CHECKPOINT:
+			summary.mode = RunSummary.Mode.CHECKPOINT
+		_:
+			summary.mode = RunSummary.Mode.NORMAL
+	summary.started_from_checkpoint = started_from_checkpoint
+	summary.start_round = run_start_round
+	summary.completed_rounds = run_completed_rounds
+	summary.highest_round = _progression_round()
+	summary.run_time_seconds = _total_time_milliseconds() / 1000.0
+	summary.mistakes_made = run_mistake_count
+	summary.lives_lost = run_lives_lost
+	summary.active_bonus_levels = bonus_manager.active_levels()
+	summary.normal_game_completed = normal_game_completed and (
+		game_mode == GameMode.STANDARD
+		or (game_mode == GameMode.CHECKPOINT and not checkpoint_uses_endless_progression)
+	)
+	summary.uses_endless_progression = (
+		game_mode == GameMode.ENDLESS
+		or (game_mode == GameMode.CHECKPOINT and checkpoint_uses_endless_progression)
+	)
+	return summary
 
 
 func _on_achievement_unlocked(data: AchievementData) -> void:
 	newly_unlocked_achievements.append(data.id)
 	for font_id in font_manager.unlock_for_achievement(data.id):
 		newly_unlocked_fonts.append(font_id)
+	palette_manager.unlock_for_achievement(data.id)

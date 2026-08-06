@@ -9,7 +9,7 @@ func _init() -> void:
 	slider.min_value = 0.0
 	slider.max_value = 100.0
 	slider.size = Vector2(100.0, 16.0)
-	var bar := TextureRect.new()
+	var bar := NinePatchRect.new()
 	bar.name = "Bar"
 	var shader := Shader.new()
 	shader.code = (

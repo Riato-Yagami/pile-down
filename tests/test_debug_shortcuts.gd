@@ -44,7 +44,7 @@ func _run() -> void:
 	game.unlocked_checkpoints.assign([1, 2])
 	game.checkpoint_snapshots = {1: {"start_round": 10}}
 	game.discovered_bonuses.assign([&"wild_card"])
-	game.achievement_manager.unlocked.assign([&"first_steps"])
+	game.achievement_manager.unlocked.assign([&"max_piles"])
 	var high_score_event := InputEventKey.new()
 	high_score_event.keycode = KEY_H
 	high_score_event.pressed = true

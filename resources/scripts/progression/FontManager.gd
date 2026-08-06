@@ -28,7 +28,11 @@ func load_progress() -> void:
 func unlock_for_achievement(achievement_id: StringName) -> Array[StringName]:
 	var newly_unlocked: Array[StringName] = []
 	for data in definitions:
-		if data.required_achievement == achievement_id and not unlocked.has(data.id):
+		if (
+			data.required_achievement != null
+			and data.required_achievement.id == achievement_id
+			and not unlocked.has(data.id)
+		):
 			unlocked.append(data.id)
 			newly_unlocked.append(data.id)
 	if not newly_unlocked.is_empty():

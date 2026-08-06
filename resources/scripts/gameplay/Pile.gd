@@ -37,6 +37,7 @@ var bonus_highlight := false
 var movable := false
 var _value_font: Font
 var _value_font_size := 20
+var _tile_colors: Array[Color] = Settings.TILE_COLORS.slice(0, 10)
 
 
 func _ready() -> void:
@@ -52,6 +53,14 @@ func _ready() -> void:
 func set_value_font(font: Font, font_size := 20) -> void:
 	_value_font = font
 	_value_font_size = clampi(font_size, 8, 32)
+	if is_node_ready():
+		_refresh()
+
+
+func set_tile_palette(colors: Array[Color]) -> void:
+	if colors.size() != 9:
+		return
+	_tile_colors = colors.duplicate()
 	if is_node_ready():
 		_refresh()
 
@@ -373,7 +382,7 @@ func play_entrance(delay: float) -> void:
 func _refresh() -> void:
 	if not is_node_ready():
 		return
-	var color: Color = Settings.TILE_COLORS[current_value % Settings.TILE_COLORS.size()]
+	var color: Color = _tile_colors[current_value % _tile_colors.size()]
 	var visual_color := Color("#8B8B8B") if colorblind_enabled else color
 	face_sprite.visible = face_up
 	back_sprite.visible = not face_up

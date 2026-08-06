@@ -5,11 +5,21 @@
 [ext_resource type="Texture2D" uid="uid://lnly0s8wwgpd" path="res://resources/sprites/ui/icons/stats.png" id="3_stats"]
 [ext_resource type="Texture2D" uid="uid://d2wec4p1fbanl" path="res://resources/sprites/ui/icons/trophies.png" id="4_trophies"]
 [ext_resource type="Texture2D" uid="uid://yn8jhdelviqd" path="res://resources/sprites/ui/icons/bonuses.png" id="5_bonuses"]
+[ext_resource type="Script" uid="uid://dj883c8fbgkvi" path="res://resources/scripts/progression/FontData.gd" id="5_qwp32"]
+[ext_resource type="FontFile" uid="uid://byith5wuarbln" path="res://resources/fonts/PressStart2P-Regular.ttf" id="6_53dcm"]
 [ext_resource type="Texture2D" uid="uid://bv570rb4pjqhq" path="res://resources/sprites/ui/icons/rules.png" id="6_rules"]
 [ext_resource type="Texture2D" uid="uid://dw63pb4j4qbyf" path="res://resources/sprites/ui/buttons/escape.png" id="7_escape"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="7_iwyew"]
+[ext_resource type="FontFile" uid="uid://0lls67bvy7ct" path="res://resources/fonts/VCR_OSD_MONO_1.001.ttf" id="8_emknw"]
 [ext_resource type="Texture2D" uid="uid://c5frbcwecqyrr" path="res://resources/sprites/ui/icons/fonts.png" id="8_fonts"]
+[ext_resource type="Script" uid="uid://bdlkhp3dt6mr" path="res://resources/scripts/progression/ColorPaletteData.gd" id="9_acq25"]
 [ext_resource type="Script" uid="uid://dnwlhbj4lgun" path="res://resources/scripts/ui/TextureHighlightButton.gd" id="9_texture_highlight"]
 [ext_resource type="Texture2D" uid="uid://kvt15wncwlow" path="res://resources/sprites/ui/buttons/button.png" id="10_button"]
+[ext_resource type="Script" uid="uid://3p7w50e0wvvw" path="res://resources/scripts/ui/ProgressionFontCatalog.gd" id="11_font_catalog"]
+[ext_resource type="Script" uid="uid://b72j1hsljivo8" path="res://resources/scripts/ui/ProgressionAchievementCatalog.gd" id="12_achievement_catalog"]
+[ext_resource type="Texture2D" uid="uid://co03berrcu88s" path="res://resources/sprites/ui/buttons/progression-lock-mode/bar.png" id="13_lock_bar"]
+[ext_resource type="Texture2D" uid="uid://td4yf0peuxx1" path="res://resources/sprites/ui/buttons/progression-lock-mode/selector.png" id="14_lock_selector"]
+[ext_resource type="Script" uid="uid://bvml2852cobfw" path="res://resources/scripts/ui/ProgressionLockFilter.gd" id="15_lock_filter"]
 
 [sub_resource type="StyleBoxTexture" id="FontButtonStyle"]
 texture = ExtResource("10_button")
@@ -18,7 +28,7 @@ texture = ExtResource("10_button")
 code = "shader_type canvas_item;
 
 uniform vec4 base_color : source_color = vec4(0.302, 0.51, 0.761, 1.0);
-uniform vec4 highlight_color : source_color = vec4(0.427, 0.655, 0.898, 1.0);
+uniform vec4 highlight_color : source_color = vec4(0.3019608, 0.50980395, 0.7607843, 1.0);
 
 void fragment() {
 	vec4 texture_color = texture(TEXTURE, UV);
@@ -56,6 +66,326 @@ resource_local_to_scene = true
 shader = SubResource("FontPreviewTileShader")
 shader_parameter/tile_color = Color(0.302, 0.51, 0.761, 1)
 
+[sub_resource type="Resource" id="Resource_tiumk"]
+script = ExtResource("7_iwyew")
+id = &"complete_no_life_lost"
+title = "PERFECT COUNTDOWN"
+description = "Complete the entire game without losing a life."
+category = &"ROUNDS"
+hidden = true
+reward_font = &"vcr"
+
+[sub_resource type="Resource" id="Resource_bdm2q"]
+script = ExtResource("5_qwp32")
+id = &"vcr"
+display_name = "VCR OSD MONO"
+font = ExtResource("8_emknw")
+default_unlocked = true
+required_achievement = SubResource("Resource_tiumk")
+
+[sub_resource type="Resource" id="Resource_adldm"]
+script = ExtResource("7_iwyew")
+id = &"complete_10_rounds"
+title = "GETTING STARTED"
+description = "Complete 10 rounds."
+category = &"ROUNDS"
+reward_font = &"tiny5"
+
+[sub_resource type="Resource" id="Resource_iraks"]
+script = ExtResource("5_qwp32")
+id = &"tiny5"
+display_name = "TINY5"
+font = ExtResource("3_p3cah")
+tile_font_size = 16
+required_achievement = SubResource("Resource_adldm")
+
+[sub_resource type="Resource" id="Resource_acq25"]
+script = ExtResource("5_qwp32")
+id = &"press_start_2p"
+display_name = "PRESS START 2P"
+font = ExtResource("6_53dcm")
+default_unlocked = true
+
+[sub_resource type="Resource" id="Resource_hhyjr"]
+script = ExtResource("9_acq25")
+id = &"arcade"
+display_name = "ARCADE"
+colors = Array[Color]([Color(0.18431373, 0.654902, 0.7882353, 1), Color(0.18431373, 0.6509804, 0.41568628, 1), Color(0.24705882, 0.43529412, 0.8509804, 1), Color(0.8862745, 0.33333334, 0.30980393, 1), Color(0.8509804, 0.64705884, 0.078431375, 1), Color(0.49803922, 0.64705884, 0.16862746, 1), Color(0.84705883, 0.30980393, 0.5137255, 1), Color(0.8862745, 0.47843137, 0.1764706, 1), Color(0.48235294, 0.35686275, 0.78039217, 1)])
+default_unlocked = true
+
+[sub_resource type="Resource" id="Resource_8t56u"]
+script = ExtResource("9_acq25")
+id = &"soft"
+display_name = "SOFT"
+colors = Array[Color]([Color(0.44705883, 0.7176471, 0.7882353, 1), Color(0.45882353, 0.7176471, 0.59607846, 1), Color(0.5058824, 0.6, 0.81960785, 1), Color(0.8509804, 0.5294118, 0.5058824, 1), Color(0.827451, 0.72156864, 0.4, 1), Color(0.6117647, 0.70980394, 0.4392157, 1), Color(0.8352941, 0.54509807, 0.65882355, 1), Color(0.8509804, 0.60784316, 0.43137255, 1), Color(0.6, 0.5254902, 0.76862746, 1)])
+default_unlocked = true
+
+[sub_resource type="Resource" id="Resource_jkfei"]
+script = ExtResource("9_acq25")
+id = &"night"
+display_name = "NIGHT"
+colors = Array[Color]([Color(0.22352941, 0.4509804, 0.5411765, 1), Color(0.23921569, 0.4627451, 0.36078432, 1), Color(0.27058825, 0.36862746, 0.60784316, 1), Color(0.5764706, 0.3019608, 0.31764707, 1), Color(0.5529412, 0.45490196, 0.1764706, 1), Color(0.4, 0.47058824, 0.23137255, 1), Color(0.54901963, 0.28627452, 0.40784314, 1), Color(0.5764706, 0.35686275, 0.22352941, 1), Color(0.38431373, 0.3019608, 0.5686275, 1)])
+default_unlocked = true
+
+[sub_resource type="Resource" id="Resource_qwxjr"]
+script = ExtResource("7_iwyew")
+id = &"max_piles"
+title = "STACK OVERFLOW"
+description = "Reach the maximum number of stacks."
+category = &"STATS"
+
+[sub_resource type="Resource" id="Resource_jgxuj"]
+script = ExtResource("7_iwyew")
+id = &"max_hand"
+title = "FULL HAND"
+description = "Reach the maximum hand size."
+category = &"STATS"
+
+[sub_resource type="Resource" id="Resource_v4mme"]
+script = ExtResource("7_iwyew")
+id = &"minimum_timer"
+title = "FINAL SECONDS"
+description = "Reach the shortest possible timer."
+category = &"STATS"
+
+[sub_resource type="Resource" id="Resource_4mkow"]
+script = ExtResource("7_iwyew")
+id = &"start_value_nine"
+title = "CLOUD NINE"
+description = "Reach a starting tile value of 9."
+category = &"STATS"
+
+[sub_resource type="Resource" id="Resource_bguks"]
+script = ExtResource("7_iwyew")
+id = &"complete_10_rounds"
+title = "GETTING STARTED"
+description = "Complete 10 rounds."
+category = &"ROUNDS"
+reward_font = &"tiny5"
+
+[sub_resource type="Resource" id="Resource_8coal"]
+script = ExtResource("7_iwyew")
+id = &"complete_half_game"
+title = "HALFWAY DOWN"
+description = "Complete half of the normal game."
+category = &"ROUNDS"
+
+[sub_resource type="Resource" id="Resource_244t5"]
+script = ExtResource("7_iwyew")
+id = &"complete_normal_game"
+title = "COUNTED DOWN"
+description = "Complete every round."
+category = &"ROUNDS"
+
+[sub_resource type="Resource" id="Resource_3m377"]
+script = ExtResource("7_iwyew")
+id = &"half_without_checkpoint"
+title = "NO SHORTCUTS"
+description = "Complete half the game from the beginning."
+category = &"ROUNDS"
+
+[sub_resource type="Resource" id="Resource_e5mcq"]
+script = ExtResource("7_iwyew")
+id = &"complete_without_checkpoint"
+title = "THE LONG WAY DOWN"
+description = "Complete the game from the beginning."
+category = &"ROUNDS"
+
+[sub_resource type="Resource" id="Resource_hm60r"]
+script = ExtResource("7_iwyew")
+id = &"half_no_life_lost"
+title = "FLAWLESS HALF"
+description = "Complete half the game without losing a life."
+category = &"ROUNDS"
+
+[sub_resource type="Resource" id="Resource_dh72k"]
+script = ExtResource("7_iwyew")
+id = &"complete_no_life_lost"
+title = "PERFECT COUNTDOWN"
+description = "Complete the entire game without losing a life."
+category = &"ROUNDS"
+hidden = true
+reward_font = &"vcr"
+
+[sub_resource type="Resource" id="Resource_v8qe0"]
+script = ExtResource("7_iwyew")
+id = &"first_checkpoint"
+title = "CHECKED IN"
+description = "Unlock your first checkpoint."
+category = &"CHECKPOINTS"
+
+[sub_resource type="Resource" id="Resource_hh77c"]
+script = ExtResource("7_iwyew")
+id = &"all_checkpoints"
+title = "ALL STOPS"
+description = "Unlock every checkpoint in Normal Mode."
+category = &"CHECKPOINTS"
+
+[sub_resource type="Resource" id="Resource_76x01"]
+script = ExtResource("7_iwyew")
+id = &"endless_max_plus_one"
+title = "ONE MORE ROUND"
+description = "Complete the first round beyond the normal limit."
+category = &"ENDLESS"
+
+[sub_resource type="Resource" id="Resource_yya14"]
+script = ExtResource("7_iwyew")
+id = &"endless_double_max"
+title = "DOUBLE OR NOTHING"
+description = "Reach twice the normal round limit in Endless Mode."
+category = &"ENDLESS"
+
+[sub_resource type="Resource" id="Resource_j4oj4"]
+script = ExtResource("7_iwyew")
+id = &"all_bonuses_discovered"
+title = "BONUS COLLECTOR"
+description = "Obtain every enabled bonus at least once."
+category = &"BONUSES & RULES"
+
+[sub_resource type="Resource" id="Resource_nafel"]
+script = ExtResource("7_iwyew")
+id = &"beat_all_special_rules"
+title = "RULEBOOK COMPLETE"
+description = "Beat every enabled Special Rule at least once."
+category = &"BONUSES & RULES"
+
+[sub_resource type="Resource" id="Resource_xsx86"]
+script = ExtResource("7_iwyew")
+id = &"one_bonus_max_level"
+title = "FULLY UPGRADED"
+description = "Raise a bonus to its maximum level."
+category = &"BONUSES & RULES"
+
+[sub_resource type="Resource" id="Resource_m8up1"]
+script = ExtResource("7_iwyew")
+id = &"all_bonuses_maxed_once"
+title = "MAXIMUM BUILD"
+description = "Max out every available bonus across your runs."
+category = &"BONUSES & RULES"
+hidden = true
+
+[sub_resource type="Resource" id="Resource_u7e07"]
+script = ExtResource("7_iwyew")
+id = &"beat_two_special_rules"
+title = "DOUBLE TROUBLE"
+description = "Beat a round with at least two Special Rules."
+category = &"BONUSES & RULES"
+
+[sub_resource type="Resource" id="Resource_0t5a8"]
+script = ExtResource("7_iwyew")
+id = &"beat_max_special_rules"
+title = "TOTAL CHAOS"
+description = "Beat a round with the maximum number of Special Rules."
+category = &"BONUSES & RULES"
+
+[sub_resource type="Resource" id="Resource_ahs8e"]
+script = ExtResource("7_iwyew")
+id = &"five_different_bonuses"
+title = "BUILD COMPLETE"
+description = "Own five different bonuses in one run."
+category = &"BONUSES & RULES"
+
+[sub_resource type="Resource" id="Resource_u517e"]
+script = ExtResource("7_iwyew")
+id = &"double_down_deja_vu_combo"
+title = "ECHO CHAMBER"
+description = "Trigger Double Down and Deja Vu from the same hand."
+category = &"COMBOS"
+
+[sub_resource type="Resource" id="Resource_6wd7c"]
+script = ExtResource("7_iwyew")
+id = &"three_bonus_combo"
+title = "EVERYONE'S HERE"
+description = "Trigger Bring a Friend, Double Down and Deja Vu from the same hand."
+category = &"COMBOS"
+hidden = true
+
+[sub_resource type="Resource" id="Resource_3nqdt"]
+script = ExtResource("7_iwyew")
+id = &"double_down_full_activation"
+title = "DOWN THE LINE"
+description = "Use every possible Double Down placement in one activation."
+category = &"COMBOS"
+
+[sub_resource type="Resource" id="Resource_16j1s"]
+script = ExtResource("7_iwyew")
+id = &"deja_vu_full_activation"
+title = "SEEING TRIPLE"
+description = "Use every possible Deja Vu placement in one activation."
+category = &"COMBOS"
+
+[sub_resource type="Resource" id="Resource_fbykq"]
+script = ExtResource("7_iwyew")
+id = &"bring_a_friend_full_activation"
+title = "THE WHOLE GANG"
+description = "Successfully play every companion with Bring a Friend III."
+category = &"COMBOS"
+
+[sub_resource type="Resource" id="Resource_yj38c"]
+script = ExtResource("7_iwyew")
+id = &"speedrun_10_rounds"
+title = "QUICK TEN"
+description = "Complete 10 rounds in under 5 minutes."
+category = &"SPEEDRUN"
+
+[sub_resource type="Resource" id="Resource_md1vf"]
+script = ExtResource("7_iwyew")
+id = &"speedrun_20_rounds"
+title = "TEN-MINUTE TWENTY"
+description = "Complete 20 rounds in under 10 minutes."
+category = &"SPEEDRUN"
+
+[sub_resource type="Resource" id="Resource_5qfvh"]
+script = ExtResource("7_iwyew")
+id = &"speedrun_full_game"
+title = "THIRTY-MINUTE COUNTDOWN"
+description = "Complete the game in under 30 minutes."
+category = &"SPEEDRUN"
+hidden = true
+
+[sub_resource type="Shader" id="LockBarHighlightShader"]
+code = "shader_type canvas_item;
+
+uniform int selected_mode = 0;
+uniform vec4 highlight_color : source_color = vec4(0.427, 0.655, 0.898, 1.0);
+
+void fragment() {
+	vec4 source = texture(TEXTURE, UV) * COLOR;
+	bool lock_pixel = UV.y < 0.55 && source.a > 0.0;
+	bool left_selected = selected_mode == 0 || selected_mode == 2;
+	bool right_selected = selected_mode == 0 || selected_mode == 1;
+	if (lock_pixel && ((UV.x < 0.42 && left_selected) || (UV.x >= 0.42 && right_selected))) {
+		source.rgb = highlight_color.rgb;
+	}
+	COLOR = source;
+}"
+
+[sub_resource type="ShaderMaterial" id="LockBarHighlightMaterial"]
+resource_local_to_scene = true
+shader = SubResource("LockBarHighlightShader")
+shader_parameter/selected_mode = 0
+shader_parameter/highlight_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
+
+[sub_resource type="Shader" id="LockSelectorHighlightShader"]
+code = "shader_type canvas_item;
+
+uniform float highlighted : hint_range(0.0, 1.0) = 0.0;
+uniform vec4 highlight_color : source_color = vec4(0.3019608, 0.50980395, 0.7607843, 1.0);
+
+void fragment() {
+	vec4 source = texture(TEXTURE, UV) * COLOR;
+	if (source.a > 0.0 && source.b > source.r * 1.3) {
+		source.rgb = mix(source.rgb, highlight_color.rgb, highlighted);
+	}
+	COLOR = source;
+}"
+
+[sub_resource type="ShaderMaterial" id="LockSelectorHighlightMaterial"]
+resource_local_to_scene = true
+shader = SubResource("LockSelectorHighlightShader")
+shader_parameter/highlighted = 0.0
+shader_parameter/highlight_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
+
 [sub_resource type="ShaderMaterial" id="ProgressionButtonHighlightMaterial"]
 resource_local_to_scene = true
 shader = SubResource("ProgressionButtonHighlightShader")
@@ -71,14 +401,28 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
+editor_preview_page = 4
+editor_preview_tile_count = 10
 entry_heading_font = ExtResource("3_p3cah")
 entry_heading_font_size = 16
 entry_details_font = ExtResource("3_p3cah")
 entry_details_font_size = 16
 font_button_style = SubResource("FontButtonStyle")
 font_button_highlight_material = SubResource("FontButtonHighlightMaterial")
-font_preview_tile_count = 5
+bonus_level_font = ExtResource("3_p3cah")
+bonus_level_font_size = 16
+bonus_level_text_offset = Vector2(1, 0)
 font_preview_tile_material = SubResource("FontPreviewTileMaterial")
+
+[node name="FontCatalog" type="Node" parent="." unique_id=104291813]
+unique_name_in_owner = true
+script = ExtResource("11_font_catalog")
+available_fonts = Array[ExtResource("5_qwp32")]([SubResource("Resource_bdm2q"), SubResource("Resource_iraks"), SubResource("Resource_acq25")])
+
+[node name="AchievementCatalog" type="Node" parent="." unique_id=104291814]
+unique_name_in_owner = true
+script = ExtResource("12_achievement_catalog")
+achievements = Array[ExtResource("7_iwyew")]([SubResource("Resource_qwxjr"), SubResource("Resource_jgxuj"), SubResource("Resource_v4mme"), SubResource("Resource_4mkow"), SubResource("Resource_bguks"), SubResource("Resource_8coal"), SubResource("Resource_244t5"), SubResource("Resource_3m377"), SubResource("Resource_e5mcq"), SubResource("Resource_hm60r"), SubResource("Resource_dh72k"), SubResource("Resource_v8qe0"), SubResource("Resource_hh77c"), SubResource("Resource_76x01"), SubResource("Resource_yya14"), SubResource("Resource_j4oj4"), SubResource("Resource_nafel"), SubResource("Resource_xsx86"), SubResource("Resource_m8up1"), SubResource("Resource_u7e07"), SubResource("Resource_0t5a8"), SubResource("Resource_ahs8e"), SubResource("Resource_u517e"), SubResource("Resource_6wd7c"), SubResource("Resource_3nqdt"), SubResource("Resource_16j1s"), SubResource("Resource_fbykq"), SubResource("Resource_yj38c"), SubResource("Resource_md1vf"), SubResource("Resource_5qfvh")])
 
 [node name="Background" type="ColorRect" parent="." unique_id=21778321]
 layout_mode = 1
@@ -108,28 +452,65 @@ theme_override_constants/separation = 8
 
 [node name="Header" type="HBoxContainer" parent="Margin/Layout" unique_id=68601913]
 layout_mode = 2
+theme_override_constants/separation = 4
 
 [node name="Title" type="Label" parent="Margin/Layout/Header" unique_id=1369754182]
 layout_mode = 2
-size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
 theme_override_font_sizes/font_size = 20
 text = "PROGRESSION"
 
+[node name="LockFilter" type="Control" parent="Margin/Layout/Header" unique_id=1147425081]
+unique_name_in_owner = true
+texture_filter = 1
+custom_minimum_size = Vector2(36, 24)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+focus_mode = 2
+mouse_default_cursor_shape = 2
+script = ExtResource("15_lock_filter")
+selector_right_x = 28.0
+
+[node name="LockModeBar" type="TextureRect" parent="Margin/Layout/Header/LockFilter" unique_id=1147425082]
+unique_name_in_owner = true
+material = SubResource("LockBarHighlightMaterial")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("13_lock_bar")
+expand_mode = 1
+stretch_mode = 3
+
+[node name="LockModeSelector" type="TextureRect" parent="Margin/Layout/Header/LockFilter" unique_id=1147425083]
+unique_name_in_owner = true
+material = SubResource("LockSelectorHighlightMaterial")
+layout_mode = 0
+offset_left = 15.0
+offset_top = 16.0
+offset_right = 21.0
+offset_bottom = 22.0
+mouse_default_cursor_shape = 2
+texture = ExtResource("14_lock_selector")
+
 [node name="Body" type="HBoxContainer" parent="Margin/Layout" unique_id=675370899]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 8
+theme_override_constants/separation = 5
 
 [node name="Navigation" type="VBoxContainer" parent="Margin/Layout/Body" unique_id=6028854]
-custom_minimum_size = Vector2(34, 0)
+custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
 theme_override_constants/separation = 4
 
 [node name="HighscoresButton" type="TextureButton" parent="Margin/Layout/Body/Navigation" unique_id=1230825144]
 unique_name_in_owner = true
 texture_filter = 1
-custom_minimum_size = Vector2(34, 34)
+custom_minimum_size = Vector2(30, 34)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("3_stats")
@@ -140,9 +521,8 @@ highlight_material = SubResource("ProgressionButtonHighlightMaterial")
 
 [node name="AchievementsButton" type="TextureButton" parent="Margin/Layout/Body/Navigation" unique_id=1749087960]
 unique_name_in_owner = true
-modulate = Color(0.3019608, 0.50980395, 0.7607843, 1)
 texture_filter = 1
-custom_minimum_size = Vector2(34, 34)
+custom_minimum_size = Vector2(30, 34)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("4_trophies")
@@ -154,7 +534,7 @@ highlight_material = SubResource("ProgressionButtonHighlightMaterial")
 [node name="BonusesButton" type="TextureButton" parent="Margin/Layout/Body/Navigation" unique_id=1852810262]
 unique_name_in_owner = true
 texture_filter = 1
-custom_minimum_size = Vector2(34, 34)
+custom_minimum_size = Vector2(30, 34)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("5_bonuses")
@@ -166,7 +546,7 @@ highlight_material = SubResource("ProgressionButtonHighlightMaterial")
 [node name="SpecialRulesButton" type="TextureButton" parent="Margin/Layout/Body/Navigation" unique_id=1024762404]
 unique_name_in_owner = true
 texture_filter = 1
-custom_minimum_size = Vector2(34, 34)
+custom_minimum_size = Vector2(30, 34)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("6_rules")
@@ -177,8 +557,9 @@ highlight_material = SubResource("ProgressionButtonHighlightMaterial")
 
 [node name="FontsButton" type="TextureButton" parent="Margin/Layout/Body/Navigation" unique_id=1990545340]
 unique_name_in_owner = true
+modulate = Color(0.3019608, 0.50980395, 0.7607843, 1)
 texture_filter = 1
-custom_minimum_size = Vector2(34, 34)
+custom_minimum_size = Vector2(30, 34)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("8_fonts")
@@ -197,49 +578,92 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
 theme_override_font_sizes/font_size = 20
-text = "ACHIEVEMENTS"
-
-[node name="FilterButton" type="OptionButton" parent="Margin/Layout/Body/Page" unique_id=1147425081]
-unique_name_in_owner = true
-visible = false
-custom_minimum_size = Vector2(86, 25)
-layout_mode = 2
-size_flags_horizontal = 0
-mouse_default_cursor_shape = 2
-theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
-theme_override_font_sizes/font_size = 14
-selected = 0
-item_count = 3
-popup/item_0/text = "BOTH"
-popup/item_0/id = 0
-popup/item_1/text = "UNLOCKED"
-popup/item_1/id = 1
-popup/item_2/text = "LOCKED"
-popup/item_2/id = 2
+text = "FONTS"
 
 [node name="Scroll" type="ScrollContainer" parent="Margin/Layout/Body/Page" unique_id=345096820]
+unique_name_in_owner = true
+visible = false
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="PageContent" type="VBoxContainer" parent="Margin/Layout/Body/Page/Scroll" unique_id=249977808]
+[node name="ContentMargin" type="MarginContainer" parent="Margin/Layout/Body/Page/Scroll" unique_id=131323473]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_right = 10
+
+[node name="PageContent" type="VBoxContainer" parent="Margin/Layout/Body/Page/Scroll/ContentMargin" unique_id=249977808]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 10
 
-[node name="FontPreviewScroll" type="ScrollContainer" parent="Margin/Layout/Body/Page" unique_id=1551367649]
+[node name="CosmeticLists" type="VBoxContainer" parent="Margin/Layout/Body/Page" unique_id=249977809]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 37)
 layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 4
+
+[node name="FontsLabel" type="Label" parent="Margin/Layout/Body/Page/CosmeticLists" unique_id=249977810]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
+theme_override_font_sizes/font_size = 16
+text = "FONTS"
+
+[node name="FontsScroll" type="ScrollContainer" parent="Margin/Layout/Body/Page/CosmeticLists" unique_id=249977811]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ContentMargin" type="MarginContainer" parent="Margin/Layout/Body/Page/CosmeticLists/FontsScroll" unique_id=1573019183]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_right = 10
+
+[node name="FontsContent" type="VBoxContainer" parent="Margin/Layout/Body/Page/CosmeticLists/FontsScroll/ContentMargin" unique_id=249977812]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="PalettesLabel" type="Label" parent="Margin/Layout/Body/Page/CosmeticLists" unique_id=249977813]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
+theme_override_font_sizes/font_size = 16
+text = "COLOR PALETTES"
+
+[node name="PalettesScroll" type="ScrollContainer" parent="Margin/Layout/Body/Page/CosmeticLists" unique_id=249977814]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ContentMargin" type="MarginContainer" parent="Margin/Layout/Body/Page/CosmeticLists/PalettesScroll" unique_id=1814627995]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_right = 10
+
+[node name="PalettesContent" type="VBoxContainer" parent="Margin/Layout/Body/Page/CosmeticLists/PalettesScroll/ContentMargin" unique_id=249977815]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="FontPreviewScroll" type="ScrollContainer" parent="Margin/Layout" unique_id=1551367649]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 78)
+layout_mode = 2
+horizontal_scroll_mode = 0
 vertical_scroll_mode = 0
 
-[node name="FontPreview" type="HBoxContainer" parent="Margin/Layout/Body/Page/FontPreviewScroll" unique_id=1112331725]
+[node name="FontPreview" type="HFlowContainer" parent="Margin/Layout/FontPreviewScroll" unique_id=1112331725]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 37)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 2
 alignment = 1
 
 [node name="BackButton" type="TextureButton" parent="." unique_id=1020035895]

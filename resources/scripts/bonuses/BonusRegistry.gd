@@ -43,3 +43,10 @@ static func create_all() -> Array[BonusData]:
 			3, 0.75, 5, BonusData.Rarity.RARE
 		),
 	]
+
+
+static func get_bonus(id: StringName) -> BonusData:
+	for data in create_all():
+		if data.id == id:
+			return data
+	return null

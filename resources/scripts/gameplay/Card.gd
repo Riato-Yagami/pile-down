@@ -76,6 +76,7 @@ var is_joker := false
 var _joker_phase := 0.0
 var _value_font: Font
 var _value_font_size := 20
+var _tile_colors: Array[Color] = Settings.TILE_COLORS.slice(0, 10)
 
 
 func _ready() -> void:
@@ -97,14 +98,22 @@ func set_value_font(font: Font, font_size := 20) -> void:
 		_update_appearance()
 
 
+func set_tile_palette(colors: Array[Color]) -> void:
+	if colors.size() != 9:
+		return
+	_tile_colors = colors.duplicate()
+	if is_node_ready():
+		_update_appearance()
+
+
 func _process(delta: float) -> void:
 	if is_joker:
 		_joker_phase = fmod(_joker_phase + delta * 0.35, 1.0)
-		var palette_position := _joker_phase * Settings.TILE_COLORS.size()
-		var first_index := int(floor(palette_position)) % Settings.TILE_COLORS.size()
-		var second_index := (first_index + 1) % Settings.TILE_COLORS.size()
-		var joker_color := Settings.TILE_COLORS[first_index].lerp(
-			Settings.TILE_COLORS[second_index],
+		var palette_position := _joker_phase * _tile_colors.size()
+		var first_index := int(floor(palette_position)) % _tile_colors.size()
+		var second_index := (first_index + 1) % _tile_colors.size()
+		var joker_color := _tile_colors[first_index].lerp(
+			_tile_colors[second_index],
 			fmod(palette_position, 1.0)
 		)
 		var joker_material := face_sprite.material as ShaderMaterial
@@ -679,7 +688,7 @@ func _animate_pose(target_scale: Vector2, y_offset: float) -> void:
 func _update_appearance() -> void:
 	if not is_node_ready():
 		return
-	var color: Color = Settings.TILE_COLORS[card_value % Settings.TILE_COLORS.size()]
+	var color: Color = _tile_colors[card_value % _tile_colors.size()]
 	var visual_color := Color("#8B8B8B") if colorblind_enabled else color
 	face_sprite.visible = face_up
 	back_sprite.visible = not face_up

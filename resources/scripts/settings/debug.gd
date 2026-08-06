@@ -54,6 +54,7 @@ const LOCK_BONUSES: Dictionary = {
 }
 
 static var _runtime_god_mode := GOD_MODE
+static var _runtime_unlock_everything := false
 
 
 static func is_enabled() -> bool:
@@ -71,6 +72,17 @@ static func toggle_god_mode() -> bool:
 	return _runtime_god_mode
 
 
+static func is_unlock_everything_enabled() -> bool:
+	return ENABLED and _runtime_unlock_everything
+
+
+static func toggle_unlock_everything() -> bool:
+	if not ENABLED:
+		return false
+	_runtime_unlock_everything = not _runtime_unlock_everything
+	return _runtime_unlock_everything
+
+
 static func get_start_round(total_rounds: int) -> int:
 	if not ENABLED:
 		return 1
@@ -78,11 +90,11 @@ static func get_start_round(total_rounds: int) -> int:
 
 
 static func unlock_endless_mode() -> bool:
-	return ENABLED and UNLOCK_ENDLESS_MODE
+	return ENABLED and (UNLOCK_ENDLESS_MODE or _runtime_unlock_everything)
 
 
 static func unlock_all_checkpoints() -> bool:
-	return ENABLED and UNLOCK_ALL_CHECKPOINTS
+	return ENABLED and (UNLOCK_ALL_CHECKPOINTS or _runtime_unlock_everything)
 
 
 static func start_from_checkpoint() -> int:

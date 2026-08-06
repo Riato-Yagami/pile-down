@@ -19,7 +19,9 @@ const MIN_TURN_TIME := 3.0
 #const MIN_TURN_TIME := 3.0
 
 # The counter starts here and reaches zero after this many cleared rounds.
-const TOTAL_ROUNDS := 50
+const MAX_ROUNDS := 50
+# Compatibility alias for scenes and saves created before MAX_ROUNDS was named.
+const TOTAL_ROUNDS := MAX_ROUNDS
 
 # Relative weights used after the first cleared round.
 # A weight of 0 disables an option. The values do not need to add up to 100.
@@ -138,6 +140,7 @@ const ENABLED_BONUSES: Array[StringName] = [
 
 const BONUS_INTERVAL := 4
 const BONUS_CHOICE_COUNT := 2
+const MIN_BONUS_CHOICES_TO_OFFER := 2
 const MAX_ACTIVE_BONUS_TYPES := 999
 
 const QUICK_PEEK_HAND_INTERVALS: Array[int] = [4, 3, 2]

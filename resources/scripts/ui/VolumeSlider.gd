@@ -6,7 +6,7 @@ const HoverInteractionScript := preload(
 	"res://resources/scripts/ui/HoverInteraction.gd"
 )
 
-@onready var bar: TextureRect = get_node("Bar")
+@onready var bar: Control = get_node("Bar")
 
 var _touch_index := -1
 var _hover_interaction = HoverInteractionScript.new()

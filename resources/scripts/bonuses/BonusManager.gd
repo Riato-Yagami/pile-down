@@ -3,6 +3,7 @@ extends Node
 
 signal bonuses_changed()
 signal bonus_selected(bonus_id: StringName)
+signal bonuses_seen(bonus_ids: Array[StringName])
 
 const Difficulty := preload("res://resources/scripts/settings/difficulty.gd")
 const Debug := preload("res://resources/scripts/settings/debug.gd")
@@ -56,11 +57,12 @@ func offer_if_due(completed_round_number: int) -> bool:
 	if completed_round_number % Difficulty.BONUS_INTERVAL != 0:
 		return false
 	var choices := generate_choices(completed_round_number + 1)
-	if choices.size() < 2:
+	if choices.size() < Difficulty.MIN_BONUS_CHOICES_TO_OFFER:
 		return false
 	var levels: Array[int] = []
 	for choice in choices:
 		levels.append(level(choice.id) + 1)
+	_emit_bonuses_seen(choices)
 	active_bar.visible = false
 	var chosen_index := await selection.present(choices, levels)
 	_add_or_upgrade(choices[chosen_index])
@@ -70,16 +72,24 @@ func offer_if_due(completed_round_number: int) -> bool:
 
 func offer_bonus_choice(round_number: int, _choice_index := 0) -> bool:
 	var choices := generate_choices(round_number)
-	if choices.size() < 2:
+	if choices.size() < Difficulty.MIN_BONUS_CHOICES_TO_OFFER:
 		return false
 	var levels: Array[int] = []
 	for choice in choices:
 		levels.append(level(choice.id) + 1)
+	_emit_bonuses_seen(choices)
 	active_bar.visible = false
 	var chosen_index := await selection.present(choices, levels)
 	_add_or_upgrade(choices[chosen_index])
 	active_bar.visible = Debug.is_enabled()
 	return true
+
+
+func _emit_bonuses_seen(choices: Array[BonusData]) -> void:
+	var ids: Array[StringName] = []
+	for choice in choices:
+		ids.append(choice.id)
+	bonuses_seen.emit(ids)
 
 
 func generate_choices(round_number: int) -> Array[BonusData]:
@@ -94,10 +104,13 @@ func generate_choices(round_number: int) -> Array[BonusData]:
 		if active.size() >= Difficulty.MAX_ACTIVE_BONUS_TYPES and not has_bonus(data.id):
 			continue
 		pool.append(data)
-	if pool.size() < 2:
+	if pool.size() < Difficulty.MIN_BONUS_CHOICES_TO_OFFER:
 		return pool
 	var target_count := mini(
-		maxi(Difficulty.BONUS_CHOICE_COUNT, 2),
+		maxi(
+			Difficulty.BONUS_CHOICE_COUNT,
+			Difficulty.MIN_BONUS_CHOICES_TO_OFFER
+		),
 		pool.size()
 	)
 	var selected: Array[BonusData] = []
@@ -200,6 +213,13 @@ func has_bonus(id: StringName) -> bool:
 
 func level(id: StringName) -> int:
 	return (active[id] as ActiveBonus).level if active.has(id) else 0
+
+
+func active_levels() -> Dictionary:
+	var result: Dictionary = {}
+	for id: StringName in active.keys():
+		result[id] = (active[id] as ActiveBonus).level
+	return result
 
 
 func next_hand_time(base_time: float) -> float:
