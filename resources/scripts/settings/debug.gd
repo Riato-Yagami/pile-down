@@ -8,7 +8,7 @@ const ENABLED := true
 const GOD_MODE := false
 
 # Progression round shown when starting a new game, from 1 to TOTAL_ROUNDS.
-const START_AT_ROUND := 10
+const START_AT_ROUND := 1
 
 # Shows the endless-mode button without requiring a completed normal run.
 const UNLOCK_ENDLESS_MODE := true
@@ -33,7 +33,7 @@ const LOCK_SPECIAL_RULES: Array[StringName] = [
 	#"merry_go_stack",
 	#"wavy_baby",
 	#"shaking_piles",
-	"lights_out",
+	#"lights_out",
 	#"shell_game",
 	#"musical_stacks"
 ]

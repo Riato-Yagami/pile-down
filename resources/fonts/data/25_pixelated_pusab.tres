@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="FontData" format=3 uid="uid://duaily2ewf3ot"]
+
+[ext_resource type="FontFile" uid="uid://1a4tt5rkul0i" path="res://resources/fonts/extra/pixelatedpusab/PixelatedPusab.ttf" id="1_nbmat"]
+[ext_resource type="Resource" path="res://resources/achievements/14_endless_double_max.tres" id="2_nbmat"]
+[ext_resource type="Script" uid="uid://dj883c8fbgkvi" path="res://resources/scripts/progression/FontData.gd" id="3_4yghn"]
+
+[resource]
+script = ExtResource("3_4yghn")
+id = &"pixelated_pusab"
+display_name = "PIXELATED PUSAB"
+font = ExtResource("1_nbmat")
+tile_font_size = 32
+tile_font_offset = Vector2(1, 2)
+title_font_offset = Vector2(1, 0)
+title_font_size = 16
+override_hidden_tile_with_font = null
+required_achievement = ExtResource("2_nbmat")

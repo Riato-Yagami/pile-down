@@ -17,12 +17,14 @@ func _run() -> void:
 	assert(game.debug_help.text.contains("[S] NEXT MUSIC SECTION"))
 	assert(game.debug_help.text.contains("[L] LOSE ONE LIFE"))
 	assert(game.debug_help.text.contains("[K] DIE NOW"))
+	assert(game.debug_help.text.contains("[U] TOGGLE UNLOCK EVERYTHING"))
 	var section_event := InputEventKey.new()
 	section_event.keycode = KEY_S
 	section_event.pressed = true
 	var initial_section := game.music_manager.current_section
 	assert(game._handle_debug_shortcut(section_event))
-	assert(game.music_manager.current_section == initial_section + 1)
+	assert(game.music_manager.current_section == initial_section)
+	assert(game.music_manager.section_change_requested)
 
 	var initial_god_mode := DebugSettings.is_god_mode_enabled()
 	var god_event := InputEventKey.new()

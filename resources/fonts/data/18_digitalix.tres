@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="FontData" format=3 uid="uid://wbh0ebr76cah"]
+
+[ext_resource type="FontFile" uid="uid://dsecleuiu0xce" path="res://resources/fonts/extra/digitalix.ttf" id="1_6epy6"]
+[ext_resource type="Resource" path="res://resources/achievements/03_start_value_nine.tres" id="2_6epy6"]
+[ext_resource type="Script" uid="uid://dj883c8fbgkvi" path="res://resources/scripts/progression/FontData.gd" id="3_qgsfb"]
+
+[resource]
+script = ExtResource("3_qgsfb")
+id = &"digitalix"
+display_name = "DIGITALIX"
+font = ExtResource("1_6epy6")
+tile_font_size = 10
+title_font_offset = null
+title_font_size = null
+override_hidden_tile_with_font = null
+required_achievement = ExtResource("2_6epy6")

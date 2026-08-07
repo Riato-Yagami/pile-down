@@ -2,6 +2,7 @@ class_name MemoryPile
 extends Control
 
 const TINY_REGULAR_FONT := preload("res://resources/fonts/Tiny5-Regular.ttf")
+const HIDDEN_TILE_COLOR := Color("b8b8b8")
 
 signal pile_selected(pile)
 signal drag_requested(pile, pointer_position)
@@ -37,6 +38,8 @@ var bonus_highlight := false
 var movable := false
 var _value_font: Font
 var _value_font_size := 20
+var _value_font_offset := Vector2.ZERO
+var _override_hidden_tile_with_font := false
 var _tile_colors: Array[Color] = Settings.TILE_COLORS.slice(0, 10)
 
 
@@ -50,9 +53,14 @@ func _ready() -> void:
 	_refresh()
 
 
-func set_value_font(font: Font, font_size := 20) -> void:
+func set_value_font(
+	font: Font, font_size := 20, font_offset := Vector2.ZERO,
+	override_hidden_tile_with_font := true
+) -> void:
 	_value_font = font
-	_value_font_size = clampi(font_size, 8, 32)
+	_value_font_size = font_size
+	_value_font_offset = font_offset
+	_override_hidden_tile_with_font = override_hidden_tile_with_font
 	if is_node_ready():
 		_refresh()
 
@@ -384,16 +392,25 @@ func _refresh() -> void:
 		return
 	var color: Color = _tile_colors[current_value % _tile_colors.size()]
 	var visual_color := Color("#8B8B8B") if colorblind_enabled else color
-	face_sprite.visible = face_up
-	back_sprite.visible = not face_up
+	var custom_hidden_tile := not face_up and _override_hidden_tile_with_font
+	face_sprite.visible = face_up or custom_hidden_tile
+	back_sprite.visible = not face_up and not custom_hidden_tile
 	back_sprite.modulate = Color.WHITE
 	_update_regeneration_ring_visibility()
 	var tile_material := face_sprite.material as ShaderMaterial
-	tile_material.set_shader_parameter("tile_color", visual_color)
-	var back_tile_material := back_sprite.material as ShaderMaterial
-	back_tile_material.set_shader_parameter("tile_color", visual_color)
-	value_label.visible = face_up
-	value_label.text = RoundModifiers.format_value(current_value, roman_numerals_enabled)
+	tile_material.set_shader_parameter(
+		"tile_color", HIDDEN_TILE_COLOR if custom_hidden_tile else visual_color
+	)
+	value_label.visible = face_up or custom_hidden_tile
+	value_label.text = (
+		"?"
+		if custom_hidden_tile
+		else RoundModifiers.format_value(current_value, roman_numerals_enabled)
+	)
+	value_label.offset_left = _value_font_offset.x
+	value_label.offset_right = _value_font_offset.x
+	value_label.offset_top = _value_font_offset.y
+	value_label.offset_bottom = _value_font_offset.y - 2.0
 	value_label.add_theme_font_size_override(
 		"font_size",
 		int(round(
@@ -401,7 +418,7 @@ func _refresh() -> void:
 			* (0.7 if roman_numerals_enabled and current_value in [7, 8] else 1.0)
 		))
 	)
-	if roman_numerals_enabled and current_value in [7, 8]:
+	if face_up and roman_numerals_enabled and current_value in [7, 8]:
 		value_label.add_theme_font_override("font", TINY_REGULAR_FONT)
 	elif _value_font != null:
 		value_label.add_theme_font_override("font", _value_font)
@@ -409,7 +426,11 @@ func _refresh() -> void:
 		value_label.remove_theme_font_override("font")
 	value_label.add_theme_color_override(
 		"font_color",
-		Settings.COLORBLIND_VALUE_COLOR if colorblind_enabled else color.darkened(0.35)
+		HIDDEN_TILE_COLOR
+		if custom_hidden_tile
+		else Settings.COLORBLIND_VALUE_COLOR
+		if colorblind_enabled
+		else color.darkened(0.35)
 	)
 
 

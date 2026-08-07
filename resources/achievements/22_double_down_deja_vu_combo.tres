@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AchievementData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_x18yw"]
+
+[resource]
+script = ExtResource("1_x18yw")
+id = &"double_down_deja_vu_combo"
+title = "ECHO CHAMBER"
+description = "Trigger Double Down and Deja Vu from the same hand."
+category = &"COMBOS"
+reward_font = &"edit_undo_dot"

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="FontData" format=3 uid="uid://dxpc4x7piauv3"]
+
+[ext_resource type="FontFile" uid="uid://i6e7s6mbt35u" path="res://resources/fonts/extra/pixellari/Pixellari.ttf" id="1_yx7on"]
+[ext_resource type="Resource" path="res://resources/achievements/25_deja_vu_full_activation.tres" id="2_yx7on"]
+[ext_resource type="Script" uid="uid://dj883c8fbgkvi" path="res://resources/scripts/progression/FontData.gd" id="3_fqv1s"]
+
+[resource]
+script = ExtResource("3_fqv1s")
+id = &"pixellari"
+display_name = "PIXELLARI"
+font = ExtResource("1_yx7on")
+tile_font_size = 16
+tile_font_offset = Vector2(0, 2)
+title_font_size = null
+override_hidden_tile_with_font = null
+required_achievement = ExtResource("2_yx7on")

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AchievementData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_bnimv"]
+
+[resource]
+script = ExtResource("1_bnimv")
+id = &"half_without_checkpoint"
+title = "NO SHORTCUTS"
+description = "Complete half the game from the beginning."
+category = &"ROUNDS"
+reward_font = &"employee_of_the_month"

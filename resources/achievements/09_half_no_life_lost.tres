@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AchievementData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_cusae"]
+
+[resource]
+script = ExtResource("1_cusae")
+id = &"half_no_life_lost"
+title = "FLAWLESS HALF"
+description = "Complete half the game without losing a life."
+category = &"ROUNDS"
+reward_font = &"gothic_pixels"

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AchievementData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_aofrw"]
+
+[resource]
+script = ExtResource("1_aofrw")
+id = &"beat_max_special_rules"
+title = "TOTAL CHAOS"
+description = "Beat a round with the maximum number of Special Rules."
+category = &"BONUSES & RULES"
+reward_font = &"upheaval"

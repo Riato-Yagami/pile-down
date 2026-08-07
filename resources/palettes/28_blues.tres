@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ColorPaletteData" format=3]
+
+[ext_resource type="Resource" path="res://resources/achievements/03_start_value_nine.tres" id="1_fcs2e"]
+[ext_resource type="Script" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_mp127"]
+
+[resource]
+script = ExtResource("2_mp127")
+id = &"blues"
+display_name = "BLUES"
+colors = Array[Color]([Color(0.45490196, 0, 0.72156864, 1), Color(0.4117647, 0.1882353, 0.7647059, 1), Color(0.36862746, 0.3764706, 0.80784315, 1), Color(0.3254902, 0.5647059, 0.8509804, 1), Color(0.30588236, 0.65882355, 0.87058824, 1), Color(0.28235295, 0.7490196, 0.8901961, 1), Color(0.3372549, 0.8117647, 0.88235295, 1), Color(0.39215687, 0.8745098, 0.8745098, 1), Color(0.44705883, 0.9372549, 0.8666667, 1), Color(0.5019608, 1, 0.85882354, 1)])
+required_achievement = ExtResource("1_fcs2e")

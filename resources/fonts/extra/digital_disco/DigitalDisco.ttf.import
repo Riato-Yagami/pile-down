@@ -2,29 +2,29 @@
 
 importer="font_data_dynamic"
 type="FontFile"
-uid="uid://byith5wuarbln"
-path="res://.godot/imported/PressStart2P-Regular.ttf-4bc321dfc01c2f73c5aab9ebdee4794a.fontdata"
+uid="uid://cjmyy4irr03n6"
+path="res://.godot/imported/DigitalDisco.ttf-eb8653d4a954489ec388b1564b26d8ab.fontdata"
 
 [deps]
 
-source_file="res://resources/fonts/PressStart2P-Regular.ttf"
-dest_files=["res://.godot/imported/PressStart2P-Regular.ttf-4bc321dfc01c2f73c5aab9ebdee4794a.fontdata"]
+source_file="res://resources/fonts/extra/digital_disco/DigitalDisco.ttf"
+dest_files=["res://.godot/imported/DigitalDisco.ttf-eb8653d4a954489ec388b1564b26d8ab.fontdata"]
 
 [params]
 
 Rendering=null
-antialiasing=0
+antialiasing=1
 generate_mipmaps=false
 disable_embedded_bitmaps=true
 multichannel_signed_distance_field=false
 msdf_pixel_range=8
 msdf_size=48
-allow_system_fallback=false
+allow_system_fallback=true
 force_autohinter=false
 modulate_color_glyphs=false
-hinting=0
-subpixel_positioning=0
-keep_rounding_remainders=false
+hinting=3
+subpixel_positioning=4
+keep_rounding_remainders=true
 oversampling=0.0
 Fallbacks=null
 fallbacks=[]

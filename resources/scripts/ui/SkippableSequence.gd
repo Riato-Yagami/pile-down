@@ -38,7 +38,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not can_skip or is_skipping or not _is_skip_event(event):
 		return
 	skip_to_end()
-	get_viewport().set_input_as_handled()
+	var viewport := get_viewport()
+	if viewport != null:
+		viewport.set_input_as_handled()
 
 
 func skip_to_end() -> void:

@@ -3,7 +3,7 @@ class_name ProgressionFontCatalog
 extends Node
 
 ## Polices proposées par le menu et utilisées sur les cartes et les piles.
-@export var available_fonts: Array[FontData] = []
+@export var available_fonts: Array[FontData] = FontRegistry.create_all()
 @export var available_palettes: Array[ColorPaletteData] = ColorPaletteRegistry.create_all()
 
 

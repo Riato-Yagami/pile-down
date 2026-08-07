@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AchievementData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_rg41j"]
+
+[resource]
+script = ExtResource("1_rg41j")
+id = &"complete_normal_game"
+title = "COUNTED DOWN"
+description = "Complete every round."
+category = &"ROUNDS"
+reward_font = &"arcade_out"

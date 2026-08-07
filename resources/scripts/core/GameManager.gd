@@ -23,9 +23,14 @@ const Debug := preload("res://resources/scripts/settings/debug.gd")
 const MUSIC_BUS_NAME := &"Music"
 const SFX_BUS_NAME := &"SFX"
 const OPTIONS_SELECTED_COLOR := Color("4d82c2")
-const OPTION_SOUND := 0
-const OPTION_GRAPHICS := 1
-const OPTION_SAVE := 2
+const OPTION_TEXT_COLOR := Color("3c3c3c")
+const OPTION_GAMEPLAY := 0
+const OPTION_SOUND := 1
+const OPTION_GRAPHICS := 2
+const OPTION_SAVE := 3
+const OPTION_LINKS := 4
+const ITCH_URL := "https://juel-s.itch.io/"
+const KOFI_URL := "https://ko-fi.com/juels"
 const LOCKED_VIEWPORT_SIZE := Vector2i(256, 320)
 const AUDIO_CONFIG_PATH := "user://pile_down.cfg"
 const DEATH_POPUP_DELAY := 0.35
@@ -45,7 +50,7 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 
 @onready var piles_board: Control = %PilesBoard
 @onready var hand_container: HBoxContainer = %HandContainer
-@onready var hand_tray: TextureRect = %HandTray
+@onready var hand_tray: NinePatchRect = %HandTray
 @onready var drag_layer: Control = %DragLayer
 @onready var hand_manager: HandManager = %HandManager
 @onready var pile_manager: PileManager = %PileManager
@@ -57,6 +62,8 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var run_time_label: Label = %RunTimeLabel
 @onready var mistakes_dots: RoundDots = %MistakesDots
 @onready var transient_label: Label = %TransientLabel
+@onready var achievement_popup: Control = %AchievementPopup
+@onready var achievement_popup_title: Label = %AchievementPopupTitle
 @onready var skippable_sequence: SkippableSequence = %SkippableSequence
 @onready var overlay: Control = %Overlay
 @onready var overlay_title: RichTextLabel = %OverlayTitle
@@ -79,21 +86,29 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var splash_high_score: RichTextLabel = %SplashHighScore
 @onready var splash_high_score_time: Label = %SplashHighScoreTime
 @onready var splash_debug_mode: Label = %SplashDebugMode
+@onready var splash_debug_help: Label = %SplashDebugHelp
 @onready var progression_button: TextureButton = %ProgressionButton
+@onready var progression_notification: TextureRect = %ProgressionNotification
 @onready var options_button: TextureButton = %OptionsButton
 @onready var options_menu: Control = %OptionsMenu
 @onready var options_back_button: TextureButton = %OptionsBackButton
+@onready var gameplay_options_button: TextureButton = %GameplayOptionsButton
 @onready var sound_options_button: TextureButton = %SoundOptionsButton
 @onready var graphics_options_button: TextureButton = %GraphicsOptionsButton
 @onready var save_options_button: TextureButton = %SaveOptionsButton
+@onready var links_options_button: TextureButton = %LinksOptionsButton
 @onready var options_page_title: Label = %OptionsPageTitle
+@onready var gameplay_options: Control = %GameplayOptions
 @onready var sound_options: Control = %SoundOptions
 @onready var graphics_options: Control = %GraphicsOptions
 @onready var save_options: Control = %SaveOptions
+@onready var links_options: Control = %LinksOptions
 @onready var adaptive_resolution_button: Button = %AdaptiveResolutionButton
 @onready var locked_resolution_button: Button = %LockedResolutionButton
-@onready var debug_unlock_all_section: Control = %DebugUnlockAllSection
-@onready var debug_unlock_all_button: Button = %DebugUnlockAllButton
+@onready var achievement_notifications_button: Button = %AchievementNotificationsButton
+@onready var timer_display_button: Button = %TimerDisplayButton
+@onready var itch_link_button: Button = %ItchLinkButton
+@onready var kofi_link_button: Button = %KofiLinkButton
 @onready var export_save_button: Button = %ExportSaveButton
 @onready var import_save_button: Button = %ImportSaveButton
 @onready var delete_save_button: Button = %DeleteSaveButton
@@ -171,6 +186,7 @@ var newly_encountered_rules: Array[StringName] = []
 var newly_unlocked_achievements: Array[StringName] = []
 var newly_unlocked_fonts: Array[StringName] = []
 var newly_unlocked_checkpoints: Array[int] = []
+var unread_progression_pages: Array[int] = []
 var achievement_manager := AchievementManager.new()
 var font_manager := FontManager.new()
 var palette_manager := ColorPaletteManager.new()
@@ -203,8 +219,13 @@ var _pending_interactive_generation := -1
 var _regeneration_hand_check_pending := false
 var _music_volume_before_mute := 100.0
 var _sound_volume_before_mute := 100.0
-var _options_page := OPTION_SOUND
+var _options_page := OPTION_GAMEPLAY
 var _adaptive_resolution := false
+var _achievement_notifications_enabled := true
+var _global_timer_enabled := true
+var _achievement_notification_queue: Array[AchievementData] = []
+var _achievement_notification_active := false
+var _achievement_popup_tween: Tween
 var _timer_display_hidden := false
 var _timer_visibility_tween: Tween
 var _gameplay_back_cursor_update_queued := false
@@ -226,6 +247,8 @@ var _card_touch_index := -1
 @export var gameplay_pop_duration := 0.24
 @export var gameplay_pop_stagger := 0.1
 @export var gameplay_pop_scale := 0.82
+@export_category("Editor Display")
+@export var start_adaptive_in_editor := false
 
 
 func _ready() -> void:
@@ -239,6 +262,7 @@ func _ready() -> void:
 	achievement_manager.load_progress()
 	font_manager.load_progress()
 	palette_manager.load_progress()
+	_load_unread_progression_pages()
 	# Unlock newly introduced cosmetic rewards for achievements already earned
 	# by an existing save.
 	for achievement_id in achievement_manager.unlocked:
@@ -269,12 +293,19 @@ func _ready() -> void:
 	progression_button.pressed.connect(_open_progression_menu)
 	options_button.pressed.connect(_open_options_menu)
 	options_back_button.pressed.connect(_close_options_menu)
+	gameplay_options_button.pressed.connect(_show_options_page.bind(OPTION_GAMEPLAY))
 	sound_options_button.pressed.connect(_show_options_page.bind(OPTION_SOUND))
 	graphics_options_button.pressed.connect(_show_options_page.bind(OPTION_GRAPHICS))
 	save_options_button.pressed.connect(_show_options_page.bind(OPTION_SAVE))
+	links_options_button.pressed.connect(_show_options_page.bind(OPTION_LINKS))
 	adaptive_resolution_button.pressed.connect(_set_adaptive_resolution.bind(true))
 	locked_resolution_button.pressed.connect(_set_adaptive_resolution.bind(false))
-	debug_unlock_all_button.pressed.connect(_toggle_debug_unlock_everything)
+	achievement_notifications_button.pressed.connect(
+		_toggle_achievement_notifications
+	)
+	timer_display_button.pressed.connect(_toggle_timer_display)
+	itch_link_button.pressed.connect(_open_external_link.bind(ITCH_URL))
+	kofi_link_button.pressed.connect(_open_external_link.bind(KOFI_URL))
 	export_save_button.pressed.connect(_open_export_save_dialog)
 	import_save_button.pressed.connect(_open_import_save_dialog)
 	delete_save_button.pressed.connect(_open_delete_save_confirmation)
@@ -284,6 +315,7 @@ func _ready() -> void:
 	progression_menu.closed.connect(_on_progression_menu_closed)
 	progression_menu.font_selected.connect(_on_progression_font_selected)
 	progression_menu.palette_selected.connect(_on_progression_palette_selected)
+	progression_menu.page_viewed.connect(_on_progression_page_viewed)
 	endless_button.mouse_entered.connect(_show_endless_high_score)
 	endless_button.mouse_exited.connect(_refresh_high_score)
 	endless_button.focus_entered.connect(_show_endless_high_score)
@@ -299,7 +331,9 @@ func _ready() -> void:
 	back_button.pressed.connect(_return_to_menu)
 	overlay_back_button.pressed.connect(_return_to_menu)
 	resized.connect(_layout_piles)
+	_setup_gameplay_options()
 	_setup_audio_controls()
+	_style_option_list_buttons()
 	_setup_graphics_options()
 	_setup_save_dialogs()
 	_load_high_score()
@@ -307,9 +341,9 @@ func _ready() -> void:
 	_apply_debug_checkpoints()
 	_refresh_checkpoint_button()
 	splash_debug_mode.visible = Debug.is_enabled()
-	_refresh_debug_help()
 	input_locked = true
 	splash.visible = true
+	_refresh_debug_help()
 	font_manager.select(font_manager.selected_font)
 	_apply_tile_font()
 	_apply_tile_palette()
@@ -341,15 +375,85 @@ func _setup_audio_controls() -> void:
 	_apply_bus_volume(SFX_BUS_NAME, sound_volume_slider.value / 100.0)
 
 
+func _style_option_list_buttons() -> void:
+	var buttons: Array[Button] = [
+		achievement_notifications_button,
+		timer_display_button,
+		adaptive_resolution_button,
+		locked_resolution_button,
+		export_save_button,
+		import_save_button,
+		delete_save_button,
+		itch_link_button,
+		kofi_link_button,
+	]
+	for button in buttons:
+		for color_name in [&"font_color", &"font_disabled_color"]:
+			button.add_theme_color_override(color_name, OPTION_TEXT_COLOR)
+		for color_name in [
+			&"font_hover_color",
+			&"font_pressed_color",
+			&"font_hover_pressed_color",
+			&"font_focus_color",
+		]:
+			button.add_theme_color_override(color_name, OPTIONS_SELECTED_COLOR)
+
+
+func _setup_gameplay_options() -> void:
+	var config := ConfigFile.new()
+	config.load(AUDIO_CONFIG_PATH)
+	_achievement_notifications_enabled = bool(config.get_value(
+		"gameplay", "achievement_notifications", true
+	))
+	_global_timer_enabled = bool(config.get_value(
+		"gameplay", "show_timer", true
+	))
+	_refresh_gameplay_options()
+
+
+func _toggle_achievement_notifications() -> void:
+	_achievement_notifications_enabled = not _achievement_notifications_enabled
+	if not _achievement_notifications_enabled:
+		_achievement_notification_queue.clear()
+		achievement_popup.visible = false
+	_save_gameplay_option(
+		"achievement_notifications", _achievement_notifications_enabled
+	)
+	_refresh_gameplay_options()
+
+
+func _toggle_timer_display() -> void:
+	_global_timer_enabled = not _global_timer_enabled
+	_save_gameplay_option("show_timer", _global_timer_enabled)
+	_refresh_gameplay_options()
+
+
+func _save_gameplay_option(key: String, value: bool) -> void:
+	var config := ConfigFile.new()
+	config.load(AUDIO_CONFIG_PATH)
+	config.set_value("gameplay", key, value)
+	config.save(AUDIO_CONFIG_PATH)
+
+
+func _refresh_gameplay_options() -> void:
+	achievement_notifications_button.icon = (
+		SELECTED_TEXTURE if _achievement_notifications_enabled else UNCHECKED_TEXTURE
+	)
+	timer_display_button.icon = (
+		SELECTED_TEXTURE if _global_timer_enabled else UNCHECKED_TEXTURE
+	)
+	run_time_label.visible = _global_timer_enabled and not splash.visible
+
+
 func _setup_graphics_options() -> void:
 	var config := ConfigFile.new()
 	config.load(AUDIO_CONFIG_PATH)
 	_adaptive_resolution = bool(config.get_value(
 		"graphics", "adaptive_resolution", false
 	))
-	debug_unlock_all_section.visible = Debug.is_enabled()
+	if OS.has_feature("editor") and start_adaptive_in_editor:
+		_adaptive_resolution = true
 	_apply_resolution_mode()
-	_refresh_debug_unlock_button()
 
 
 func _toggle_debug_unlock_everything() -> void:
@@ -357,17 +461,10 @@ func _toggle_debug_unlock_everything() -> void:
 	get_tree().reload_current_scene()
 
 
-func _refresh_debug_unlock_button() -> void:
-	debug_unlock_all_button.icon = (
-		SELECTED_TEXTURE
-		if Debug.is_unlock_everything_enabled()
-		else UNCHECKED_TEXTURE
-	)
-
-
 func _apply_debug_unlock_everything() -> void:
 	if not Debug.is_unlock_everything_enabled():
 		return
+	max_discovered_tile_value = Difficulty.MAX_CARD_VALUE
 	achievement_manager.unlocked.clear()
 	for achievement in achievement_manager.definitions:
 		achievement_manager.unlocked.append(achievement.id)
@@ -496,6 +593,14 @@ func _process(_delta: float) -> void:
 		and not splash.visible
 		and not overlay.visible
 	)
+	splash_debug_help.visible = (
+		Debug.is_enabled()
+		and _debug_help_enabled
+		and splash.visible
+		and not options_menu.visible
+		and not checkpoint_menu.visible
+		and not progression_menu.visible
+	)
 	if run_time_label.visible:
 		run_time_label.text = _format_duration(_total_time_milliseconds())
 	if _regeneration_hand_check_pending and not input_locked:
@@ -537,26 +642,27 @@ func _process(_delta: float) -> void:
 func _input(event: InputEvent) -> void:
 	_update_gameplay_back_hover(event)
 	if _is_overlay_back_pointer_event(event):
-		get_viewport().set_input_as_handled()
+		_set_input_as_handled()
 		_return_to_menu()
 		return
 	if _is_gameplay_back_pointer_event(event):
-		get_viewport().set_input_as_handled()
+		_set_input_as_handled()
 		_return_to_menu()
 		return
 	if _handle_global_shortcut(event):
 		return
 	if _handle_debug_shortcut(event):
-		get_viewport().set_input_as_handled()
+		# A debug shortcut can reload the scene and detach this node immediately.
+		_set_input_as_handled()
 		return
 	if round_modifiers.flashlight_enabled:
 		if event is InputEventScreenTouch or event is InputEventScreenDrag:
 			flashlight_overlay.follow_touch(event.position)
 	if _handle_pile_touch_input(event):
-		get_viewport().set_input_as_handled()
+		_set_input_as_handled()
 		return
 	if _handle_card_touch_input(event):
-		get_viewport().set_input_as_handled()
+		_set_input_as_handled()
 		return
 	if moving_pile != null and is_instance_valid(moving_pile):
 		if event is InputEventMouseMotion or event is InputEventScreenDrag:
@@ -571,7 +677,7 @@ func _input(event: InputEvent) -> void:
 				event.position - _moving_pile_offset
 			).round()
 			_finish_pile_move()
-			get_viewport().set_input_as_handled()
+			_set_input_as_handled()
 		return
 	if selected_card == null or not is_instance_valid(selected_card) or not selected_card.dragging:
 		return
@@ -584,13 +690,19 @@ func _input(event: InputEvent) -> void:
 		var clicked_pile := _pile_at(event.position)
 		if clicked_pile != null:
 			_on_card_drag_released(selected_card, event.position)
-			get_viewport().set_input_as_handled()
+			_set_input_as_handled()
 			return
 	if event is InputEventMouseMotion:
 		selected_card.drag_target = event.position
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
 		_on_card_drag_released(selected_card, event.position)
-		get_viewport().set_input_as_handled()
+		_set_input_as_handled()
+
+
+func _set_input_as_handled() -> void:
+	var viewport := get_viewport()
+	if viewport != null:
+		viewport.set_input_as_handled()
 
 
 func _is_overlay_back_pointer_event(event: InputEvent) -> bool:
@@ -685,8 +797,8 @@ func _handle_global_shortcut(event: InputEvent) -> bool:
 			return true
 		KEY_T:
 			if not splash.visible and not overlay.visible:
-				run_time_label.visible = not run_time_label.visible
-				if run_time_label.visible:
+				_toggle_timer_display()
+				if _global_timer_enabled:
 					run_time_label.text = _format_duration(_total_time_milliseconds())
 				return true
 	return false
@@ -704,26 +816,39 @@ func _open_options_menu() -> void:
 	options_menu.visible = true
 	_show_options_page(_options_page)
 	match _options_page:
+		OPTION_GAMEPLAY:
+			achievement_notifications_button.grab_focus()
 		OPTION_SOUND:
 			music_volume_slider.grab_focus()
 		OPTION_GRAPHICS:
 			adaptive_resolution_button.grab_focus()
 		OPTION_SAVE:
 			export_save_button.grab_focus()
+		OPTION_LINKS:
+			itch_link_button.grab_focus()
 
 
 func _show_options_page(page: int) -> void:
-	_options_page = clampi(page, OPTION_SOUND, OPTION_SAVE)
+	_options_page = clampi(page, OPTION_GAMEPLAY, OPTION_LINKS)
+	gameplay_options.visible = _options_page == OPTION_GAMEPLAY
 	sound_options.visible = _options_page == OPTION_SOUND
 	graphics_options.visible = _options_page == OPTION_GRAPHICS
 	save_options.visible = _options_page == OPTION_SAVE
+	links_options.visible = _options_page == OPTION_LINKS
 	match _options_page:
+		OPTION_GAMEPLAY:
+			options_page_title.text = "GAMEPLAY"
 		OPTION_SOUND:
 			options_page_title.text = "SOUND"
 		OPTION_GRAPHICS:
 			options_page_title.text = "GRAPHICS"
 		OPTION_SAVE:
 			options_page_title.text = "SAVE DATA"
+		OPTION_LINKS:
+			options_page_title.text = "LINKS"
+	gameplay_options_button.modulate = (
+		OPTIONS_SELECTED_COLOR if _options_page == OPTION_GAMEPLAY else Color.WHITE
+	)
 	sound_options_button.modulate = (
 		OPTIONS_SELECTED_COLOR if _options_page == OPTION_SOUND else Color.WHITE
 	)
@@ -733,6 +858,16 @@ func _show_options_page(page: int) -> void:
 	save_options_button.modulate = (
 		OPTIONS_SELECTED_COLOR if _options_page == OPTION_SAVE else Color.WHITE
 	)
+	links_options_button.modulate = (
+		OPTIONS_SELECTED_COLOR if _options_page == OPTION_LINKS else Color.WHITE
+	)
+
+
+func _open_external_link(url: String) -> void:
+	if not url.begins_with("https://"):
+		push_warning("Refusing to open a non-HTTPS external link.")
+		return
+	OS.shell_open(url)
 
 
 func _close_options_menu() -> void:
@@ -764,12 +899,24 @@ func _apply_tile_font() -> void:
 		return
 	hand_manager.value_font = data.font
 	hand_manager.value_font_size = data.tile_font_size
+	hand_manager.value_font_offset = data.tile_font_offset
+	hand_manager.override_hidden_tile_with_font = data.override_hidden_tile_with_font
 	for card in hand_manager.current_cards:
 		if is_instance_valid(card):
-			card.set_value_font(data.font, data.tile_font_size)
+			card.set_value_font(
+				data.font,
+				data.tile_font_size,
+				data.tile_font_offset,
+				data.override_hidden_tile_with_font
+			)
 	for pile in piles:
 		if is_instance_valid(pile):
-			pile.set_value_font(data.font, data.tile_font_size)
+			pile.set_value_font(
+				data.font,
+				data.tile_font_size,
+				data.tile_font_offset,
+				data.override_hidden_tile_with_font
+			)
 
 
 func _apply_tile_palette() -> void:
@@ -795,7 +942,48 @@ func _progression_snapshot() -> Dictionary:
 		"special_rules": _progression_special_rules(),
 		"fonts": _progression_fonts(),
 		"palettes": _progression_palettes(),
+		"unread_progression_pages": unread_progression_pages.duplicate(),
 	}
+
+
+func _load_unread_progression_pages() -> void:
+	var config := ConfigFile.new()
+	config.load(AUDIO_CONFIG_PATH)
+	unread_progression_pages.clear()
+	for value in config.get_value("progression", "unread_pages", []):
+		var page := int(value)
+		if page >= ProgressionMenu.Page.HIGHSCORES and page <= ProgressionMenu.Page.SPECIAL_RULES:
+			if not unread_progression_pages.has(page):
+				unread_progression_pages.append(page)
+	_refresh_progression_notification()
+
+
+func _mark_progression_page_unread(page: int) -> void:
+	if unread_progression_pages.has(page):
+		return
+	unread_progression_pages.append(page)
+	_save_unread_progression_pages()
+	_refresh_progression_notification()
+
+
+func _on_progression_page_viewed(page: int) -> void:
+	if not unread_progression_pages.has(page):
+		return
+	unread_progression_pages.erase(page)
+	_save_unread_progression_pages()
+	_refresh_progression_notification()
+
+
+func _save_unread_progression_pages() -> void:
+	var config := ConfigFile.new()
+	config.load(AUDIO_CONFIG_PATH)
+	config.set_value("progression", "unread_pages", unread_progression_pages)
+	config.save(AUDIO_CONFIG_PATH)
+
+
+func _refresh_progression_notification() -> void:
+	if is_instance_valid(progression_notification):
+		progression_notification.visible = not unread_progression_pages.is_empty()
 
 
 func _progression_highscores() -> Array[Dictionary]:
@@ -921,6 +1109,14 @@ func _progression_fonts() -> Array[Dictionary]:
 			"title": data.display_name,
 			"font": data.font,
 			"font_size": data.tile_font_size,
+			"font_offset": data.tile_font_offset,
+			"title_font_offset": data.title_font_offset,
+			"title_font_size": (
+				data.title_font_size
+				if data.title_font_size > 0
+				else data.tile_font_size
+			),
+			"override_hidden_tile_with_font": data.override_hidden_tile_with_font,
 			"unlocked": font_manager.unlocked.has(data.id),
 			"selected": font_manager.selected_font == data.id,
 		})
@@ -964,6 +1160,9 @@ func _handle_debug_shortcut(event: InputEvent) -> bool:
 	match key_event.keycode:
 		KEY_F1:
 			_debug_help_enabled = not _debug_help_enabled
+			return true
+		KEY_U:
+			_toggle_debug_unlock_everything()
 			return true
 		KEY_E:
 			if splash.visible or overlay.visible or input_locked:
@@ -1100,9 +1299,11 @@ func _debug_reset_progression() -> void:
 func _refresh_debug_help() -> void:
 	if not Debug.is_enabled():
 		debug_help.visible = false
+		splash_debug_help.visible = false
 		return
-	debug_help.text = (
-		"[E] WIN CURRENT ROUND\n"
+	var help_text := (
+		"[U] TOGGLE UNLOCK EVERYTHING\n"
+		+ "[E] WIN CURRENT ROUND\n"
 		+ "[S] NEXT MUSIC SECTION\n"
 		+ "[G] GOD MODE: %s\n" % ("ON" if Debug.is_god_mode_enabled() else "OFF")
 		+ "[R] RESET GAME\n"
@@ -1114,6 +1315,9 @@ func _refresh_debug_help() -> void:
 		+ "[F1] HIDE DEBUG HELP\n"
 		+ "[ESC] BACK TO MENU"
 	)
+	debug_help.text = help_text
+	splash_debug_help.text = help_text
+	splash_debug_help.visible = _debug_help_enabled and splash.visible
 
 
 func start_game(endless_mode := false) -> void:
@@ -1157,7 +1361,7 @@ func start_game(endless_mode := false) -> void:
 	run_paused_msec = 0
 	run_pause_started_msec = game_started_msec
 	round_reached_time_ms = 0
-	run_time_label.visible = false
+	run_time_label.visible = _global_timer_enabled
 	overlay.visible = false
 	overlay_mode = ""
 	bonus_manager.begin_run()
@@ -1294,7 +1498,10 @@ func start_round() -> void:
 		var selected_font_data := font_manager.find(font_manager.selected_font)
 		if selected_font_data != null:
 			pile.set_value_font(
-				selected_font_data.font, selected_font_data.tile_font_size
+				selected_font_data.font,
+				selected_font_data.tile_font_size,
+				selected_font_data.tile_font_offset,
+				selected_font_data.override_hidden_tile_with_font
 			)
 		pile.setup(
 			index,
@@ -2692,7 +2899,7 @@ func _finish_game(completed_all_rounds := false) -> void:
 	else:
 		overlay_title.text = "[center]%d ROUNDS LEFT[/center]" % round_number
 		overlay_details.text = "[center]in %s[/center]" % formatted_time
-	_append_new_checkpoint_summary()
+	_append_new_progression_summary()
 	overlay_button.text = "REPLAY"
 	overlay_endless_button.visible = (
 		completed_all_rounds
@@ -2731,8 +2938,36 @@ func _show_game_over_overlay(animate_death: bool) -> void:
 
 
 func _append_new_checkpoint_summary() -> void:
-	if newly_unlocked_checkpoints.is_empty():
+	_append_new_progression_summary()
+
+
+func _append_new_progression_summary() -> void:
+	var lines := PackedStringArray()
+	var checkpoint_line := _new_checkpoint_summary_line()
+	if not checkpoint_line.is_empty():
+		lines.append(checkpoint_line)
+	var bonus_titles := _new_bonus_titles()
+	if not bonus_titles.is_empty():
+		lines.append("NEW BONUSES: %s" % ", ".join(bonus_titles))
+	var rule_titles := _new_rule_titles()
+	if not rule_titles.is_empty():
+		lines.append("NEW RULES: %s" % ", ".join(rule_titles))
+	var achievement_titles := _new_achievement_titles()
+	if not achievement_titles.is_empty():
+		lines.append("NEW ACHIEVEMENTS: %s" % ", ".join(achievement_titles))
+	if lines.is_empty():
+		overlay_unlocks.visible = false
+		overlay_unlocks.text = ""
 		return
+	overlay_unlocks.text = (
+		"[center]NEW PROGRESSION\n%s[/center]" % "\n".join(lines)
+	)
+	overlay_unlocks.visible = true
+
+
+func _new_checkpoint_summary_line() -> String:
+	if newly_unlocked_checkpoints.is_empty():
+		return ""
 	var checkpoint_ids: Array[int] = []
 	for checkpoint_id in newly_unlocked_checkpoints:
 		if not checkpoint_ids.has(checkpoint_id):
@@ -2742,10 +2977,36 @@ func _append_new_checkpoint_summary() -> void:
 	for checkpoint_id in checkpoint_ids:
 		labels.append(str(checkpoint_id))
 	var heading := "NEW CHECKPOINTS" if checkpoint_ids.size() > 1 else "NEW CHECKPOINT"
-	overlay_unlocks.text = (
-		"[center]%s: %s[/center]" % [heading, " AND ".join(labels)]
-	)
-	overlay_unlocks.visible = true
+	return "%s: %s" % [heading, " AND ".join(labels)]
+
+
+func _new_bonus_titles() -> PackedStringArray:
+	var titles := PackedStringArray()
+	for bonus_id in newly_discovered_bonuses:
+		for data in bonus_manager.definitions:
+			if data.id == bonus_id and not titles.has(data.title):
+				titles.append(data.title)
+				break
+	return titles
+
+
+func _new_rule_titles() -> PackedStringArray:
+	var titles := PackedStringArray()
+	for rule_id in newly_encountered_rules:
+		for data in SpecialRuleRegistry.create_all_rules():
+			if data.id == rule_id and not titles.has(data.title):
+				titles.append(data.title)
+				break
+	return titles
+
+
+func _new_achievement_titles() -> PackedStringArray:
+	var titles := PackedStringArray()
+	for achievement_id in newly_unlocked_achievements:
+		var data := achievement_manager.find(achievement_id)
+		if data != null and not titles.has(data.title):
+			titles.append(data.title)
+	return titles
 
 
 func _on_overlay_pressed() -> void:
@@ -3594,6 +3855,7 @@ func _unlock_completed_checkpoint(completed_round: int) -> bool:
 	unlocked_checkpoints.sort()
 	checkpoint_snapshots[checkpoint_id] = _pending_checkpoint_snapshot.to_dictionary()
 	newly_unlocked_checkpoints.append(checkpoint_id)
+	_mark_progression_page_unread(ProgressionMenu.Page.HIGHSCORES)
 	_save_checkpoint_progress()
 	_pending_checkpoint_snapshot = null
 	checkpoint_segment_damage_count = 0
@@ -3640,7 +3902,7 @@ func start_from_checkpoint(checkpoint_id: int) -> bool:
 	run_paused_msec = 0
 	run_pause_started_msec = game_started_msec
 	round_reached_time_ms = 0
-	run_time_label.visible = false
+	run_time_label.visible = _global_timer_enabled
 	overlay.visible = false
 	overlay_mode = ""
 	splash.visible = false
@@ -3924,6 +4186,7 @@ func _on_bonus_selected(bonus_id: StringName) -> void:
 	if not discovered_bonuses.has(bonus_id):
 		discovered_bonuses.append(bonus_id)
 		newly_discovered_bonuses.append(bonus_id)
+		_mark_progression_page_unread(ProgressionMenu.Page.BONUSES)
 		_save_discoveries()
 	achievement_manager.bonus_acquired.emit(
 		bonus_id,
@@ -3957,6 +4220,7 @@ func _on_special_rules_selected(rules: Array[SpecialRuleData]) -> void:
 			continue
 		encountered_special_rules.append(rule.id)
 		newly_encountered_rules.append(rule.id)
+		_mark_progression_page_unread(ProgressionMenu.Page.SPECIAL_RULES)
 	_save_discoveries()
 
 
@@ -4013,6 +4277,47 @@ func _build_run_summary(normal_game_completed: bool) -> RunSummary:
 
 func _on_achievement_unlocked(data: AchievementData) -> void:
 	newly_unlocked_achievements.append(data.id)
+	_mark_progression_page_unread(ProgressionMenu.Page.ACHIEVEMENTS)
 	for font_id in font_manager.unlock_for_achievement(data.id):
 		newly_unlocked_fonts.append(font_id)
 	palette_manager.unlock_for_achievement(data.id)
+	_queue_achievement_notification(data)
+
+
+func _queue_achievement_notification(data: AchievementData) -> void:
+	if not _achievement_notifications_enabled:
+		return
+	_achievement_notification_queue.append(data)
+	if not _achievement_notification_active:
+		_play_achievement_notifications()
+
+
+func _play_achievement_notifications() -> void:
+	_achievement_notification_active = true
+	while (
+		_achievement_notifications_enabled
+		and not _achievement_notification_queue.is_empty()
+	):
+		var data: AchievementData = _achievement_notification_queue.pop_front()
+		achievement_popup_title.text = data.title
+		achievement_popup.visible = true
+		achievement_popup.modulate.a = 0.0
+		achievement_popup.position.y = -8.0
+		soft_audio.play_achievement()
+		_achievement_popup_tween = create_tween()
+		_achievement_popup_tween.set_trans(Tween.TRANS_QUAD)
+		_achievement_popup_tween.set_ease(Tween.EASE_OUT)
+		_achievement_popup_tween.set_parallel()
+		_achievement_popup_tween.tween_property(
+			achievement_popup, "modulate:a", 1.0, 0.18
+		)
+		_achievement_popup_tween.tween_property(
+			achievement_popup, "position:y", 8.0, 0.18
+		)
+		_achievement_popup_tween.chain().tween_interval(1.5)
+		_achievement_popup_tween.chain().tween_property(
+			achievement_popup, "modulate:a", 0.0, 0.2
+		)
+		await _achievement_popup_tween.finished
+	achievement_popup.visible = false
+	_achievement_notification_active = false

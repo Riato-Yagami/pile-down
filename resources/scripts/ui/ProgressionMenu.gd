@@ -5,6 +5,7 @@ extends Control
 signal closed()
 signal font_selected(font_id: StringName)
 signal palette_selected(palette_id: StringName)
+signal page_viewed(page: int)
 
 const CHECKED_TEXTURE := preload(
 	"res://resources/sprites/ui/check/checked.png"
@@ -59,6 +60,8 @@ void fragment() {
 const Settings := preload("res://resources/scripts/settings/settings.gd")
 const SELECTED_COLOR := Color("4d82c2")
 const LOCKED_ENTRY_OPACITY := 0.55
+# Kept for a possible later reactivation of the LOCKED/BOTH/UNLOCKED control.
+const SHOW_LOCK_FILTER := false
 const GOLD_STATUS_SHADER := """
 shader_type canvas_item;
 uniform vec4 gold_color : source_color = vec4(0.851, 0.647, 0.078, 1.0);
@@ -97,6 +100,22 @@ var editor_preview_page: int = Page.HIGHSCORES:
 	set(value):
 		editor_preview_tile_count = clampi(value, 1, 10)
 		_refresh_editor_preview()
+@export var editor_preview_font: FontData:
+	set(value):
+		_disconnect_preview_resource(editor_preview_font)
+		editor_preview_font = value
+		_connect_preview_resource(editor_preview_font)
+		_refresh_editor_preview()
+@export var editor_preview_palette: ColorPaletteData:
+	set(value):
+		_disconnect_preview_resource(editor_preview_palette)
+		editor_preview_palette = value
+		_connect_preview_resource(editor_preview_palette)
+		_refresh_editor_preview()
+@export_tool_button("Reload Editor Preview", "Reload")
+var reload_editor_preview_action: Callable = _reload_editor_preview
+@export_tool_button("Copy Notification Placement", "Duplicate")
+var copy_notification_placement_action: Callable = _copy_notification_placement
 
 @export_category("Entry Style")
 @export var entry_heading_font: Font:
@@ -106,6 +125,10 @@ var editor_preview_page: int = Page.HIGHSCORES:
 @export_range(8, 32, 1) var entry_heading_font_size := 15:
 	set(value):
 		entry_heading_font_size = value
+		_refresh_editor_preview()
+@export var entry_heading_text_offset := Vector2(2.0, 2.0):
+	set(value):
+		entry_heading_text_offset = value
 		_refresh_editor_preview()
 @export var entry_details_font: Font:
 	set(value):
@@ -156,6 +179,7 @@ var editor_preview_page: int = Page.HIGHSCORES:
 
 var _snapshot: Dictionary = {}
 var _page := Page.HIGHSCORES
+var _page_badges: Array[TextureRect] = []
 
 
 func get_available_fonts() -> Array[FontData]:
@@ -175,9 +199,10 @@ func _ready() -> void:
 	lock_filter.set_mode(ProgressFilter.BOTH)
 	lock_filter.mode_changed.connect(_on_filter_selected)
 	for index in page_buttons.size():
-		var show_callable := _show_page.bind(index)
+		var show_callable := _on_page_button_pressed.bind(index)
 		if not page_buttons[index].pressed.is_connected(show_callable):
 			page_buttons[index].pressed.connect(show_callable)
+	_setup_page_badges()
 	if not %BackButton.pressed.is_connected(close):
 		%BackButton.pressed.connect(close)
 	if Engine.is_editor_hint():
@@ -213,12 +238,56 @@ func _refresh_editor_preview() -> void:
 		call_deferred("_show_editor_preview")
 
 
+func _reload_editor_preview() -> void:
+	_refresh_editor_preview()
+
+
+func _connect_preview_resource(resource: Resource) -> void:
+	if resource != null and not resource.changed.is_connected(_refresh_editor_preview):
+		resource.changed.connect(_refresh_editor_preview)
+
+
+func _disconnect_preview_resource(resource: Resource) -> void:
+	if resource != null and resource.changed.is_connected(_refresh_editor_preview):
+		resource.changed.disconnect(_refresh_editor_preview)
+
+
 func _show_editor_preview() -> void:
 	if not Engine.is_editor_hint() or not is_node_ready():
 		return
 	visible = editor_preview_enabled
 	if not editor_preview_enabled:
 		return
+	var preview_font: Font = entry_heading_font
+	var preview_font_size := 20
+	var preview_font_offset := Vector2.ZERO
+	var preview_title_font_offset := Vector2.ZERO
+	var preview_title_font_size := 20
+	var preview_override_hidden_tile := false
+	var preview_font_title := "CURRENT FONT"
+	if editor_preview_font != null:
+		preview_font = editor_preview_font.font
+		preview_font_size = editor_preview_font.tile_font_size
+		preview_font_offset = editor_preview_font.tile_font_offset
+		preview_title_font_offset = editor_preview_font.title_font_offset
+		preview_title_font_size = (
+			editor_preview_font.title_font_size
+			if editor_preview_font.title_font_size > 0
+			else editor_preview_font.tile_font_size
+		)
+		preview_override_hidden_tile = (
+			editor_preview_font.override_hidden_tile_with_font
+		)
+		preview_font_title = editor_preview_font.display_name
+	var preview_palettes: Array[Dictionary] = []
+	if editor_preview_palette != null:
+		preview_palettes.append({
+			"id": editor_preview_palette.id,
+			"title": editor_preview_palette.display_name,
+			"colors": editor_preview_palette.colors.duplicate(),
+			"unlocked": true,
+			"selected": true,
+		})
 	_snapshot = {
 		"max_discovered_tile_value": editor_preview_tile_count - 1,
 		"highscores": [
@@ -259,23 +328,62 @@ func _show_editor_preview() -> void:
 		"fonts": [
 			{
 				"id": &"preview",
-				"title": "CURRENT FONT",
-				"font": entry_heading_font,
-				"font_size": 20,
+				"title": preview_font_title,
+				"font": preview_font,
+				"font_size": preview_font_size,
+				"font_offset": preview_font_offset,
+				"title_font_offset": preview_title_font_offset,
+				"title_font_size": preview_title_font_size,
+				"override_hidden_tile_with_font": preview_override_hidden_tile,
 				"unlocked": true,
 				"selected": true,
 			},
 			{"id": &"locked", "title": "LOCKED FONT", "unlocked": false, "selected": false},
 		],
+		"palettes": preview_palettes,
 	}
 	_show_page(editor_preview_page)
 
 
 func open(snapshot: Dictionary) -> void:
 	_snapshot = snapshot
+	_refresh_page_badges(_snapshot.get("unread_progression_pages", []))
 	visible = true
 	_show_page(_page)
 	page_buttons[_page].grab_focus()
+
+
+func _setup_page_badges() -> void:
+	var template := %StatsNotification as TextureRect
+	_page_badges.append(template)
+	for index in range(1, page_buttons.size()):
+		var badge := template.duplicate() as TextureRect
+		badge.name = "Notification"
+		page_buttons[index].add_child(badge)
+		_page_badges.append(badge)
+	for badge in _page_badges:
+		badge.visible = Engine.is_editor_hint()
+
+
+func _copy_notification_placement() -> void:
+	if not is_node_ready() or _page_badges.is_empty():
+		return
+	var template := _page_badges[Page.HIGHSCORES]
+	for index in range(1, _page_badges.size()):
+		_page_badges[index].position = template.position
+		_page_badges[index].size = template.size
+
+
+func _refresh_page_badges(unread_pages: Array) -> void:
+	for index in _page_badges.size():
+		_page_badges[index].visible = unread_pages.has(index)
+
+
+func _on_page_button_pressed(page: int) -> void:
+	_show_page(page)
+	if page < _page_badges.size():
+		_page_badges[page].visible = false
+	page_viewed.emit(page)
 
 
 func close() -> void:
@@ -287,7 +395,7 @@ func close() -> void:
 
 func _show_page(page: int) -> void:
 	_page = clampi(page, Page.HIGHSCORES, Page.FONTS)
-	lock_filter.visible = _page != Page.HIGHSCORES
+	lock_filter.visible = SHOW_LOCK_FILTER and _page != Page.HIGHSCORES
 	font_preview_scroll.visible = _page == Page.FONTS
 	main_scroll.visible = _page != Page.FONTS
 	cosmetic_lists.visible = _page == Page.FONTS
@@ -419,7 +527,10 @@ func _populate_fonts() -> void:
 	var fonts: Array = _snapshot.get("fonts", [])
 	var palettes: Array = _snapshot.get("palettes", [])
 	var preview_data: Dictionary = {}
-	for font_value in fonts:
+	var ordered_fonts := fonts
+	if Engine.is_editor_hint():
+		ordered_fonts = _selected_first(fonts)
+	for font_value in ordered_fonts:
 		var font_data := font_value as Dictionary
 		var unlocked := bool(font_data.get("unlocked", false))
 		if unlocked and (preview_data.is_empty() or bool(font_data.get("selected", false))):
@@ -433,9 +544,18 @@ func _populate_fonts() -> void:
 			unlocked,
 			selected,
 			_select_font.bind(StringName(font_data.get("id", &""))),
-			font_data.get("font") as Font
+			font_data.get("font") as Font,
+			[],
+			int(font_data.get(
+				"title_font_size",
+				font_data.get("font_size", entry_heading_font_size)
+			)),
+			_vector2_or_zero(font_data.get("title_font_offset"))
 		)
-	for palette_value in palettes:
+	var ordered_palettes := palettes
+	if Engine.is_editor_hint():
+		ordered_palettes = _selected_first(palettes)
+	for palette_value in ordered_palettes:
 		var palette_data := palette_value as Dictionary
 		var palette_unlocked := bool(palette_data.get("unlocked", false))
 		var palette_selected_now := bool(palette_data.get("selected", false))
@@ -455,6 +575,25 @@ func _populate_fonts() -> void:
 	_update_font_preview(preview_data)
 
 
+func _selected_first(entries: Array) -> Array:
+	var ordered: Array = []
+	for entry_value in entries:
+		if bool((entry_value as Dictionary).get("selected", false)):
+			ordered.append(entry_value)
+	for entry_value in entries:
+		if not bool((entry_value as Dictionary).get("selected", false)):
+			ordered.append(entry_value)
+	return ordered
+
+
+func _vector2_or_zero(value: Variant) -> Vector2:
+	if value is Vector2:
+		return value
+	if value is Vector2i:
+		return Vector2(value)
+	return Vector2.ZERO
+
+
 func _add_cosmetic_choice(
 	target: VBoxContainer,
 	title: String,
@@ -462,7 +601,9 @@ func _add_cosmetic_choice(
 	selected: bool,
 	selection: Callable,
 	choice_font: Font = null,
-	palette_colors: Array = []
+	palette_colors: Array = [],
+	choice_font_size := -1,
+	choice_font_offset := Vector2.ZERO
 ) -> void:
 	var button := Button.new()
 	button.set_script(HighlightButtonScript)
@@ -479,7 +620,10 @@ func _add_cosmetic_choice(
 	var displayed_font := choice_font if choice_font != null else entry_heading_font
 	if displayed_font != null:
 		button.add_theme_font_override("font", displayed_font)
-	button.add_theme_font_size_override("font_size", entry_heading_font_size)
+	button.add_theme_font_size_override(
+		"font_size",
+		choice_font_size if choice_font_size > 0 else entry_heading_font_size
+	)
 	for color_name in [
 		&"font_color", &"font_hover_color", &"font_pressed_color",
 		&"font_disabled_color"
@@ -490,8 +634,37 @@ func _add_cosmetic_choice(
 	if unlocked and not selected:
 		button.pressed.connect(selection)
 	target.add_child(button)
-	if unlocked and not palette_colors.is_empty():
+	if not palette_colors.is_empty():
 		_add_palette_title(button, displayed_title, palette_colors, displayed_font)
+	elif unlocked and choice_font != null:
+		_add_font_title(
+			button,
+			displayed_title,
+			displayed_font,
+			choice_font_size if choice_font_size > 0 else entry_heading_font_size,
+			choice_font_offset
+		)
+
+
+func _add_font_title(
+	button: Button, title: String, font: Font, font_size: int, font_offset: Vector2
+) -> void:
+	button.text = ""
+	var label := Label.new()
+	label.name = "FontTitle"
+	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	label.offset_left = 18.0 + font_offset.x
+	label.offset_right += font_offset.x
+	label.offset_top += font_offset.y
+	label.offset_bottom += font_offset.y
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.text = title
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_override("font", font)
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", Color("3c3c3c"))
+	button.add_child(label)
 
 
 func _add_palette_title(
@@ -537,7 +710,14 @@ func _update_font_preview(font_data: Dictionary) -> void:
 	if font_data.is_empty():
 		return
 	var font := font_data.get("font") as Font
-	var font_size := clampi(int(font_data.get("font_size", 20)), 8, 32)
+	var font_size := int(font_data.get("font_size", 20))
+	var font_offset := _vector2_or_zero(font_data.get("font_offset"))
+	var override_hidden_tile := true
+	var override_hidden_value: Variant = font_data.get(
+		"override_hidden_tile_with_font", true
+	)
+	if override_hidden_value is bool:
+		override_hidden_tile = override_hidden_value
 	var colors: Array = font_data.get("colors", [])
 	var maximum_value := clampi(
 		int(_snapshot.get("max_discovered_tile_value", 3)), 0, 9
@@ -550,17 +730,23 @@ func _update_font_preview(font_data: Dictionary) -> void:
 		var is_hidden_tile := preview_index == 0
 		var tile := TextureRect.new()
 		tile.custom_minimum_size = Vector2(34.0, 37.0)
-		tile.texture = TILE_BACK_TEXTURE if is_hidden_tile else TILE_FACE_TEXTURE
+		tile.texture = (
+			TILE_FACE_TEXTURE if is_hidden_tile and override_hidden_tile
+			else TILE_BACK_TEXTURE if is_hidden_tile
+			else TILE_FACE_TEXTURE
+		)
 		tile.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		tile.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		tile.stretch_mode = TextureRect.STRETCH_SCALE
-		if is_hidden_tile:
+		if is_hidden_tile and not override_hidden_tile:
 			font_preview.add_child(tile)
 			continue
 		var tile_material := font_preview_tile_material.duplicate() as ShaderMaterial
-		var color_index := int(value)
+		var color_index := int(value) if not is_hidden_tile else 0
 		var tile_color: Color = (
-			colors[color_index % colors.size()]
+			Color("b8b8b8")
+			if is_hidden_tile
+			else colors[color_index % colors.size()]
 			if not colors.is_empty()
 			else Settings.TILE_COLORS[color_index % Settings.TILE_COLORS.size()]
 		)
@@ -569,12 +755,17 @@ func _update_font_preview(font_data: Dictionary) -> void:
 		var label := Label.new()
 		label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		# Match the two-pixel optical lift used by Card and Pile value labels.
-		label.offset_bottom = -2.0
+		label.offset_left = font_offset.x
+		label.offset_right = font_offset.x
+		label.offset_top = font_offset.y
+		label.offset_bottom = font_offset.y - 2.0
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		label.text = str(value)
+		label.text = "?" if is_hidden_tile else str(value)
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		label.add_theme_color_override("font_color", tile_color.darkened(0.35))
+		label.add_theme_color_override(
+			"font_color", tile_color if is_hidden_tile else tile_color.darkened(0.35)
+		)
 		label.add_theme_font_size_override("font_size", font_size)
 		if font != null:
 			label.add_theme_font_override("font", font)
@@ -671,6 +862,10 @@ func _add_entry(
 	if entry_heading_font != null:
 		heading_label.add_theme_font_override("font", entry_heading_font)
 	heading_label.add_theme_font_size_override("font_size", entry_heading_font_size)
+	var heading_offset_style := StyleBoxEmpty.new()
+	heading_offset_style.content_margin_left = entry_heading_text_offset.x
+	heading_offset_style.content_margin_top = entry_heading_text_offset.y
+	heading_label.add_theme_stylebox_override("normal", heading_offset_style)
 	heading_label.add_theme_color_override(
 		"font_color",
 		Color("4d82c2") if accent else Color("3c3c3c")

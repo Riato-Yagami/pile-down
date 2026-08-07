@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AchievementData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_2as7l"]
+
+[resource]
+script = ExtResource("1_2as7l")
+id = &"all_checkpoints"
+title = "ALL STOPS"
+description = "Unlock every checkpoint in Normal Mode."
+category = &"CHECKPOINTS"
+reward_font = &"eight_bit_hud"

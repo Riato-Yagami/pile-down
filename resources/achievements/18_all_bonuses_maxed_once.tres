@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="AchievementData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_lo2cv"]
+
+[resource]
+script = ExtResource("1_lo2cv")
+id = &"all_bonuses_maxed_once"
+title = "MAXIMUM BUILD"
+description = "Max out every available bonus across your runs."
+category = &"BONUSES & RULES"
+hidden = true
+reward_font = &"alkhemikal"

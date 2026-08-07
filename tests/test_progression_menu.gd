@@ -19,7 +19,28 @@ func _run() -> void:
 		(menu.content.get_parent() as MarginContainer)
 		.get_theme_constant("margin_right") == 10
 	)
-	assert(menu.get_available_fonts().size() == 3)
+	assert(menu.get_available_fonts().size() == FontRegistry.create_all().size())
+	assert(menu.get_available_fonts().size() == FontRegistry.create_all().size())
+	assert(menu.get_available_palettes().size() == 35)
+	var palette_ids: Array[StringName] = []
+	assert(AchievementRegistry.create_all().size() == 30)
+	for achievement in AchievementRegistry.create_all():
+		assert(achievement.resource_path.begins_with("res://resources/achievements/"))
+	for font_data in menu.get_available_fonts():
+		assert(font_data.resource_path.begins_with("res://resources/fonts/data/"))
+		if font_data.required_achievement != null:
+			assert(font_data.required_achievement.resource_path.begins_with(
+				"res://resources/achievements/"
+			))
+	for palette_data in menu.get_available_palettes():
+		assert(palette_data.resource_path.begins_with("res://resources/palettes/"))
+		assert(not palette_data.id.is_empty())
+		assert(not palette_ids.has(palette_data.id))
+		palette_ids.append(palette_data.id)
+		if palette_data.required_achievement != null:
+			assert(palette_data.required_achievement.resource_path.begins_with(
+				"res://resources/achievements/"
+			))
 	var styled_scrollbar := menu.main_scroll.get_v_scroll_bar()
 	assert(is_equal_approx(styled_scrollbar.custom_minimum_size.x, 8.0))
 	assert(styled_scrollbar.get_theme_stylebox("grabber") is StyleBoxEmpty)
@@ -30,10 +51,28 @@ func _run() -> void:
 	menu.editor_preview_tile_count = 12
 	assert(menu.editor_preview_tile_count == 10)
 	menu.editor_preview_tile_count = 9
+	assert(menu.editor_preview_font != null)
+	assert(menu.editor_preview_font.id == &"press_start_2p")
+	assert(menu.editor_preview_palette != null)
+	assert(menu.editor_preview_palette.id == &"arcade")
 	assert(menu.get_achievements().size() == AchievementRegistry.create_all().size())
 	var tiny5 := menu.get_available_fonts()[1]
 	assert(tiny5.required_achievement != null)
 	assert(tiny5.required_achievement.id == &"complete_10_rounds")
+	var font_achievement_ids: Array[StringName] = []
+	for font_data in menu.get_available_fonts():
+		if font_data.required_achievement == null:
+			continue
+		assert(not font_achievement_ids.has(font_data.required_achievement.id))
+		font_achievement_ids.append(font_data.required_achievement.id)
+	var pixel_western := menu.get_available_fonts().filter(
+		func(data: FontData) -> bool: return data.id == &"pixel_western"
+	).front() as FontData
+	assert(pixel_western.tile_font_size == 8)
+	var upheaval := menu.get_available_fonts().filter(
+		func(data: FontData) -> bool: return data.id == &"upheaval"
+	).front() as FontData
+	assert(upheaval.tile_font_size == 14)
 	var snapshot := {
 		"max_discovered_tile_value": 8,
 		"highscores": [
@@ -148,7 +187,8 @@ func _run() -> void:
 	menu.lock_filter.set_mode(ProgressionLockFilter.BOTH)
 
 	menu._show_page(ProgressionMenu.Page.BONUSES)
-	assert(menu.lock_filter.visible)
+	assert(not menu.lock_filter.visible)
+	assert(not menu.SHOW_LOCK_FILTER)
 	assert(menu.title_label.text == "BONUSES")
 	var global_title := menu.get_node("Margin/Layout/Header/Title") as Label
 	assert(menu.lock_filter.get_parent() == global_title.get_parent())
@@ -261,7 +301,7 @@ func _run() -> void:
 	assert(menu.cosmetic_lists.visible)
 	assert(menu.font_preview_scroll.get_parent() == layout)
 	assert(menu.font_preview_scroll.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED)
-	assert(menu.font_preview_scroll.custom_minimum_size.y >= 78.0)
+	assert(menu.font_preview_scroll.custom_minimum_size.y >= 37.0)
 	var selected_button := menu.fonts_content.get_child(0) as Button
 	var other_button := menu.fonts_content.get_child(1) as Button
 	assert(selected_button.text == "DEFAULT")

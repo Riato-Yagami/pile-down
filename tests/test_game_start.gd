@@ -47,11 +47,12 @@ func _run() -> void:
 	var time_event := InputEventKey.new()
 	time_event.keycode = KEY_T
 	time_event.pressed = true
+	assert(game.run_time_label.visible)
+	assert(game._handle_global_shortcut(time_event))
+	assert(not game.run_time_label.visible)
 	assert(game._handle_global_shortcut(time_event))
 	assert(game.run_time_label.visible)
 	assert(game.run_time_label.text.contains(" s "))
-	assert(game._handle_global_shortcut(time_event))
-	assert(not game.run_time_label.visible)
 	var configured_start := DebugSettings.get_start_round(DifficultySettings.TOTAL_ROUNDS)
 	assert(game.piles.size() == game.pile_count)
 	assert(game.pile_count >= DifficultySettings.START_PILES)

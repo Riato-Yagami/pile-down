@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="FontData" format=3 uid="uid://dbow1f7348e36"]
+
+[ext_resource type="FontFile" uid="uid://da01sycpim60x" path="res://resources/fonts/extra/pixel_western/Pixel-Western.ttf" id="1_xtw81"]
+[ext_resource type="Resource" path="res://resources/achievements/19_beat_two_special_rules.tres" id="2_xtw81"]
+[ext_resource type="Script" uid="uid://dj883c8fbgkvi" path="res://resources/scripts/progression/FontData.gd" id="3_lpqt3"]
+
+[resource]
+script = ExtResource("3_lpqt3")
+id = &"pixel_western"
+display_name = "PIXEL WESTERN"
+font = ExtResource("1_xtw81")
+tile_font_size = 16
+tile_font_offset = Vector2(1, 8)
+title_font_offset = Vector2(1, 4)
+title_font_size = 8
+override_hidden_tile_with_font = null
+required_achievement = ExtResource("2_xtw81")

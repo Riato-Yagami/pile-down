@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ColorPaletteData" format=3 uid="uid://d4gew143dmacy"]
+
+[ext_resource type="Script" uid="uid://bdlkhp3dt6mr" path="res://resources/scripts/progression/ColorPaletteData.gd" id="1_owuje"]
+
+[resource]
+script = ExtResource("1_owuje")
+id = &"rgb"
+display_name = "RGB"
+colors = Array[Color]([Color(1, 0, 0, 1), Color(0, 1, 0, 1), Color(0, 0, 1, 1), Color(1, 1, 0, 1), Color(1, 0, 1, 1), Color(0, 1, 1, 1), Color(1, 1, 1, 1), Color(0.39215687, 0.39215687, 1, 1), Color(0.39215687, 1, 0.39215687, 1), Color(1, 0.39215687, 0.39215687, 1)])
+metadata/_custom_type_script = "uid://bdlkhp3dt6mr"

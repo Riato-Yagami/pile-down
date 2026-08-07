@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="AchievementData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_lvb1t"]
+
+[resource]
+script = ExtResource("1_lvb1t")
+id = &"complete_no_life_lost"
+title = "PERFECT COUNTDOWN"
+description = "Complete the entire game without losing a life."
+category = &"ROUNDS"
+hidden = true
+reward_font = &"vcr"

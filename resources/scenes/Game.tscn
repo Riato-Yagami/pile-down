@@ -39,11 +39,14 @@
 [ext_resource type="Script" uid="uid://dfi4cp4nlnhp2" path="res://resources/scripts/ui/SkippableSequence.gd" id="35_skippable_sequence"]
 [ext_resource type="PackedScene" uid="uid://c05lrwawno2fu" path="res://resources/scenes/ProgressionMenu.tscn" id="36_progression_menu"]
 [ext_resource type="Texture2D" uid="uid://lnly0s8wwgpd" path="res://resources/sprites/ui/icons/stats.png" id="37_stats"]
-[ext_resource type="Texture2D" path="res://resources/sprites/ui/icons/options.png" id="38_options"]
-[ext_resource type="Script" path="res://resources/scripts/settings/SaveDataManager.gd" id="39_save_data"]
-[ext_resource type="Texture2D" path="res://resources/sprites/ui/icons/sounds.png" id="40_sounds"]
-[ext_resource type="Texture2D" path="res://resources/sprites/ui/icons/saves.png" id="41_saves"]
-[ext_resource type="Texture2D" path="res://resources/sprites/ui/icons/graphics.png" id="42_graphics"]
+[ext_resource type="Texture2D" uid="uid://du64fyw0drmpp" path="res://resources/sprites/ui/icons/options.png" id="38_options"]
+[ext_resource type="Script" uid="uid://bsm56bnpm240e" path="res://resources/scripts/settings/SaveDataManager.gd" id="39_save_data"]
+[ext_resource type="Texture2D" uid="uid://qj1gwe0jk5u8" path="res://resources/sprites/ui/icons/sounds.png" id="40_sounds"]
+[ext_resource type="Texture2D" uid="uid://clovqvj8xs4rd" path="res://resources/sprites/ui/icons/saves.png" id="41_saves"]
+[ext_resource type="Texture2D" uid="uid://b1rwk60r6xs17" path="res://resources/sprites/ui/icons/graphics.png" id="42_graphics"]
+[ext_resource type="Texture2D" uid="uid://bnjdgws8frfso" path="res://resources/sprites/ui/icons/links.png" id="43_links"]
+[ext_resource type="Texture2D" uid="uid://d2wec4p1fbanl" path="res://resources/sprites/ui/icons/trophies.png" id="44_achievement"]
+[ext_resource type="Texture2D" uid="uid://dbkhyoj6xl7sy" path="res://resources/sprites/ui/notification.png" id="45_notification"]
 
 [sub_resource type="Theme" id="PixelTheme"]
 default_font = ExtResource("12")
@@ -135,7 +138,7 @@ void fragment() {
 	COLOR = source;
 }"
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_65kn7"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vko1l"]
 resource_local_to_scene = true
 shader = SubResource("ButtonHighlightShader")
 shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
@@ -166,6 +169,12 @@ shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
 [sub_resource type="ShaderMaterial" id="EndlessButtonHighlightMaterial"]
 resource_local_to_scene = true
 shader = SubResource("Shader_cw3lv")
+shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
+shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_65kn7"]
+resource_local_to_scene = true
+shader = SubResource("ButtonHighlightShader")
 shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
 shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
 
@@ -212,6 +221,48 @@ shader_parameter/empty_color = Color(0.725, 0.765, 0.812, 1)
 shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
 shader_parameter/highlighted = 0.0
 
+[sub_resource type="Shader" id="ProgressionButtonHighlightShader"]
+code = "shader_type canvas_item;
+
+uniform vec4 base_color : source_color = vec4(0.302, 0.51, 0.761, 1.0);
+uniform vec4 highlight_color : source_color = vec4(0.3019608, 0.50980395, 0.7607843, 1.0);
+
+void fragment() {
+	vec4 texture_color = texture(TEXTURE, UV);
+	vec4 source = texture_color * COLOR;
+	bool base_fill_pixel = (
+		texture_color.a > 0.0
+		&& distance(texture_color.rgb, base_color.rgb) < 0.01
+	);
+	if (base_fill_pixel) {
+		source.rgb = highlight_color.rgb;
+	}
+	COLOR = source;
+}"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_uice7"]
+resource_local_to_scene = true
+shader = SubResource("ProgressionButtonHighlightShader")
+shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
+shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+
+[sub_resource type="Shader" id="FontPreviewTileShader"]
+code = "shader_type canvas_item;
+
+uniform vec4 tile_color : source_color = vec4(0.302, 0.51, 0.761, 1.0);
+
+void fragment() {
+	vec4 source = texture(TEXTURE, UV);
+	bool is_green = source.g > 0.6 && source.g > source.r * 1.35 && source.g > source.b * 1.35;
+	COLOR = is_green ? vec4(tile_color.rgb, source.a * tile_color.a) : source;
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_f7k5u"]
+resource_local_to_scene = true
+shader = SubResource("FontPreviewTileShader")
+shader_parameter/tile_color = Color(0.302, 0.51, 0.761, 1)
+
 [node name="Game" type="Control" unique_id=694228927]
 layout_mode = 3
 anchors_preset = 15
@@ -221,6 +272,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = SubResource("PixelTheme")
 script = ExtResource("1")
+start_adaptive_in_editor = true
 
 [node name="Artwork" type="Node" parent="." unique_id=401090310]
 
@@ -314,10 +366,14 @@ unique_name_in_owner = true
 visible = false
 z_index = 10
 texture_filter = 1
-offset_left = 216.0
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -40.0
 offset_top = 41.0
-offset_right = 239.0
+offset_right = -17.0
 offset_bottom = 54.0
+grow_horizontal = 0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("31_escape")
 script = ExtResource("34_texture_highlight")
@@ -376,7 +432,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="HandTray" type="TextureRect" parent="Gameplay" unique_id=1006987005]
+[node name="HandTray" type="NinePatchRect" parent="Gameplay" unique_id=1006987005]
 unique_name_in_owner = true
 texture_filter = 1
 anchors_preset = 12
@@ -390,6 +446,10 @@ offset_bottom = -9.0
 grow_horizontal = 2
 grow_vertical = 0
 texture = ExtResource("11")
+patch_margin_left = 18
+patch_margin_top = 8
+patch_margin_right = 18
+patch_margin_bottom = 8
 
 [node name="MistakesDots" type="Control" parent="Gameplay/HandTray" unique_id=369532668]
 unique_name_in_owner = true
@@ -610,7 +670,7 @@ theme_override_font_sizes/normal_font_size = 20
 layout_mode = 2
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
-highlight_material = SubResource("ShaderMaterial_65kn7")
+highlight_material = SubResource("ShaderMaterial_vko1l")
 
 [node name="SkippableSequenceLayer" type="CanvasLayer" parent="PresentationLayers" unique_id=1910882523]
 layer = 30
@@ -626,6 +686,53 @@ grow_vertical = 2
 script = ExtResource("35_skippable_sequence")
 
 [node name="Screens" type="Node" parent="." unique_id=2062740707]
+
+[node name="AchievementPopup" type="Control" parent="Screens" unique_id=1735031890]
+unique_name_in_owner = true
+visible = false
+z_index = 100
+layout_mode = 3
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 38.0
+offset_top = 50.0
+offset_right = -38.0
+offset_bottom = 100.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="Icon" type="TextureRect" parent="Screens/AchievementPopup" unique_id=1990628588]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 4.0
+offset_top = -18.0
+offset_right = 40.0
+offset_bottom = 18.0
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("44_achievement")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="AchievementPopupTitle" type="Label" parent="Screens/AchievementPopup" unique_id=1979825494]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 46.0
+offset_right = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_fonts/font = ExtResource("12")
+theme_override_font_sizes/font_size = 20
+text = "STACK OVERFLOW"
+vertical_alignment = 1
+autowrap_mode = 2
 
 [node name="Overlay" type="Control" parent="Screens" unique_id=1498983076]
 unique_name_in_owner = true
@@ -789,15 +896,15 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_colors/default_color = Color(0.302, 0.51, 0.761, 1)
 theme_override_fonts/normal_font = ExtResource("6_1vynq")
-theme_override_font_sizes/normal_font_size = 14
+theme_override_font_sizes/normal_font_size = 12
 bbcode_enabled = true
-text = "[center]NEW CHECKPOINT: 1[/center]"
+text = "[center]NEW PROGRESSION
+NEW CHECKPOINT: 1[/center]"
 fit_content = true
 scroll_active = false
 
 [node name="Splash" type="Control" parent="Screens" unique_id=1259278219]
 unique_name_in_owner = true
-visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -985,16 +1092,28 @@ texture_normal = ExtResource("37_stats")
 script = ExtResource("34_texture_highlight")
 highlight_material = SubResource("EscapeButtonHighlightMaterial")
 
-[node name="OptionsButton" type="TextureButton" parent="Screens/Splash"]
+[node name="ProgressionNotification" type="TextureRect" parent="Screens/Splash/ProgressionButton" unique_id=1138318201]
+unique_name_in_owner = true
+visible = false
+texture_filter = 1
+layout_mode = 0
+offset_left = -5.0
+offset_top = 15.0
+offset_right = 5.0
+offset_bottom = 26.0
+mouse_filter = 2
+texture = ExtResource("45_notification")
+
+[node name="OptionsButton" type="TextureButton" parent="Screens/Splash" unique_id=1231859299]
 unique_name_in_owner = true
 texture_filter = 1
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -58.0
+offset_left = -60.0
 offset_top = 8.0
-offset_right = -35.0
+offset_right = -37.0
 offset_bottom = 33.0
 grow_horizontal = 0
 mouse_default_cursor_shape = 2
@@ -1002,7 +1121,24 @@ texture_normal = ExtResource("38_options")
 script = ExtResource("34_texture_highlight")
 highlight_material = SubResource("EscapeButtonHighlightMaterial")
 
-[node name="OptionsMenu" type="Control" parent="Screens/Splash"]
+[node name="SplashDebugHelp" type="Label" parent="Screens/Splash" unique_id=1663374135]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = -118.0
+offset_right = 198.0
+offset_bottom = -8.0
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 0.82)
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 8
+text = "DEBUG SHORTCUTS"
+
+[node name="OptionsMenu" type="Control" parent="Screens/Splash" unique_id=1183997088]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -1012,7 +1148,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Scrim" type="ColorRect" parent="Screens/Splash/OptionsMenu"]
+[node name="Scrim" type="ColorRect" parent="Screens/Splash/OptionsMenu" unique_id=1645348364]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -1021,7 +1157,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.969, 0.965, 0.949, 1)
 
-[node name="Margin" type="MarginContainer" parent="Screens/Splash/OptionsMenu"]
+[node name="Margin" type="MarginContainer" parent="Screens/Splash/OptionsMenu" unique_id=597374488]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -1033,21 +1169,21 @@ offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Layout" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin"]
+[node name="Layout" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin" unique_id=1877249336]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Header" type="HBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout"]
+[node name="Header" type="HBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout" unique_id=950710411]
 layout_mode = 2
 
-[node name="Title" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Header"]
+[node name="Title" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Header" unique_id=1547225580]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
 theme_override_font_sizes/font_size = 20
 text = "OPTIONS"
 
-[node name="OptionsBackButton" type="TextureButton" parent="Screens/Splash/OptionsMenu/Margin/Layout/Header"]
+[node name="OptionsBackButton" type="TextureButton" parent="Screens/Splash/OptionsMenu/Margin/Layout/Header" unique_id=629689209]
 unique_name_in_owner = true
 texture_filter = 1
 custom_minimum_size = Vector2(23, 13)
@@ -1058,19 +1194,31 @@ texture_normal = ExtResource("31_escape")
 script = ExtResource("34_texture_highlight")
 highlight_material = SubResource("EscapeButtonHighlightMaterial")
 
-[node name="Body" type="HBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout"]
+[node name="Body" type="HBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout" unique_id=524780684]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 8
 
-[node name="Navigation" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body"]
+[node name="Navigation" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body" unique_id=18332861]
 custom_minimum_size = Vector2(34, 0)
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="SoundOptionsButton" type="TextureButton" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Navigation"]
+[node name="GameplayOptionsButton" type="TextureButton" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Navigation" unique_id=1118789519]
 unique_name_in_owner = true
 modulate = Color(0.3019608, 0.50980395, 0.7607843, 1)
+texture_filter = 1
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("38_options")
+ignore_texture_size = true
+stretch_mode = 3
+script = ExtResource("34_texture_highlight")
+highlight_material = SubResource("EscapeButtonHighlightMaterial")
+
+[node name="SoundOptionsButton" type="TextureButton" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Navigation" unique_id=1179998403]
+unique_name_in_owner = true
 texture_filter = 1
 custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
@@ -1081,7 +1229,7 @@ stretch_mode = 3
 script = ExtResource("34_texture_highlight")
 highlight_material = SubResource("EscapeButtonHighlightMaterial")
 
-[node name="GraphicsOptionsButton" type="TextureButton" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Navigation"]
+[node name="GraphicsOptionsButton" type="TextureButton" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Navigation" unique_id=683550609]
 unique_name_in_owner = true
 texture_filter = 1
 custom_minimum_size = Vector2(34, 34)
@@ -1093,7 +1241,7 @@ stretch_mode = 3
 script = ExtResource("34_texture_highlight")
 highlight_material = SubResource("EscapeButtonHighlightMaterial")
 
-[node name="SaveOptionsButton" type="TextureButton" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Navigation"]
+[node name="SaveOptionsButton" type="TextureButton" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Navigation" unique_id=1032841004]
 unique_name_in_owner = true
 texture_filter = 1
 custom_minimum_size = Vector2(34, 34)
@@ -1105,42 +1253,197 @@ stretch_mode = 3
 script = ExtResource("34_texture_highlight")
 highlight_material = SubResource("EscapeButtonHighlightMaterial")
 
-[node name="Page" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body"]
+[node name="LinksOptionsButton" type="TextureButton" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Navigation" unique_id=2004546856]
+unique_name_in_owner = true
+texture_filter = 1
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("43_links")
+ignore_texture_size = true
+stretch_mode = 3
+script = ExtResource("34_texture_highlight")
+highlight_material = SubResource("EscapeButtonHighlightMaterial")
+
+[node name="Page" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body" unique_id=345235265]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="OptionsPageTitle" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page"]
+[node name="OptionsPageTitle" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page" unique_id=561215275]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
 theme_override_font_sizes/font_size = 20
 text = "SOUND"
 
-[node name="SoundOptions" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page"]
+[node name="GameplayOptions" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page" unique_id=29131972]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_constants/separation = 2
 
-[node name="GraphicsOptions" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page"]
+[node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GameplayOptions" unique_id=2121987407]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 16
+text = "DISPLAY"
+
+[node name="AchievementNotificationsButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GameplayOptions" unique_id=881072139]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 16
+text = "ACHIEVEMENTS"
+flat = true
+alignment = 0
+script = ExtResource("22_highlight")
+highlight_material = SubResource("ShaderMaterial_65kn7")
+
+[node name="TimerDisplayButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GameplayOptions" unique_id=834538790]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 16
+text = "GLOBAL TIMER"
+flat = true
+alignment = 0
+script = ExtResource("22_highlight")
+highlight_material = SubResource("ShaderMaterial_65kn7")
+
+[node name="SoundOptions" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page" unique_id=517089021]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Content" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions"]
+[node name="AudioControls" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions" unique_id=2084179241]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Title" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls" unique_id=1397884041]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 16
+text = "VOLUME"
+
+[node name="MusicRow" type="HBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls" unique_id=165726750]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls/MusicRow" unique_id=1718612431]
+custom_minimum_size = Vector2(72, 24)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 16
+text = "MUSIC"
+vertical_alignment = 1
+
+[node name="MusicVolumeSlider" type="HSlider" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls/MusicRow" unique_id=1338331245]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(84, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+theme_override_icons/grabber = SubResource("TransparentSliderGrabber")
+theme_override_icons/grabber_highlight = SubResource("TransparentSliderGrabber")
+theme_override_icons/grabber_disabled = SubResource("TransparentSliderGrabber")
+theme_override_styles/slider = SubResource("EmptySliderStyle")
+theme_override_styles/grabber_area = SubResource("EmptySliderStyle")
+theme_override_styles/grabber_area_highlight = SubResource("EmptySliderStyle")
+value = 100.0
+script = ExtResource("20_volume")
+
+[node name="Bar" type="NinePatchRect" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls/MusicRow/MusicVolumeSlider" unique_id=241571226]
+material = SubResource("MusicVolumeBarMaterial")
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_top = -3.0
+offset_bottom = 3.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("21_bar")
+patch_margin_left = 2
+patch_margin_top = 2
+patch_margin_right = 2
+patch_margin_bottom = 2
+
+[node name="SoundRow" type="HBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls" unique_id=403265211]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls/SoundRow" unique_id=1444721140]
+custom_minimum_size = Vector2(72, 24)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 16
+text = "SOUNDS"
+vertical_alignment = 1
+
+[node name="SoundVolumeSlider" type="HSlider" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls/SoundRow" unique_id=1751041834]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(84, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+theme_override_icons/grabber = SubResource("TransparentSliderGrabber")
+theme_override_icons/grabber_highlight = SubResource("TransparentSliderGrabber")
+theme_override_icons/grabber_disabled = SubResource("TransparentSliderGrabber")
+theme_override_styles/slider = SubResource("EmptySliderStyle")
+theme_override_styles/grabber_area = SubResource("EmptySliderStyle")
+theme_override_styles/grabber_area_highlight = SubResource("EmptySliderStyle")
+value = 100.0
+script = ExtResource("20_volume")
+
+[node name="Bar" type="NinePatchRect" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls/SoundRow/SoundVolumeSlider" unique_id=212451574]
+material = SubResource("SoundVolumeBarMaterial")
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_top = -3.0
+offset_bottom = 3.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("21_bar")
+patch_margin_left = 2
+patch_margin_top = 2
+patch_margin_right = 2
+patch_margin_bottom = 2
+
+[node name="GraphicsOptions" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page" unique_id=369152806]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Content" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions" unique_id=2071489164]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 2
 
-[node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content"]
+[node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content" unique_id=244331881]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "SCREEN SIZE"
 
-[node name="AdaptiveResolutionButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content"]
+[node name="AdaptiveResolutionButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content" unique_id=607069609]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
@@ -1148,12 +1451,12 @@ size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "ADAPTIVE"
-alignment = 0
 flat = true
+alignment = 0
 script = ExtResource("22_highlight")
 highlight_material = SubResource("ShaderMaterial_65kn7")
 
-[node name="LockedResolutionButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content"]
+[node name="LockedResolutionButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content" unique_id=534865127]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
@@ -1161,41 +1464,131 @@ size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "LOCKED"
-alignment = 0
 flat = true
+alignment = 0
 script = ExtResource("22_highlight")
 highlight_material = SubResource("ShaderMaterial_65kn7")
 
-[node name="DebugUnlockAllSection" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content"]
+[node name="SaveOptions" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page" unique_id=1369491556]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
-theme_override_constants/separation = 2
+size_flags_vertical = 3
 
-[node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content/DebugUnlockAllSection"]
+[node name="SaveData" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SaveOptions" unique_id=852823004]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 3
+
+[node name="Title" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SaveOptions/SaveData" unique_id=1344683528]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
-text = "DEBUG"
+text = "SAVE DATA"
 
-[node name="DebugUnlockAllButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content/DebugUnlockAllSection"]
+[node name="Buttons" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SaveOptions/SaveData" unique_id=1969241822]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="ExportSaveButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SaveOptions/SaveData/Buttons" unique_id=195556717]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
-text = "UNLOCK EVERYTHING"
-alignment = 0
+text = "EXPORT"
 flat = true
+alignment = 0
 script = ExtResource("22_highlight")
 highlight_material = SubResource("ShaderMaterial_65kn7")
 
-[node name="SaveOptions" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page"]
+[node name="ImportSaveButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SaveOptions/SaveData/Buttons" unique_id=1398306628]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 16
+text = "IMPORT"
+flat = true
+alignment = 0
+script = ExtResource("22_highlight")
+highlight_material = SubResource("ShaderMaterial_65kn7")
+
+[node name="DeleteSaveButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SaveOptions/SaveData/Buttons" unique_id=311336783]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 16
+text = "DELETE"
+flat = true
+alignment = 0
+script = ExtResource("22_highlight")
+highlight_material = SubResource("ShaderMaterial_65kn7")
+
+[node name="SaveStatus" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SaveOptions/SaveData" unique_id=2117054953]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.541, 0.533, 0.51, 1)
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 12
+autowrap_mode = 2
+
+[node name="LinksOptions" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page" unique_id=645486794]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_constants/separation = 2
+
+[node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/LinksOptions" unique_id=1677015471]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 16
+text = "FIND JUELS ONLINE"
+
+[node name="ItchLinkButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/LinksOptions" unique_id=395988428]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 16
+text = "ITCH.IO"
+flat = true
+alignment = 0
+script = ExtResource("22_highlight")
+highlight_material = SubResource("ShaderMaterial_65kn7")
+
+[node name="KofiLinkButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/LinksOptions" unique_id=1832797592]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 16
+text = "KO-FI"
+flat = true
+alignment = 0
+script = ExtResource("22_highlight")
+highlight_material = SubResource("ShaderMaterial_65kn7")
+
+[node name="ExportSaveDialog" type="FileDialog" parent="Screens/Splash/OptionsMenu" unique_id=1620905644]
+unique_name_in_owner = true
+
+[node name="ImportSaveDialog" type="FileDialog" parent="Screens/Splash/OptionsMenu" unique_id=692869488]
+unique_name_in_owner = true
+
+[node name="DeleteSaveConfirmation" type="ConfirmationDialog" parent="Screens/Splash/OptionsMenu" unique_id=479253506]
+unique_name_in_owner = true
+title = "DELETE SAVE"
+dialog_text = "Delete all saved data? This cannot be undone."
 
 [node name="CheckpointMenu" type="Control" parent="Screens/Splash" unique_id=137033687]
 unique_name_in_owner = true
@@ -1251,191 +1644,13 @@ theme_override_font_sizes/font_size = 14
 text = "BACK"
 script = ExtResource("22_highlight")
 
-[node name="AudioControls" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions" unique_id=2084179241]
-layout_mode = 2
-theme_override_constants/separation = 2
-
-[node name="Title" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
-theme_override_fonts/font = ExtResource("6_1vynq")
-theme_override_font_sizes/font_size = 16
-text = "VOLUME"
-
-[node name="MusicRow" type="HBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls" unique_id=165726750]
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls/MusicRow" unique_id=1718612431]
-custom_minimum_size = Vector2(56, 24)
-layout_mode = 2
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_fonts/font = ExtResource("6_1vynq")
-theme_override_font_sizes/font_size = 16
-text = "MUSIC"
-vertical_alignment = 1
-
-[node name="MusicVolumeSlider" type="HSlider" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls/MusicRow" unique_id=1338331245]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(84, 24)
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 4
-mouse_default_cursor_shape = 2
-theme_override_icons/grabber = SubResource("TransparentSliderGrabber")
-theme_override_icons/grabber_highlight = SubResource("TransparentSliderGrabber")
-theme_override_icons/grabber_disabled = SubResource("TransparentSliderGrabber")
-theme_override_styles/slider = SubResource("EmptySliderStyle")
-theme_override_styles/grabber_area = SubResource("EmptySliderStyle")
-theme_override_styles/grabber_area_highlight = SubResource("EmptySliderStyle")
-value = 100.0
-script = ExtResource("20_volume")
-
-[node name="Bar" type="NinePatchRect" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls/MusicRow/MusicVolumeSlider" unique_id=241571226]
-material = SubResource("MusicVolumeBarMaterial")
-layout_mode = 1
-anchors_preset = 14
-anchor_top = 0.5
-anchor_right = 1.0
-anchor_bottom = 0.5
-offset_top = -3.0
-offset_bottom = 3.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("21_bar")
-patch_margin_left = 2
-patch_margin_top = 2
-patch_margin_right = 2
-patch_margin_bottom = 2
-
-[node name="SoundRow" type="HBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls" unique_id=403265211]
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls/SoundRow" unique_id=1444721140]
-custom_minimum_size = Vector2(56, 24)
-layout_mode = 2
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_fonts/font = ExtResource("6_1vynq")
-theme_override_font_sizes/font_size = 16
-text = "SOUNDS"
-vertical_alignment = 1
-
-[node name="SoundVolumeSlider" type="HSlider" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls/SoundRow" unique_id=1751041834]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(84, 24)
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 4
-mouse_default_cursor_shape = 2
-theme_override_icons/grabber = SubResource("TransparentSliderGrabber")
-theme_override_icons/grabber_highlight = SubResource("TransparentSliderGrabber")
-theme_override_icons/grabber_disabled = SubResource("TransparentSliderGrabber")
-theme_override_styles/slider = SubResource("EmptySliderStyle")
-theme_override_styles/grabber_area = SubResource("EmptySliderStyle")
-theme_override_styles/grabber_area_highlight = SubResource("EmptySliderStyle")
-value = 100.0
-script = ExtResource("20_volume")
-
-[node name="Bar" type="NinePatchRect" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls/SoundRow/SoundVolumeSlider" unique_id=212451574]
-material = SubResource("SoundVolumeBarMaterial")
-layout_mode = 1
-anchors_preset = 14
-anchor_top = 0.5
-anchor_right = 1.0
-anchor_bottom = 0.5
-offset_top = -3.0
-offset_bottom = 3.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("21_bar")
-patch_margin_left = 2
-patch_margin_top = 2
-patch_margin_right = 2
-patch_margin_bottom = 2
-
-[node name="SaveData" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SaveOptions"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 3
-
-[node name="Title" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SaveOptions/SaveData"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
-theme_override_fonts/font = ExtResource("6_1vynq")
-theme_override_font_sizes/font_size = 16
-text = "SAVE DATA"
-
-[node name="Buttons" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SaveOptions/SaveData"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 2
-
-[node name="ExportSaveButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SaveOptions/SaveData/Buttons"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 24)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_fonts/font = ExtResource("6_1vynq")
-theme_override_font_sizes/font_size = 16
-text = "EXPORT"
-alignment = 0
-flat = true
-script = ExtResource("22_highlight")
-highlight_material = SubResource("ShaderMaterial_65kn7")
-
-[node name="ImportSaveButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SaveOptions/SaveData/Buttons"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 24)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_fonts/font = ExtResource("6_1vynq")
-theme_override_font_sizes/font_size = 16
-text = "IMPORT"
-alignment = 0
-flat = true
-script = ExtResource("22_highlight")
-highlight_material = SubResource("ShaderMaterial_65kn7")
-
-[node name="DeleteSaveButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SaveOptions/SaveData/Buttons"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 24)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_fonts/font = ExtResource("6_1vynq")
-theme_override_font_sizes/font_size = 16
-text = "DELETE"
-alignment = 0
-flat = true
-script = ExtResource("22_highlight")
-highlight_material = SubResource("ShaderMaterial_65kn7")
-
-[node name="SaveStatus" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SaveOptions/SaveData"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.541, 0.533, 0.51, 1)
-theme_override_fonts/font = ExtResource("6_1vynq")
-theme_override_font_sizes/font_size = 12
-autowrap_mode = 2
-
-[node name="ExportSaveDialog" type="FileDialog" parent="Screens/Splash/OptionsMenu"]
-unique_name_in_owner = true
-
-[node name="ImportSaveDialog" type="FileDialog" parent="Screens/Splash/OptionsMenu"]
-unique_name_in_owner = true
-
-[node name="DeleteSaveConfirmation" type="ConfirmationDialog" parent="Screens/Splash/OptionsMenu"]
-unique_name_in_owner = true
-title = "DELETE SAVE"
-dialog_text = "Delete all saved data? This cannot be undone."
-
-[node name="SaveDataManager" type="Node" parent="."]
-unique_name_in_owner = true
-script = ExtResource("39_save_data")
-
 [node name="ProgressionMenu" parent="Screens" unique_id=1548032098 instance=ExtResource("36_progression_menu")]
 visible = false
+font_button_highlight_material = SubResource("ShaderMaterial_uice7")
+font_preview_tile_material = SubResource("ShaderMaterial_f7k5u")
+
+[node name="SaveDataManager" type="Node" parent="." unique_id=217628651]
+unique_name_in_owner = true
+script = ExtResource("39_save_data")
 
 [editable path="PresentationLayers/BonusSelectionLayer/BonusSelection"]

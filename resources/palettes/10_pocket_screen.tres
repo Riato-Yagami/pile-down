@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ColorPaletteData" format=3 uid="uid://cwh58awrxofht"]
+
+[ext_resource type="Resource" path="res://resources/achievements/06_complete_normal_game.tres" id="1_homvm"]
+[ext_resource type="Script" uid="uid://bdlkhp3dt6mr" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_6law7"]
+
+[resource]
+script = ExtResource("2_6law7")
+id = &"pocket_screen"
+display_name = "POCKET SCREEN"
+colors = Array[Color]([Color(0.32156864, 0.39215687, 0.2901961, 1), Color(0.44313726, 0.5411765, 0.3019608, 1), Color(0.5411765, 0.49411765, 0.24705882, 1), Color(0.30980393, 0.50980395, 0.24705882, 1), Color(0.23921569, 0.4745098, 0.38431373, 1), Color(0.30980393, 0.4392157, 0.5176471, 1), Color(0.3882353, 0.3764706, 0.54901963, 1), Color(0.5019608, 0.3372549, 0.4862745, 1), Color(0.54509807, 0.37254903, 0.28235295, 1), Color(0.40784314, 0.4509804, 0.23529412, 1)])
+required_achievement = ExtResource("1_homvm")

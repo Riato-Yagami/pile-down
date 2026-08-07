@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ColorPaletteData" format=3 uid="uid://c4kjlklxcevck"]
+
+[ext_resource type="Script" uid="uid://bdlkhp3dt6mr" path="res://resources/scripts/progression/ColorPaletteData.gd" id="1_eh007"]
+
+[resource]
+script = ExtResource("1_eh007")
+id = &"soft_rainbow"
+display_name = "SOFT RAINBOW"
+colors = Array[Color]([Color(0.9843137, 0.972549, 0.8, 1), Color(0.99215686, 0.89411765, 0.8117647, 1), Color(1, 0.8117647, 0.8235294, 1), Color(0.94509804, 0.7529412, 0.9098039, 1), Color(0.8117647, 0.7294118, 0.9411765, 1), Color(0.6392157, 0.76862746, 0.9529412, 1), Color(0.5647059, 0.85882354, 0.95686275, 1), Color(0.5568628, 0.9254902, 0.9607843, 1), Color(0.59607846, 0.9607843, 0.88235295, 1), Color(0.7254902, 0.9843137, 0.7529412, 1)])

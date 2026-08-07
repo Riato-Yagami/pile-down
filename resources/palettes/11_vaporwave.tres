@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ColorPaletteData" format=3]
+
+[ext_resource type="Resource" path="res://resources/achievements/28_speedrun_20_rounds.tres" id="1_12c42"]
+[ext_resource type="Script" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_75ovu"]
+
+[resource]
+script = ExtResource("2_75ovu")
+id = &"vaporwave"
+display_name = "VAPORWAVE"
+colors = Array[Color]([Color(0.14901961, 0.7764706, 0.85490197, 1), Color(1, 0.30980393, 0.6392157, 1), Color(0.4862745, 0.36078432, 0.9882353, 1), Color(1, 0.47843137, 0.34901962, 1), Color(0.96862745, 0.7882353, 0.28235295, 1), Color(0.20784314, 0.8156863, 0.7294118, 1), Color(0.8509804, 0.30980393, 0.8352941, 1), Color(0.3019608, 0.5529412, 1, 1), Color(0.65882355, 0.33333334, 0.96862745, 1), Color(1, 0.36862746, 0.47058824, 1)])
+required_achievement = ExtResource("1_12c42")

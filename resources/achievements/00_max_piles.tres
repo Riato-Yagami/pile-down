@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="AchievementData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_ielyv"]
+
+[resource]
+script = ExtResource("1_ielyv")
+id = &"max_piles"
+title = "STACK OVERFLOW"
+description = "Reach the maximum number of stacks."
+category = &"STATS"

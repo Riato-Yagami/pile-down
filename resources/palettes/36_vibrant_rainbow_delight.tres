@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ColorPaletteData" format=3]
+
+[ext_resource type="Resource" path="res://resources/achievements/19_beat_two_special_rules.tres" id="1_2x84p"]
+[ext_resource type="Script" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_xofxn"]
+
+[resource]
+script = ExtResource("2_xofxn")
+id = &"vibrant_rainbow_delight"
+display_name = "VIBRANT RAINBOW DELIGHT"
+colors = Array[Color]([Color(1, 0.38039216, 0.67058825, 1), Color(1, 0.38039216, 0.4627451, 1), Color(1, 0.5058824, 0.38039216, 1), Color(1, 0.70980394, 0.38039216, 1), Color(1, 0.91764706, 0.38431373, 1), Color(0.8745098, 1, 0.38039216, 1), Color(0.67058825, 1, 0.38039216, 1), Color(0.4627451, 1, 0.38039216, 1), Color(0.38039216, 1, 0.5058824, 1), Color(0.38039216, 1, 0.70980394, 1)])
+required_achievement = ExtResource("1_2x84p")

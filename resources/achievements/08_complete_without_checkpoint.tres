@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AchievementData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_pfmcm"]
+
+[resource]
+script = ExtResource("1_pfmcm")
+id = &"complete_without_checkpoint"
+title = "THE LONG WAY DOWN"
+description = "Complete the game from the beginning."
+category = &"ROUNDS"
+reward_font = &"alagard"

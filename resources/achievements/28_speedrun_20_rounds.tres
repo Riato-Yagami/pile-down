@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AchievementData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_paviu"]
+
+[resource]
+script = ExtResource("1_paviu")
+id = &"speedrun_20_rounds"
+title = "TEN-MINUTE TWENTY"
+description = "Complete 20 rounds in under 10 minutes."
+category = &"SPEEDRUN"
+reward_font = &"vhs_gothic"

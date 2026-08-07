@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="FontData" format=3 uid="uid://b58s6pv6j46gj"]
+
+[ext_resource type="FontFile" uid="uid://com0um48jud7m" path="res://resources/fonts/extra/upheaval/upheavtt.ttf" id="1_jximv"]
+[ext_resource type="Resource" path="res://resources/achievements/20_beat_max_special_rules.tres" id="2_jximv"]
+[ext_resource type="Script" uid="uid://dj883c8fbgkvi" path="res://resources/scripts/progression/FontData.gd" id="3_kvajt"]
+
+[resource]
+script = ExtResource("3_kvajt")
+id = &"upheaval"
+display_name = "UPHEAVAL"
+font = ExtResource("1_jximv")
+tile_font_offset = Vector2(0, -1)
+title_font_offset = Vector2(0, -1)
+title_font_size = null
+override_hidden_tile_with_font = null
+required_achievement = ExtResource("2_jximv")

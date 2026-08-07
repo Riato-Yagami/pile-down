@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ColorPaletteData" format=3]
+
+[ext_resource type="Resource" path="res://resources/achievements/18_all_bonuses_maxed_once.tres" id="1_vwc1a"]
+[ext_resource type="Script" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_lnlu8"]
+
+[resource]
+script = ExtResource("2_lnlu8")
+id = &"tropical"
+display_name = "TROPICAL"
+colors = Array[Color]([Color(0.4509804, 0.7176471, 0.72156864, 1), Color(0.32156864, 0.6313726, 0.6392157, 1), Color(0.4627451, 0.78431374, 0.69411767, 1), Color(0.3137255, 0.7254902, 0.60784316, 1), Color(0.8627451, 0.14117648, 0.29411766, 1), Color(0.6862745, 0.11372549, 0.23529412, 1), Color(0.9647059, 0.79607844, 0.32156864, 1), Color(0.9529412, 0.72156864, 0.08627451, 1), Color(0.9411765, 0.3529412, 0.16078432, 1), Color(0.8235294, 0.24705882, 0.05882353, 1)])
+required_achievement = ExtResource("1_vwc1a")

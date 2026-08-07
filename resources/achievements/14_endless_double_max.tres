@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AchievementData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_kw8l6"]
+
+[resource]
+script = ExtResource("1_kw8l6")
+id = &"endless_double_max"
+title = "DOUBLE OR NOTHING"
+description = "Reach twice the normal round limit in Endless Mode."
+category = &"ENDLESS"
+reward_font = &"pixelated_pusab"

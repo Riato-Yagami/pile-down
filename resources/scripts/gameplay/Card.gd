@@ -24,6 +24,7 @@ enum ForcedReturnReason {
 
 const TINY_REGULAR_FONT := preload("res://resources/fonts/Tiny5-Regular.ttf")
 const Settings := preload("res://resources/scripts/settings/settings.gd")
+const HIDDEN_TILE_COLOR := Color("b8b8b8")
 
 @export var card_value := 0
 
@@ -76,6 +77,8 @@ var is_joker := false
 var _joker_phase := 0.0
 var _value_font: Font
 var _value_font_size := 20
+var _value_font_offset := Vector2.ZERO
+var _override_hidden_tile_with_font := false
 var _tile_colors: Array[Color] = Settings.TILE_COLORS.slice(0, 10)
 
 
@@ -91,9 +94,14 @@ func _ready() -> void:
 	_update_appearance()
 
 
-func set_value_font(font: Font, font_size := 20) -> void:
+func set_value_font(
+	font: Font, font_size := 20, font_offset := Vector2.ZERO,
+	override_hidden_tile_with_font := true
+) -> void:
 	_value_font = font
-	_value_font_size = clampi(font_size, 8, 32)
+	_value_font_size = font_size
+	_value_font_offset = font_offset
+	_override_hidden_tile_with_font = override_hidden_tile_with_font
 	if is_node_ready():
 		_update_appearance()
 
@@ -367,7 +375,7 @@ func reset_hand_pose() -> void:
 	rotation = 0.0
 	face_sprite.position.y = 0.0
 	back_sprite.position.y = 0.0
-	value_label.position.y = 0.0
+	_apply_value_label_offset()
 	drag_timer_ring.visible = false
 	z_index = 0
 
@@ -682,7 +690,16 @@ func _animate_pose(target_scale: Vector2, y_offset: float) -> void:
 	_visual_tween.tween_property(self, "scale", target_scale, 0.12)
 	_visual_tween.tween_property(face_sprite, "position:y", y_offset, 0.12)
 	_visual_tween.tween_property(back_sprite, "position:y", y_offset, 0.12)
-	_visual_tween.tween_property(value_label, "position:y", y_offset, 0.12)
+	_visual_tween.tween_property(
+		value_label, "position:y", _value_font_offset.y + y_offset, 0.12
+	)
+
+
+func _apply_value_label_offset(pose_y := 0.0) -> void:
+	value_label.offset_left = _value_font_offset.x
+	value_label.offset_right = _value_font_offset.x
+	value_label.offset_top = _value_font_offset.y + pose_y
+	value_label.offset_bottom = _value_font_offset.y + pose_y - 2.0
 
 
 func _update_appearance() -> void:
@@ -690,19 +707,23 @@ func _update_appearance() -> void:
 		return
 	var color: Color = _tile_colors[card_value % _tile_colors.size()]
 	var visual_color := Color("#8B8B8B") if colorblind_enabled else color
-	face_sprite.visible = face_up
-	back_sprite.visible = not face_up
+	var custom_hidden_tile := not face_up and _override_hidden_tile_with_font
+	face_sprite.visible = face_up or custom_hidden_tile
+	back_sprite.visible = not face_up and not custom_hidden_tile
 	back_sprite.modulate = Color.WHITE
 	var tile_material := face_sprite.material as ShaderMaterial
-	tile_material.set_shader_parameter("tile_color", visual_color)
-	var back_tile_material := back_sprite.material as ShaderMaterial
-	back_tile_material.set_shader_parameter("tile_color", visual_color)
-	value_label.visible = face_up
+	tile_material.set_shader_parameter(
+		"tile_color", HIDDEN_TILE_COLOR if custom_hidden_tile else visual_color
+	)
+	value_label.visible = face_up or custom_hidden_tile
 	value_label.text = (
-		"J"
+		"?"
+		if custom_hidden_tile
+		else "J"
 		if is_joker
 		else RoundModifiers.format_value(card_value, roman_numerals_enabled)
 	)
+	_apply_value_label_offset(face_sprite.position.y)
 	value_label.add_theme_font_size_override(
 		"font_size",
 		int(round(
@@ -710,7 +731,7 @@ func _update_appearance() -> void:
 			* (0.7 if roman_numerals_enabled and card_value in [7, 8] else 1.0)
 		))
 	)
-	if roman_numerals_enabled and card_value in [7, 8]:
+	if face_up and roman_numerals_enabled and card_value in [7, 8]:
 		value_label.add_theme_font_override("font", TINY_REGULAR_FONT)
 	elif _value_font != null:
 		value_label.add_theme_font_override("font", _value_font)
@@ -718,7 +739,11 @@ func _update_appearance() -> void:
 		value_label.remove_theme_font_override("font")
 	value_label.add_theme_color_override(
 		"font_color",
-		Settings.COLORBLIND_VALUE_COLOR if colorblind_enabled else color.darkened(0.35)
+		HIDDEN_TILE_COLOR
+		if custom_hidden_tile
+		else Settings.COLORBLIND_VALUE_COLOR
+		if colorblind_enabled
+		else color.darkened(0.35)
 	)
 
 

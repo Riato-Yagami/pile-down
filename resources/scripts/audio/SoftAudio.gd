@@ -156,6 +156,11 @@ func play_special_rule() -> void:
 	_play_sequence([261.63, 392.0, 311.13], 0.065, 0.08, 0.045)
 
 
+func play_achievement() -> void:
+	# A compact rising sparkle stays distinct from round and victory cues.
+	_play_sequence([659.25, 783.99, 1046.5], 0.055, 0.1, 0.05)
+
+
 func play_game_over() -> void:
 	# A loud three-stage fall accompanies the death popup. Rich harmonics keep
 	# the cue audible while the music bus is filtered.

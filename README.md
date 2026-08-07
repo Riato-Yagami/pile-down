@@ -216,10 +216,15 @@ l'horloge produit un flash rouge synchronisé avec chaque tick.
 ```text
 pile-down/
 ├── resources/
+│   ├── achievements/             # un AchievementData `.tres` par succès
 │   ├── fonts/
-│   │   ├── PressStart2P-Regular.ttf
+│   │   ├── data/                 # un FontData `.tres` par police
+│   │   ├── extra/
+│   │   │   ├── PressStart2P/
+│   │   │   └── autres polices et licences
 │   │   ├── Tiny5-Regular.ttf
 │   │   └── VCR_OSD_MONO_1.001.ttf
+│   ├── palettes/                 # un ColorPaletteData `.tres` par palette
 │   ├── scenes/
 │   │   ├── Game.tscn
 │   │   ├── Card.tscn
@@ -337,9 +342,8 @@ participent pas à ce tirage.
 Les options de développement sont centralisées dans `resources/scripts/settings/debug.gd`.
 `ENABLED` est l'interrupteur global : lorsqu'il vaut `false`, toutes les autres
 options sont ignorées. Lorsqu'il vaut `true`, le menu principal affiche
-`DEBUG MODE` en rouge.
-La page `GRAPHICS` des options affiche alors le toggle `UNLOCK EVERYTHING`.
-Son activation recharge la scène avec achievements, polices, palettes, bonus,
+`DEBUG MODE` en rouge et la cheatsheet des raccourcis. La touche `U` active ou
+désactive `UNLOCK EVERYTHING` et recharge la scène avec achievements, polices, palettes, bonus,
 règles, checkpoints et Endless débloqués uniquement en mémoire. Le désactiver
 recharge la progression réelle depuis la sauvegarde, qui n'est jamais modifiée
 par ce toggle.
@@ -385,36 +389,67 @@ en nine-patch vertical avec des extrémités protégées sur 4 pixels. Le sélec
 reste toujours à sa taille native de 6×14 pixels, centré dans la piste et
 déplacé uniquement sur l'axe vertical ; le `VScrollBar` fonctionnel reste
 invisible derrière ce visuel.
-Le choix actif reprend la teinte bleue de la navigation. La liste
-`Available Fonts` du sous-nœud
-`FontCatalog` de `ProgressionMenu` permet de choisir les polices proposées
-depuis l'inspecteur. Chaque entrée expose la police, `Tile Font Size` et
-l'achievement requis pour la débloquer. La liste des achievements se règle
-séparément dans le sous-nœud `AchievementCatalog`. La taille choisie s'applique
-aux chiffres dans le jeu et dans l'aperçu. La
+Le choix actif reprend la teinte bleue de la navigation. Chaque fichier de
+`resources/fonts/data/` décrit une police proposée et expose la ressource,
+`Tile Font Size`, `Tile Font Offset`, `Title Font Size`, `Title Font Offset` et
+l'achievement requis pour la débloquer. La taille du titre peut ainsi différer
+de celle des chiffres ; une valeur de `0` la synchronise avec `Tile Font Size`.
+`Tile Font Size` n'impose aucune valeur minimale ou maximale et est appliqué tel
+quel aux cartes, piles et previews.
+Le premier offset ajuste la position des chiffres sans déplacer les tuiles ; le
+second corrige indépendamment le titre rendu avec cette police dans la liste.
+`Override Hidden Tile With Font` remplace le dos contenant un `?` pré-dessiné
+par une tuile neutre et rend ce symbole avec la même police, taille et offset
+que les chiffres, dans le jeu comme dans les previews. Cette option est activée
+par défaut.
+`FontRegistry`
+charge automatiquement tous les `.tres` du dossier dans l'ordre de leur
+préfixe numérique. La liste des achievements est chargée depuis
+`resources/achievements/`. La taille choisie s'applique aux chiffres dans le jeu,
+au titre de la police dans sa liste et immédiatement dans l'aperçu de l'éditeur
+lorsqu'elle est modifiée. Dans le preview de l'éditeur uniquement, la police et
+la palette sélectionnées apparaissent en tête de leurs listes ; leur ordre en jeu
+reste celui des catalogues. Le bouton `Reload Editor Preview` de l'inspecteur
+permet de forcer le rendu. La
 police choisie s'applique uniquement aux valeurs des cartes et des piles, sans
 modifier les textes de l'interface. Les cinq pages utilisent les
 icônes sans panneau du dossier `resources/sprites/ui/icons/` (`stats.png`,
 `trophies.png`, `bonuses.png`, `rules.png` et `fonts.png`) dans la
 navigation. Tous les boutons fonctionnent à la souris, au clavier et au
 tactile ; la touche `Escape` ou le bouton illustré `escape.png` ferme le menu.
-Le sous-nœud `FontCatalog` expose aussi `Available Palettes`. Chaque palette
-contient exactement neuf couleurs modifiables dans l'inspecteur. La page Fonts
+
+Le catalogue contient 28 polices, dont `PRESS START 2P`, `TINY5`, `VCR OSD
+MONO`, `8-BIT ARCADE`, `EDIT UNDO DOT`, `PIXEL WESTERN`, `UPHEAVAL`, `VHS
+GOTHIC`, `ALAGARD`, `ALKHEMIKAL`, `BETTER VCR`, `BIRCH LEAF`, `BOILED PASTA`,
+`DICO`, les deux variantes `DIGITAL DISCO`, `DIGITALIX`, `EMPLOYEE OF THE
+MONTH`, `GOTHIC PIXELS`, `GRAPE SODA`, `KIWI SODA`, `MONSTER FRIEND`, `MYSIMS
+RACING`, `PIXELATED PUSAB`, `PIXELED` et `PIXELLARI`. Chaque police verrouillée
+possède un achievement distinct. `PIXEL WESTERN` conserve sa taille native recommandée
+de 8 px, `UPHEAVAL` sa taille de 14 pt et `EDIT UNDO DOT` est importée sans
+anticrénelage conformément à sa documentation. Les fichiers de licence,
+readme et attribution restent distribués avec les polices. `VHS GOTHIC` est
+attribuée à Spottie Leonard et à la police source `CHARGEN '92` de
+ParadigmTheGreat sous CC BY-SA 3.0.
+
+Les polices sans licence locale mais indiquées « 100% free » sur leur page
+DaFont sont intégrées selon cette autorisation. `8-bit pusab` et `Daydream DEMO`
+ont été supprimées du dépôt car leurs licences jointes interdisaient l'usage
+commercial. Les fichiers `.fon` restent hors du catalogue, car Godot ne les
+prend pas en charge.
+
+Chaque fichier de `resources/palettes/` décrit une palette de dix couleurs
+modifiables dans l'inspecteur. `ColorPaletteRegistry` charge automatiquement
+ces `.tres` dans l'ordre de leur préfixe numérique. La page Fonts
 présente les polices et les palettes comme les autres listes de progression,
 dans deux rangées verticales possédant chacune son propre défilement. Elle
 permet de sélectionner séparément la police et la palette ; la palette choisie
 est sauvegardée dans `settings/selected_palette`, prévisualisée sur neuf tuiles
 et appliquée aux cartes, aux piles et aux jokers.
-Les pages Achievements, Bonuses, Special Rules et Fonts proposent un sélecteur
-illustré et glissable : `LOCKED` à gauche, `BOTH` au centre et `UNLOCKED` à
-droite. Le curseur réagit au survol et le cadenas du mode actif est mis en
-surbrillance avec le bleu de l'onglet de progression sélectionné, qu'il soit
-ouvert ou fermé, tandis que la barre conserve les couleurs de son sprite ; la
-barre est placée dans l'en-tête, immédiatement à droite du titre global
-`PROGRESSION`, afin de rester fixe entre les sections et de laisser davantage
-de hauteur aux listes. La page Highscores n'affiche pas ce filtre. La propriété
-`Selector Right X` du `LockFilter` règle dans l'éditeur sa limite droite en
-pixels ; la limite gauche est automatiquement placée à la position symétrique.
+Le sélecteur `LOCKED / BOTH / UNLOCKED` des pages de progression est
+temporairement masqué et les listes restent sur `BOTH`. Son script, ses sprites,
+son positionnement et sa logique de filtrage sont conservés pour permettre sa
+réactivation ultérieure en passant `SHOW_LOCK_FILTER` à `true` dans
+`ProgressionMenu.gd`.
 La mise en page reste contenue dans la fenêtre logique minimale de 256×320 et
 les listes longues défilent dans leur zone dédiée.
 Les boutons illustrés utilisent tous `TextureHighlightButton.gd` et le shader
@@ -424,12 +459,16 @@ règle découverte, distincte du texte d'ambiance utilisé pendant son annonce.
 Les champs encore inconnus des bonus et règles affichent `???`. Une entrée
 rencontrée mais non obtenue ou non battue révèle son nom en semi-transparence,
 affiche `???` à la place de sa description et n'affiche ni coche ni niveau.
+Les titres associés aux pastilles utilisent `Entry Heading Text Offset`, réglé
+par défaut à `(2, 2)`, afin de corriger leur centrage optique vers le bas et la
+droite sans déplacer les icônes.
 Les bonus obtenus sur plusieurs niveaux inscrivent leur meilleur niveau
 dans le carré ; le carré devient doré au niveau maximal. Les états binaires
 utilisent les sprites `ui/check/checked.png` et `ui/check/unchecked.png`.
-Les 30 achievements permanents sont déclarés dans
-`resources/scripts/progression/AchievementRegistry.gd` et évalués uniquement
-sur les événements de jeu concernés. Ils sont regroupés sous `STATS`, `ROUNDS`,
+Les 30 achievements permanents sont décrits individuellement dans
+`resources/achievements/`. `AchievementRegistry` charge automatiquement les
+fichiers `.tres` dans l'ordre de leur préfixe numérique. Ils sont évalués uniquement
+sur les événements de jeu concernés et regroupés sous `STATS`, `ROUNDS`,
 `CHECKPOINTS`, `ENDLESS`, `BONUSES & RULES`, `COMBOS` et `SPEEDRUN`. Les
 achievements cumulatifs affichent leur complétion avec le sprite et le shader
 des barres de volume. Leur détail numérique apparaît au survol de la barre,
@@ -452,13 +491,40 @@ Sur l'écran principal, l'icône `options.png`, placée à côté de l'icône de
 statistiques, ouvre le menu `OPTIONS`. Les réglages `MUSIC` et `SOUND` y
 reprennent les curseurs, le shader et la sauvegarde audio existants. Comme dans
 le menu de progression, le titre reste en haut à gauche et le bouton illustré
-Échap en haut à droite referme l'écran. Les icônes `sounds.png` et `saves.png`
-ainsi que `graphics.png` forment la navigation verticale des catégories
-`SOUND`, `GRAPHICS` et `SAVE DATA`, comme
+Échap en haut à droite referme l'écran. L'icône classique `options.png`, puis
+les icônes `sounds.png`, `graphics.png`, `saves.png` et `links.png` forment la
+navigation verticale des catégories `GAMEPLAY`, `SOUND`, `GRAPHICS`,
+`SAVE DATA` et `LINKS`, comme
 dans le menu de progression. La section `SAVE DATA` permet d'exporter
 la configuration complète en JSON, d'importer un export validé ou de supprimer
 la sauvegarde après confirmation. Un import ou une suppression recharge la
 scène afin de synchroniser immédiatement tout l'état en mémoire.
+
+La page `GAMEPLAY` permet de désactiver séparément les notifications
+d'achievements et le chronomètre global de la partie. Cette option ne masque
+jamais l'horloge ni la valeur du compte à rebours du round. Une notification
+active s'affiche sans panneau de fond, avec l'icône achievement à gauche et le
+nom obtenu à droite, accompagnée d'un court son ascendant ; plusieurs
+achievements simultanés sont présentés successivement. Les choix sont appliqués
+immédiatement et sauvegardés dans `gameplay/achievement_notifications` et
+`gameplay/show_timer`.
+
+L'écran de fin de partie regroupe sous `NEW PROGRESSION` les checkpoints
+débloqués, bonus découverts, règles rencontrées et achievements obtenus pendant
+la partie. Les catégories sans nouveauté sont omises.
+
+Ces nouveautés ajoutent `notification.png` au bouton Progression du menu
+principal et à l'onglet concerné (`STATS`, `ACHIEVEMENTS`, `BONUSES` ou
+`SPECIAL RULES`). Cliquer sur l'icône d'un onglet acquitte cette catégorie ; le
+badge principal disparaît lorsque toutes les catégories ont été consultées.
+Dans `ProgressionMenu.tscn`, `StatsNotification` est le modèle éditable du
+placement. Le bouton d'inspecteur `Copy Notification Placement` recopie sa
+position et sa taille sur les badges des autres onglets.
+
+La page `LINKS` ouvre les profils externes dans le navigateur du système :
+`ITCH.IO` mène à `https://juel-s.itch.io/` et `KO-FI` à
+`https://ko-fi.com/juels`. Seules les adresses HTTPS codées dans le jeu sont
+acceptées par le gestionnaire de liens.
 Les sélecteurs d'import et d'export utilisent les dialogues natifs du système
 pour ne pas dépasser la fenêtre logique du jeu ; la confirmation de suppression
 reste compacte et replie son texte automatiquement.
@@ -476,19 +542,37 @@ encadrement persistant autour de la valeur active.
 Les pages `SOUND` et `SAVE DATA` utilisent la même présentation en liste : les
 volumes occupent deux lignes sous le titre `VOLUME`, tandis qu'export, import et
 suppression forment trois actions verticales plates avec highlight au survol.
+Les libellés `MUSIC` et `SOUNDS` partagent une colonne fixe de 72 pixels afin
+que leurs deux barres commencent au même emplacement et gardent la même largeur.
+Les libellés des choix et des actions restent sombres au repos, puis prennent
+le bleu actif au survol, à la pression ou lorsqu'ils reçoivent le focus clavier.
+Ce comportement s'applique notamment aux actions `SAVE DATA` et `LINKS`.
+En affichage adaptatif, le fond de la main utilise un découpage nine-patch qui
+préserve ses extrémités sur 18 pixels pendant que seul son centre s'étire. Le
+bouton Échap du gameplay est ancré au bord supérieur droit et suit donc la
+largeur réelle du viewport étendu.
+La propriété `Editor Display > Start Adaptive In Editor` du nœud `Game` force
+le mode adaptatif dès un lancement depuis l'éditeur. Elle est activée dans la
+scène principale et n'affecte ni les builds exportés ni la préférence graphique
+sauvegardée du joueur.
 Dans le menu de progression, la navigation de catégories occupe une colonne
 compacte de 30 pixels près du bord gauche. Les listes réservent une marge de
 10 pixels devant leur barre de défilement afin que textes et indicateurs de
 progression ne passent jamais sous celle-ci.
 Chaque choix de police affiche son nom avec la police correspondante. Le titre
 de chaque palette débloquée alterne ses caractères entre toutes les couleurs de
-la palette afin de la reconnaître directement dans la liste. Les noms de
+la palette afin de la reconnaître directement dans la liste. Une palette
+verrouillée conserve le titre `???`, dont les trois caractères utilisent ses
+trois premières couleurs sans révéler son nom. Les noms de
 polices et de palettes reviennent automatiquement à la ligne et agrandissent
 leur entrée lorsqu'ils dépassent la largeur disponible.
-Le catalogue conserve `CLASSIC` comme palette initiale et propose aussi
-`ARCADE CRT`, débloquée immédiatement, puis `FALLING BLOCKS`, `MONSTER TYPES`,
-`CUBE MIX`, `DIGITAL PET`, `VHS SUNSET`, `SATURDAY HEROES`, `MECHA WARNING`,
-`MAGIC GEMS` et `POCKET SCREEN`. Chaque palette contient dix teintes distinctes
+Le catalogue est construit directement depuis les ressources présentes dans le
+dossier. Il inclut notamment `PEACHY DELIGHT`, `PURPLE RAINDROPS`, `BLUES`,
+`OCEAN SUNSET`, `PASTEL`, `MAGICAL SEASIDE`, `MINTY`, `LEMONADE`, `COZY`,
+`TROPICAL`, `VIBRANT RAINBOW DELIGHT`, `FAIRY GARDEN`, `FIRECRACKER`, `FIESTA`,
+`FUNKY`, `MEADOW`, `CHERRY BLOSSOM`, `SPRING` et `SOFT RAINBOW`. Les dix-huit
+premières nouvelles récompenses utilisent chacune un achievement jusque-là sans
+palette ; `SOFT RAINBOW` est disponible par défaut. Chaque palette contient dix teintes distinctes
 indexées de `0` à `9`. Les palettes verrouillées sont accordées par leurs
 achievements associés et enregistrées dans `progression/unlocked_palettes`.
 La règle `COLORBLIND` ne modifie jamais la palette sélectionnée : elle remplace
@@ -497,7 +581,10 @@ palette choisie réapparaît automatiquement au round suivant.
 
 `ProgressionMenu.tscn` fournit un aperçu directement dans l'éditeur. Les
 propriétés `Editor Preview/Enabled` et `Editor Preview/Page` permettent
-d'afficher chacune des cinq pages. La section `Entry Style` expose les polices
+d'afficher chacune des cinq pages. `Editor Preview Font` et
+`Editor Preview Palette` permettent de choisir indépendamment la police et la
+palette appliquées aux tuiles de démonstration, sans modifier la sauvegarde ni
+la sélection du joueur. La section `Entry Style` expose les polices
 et tailles des titres et descriptions générés avec une actualisation immédiate.
 
 - `GOD_MODE` conserve les trois vies après une erreur ;

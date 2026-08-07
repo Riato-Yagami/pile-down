@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AchievementData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_vessw"]
+
+[resource]
+script = ExtResource("1_vessw")
+id = &"three_bonus_combo"
+title = "EVERYONE'S HERE"
+description = "Trigger Bring a Friend, Double Down and Deja Vu from the same hand."
+category = &"COMBOS"
+hidden = true
