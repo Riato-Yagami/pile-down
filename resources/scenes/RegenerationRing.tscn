@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://resources/scripts/special_rules/rules/RegenerationRing.gd" id="1"]
-[ext_resource type="Texture2D" path="res://resources/sprites/tiles/tile-regen.png" id="2"]
+[ext_resource type="Texture2D" path="res://resources/materials/textures/tiles/tile-regen.tres" id="2"]
 
 [sub_resource type="Shader" id="RegenProgressShader"]
 code = "shader_type canvas_item;

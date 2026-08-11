@@ -21,6 +21,7 @@ func _run() -> void:
 		&"grace_period",
 		&"colorblind",
 		&"floor_is_lava",
+		&"pixelated",
 	]
 	for expected_id in expected_ids:
 		var found := false
@@ -51,10 +52,12 @@ func _run() -> void:
 	assert(modifiers.grace_period_enabled)
 	assert(modifiers.colorblind_enabled)
 	assert(modifiers.floor_is_lava_enabled)
+	assert(modifiers.pixelation_enabled)
 	for index in range(registry_rules.size() - 1, -1, -1):
 		if expected_ids.has(registry_rules[index].id):
 			registry_rules[index].deactivate(context)
 	assert(not modifiers.musical_stacks_enabled)
+	assert(not modifiers.pixelation_enabled)
 	assert(modifiers.maximum_mistakes_override == -1)
 
 	var hot_rule: SpecialRuleData
@@ -131,6 +134,35 @@ func _run() -> void:
 		false,
 		combined_blind_modifiers
 	)
+	assert(not combined_blind_card.face_up)
+	var combined_touch_position := (
+		combined_blind_card.get_global_rect().abs().get_center()
+	)
+	combined_blind_card.begin_touch_interaction(3, combined_touch_position)
+	assert(combined_blind_card.touch_state == PlayingCard.TouchState.REVEALED)
+	assert(combined_blind_card.face_up)
+	combined_blind_card.touch_position = (
+		combined_touch_position
+		+ Vector2(combined_blind_card.touch_drag_distance + 1.0, 0.0)
+	)
+	await create_timer(combined_blind_card.touch_drag_delay + 0.02).timeout
+	assert(combined_blind_card.touch_drag_is_ready())
+	combined_blind_card.prepare_external_drag(true)
+	combined_blind_card.begin_external_drag(
+		combined_blind_card.touch_position, true
+	)
+	assert(combined_blind_card.touch_state == PlayingCard.TouchState.DRAGGING)
+	assert(combined_blind_card.face_up)
+	await create_timer(combined_blind_card.touch_drag_face_hold + 0.16).timeout
+	assert(not combined_blind_card.face_up)
+	combined_blind_card.finish_drag()
+	combined_blind_card.face_up = false
+	combined_blind_card._update_appearance()
+	combined_blind_card.begin_touch_interaction(4, combined_touch_position)
+	assert(combined_blind_card.face_up)
+	combined_blind_card.finish_touch_tap()
+	assert(combined_blind_card.face_up)
+	await create_timer(combined_blind_card.touch_tap_hide_delay + 0.16).timeout
 	assert(not combined_blind_card.face_up)
 	combined_blind_card._on_mouse_entered()
 	await create_timer(0.16).timeout

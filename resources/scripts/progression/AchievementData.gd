@@ -7,6 +7,10 @@ extends Resource
 @export var category: StringName
 @export var hidden := false
 @export var reward_font: StringName
+## Seuil principal du succes lorsqu'il peut etre pilote par les donnees.
+@export var required_count := 0
+## Duree maximale stricte, en secondes. Zero desactive la contrainte de temps.
+@export var time_limit_seconds := 0.0
 
 
 func _init(

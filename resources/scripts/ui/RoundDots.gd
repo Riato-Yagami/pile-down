@@ -1,8 +1,12 @@
 class_name RoundDots
 extends Control
 
-const FULL_TEXTURE := preload("res://resources/sprites/hand/life/life-point-full.png")
-const EMPTY_TEXTURE := preload("res://resources/sprites/hand/life/life-point-empty.png")
+const FULL_TEXTURE := preload(
+	"res://resources/materials/textures/hand/life/life-point-full.tres"
+)
+const EMPTY_TEXTURE := preload(
+	"res://resources/materials/textures/hand/life/life-point-empty.tres"
+)
 const REINFORCED_SHADER := """
 shader_type canvas_item;
 uniform vec4 gold_color : source_color = vec4(0.851, 0.647, 0.078, 1.0);

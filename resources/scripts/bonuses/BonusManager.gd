@@ -12,7 +12,9 @@ const ACTIVE_BADGE_SCENE := preload(
 )
 
 @onready var selection: BonusSelection = %BonusSelection
-@onready var active_bar: HBoxContainer = %ActiveBonusBar
+@onready var active_bar: GridContainer = %ActiveBonusBar
+@onready var active_description: PanelContainer = %ActiveBonusDescription
+@onready var active_description_text: Label = %ActiveBonusDescriptionText
 
 var rng := RandomNumberGenerator.new()
 var definitions: Array[BonusData] = BonusRegistry.create_all()
@@ -31,6 +33,7 @@ var _debug_forced_activation_bonus_ids: Array[StringName] = []
 
 func _ready() -> void:
 	rng.randomize()
+	active_description.visible = false
 
 
 func begin_run() -> void:
@@ -66,7 +69,7 @@ func offer_if_due(completed_round_number: int) -> bool:
 	active_bar.visible = false
 	var chosen_index := await selection.present(choices, levels)
 	_add_or_upgrade(choices[chosen_index])
-	active_bar.visible = Debug.is_enabled()
+	active_bar.visible = not active.is_empty()
 	return true
 
 
@@ -81,7 +84,7 @@ func offer_bonus_choice(round_number: int, _choice_index := 0) -> bool:
 	active_bar.visible = false
 	var chosen_index := await selection.present(choices, levels)
 	_add_or_upgrade(choices[chosen_index])
-	active_bar.visible = Debug.is_enabled()
+	active_bar.visible = not active.is_empty()
 	return true
 
 
@@ -329,14 +332,15 @@ func choose_rule_to_break(rules: Array[SpecialRuleData]) -> int:
 		return -1
 	active_bar.visible = false
 	var chosen_index := await selection.present_rules(rules)
-	active_bar.visible = true
+	active_bar.visible = not active.is_empty()
 	return chosen_index
 
 
 func _refresh_bar() -> void:
 	if active_bar == null:
 		return
-	active_bar.visible = Debug.is_enabled()
+	var unique_acronyms := ActiveBonusBadge.build_unique_acronyms(definitions)
+	active_bar.visible = not active.is_empty()
 	for child in active_bar.get_children():
 		child.queue_free()
 	for owned_value in active.values():
@@ -345,6 +349,76 @@ func _refresh_bar() -> void:
 		badge.setup(
 			owned.data,
 			owned.level,
-			owned.data.id == &"safety_net" and not safety_net_available
+			owned.data.id == &"safety_net" and not safety_net_available,
+			unique_acronyms.get(owned.data.id, "")
 		)
+		badge.description_requested.connect(_show_active_description.bind(badge))
+		badge.description_hidden.connect(_hide_active_description.bind(badge))
 		active_bar.add_child(badge)
+
+
+func _show_active_description(description: String, badge: ActiveBonusBadge) -> void:
+	active_description.set_meta(&"source_badge", badge)
+	active_description_text.text = description
+	active_description.modulate.a = 0.0
+	active_description.visible = true
+	var desired_size := _size_active_description()
+	await get_tree().process_frame
+	if active_description.get_meta(&"source_badge", null) != badge:
+		return
+	# The old editor-layout minimum is now invalidated, so the panel can shrink.
+	active_description.size = desired_size
+	_position_active_description(badge)
+	active_description.modulate.a = 1.0
+
+
+func _size_active_description() -> Vector2:
+	var viewport_size := active_description.get_viewport_rect().size
+	var font := active_description_text.get_theme_font(&"font")
+	var font_size := active_description_text.get_theme_font_size(&"font_size")
+	var text_width := font.get_string_size(
+		active_description_text.text,
+		HORIZONTAL_ALIGNMENT_LEFT,
+		-1,
+		font_size
+	).x
+	var box_width := clampf(text_width + 20.0, 80.0, viewport_size.x * 0.5)
+	var panel_style := active_description.get_theme_stylebox(&"panel")
+	var panel_margins := panel_style.get_minimum_size()
+	var content_width := maxf(box_width - panel_margins.x, 1.0)
+	var wrapped_text_size := font.get_multiline_string_size(
+		active_description_text.text,
+		HORIZONTAL_ALIGNMENT_CENTER,
+		content_width,
+		font_size
+	)
+	var box_height := maxf(wrapped_text_size.y + panel_margins.y, 24.0)
+	active_description.set_anchor(SIDE_LEFT, 0.0)
+	active_description.set_anchor(SIDE_TOP, 0.0)
+	active_description.set_anchor(SIDE_RIGHT, 0.0)
+	active_description.set_anchor(SIDE_BOTTOM, 0.0)
+	active_description_text.custom_minimum_size = Vector2(
+		content_width,
+		wrapped_text_size.y
+	)
+	var desired_size := Vector2(box_width, box_height)
+	active_description.size = desired_size
+	return desired_size
+
+
+func _position_active_description(badge: ActiveBonusBadge) -> void:
+	var viewport_size := active_description.get_viewport_rect().size
+	var box_size := active_description.size
+	var badge_rect := badge.get_global_rect()
+	var desired_x := badge_rect.get_center().x - box_size.x * 0.5
+	var box_x := clampf(desired_x, 4.0, viewport_size.x - box_size.x - 4.0)
+	var box_y := maxf(badge_rect.position.y - box_size.y - 4.0, 4.0)
+	active_description.global_position = Vector2(box_x, box_y)
+
+
+func _hide_active_description(badge: ActiveBonusBadge) -> void:
+	if active_description.get_meta(&"source_badge", null) != badge:
+		return
+	active_description.visible = false
+	active_description.modulate.a = 1.0
+	active_description.remove_meta(&"source_badge")

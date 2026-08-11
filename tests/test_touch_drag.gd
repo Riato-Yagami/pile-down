@@ -58,8 +58,8 @@ func _run() -> void:
 	press.pressed = true
 	game._input(press)
 	assert(game.selected_card == card)
-	assert(card.dragging)
-	assert(card.drag_target.is_equal_approx(touch_position))
+	assert(not card.dragging)
+	assert(card.touch_state == PlayingCard.TouchState.REVEALED)
 	assert(game._card_touch_index == 0)
 
 	var drag := InputEventScreenDrag.new()
@@ -67,11 +67,15 @@ func _run() -> void:
 	drag.position = touch_position + Vector2(0.0, 48.0)
 	var position_before_drag := card.get_global_rect().abs().get_center()
 	game._input(drag)
+	assert(not card.dragging)
+	await create_timer(card.touch_drag_delay + 0.03).timeout
+	assert(card.dragging)
+	assert(card.touch_state == PlayingCard.TouchState.DRAGGING)
 	assert(card.drag_target.is_equal_approx(drag.position))
-	for frame in 5:
+	for frame in 3:
 		await process_frame
 	var position_after_drag := card.get_global_rect().abs().get_center()
-	assert(position_after_drag.y > position_before_drag.y)
+	assert(position_after_drag.distance_to(position_before_drag) > 5.0)
 
 	var release := InputEventScreenTouch.new()
 	release.index = 0

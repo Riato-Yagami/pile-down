@@ -26,7 +26,10 @@ func _process(delta: float) -> void:
 	# A touch does not move Godot's mouse position when mouse emulation is off.
 	# Keep the last finger position instead of replacing it with a stale cursor.
 	if not _using_touch_input:
-		target_position = get_viewport().get_mouse_position()
+		var viewport := get_viewport()
+		if viewport == null:
+			return
+		target_position = viewport.get_mouse_position()
 	light_position = light_position.lerp(target_position, minf(delta * 14.0, 1.0)).round()
 	_update_shader()
 
@@ -44,7 +47,10 @@ func close_in() -> void:
 	_kill_transition()
 	visible = true
 	_using_touch_input = false
-	target_position = get_viewport().get_mouse_position()
+	var viewport := get_viewport()
+	target_position = (
+		viewport.get_mouse_position() if viewport != null else size * 0.5
+	)
 	light_position = target_position
 	animated_radius = _fully_open_radius()
 	_update_shader()

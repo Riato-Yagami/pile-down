@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://b0jp2dhqo74ir"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_klhdd"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1_klhdd"]
 
 [resource]
 script = ExtResource("1_klhdd")
@@ -9,3 +9,4 @@ title = "DOWN THE LINE"
 description = "Use every possible Double Down placement in one activation."
 category = &"COMBOS"
 reward_font = &"pixeled"
+required_count = 3

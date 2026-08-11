@@ -14,6 +14,12 @@ enum DragState {
 	LOCKED_OUT,
 }
 
+enum TouchState {
+	IDLE,
+	REVEALED,
+	DRAGGING,
+}
+
 enum ForcedReturnReason {
 	NONE,
 	LAVA,
@@ -27,6 +33,11 @@ const Settings := preload("res://resources/scripts/settings/settings.gd")
 const HIDDEN_TILE_COLOR := Color("b8b8b8")
 
 @export var card_value := 0
+@export_group("Touch Interaction")
+@export_range(0.0, 0.5, 0.01) var touch_drag_delay := 0.12
+@export_range(1.0, 32.0, 1.0) var touch_drag_distance := 8.0
+@export_range(0.0, 0.5, 0.01) var touch_drag_face_hold := 0.18
+@export_range(0.0, 1.0, 0.05) var touch_tap_hide_delay := 0.35
 
 @onready var visual_root: Control = %VisualRoot
 @onready var face: Button = %Face
@@ -80,6 +91,12 @@ var _value_font_size := 20
 var _value_font_offset := Vector2.ZERO
 var _override_hidden_tile_with_font := false
 var _tile_colors: Array[Color] = Settings.TILE_COLORS.slice(0, 10)
+var touch_state := TouchState.IDLE
+var touch_index := -1
+var touch_origin := Vector2.ZERO
+var touch_position := Vector2.ZERO
+var _touch_started_at_msec := 0
+var _touch_generation := 0
 
 
 func _ready() -> void:
@@ -179,6 +196,7 @@ func setup(
 	hover_reveal_enabled = hover_reveal
 	roman_numerals_enabled = use_roman_numerals
 	set_selectable(can_select)
+	reset_touch_interaction()
 	face_up = not hover_reveal_enabled
 	colorblind_enabled = (
 		round_modifiers != null and round_modifiers.colorblind_enabled
@@ -232,12 +250,13 @@ func set_selected_visual(is_selected: bool) -> void:
 	_selected = is_selected
 
 
-func begin_external_drag(pointer_position: Vector2) -> void:
+func begin_external_drag(pointer_position: Vector2, preserve_touch_face := false) -> void:
 	_materialize_entrance_for_drag()
 	wandering_enabled = false
 	if (
 		round_modifiers != null
 		and round_modifiers.blind_delivery_enabled
+		and not preserve_touch_face
 	):
 		# Mouse press can arrive before the hover flip tween has completed.
 		# Hide synchronously so the value is never visible during the drag.
@@ -251,6 +270,8 @@ func begin_external_drag(pointer_position: Vector2) -> void:
 	_drag_starting = false
 	drag_collision_area.monitorable = true
 	drag_state = DragState.DRAGGING
+	if touch_index >= 0:
+		touch_state = TouchState.DRAGGING
 	drag_origin = global_position
 	placement_confirmed = false
 	if not has_stable_hand_position:
@@ -261,6 +282,8 @@ func begin_external_drag(pointer_position: Vector2) -> void:
 	_pointer_offset = get_global_transform().affine_inverse() * pointer_position
 	z_index = 100
 	_animate_pose(Vector2(1.06, 1.06), -2.0)
+	if preserve_touch_face and _blind_delivery_enabled():
+		_schedule_blind_delivery_touch_hide()
 	if (
 		round_modifiers != null
 		and round_modifiers.hot_potatoes_enabled
@@ -271,7 +294,7 @@ func begin_external_drag(pointer_position: Vector2) -> void:
 		drag_timer_ring.visible = true
 
 
-func prepare_external_drag() -> void:
+func prepare_external_drag(preserve_touch_face := false) -> void:
 	_drag_starting = true
 	# A hover flip animates this Control's local Y position. It must finish
 	# before reparenting, otherwise its cleanup writes the old hand-local Y
@@ -280,6 +303,7 @@ func prepare_external_drag() -> void:
 	if (
 		round_modifiers != null
 		and round_modifiers.blind_delivery_enabled
+		and not preserve_touch_face
 	):
 		hidden_by_blind_delivery = true
 		face_up = false
@@ -302,10 +326,82 @@ func update_touch_drag(pointer_position: Vector2) -> void:
 	_last_target = pointer_position
 
 
+func begin_touch_interaction(index: int, pointer_position: Vector2) -> void:
+	_touch_generation += 1
+	touch_index = index
+	touch_origin = pointer_position
+	touch_position = pointer_position
+	_touch_started_at_msec = Time.get_ticks_msec()
+	touch_state = TouchState.REVEALED
+	if hover_reveal_enabled:
+		_cancel_flip_animation()
+		face_up = true
+		hidden_by_blind_delivery = false
+		_update_appearance()
+
+
+func update_touch_interaction(pointer_position: Vector2) -> void:
+	touch_position = pointer_position
+
+
+func touch_drag_is_ready() -> bool:
+	if touch_state != TouchState.REVEALED:
+		return false
+	var elapsed := (Time.get_ticks_msec() - _touch_started_at_msec) / 1000.0
+	return (
+		elapsed >= touch_drag_delay
+		and touch_origin.distance_to(touch_position) >= touch_drag_distance
+	)
+
+
+func finish_touch_tap() -> void:
+	var should_hide := hover_reveal_enabled and touch_state == TouchState.REVEALED
+	reset_touch_interaction()
+	if not should_hide:
+		return
+	var generation := _touch_generation
+	get_tree().create_timer(touch_tap_hide_delay).timeout.connect(func() -> void:
+		if (
+			generation == _touch_generation
+			and not dragging
+			and touch_state == TouchState.IDLE
+		):
+			flip_down(true)
+	)
+
+
+func reset_touch_interaction() -> void:
+	_touch_generation += 1
+	touch_state = TouchState.IDLE
+	touch_index = -1
+	touch_origin = Vector2.ZERO
+	touch_position = Vector2.ZERO
+	_touch_started_at_msec = 0
+
+
+func _blind_delivery_enabled() -> bool:
+	return round_modifiers != null and round_modifiers.blind_delivery_enabled
+
+
+func _schedule_blind_delivery_touch_hide() -> void:
+	var generation := _touch_generation
+	get_tree().create_timer(touch_drag_face_hold).timeout.connect(func() -> void:
+		if (
+			generation != _touch_generation
+			or not dragging
+			or touch_state != TouchState.DRAGGING
+		):
+			return
+		hidden_by_blind_delivery = true
+		flip_down(true)
+	)
+
+
 func finish_drag() -> void:
 	dragging = false
 	drag_collision_area.monitorable = false
 	drag_state = DragState.IDLE
+	reset_touch_interaction()
 	cancel_drag_timers()
 	z_index = 0
 	rotation = 0.0

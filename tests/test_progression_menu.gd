@@ -23,7 +23,7 @@ func _run() -> void:
 	assert(menu.get_available_fonts().size() == FontRegistry.create_all().size())
 	assert(menu.get_available_palettes().size() == 35)
 	var palette_ids: Array[StringName] = []
-	assert(AchievementRegistry.create_all().size() == 30)
+	assert(AchievementRegistry.create_all().size() == 31)
 	for achievement in AchievementRegistry.create_all():
 		assert(achievement.resource_path.begins_with("res://resources/achievements/"))
 	for font_data in menu.get_available_fonts():
@@ -48,13 +48,19 @@ func _run() -> void:
 	assert(scroll_visual.selector.texture == menu.VERTICAL_SCROLL_SELECTOR_TEXTURE)
 	assert(scroll_visual.selector.size == Vector2(6.0, 14.0))
 	assert(is_equal_approx(scroll_visual.selector.position.x, 1.0))
-	menu.editor_preview_tile_count = 12
-	assert(menu.editor_preview_tile_count == 10)
-	menu.editor_preview_tile_count = 9
-	assert(menu.editor_preview_font != null)
-	assert(menu.editor_preview_font.id == &"press_start_2p")
-	assert(menu.editor_preview_palette != null)
-	assert(menu.editor_preview_palette.id == &"arcade")
+	menu.font_catalog.editor_preview_tile_count = 12
+	assert(menu.font_catalog.editor_preview_tile_count == 10)
+	menu.font_catalog.editor_preview_tile_count = 9
+	assert(menu.font_catalog.editor_preview_font != null)
+	assert(menu.font_catalog.editor_preview_font.id == &"press_start_2p")
+	assert(menu.font_catalog.editor_preview_palette != null)
+	assert(menu.font_catalog.editor_preview_palette.id == &"arcade")
+	assert(menu.get_default_font().id == &"vcr")
+	assert(menu.get_default_palette().id == &"arcade")
+	menu._copy_notification_placement()
+	for badge in menu._page_badges:
+		assert(badge.position == Vector2(0.0, 21.0))
+		assert(badge.size == Vector2(10.0, 11.0))
 	assert(menu.get_achievements().size() == AchievementRegistry.create_all().size())
 	var tiny5 := menu.get_available_fonts()[1]
 	assert(tiny5.required_achievement != null)
@@ -90,6 +96,8 @@ func _run() -> void:
 				"progress": "Rounds completed: 6 / 10",
 				"progress_current": 6,
 				"progress_target": 10,
+				"reward_font": &"eight_bit_hud",
+				"new": true,
 			},
 			{
 				"title": "PERFECT ROUND",
@@ -260,10 +268,15 @@ func _run() -> void:
 	menu._show_page(ProgressionMenu.Page.ACHIEVEMENTS)
 	assert((menu.content.get_child(0) as Label).text == "ROUNDS")
 	var progressive_achievement := menu.content.get_child(1) as VBoxContainer
-	assert(not (progressive_achievement.get_child(1) as Label).text.contains("6 / 10"))
+	var progressive_heading := progressive_achievement.get_child(0) as HBoxContainer
+	assert((progressive_heading.get_node("NewLabel") as Label).text == "NEW")
+	var achievement_details := progressive_achievement.get_child(1) as Label
+	assert(not achievement_details.text.contains("6 / 10"))
+	assert(achievement_details.text.contains("Reward: 8-BIT HUD"))
 	var achievement_bar := progressive_achievement.get_child(2) as NinePatchRect
 	assert(achievement_bar.texture == menu.PROGRESS_BAR_TEXTURE)
-	assert(achievement_bar.custom_minimum_size.x == 80.0)
+	assert(achievement_bar.custom_minimum_size.x == 0.0)
+	assert(achievement_bar.size_flags_horizontal == Control.SIZE_EXPAND_FILL)
 	assert(achievement_bar.patch_margin_left == 2)
 	assert(achievement_bar.patch_margin_right == 2)
 	assert(achievement_bar.tooltip_text == "Rounds completed: 6 / 10")

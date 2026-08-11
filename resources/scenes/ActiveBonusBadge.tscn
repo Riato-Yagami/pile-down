@@ -1,13 +1,54 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://brvd6qt0cdmx4"]
 
-[ext_resource type="Script" path="res://resources/scripts/bonuses/ActiveBonusBadge.gd" id="1"]
+[ext_resource type="Script" uid="uid://cqkxxcnbi0f2l" path="res://resources/scripts/bonuses/ActiveBonusBadge.gd" id="1"]
+[ext_resource type="FontFile" uid="uid://camkk5gui0ppq" path="res://resources/fonts/Tiny5-Regular.ttf" id="1_d61n3"]
+[ext_resource type="Texture2D" path="res://resources/materials/textures/ui/buttons/button.tres" id="2_button"]
 
-[node name="ActiveBonusBadge" type="Label"]
-custom_minimum_size = Vector2(18, 14)
+[sub_resource type="StyleBoxTexture" id="BadgeBox"]
+content_margin_left = 2.0
+content_margin_top = 1.0
+content_margin_right = 2.0
+content_margin_bottom = 1.0
+texture = ExtResource("2_button")
+texture_margin_left = 6.0
+texture_margin_top = 5.0
+texture_margin_right = 6.0
+texture_margin_bottom = 5.0
+
+[sub_resource type="Shader" id="BadgeHighlightShader"]
+code = "shader_type canvas_item;
+
+uniform vec4 base_color : source_color = vec4(0.302, 0.51, 0.761, 1.0);
+uniform vec4 highlight_color : source_color = vec4(0.427, 0.655, 0.898, 1.0);
+
+void fragment() {
+	vec4 texture_color = texture(TEXTURE, UV);
+	vec4 source = texture_color * COLOR;
+	bool base_fill_pixel = (
+		texture_color.a > 0.0
+		&& distance(texture_color.rgb, base_color.rgb) < 0.01
+	);
+	if (base_fill_pixel) {
+		source.rgb = highlight_color.rgb;
+	}
+	COLOR = source;
+}"
+
+[sub_resource type="ShaderMaterial" id="BadgeHighlightMaterial"]
+resource_local_to_scene = true
+shader = SubResource("BadgeHighlightShader")
+shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
+shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+
+[node name="ActiveBonusBadge" type="Label" unique_id=1443630549]
+custom_minimum_size = Vector2(20, 16)
 mouse_filter = 1
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_font_sizes/font_size = 10
-text = ""
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("1_d61n3")
+theme_override_font_sizes/font_size = 8
+theme_override_styles/normal = SubResource("BadgeBox")
+text = "NT III"
 horizontal_alignment = 1
 vertical_alignment = 1
 script = ExtResource("1")
+highlight_material = SubResource("BadgeHighlightMaterial")

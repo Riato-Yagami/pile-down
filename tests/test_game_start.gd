@@ -66,6 +66,22 @@ func _run() -> void:
 	assert(game.start_value >= DifficultySettings.START_CARD_VALUE)
 	assert(game.turn_time <= DifficultySettings.START_TURN_TIME)
 	assert(game.turn_time >= DifficultySettings.MIN_TURN_TIME)
+	assert(
+		game.get_extra_difficulty_chance(2)
+		> game.get_extra_difficulty_chance(20)
+	)
+	assert(
+		game.get_no_difficulty_change_chance(2)
+		< game.get_no_difficulty_change_chance(20)
+	)
+	assert(is_zero_approx(game.get_extra_difficulty_chance(100)))
+	assert(is_equal_approx(
+		game.get_no_difficulty_change_chance(100),
+		DifficultySettings.MAX_NO_DIFFICULTY_CHANCE
+	))
+	game.difficulty_droughts[&"pile"] = DifficultySettings.MAX_STAT_DROUGHT
+	assert(game._has_due_difficulty_guarantee())
+	game.difficulty_droughts[&"pile"] = 0
 	var expected_reliefs := 0
 	for progression_round in range(2, configured_start + 1):
 		if game._is_special_tier_relief_round(progression_round):

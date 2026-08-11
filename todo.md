@@ -103,12 +103,12 @@
 
 ### Achievements et polices
 
-- [ ] Instancier et animer les popups en haut de l'écran.
-- [ ] Mettre les popups en attente pendant les annonces importantes.
-- [ ] Garantir que les popups ne cachent jamais le timer.
-- [ ] Construire l'interface de sélection des polices.
-- [ ] Vérifier visuellement chaque police dans toutes les tuiles.
-- [ ] Ajuster les textes trop larges selon la police.
+- [x] Instancier et animer les popups en haut de l'écran.
+- [x] Mettre les popups en attente pendant les annonces importantes.
+- [x] Garantir que les popups ne cachent jamais le timer.
+- [x] Construire l'interface de sélection des polices.
+- [x] Vérifier visuellement chaque police dans toutes les tuiles.
+- [x] Ajuster les textes trop larges selon la police.
 - [ ] Brancher toutes les options debug associées.
 
 ### Lucky Hand
@@ -149,34 +149,31 @@
 
 ### Écran de fin
 
-- [ ] Afficher les nouvelles découvertes après le score.
-- [ ] Présenter uniquement les catégories non vides.
-- [ ] Afficher successivement bonus, règles, achievements, polices et checkpoints.
-- [ ] Permettre de passer ces notifications.
-- [ ] Conserver l'écran actuel lorsqu'il n'y a rien de nouveau.
+- [x] Afficher les nouvelles découvertes après le score.
+- [x] Présenter uniquement les catégories non vides.
+- [x] Afficher successivement bonus, règles, achievements, polices et checkpoints.
+- [x] Permettre de passer ces notifications.
+- [x] Conserver l'écran actuel lorsqu'il n'y a rien de nouveau.
 
 ### Peek-a-Card tactile
 
-- [ ] Ajouter les états tactiles `IDLE`, `REVEALED` et `DRAGGING`.
-- [ ] Révéler la carte au premier contact.
-- [ ] Attendre un court délai avant le drag.
-- [ ] Déclencher le drag après la distance minimale.
-- [ ] Continuer le drag sans demander un second tap.
-- [ ] Maintenir brièvement la face visible après le début du drag.
-- [ ] Masquer la carte avec un délai après un simple tap.
-- [ ] Ajouter le comportement spécifique à Blind Delivery.
-- [ ] Ajouter les tests tactiles automatisés.
+- [x] Ajouter les états tactiles `IDLE`, `REVEALED` et `DRAGGING`.
+- [x] Révéler la carte au premier contact.
+- [x] Attendre un court délai avant le drag.
+- [x] Déclencher le drag après la distance minimale.
+- [x] Continuer le drag sans demander un second tap.
+- [x] Maintenir brièvement la face visible après le début du drag.
+- [x] Masquer la carte avec un délai après un simple tap.
+- [x] Ajouter le comportement spécifique à Blind Delivery.
+- [x] Ajouter les tests tactiles automatisés.
 
 ### Effets visuels
 
-- [ ] Ajouter un halo pixelisé pendant le drag.
-- [ ] Utiliser un halo neutre en mode Colorblind.
-- [ ] Réduire le halo des cartes Bring a Friend.
-- [ ] Créer un pool léger de poussière.
-- [ ] Déplacer la poussière au passage des cartes.
-- [ ] Appliquer une impulsion réduite au passage des piles mobiles.
-- [ ] Ajouter une option pour désactiver la poussière.
-- [ ] Brancher le mode debug de visualisation de la poussière.
+- [x] Créer un pool léger de poussière.
+- [x] Déplacer la poussière au passage des cartes.
+- [x] Appliquer une impulsion réduite au passage des piles mobiles.
+- [x] Ajouter une option pour désactiver la poussière.
+- [x] Brancher le mode debug de visualisation de la poussière.
 
 ### Tests
 

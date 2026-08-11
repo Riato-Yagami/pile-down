@@ -97,7 +97,7 @@ func _on_difficulty_stat_changed(stat_id: StringName, new_value: Variant) -> voi
 			):
 				unlock(&"minimum_timer")
 		&"start_value":
-			if int(new_value) >= 9:
+			if int(new_value) >= _required_count(&"start_value_nine", 9):
 				unlock(&"start_value_nine")
 
 
@@ -114,7 +114,9 @@ func _on_round_completed(
 			and not summary.uses_endless_progression
 		)
 	)
-	if summary.completed_rounds >= 10:
+	if summary.completed_rounds >= _required_count(&"first_round", 1):
+		unlock(&"first_round")
+	if summary.completed_rounds >= _required_count(&"complete_10_rounds", 10):
 		unlock(&"complete_10_rounds")
 	if normal_progression and summary.completed_rounds >= half_rounds:
 		unlock(&"complete_half_game")
@@ -130,7 +132,7 @@ func _on_round_completed(
 			unlock(&"endless_max_plus_one")
 		if completed_round >= Difficulty.MAX_ROUNDS * 2:
 			unlock(&"endless_double_max")
-	if rule_ids.size() >= 2:
+	if rule_ids.size() >= _required_count(&"beat_two_special_rules", 2):
 		unlock(&"beat_two_special_rules")
 	if rule_ids.size() >= Difficulty.MAX_COMBINED_RULES:
 		unlock(&"beat_max_special_rules")
@@ -157,7 +159,7 @@ func _on_bonus_acquired(
 	var data := _find_bonus(bonus_id)
 	if data != null and data.max_level > 1 and level >= data.max_level:
 		unlock(&"one_bonus_max_level")
-	if active_levels.size() >= 5:
+	if active_levels.size() >= _required_count(&"five_different_bonuses", 5):
 		unlock(&"five_different_bonuses")
 	if _contains_all_enabled(discovered_ids, Difficulty.ENABLED_BONUSES):
 		unlock(&"all_bonuses_discovered")
@@ -204,17 +206,22 @@ func _on_hand_combo_resolved(summary: HandComboSummary) -> void:
 	):
 		unlock(&"three_bonus_combo")
 	if (
-		int(summary.bonus_levels.get(&"double_down", 0)) >= 3
-		and summary.double_down_count == 3
+		int(summary.bonus_levels.get(&"double_down", 0))
+		>= _required_count(&"double_down_full_activation", 3)
+		and summary.double_down_count
+		== _required_count(&"double_down_full_activation", 3)
 	):
 		unlock(&"double_down_full_activation")
 	if (
-		int(summary.bonus_levels.get(&"deja_vu", 0)) >= 3
-		and summary.deja_vu_count == 3
+		int(summary.bonus_levels.get(&"deja_vu", 0))
+		>= _required_count(&"deja_vu_full_activation", 3)
+		and summary.deja_vu_count
+		== _required_count(&"deja_vu_full_activation", 3)
 	):
 		unlock(&"deja_vu_full_activation")
 	if (
-		int(summary.bonus_levels.get(&"bring_a_friend", 0)) >= 3
+		int(summary.bonus_levels.get(&"bring_a_friend", 0))
+		>= _required_count(&"bring_a_friend_full_activation", 3)
 		and summary.bring_a_friend_total_companions > 0
 		and summary.bring_a_friend_count
 		== summary.bring_a_friend_total_companions
@@ -237,12 +244,38 @@ func _on_run_completed(summary: RunSummary) -> void:
 func _evaluate_speedrun_milestones(summary: RunSummary) -> void:
 	if summary.mode != RunSummary.Mode.NORMAL or summary.started_from_checkpoint:
 		return
-	if summary.completed_rounds >= 10 and summary.run_time_seconds < 300.0:
+	if (
+		summary.completed_rounds >= _required_count(&"speedrun_10_rounds", 10)
+		and summary.run_time_seconds
+		< _time_limit_seconds(&"speedrun_10_rounds", 300.0)
+	):
 		unlock(&"speedrun_10_rounds")
-	if summary.completed_rounds >= 20 and summary.run_time_seconds < 600.0:
+	if (
+		summary.completed_rounds >= _required_count(&"speedrun_20_rounds", 20)
+		and summary.run_time_seconds
+		< _time_limit_seconds(&"speedrun_20_rounds", 600.0)
+	):
 		unlock(&"speedrun_20_rounds")
-	if summary.normal_game_completed and summary.run_time_seconds < 1800.0:
+	if (
+		summary.normal_game_completed
+		and summary.run_time_seconds
+		< _time_limit_seconds(&"speedrun_full_game", 1800.0)
+	):
 		unlock(&"speedrun_full_game")
+
+
+func _required_count(id: StringName, fallback: int) -> int:
+	var data := find(id)
+	if data == null or data.required_count <= 0:
+		return fallback
+	return data.required_count
+
+
+func _time_limit_seconds(id: StringName, fallback: float) -> float:
+	var data := find(id)
+	if data == null or data.time_limit_seconds <= 0.0:
+		return fallback
+	return data.time_limit_seconds
 
 
 static func normal_checkpoint_ids() -> Array[int]:

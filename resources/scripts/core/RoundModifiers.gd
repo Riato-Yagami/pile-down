@@ -26,6 +26,7 @@ var sudden_death_enabled := false
 var grace_period_enabled := false
 var colorblind_enabled := false
 var floor_is_lava_enabled := false
+var pixelation_enabled := false
 
 var maximum_mistakes_override := -1
 var grace_period_duration := 0.0
@@ -55,6 +56,7 @@ func reset() -> void:
 	grace_period_enabled = false
 	colorblind_enabled = false
 	floor_is_lava_enabled = false
+	pixelation_enabled = false
 	maximum_mistakes_override = -1
 	grace_period_duration = 0.0
 	hot_potato_drag_duration = 0.0

@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://nmjhggixs5sp"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_qvnl2"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1_qvnl2"]
 
 [resource]
 script = ExtResource("1_qvnl2")
@@ -10,3 +10,4 @@ description = "Complete the game in under 30 minutes."
 category = &"SPEEDRUN"
 hidden = true
 reward_font = &"digital_disco_thin"
+time_limit_seconds = 1800.0

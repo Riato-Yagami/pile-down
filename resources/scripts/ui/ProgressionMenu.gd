@@ -8,13 +8,13 @@ signal palette_selected(palette_id: StringName)
 signal page_viewed(page: int)
 
 const CHECKED_TEXTURE := preload(
-	"res://resources/sprites/ui/check/checked.png"
+	"res://resources/materials/textures/ui/check/checked.tres"
 )
 const UNCHECKED_TEXTURE := preload(
-	"res://resources/sprites/ui/check/unchecked.png"
+	"res://resources/materials/textures/ui/check/unchecked.tres"
 )
 const SELECTED_TEXTURE := preload(
-	"res://resources/sprites/ui/check/selected.png"
+	"res://resources/materials/textures/ui/check/selected.tres"
 )
 const HighlightButtonScript := preload(
 	"res://resources/scripts/ui/HighlightButton.gd"
@@ -26,13 +26,13 @@ const TILE_BACK_TEXTURE := preload(
 	"res://resources/sprites/tiles/tile-back.png"
 )
 const PROGRESS_BAR_TEXTURE := preload(
-	"res://resources/sprites/ui/panels/bar.png"
+	"res://resources/materials/textures/ui/panels/bar.tres"
 )
 const VERTICAL_SCROLL_TRACK_TEXTURE := preload(
-	"res://resources/sprites/ui/buttons/slide-bar/vertical/bar.png"
+	"res://resources/materials/textures/ui/buttons/slide-bar/vertical/bar.tres"
 )
 const VERTICAL_SCROLL_SELECTOR_TEXTURE := preload(
-	"res://resources/sprites/ui/buttons/slide-bar/vertical/selector.png"
+	"res://resources/materials/textures/ui/buttons/slide-bar/vertical/selector.tres"
 )
 const ProgressionCompletionBarScript := preload(
 	"res://resources/scripts/ui/ProgressionCompletionBar.gd"
@@ -60,6 +60,9 @@ void fragment() {
 const Settings := preload("res://resources/scripts/settings/settings.gd")
 const SELECTED_COLOR := Color("4d82c2")
 const LOCKED_ENTRY_OPACITY := 0.55
+# The main icon is 23x25. Panel buttons are 30x34 and center that same texture,
+# so its notification needs the rounded (3.5, 4.5) centering compensation.
+const PANEL_NOTIFICATION_RECT := Rect2(0.0, 21.0, 10.0, 11.0)
 # Kept for a possible later reactivation of the LOCKED/BOTH/UNLOCKED control.
 const SHOW_LOCK_FILTER := false
 const GOLD_STATUS_SHADER := """
@@ -86,36 +89,18 @@ enum ProgressFilter {
 	LOCKED,
 }
 
-@export_category("Editor Preview")
-@export var editor_preview_enabled := true:
-	set(value):
-		editor_preview_enabled = value
-		_refresh_editor_preview()
-@export_enum("Highscores", "Achievements", "Bonuses", "Special Rules", "Fonts")
-var editor_preview_page: int = Page.HIGHSCORES:
-	set(value):
-		editor_preview_page = clampi(value, Page.HIGHSCORES, Page.FONTS)
-		_refresh_editor_preview()
-@export_range(1, 10, 1) var editor_preview_tile_count := 9:
-	set(value):
-		editor_preview_tile_count = clampi(value, 1, 10)
-		_refresh_editor_preview()
-@export var editor_preview_font: FontData:
-	set(value):
-		_disconnect_preview_resource(editor_preview_font)
-		editor_preview_font = value
-		_connect_preview_resource(editor_preview_font)
-		_refresh_editor_preview()
-@export var editor_preview_palette: ColorPaletteData:
-	set(value):
-		_disconnect_preview_resource(editor_preview_palette)
-		editor_preview_palette = value
-		_connect_preview_resource(editor_preview_palette)
-		_refresh_editor_preview()
-@export_tool_button("Reload Editor Preview", "Reload")
-var reload_editor_preview_action: Callable = _reload_editor_preview
 @export_tool_button("Copy Notification Placement", "Duplicate")
 var copy_notification_placement_action: Callable = _copy_notification_placement
+
+@export_category("Menu Editor Preview")
+@export var show_editor_preview := false:
+	set(value):
+		show_editor_preview = value
+		if Engine.is_editor_hint() and is_node_ready():
+			if show_editor_preview:
+				_show_editor_preview()
+			else:
+				visible = false
 
 @export_category("Entry Style")
 @export var entry_heading_font: Font:
@@ -194,7 +179,17 @@ func get_available_palettes() -> Array[ColorPaletteData]:
 	return font_catalog.available_palettes
 
 
+func get_default_font() -> FontData:
+	return font_catalog.default_font
+
+
+func get_default_palette() -> ColorPaletteData:
+	return font_catalog.default_palette
+
+
 func _ready() -> void:
+	if not font_catalog.editor_preview_changed.is_connected(_refresh_editor_preview):
+		font_catalog.editor_preview_changed.connect(_refresh_editor_preview)
 	_style_vertical_scrollbars()
 	lock_filter.set_mode(ProgressFilter.BOTH)
 	lock_filter.mode_changed.connect(_on_filter_selected)
@@ -205,7 +200,7 @@ func _ready() -> void:
 	_setup_page_badges()
 	if not %BackButton.pressed.is_connected(close):
 		%BackButton.pressed.connect(close)
-	if Engine.is_editor_hint():
+	if Engine.is_editor_hint() and show_editor_preview:
 		_show_editor_preview()
 	else:
 		visible = false
@@ -234,29 +229,15 @@ func _style_vertical_scrollbars() -> void:
 
 
 func _refresh_editor_preview() -> void:
-	if Engine.is_editor_hint() and is_node_ready():
+	if Engine.is_editor_hint() and is_node_ready() and show_editor_preview:
 		call_deferred("_show_editor_preview")
-
-
-func _reload_editor_preview() -> void:
-	_refresh_editor_preview()
-
-
-func _connect_preview_resource(resource: Resource) -> void:
-	if resource != null and not resource.changed.is_connected(_refresh_editor_preview):
-		resource.changed.connect(_refresh_editor_preview)
-
-
-func _disconnect_preview_resource(resource: Resource) -> void:
-	if resource != null and resource.changed.is_connected(_refresh_editor_preview):
-		resource.changed.disconnect(_refresh_editor_preview)
 
 
 func _show_editor_preview() -> void:
 	if not Engine.is_editor_hint() or not is_node_ready():
 		return
-	visible = editor_preview_enabled
-	if not editor_preview_enabled:
+	visible = show_editor_preview and font_catalog.editor_preview_enabled
+	if not visible:
 		return
 	var preview_font: Font = entry_heading_font
 	var preview_font_size := 20
@@ -265,31 +246,33 @@ func _show_editor_preview() -> void:
 	var preview_title_font_size := 20
 	var preview_override_hidden_tile := false
 	var preview_font_title := "CURRENT FONT"
-	if editor_preview_font != null:
-		preview_font = editor_preview_font.font
-		preview_font_size = editor_preview_font.tile_font_size
-		preview_font_offset = editor_preview_font.tile_font_offset
-		preview_title_font_offset = editor_preview_font.title_font_offset
+	if font_catalog.editor_preview_font != null:
+		var editor_font := font_catalog.editor_preview_font
+		preview_font = editor_font.font
+		preview_font_size = editor_font.tile_font_size
+		preview_font_offset = editor_font.tile_font_offset
+		preview_title_font_offset = editor_font.title_font_offset
 		preview_title_font_size = (
-			editor_preview_font.title_font_size
-			if editor_preview_font.title_font_size > 0
-			else editor_preview_font.tile_font_size
+			editor_font.title_font_size
+			if editor_font.title_font_size > 0
+			else editor_font.tile_font_size
 		)
 		preview_override_hidden_tile = (
-			editor_preview_font.override_hidden_tile_with_font
+			editor_font.override_hidden_tile_with_font
 		)
-		preview_font_title = editor_preview_font.display_name
+		preview_font_title = editor_font.display_name
 	var preview_palettes: Array[Dictionary] = []
-	if editor_preview_palette != null:
+	if font_catalog.editor_preview_palette != null:
+		var editor_palette := font_catalog.editor_preview_palette
 		preview_palettes.append({
-			"id": editor_preview_palette.id,
-			"title": editor_preview_palette.display_name,
-			"colors": editor_preview_palette.colors.duplicate(),
+			"id": editor_palette.id,
+			"title": editor_palette.display_name,
+			"colors": editor_palette.colors.duplicate(),
 			"unlocked": true,
 			"selected": true,
 		})
 	_snapshot = {
-		"max_discovered_tile_value": editor_preview_tile_count - 1,
+		"max_discovered_tile_value": font_catalog.editor_preview_tile_count - 1,
 		"highscores": [
 			{"title": "CLASSIC", "value": "12 ROUNDS LEFT"},
 			{"title": "ENDLESS", "value": "ROUND 24"},
@@ -341,8 +324,10 @@ func _show_editor_preview() -> void:
 			{"id": &"locked", "title": "LOCKED FONT", "unlocked": false, "selected": false},
 		],
 		"palettes": preview_palettes,
+		"unread_progression_pages": [Page.ACHIEVEMENTS],
 	}
-	_show_page(editor_preview_page)
+	_refresh_page_badges(_snapshot["unread_progression_pages"])
+	_show_page(font_catalog.editor_preview_page)
 
 
 func open(snapshot: Dictionary) -> void:
@@ -362,16 +347,15 @@ func _setup_page_badges() -> void:
 		page_buttons[index].add_child(badge)
 		_page_badges.append(badge)
 	for badge in _page_badges:
-		badge.visible = Engine.is_editor_hint()
+		badge.visible = false
 
 
 func _copy_notification_placement() -> void:
 	if not is_node_ready() or _page_badges.is_empty():
 		return
-	var template := _page_badges[Page.HIGHSCORES]
-	for index in range(1, _page_badges.size()):
-		_page_badges[index].position = template.position
-		_page_badges[index].size = template.size
+	for badge in _page_badges:
+		badge.position = PANEL_NOTIFICATION_RECT.position
+		badge.size = PANEL_NOTIFICATION_RECT.size
 
 
 func _refresh_page_badges(unread_pages: Array) -> void:
@@ -467,7 +451,7 @@ func _populate_achievements() -> void:
 			)
 		var reward_font := StringName(achievement.get("reward_font", &""))
 		if reward_font != &"" and (unlocked or not hidden):
-			description += "\nReward: %s" % String(reward_font)
+			description += "\nReward: %s" % _font_display_name(reward_font)
 		var unlock_date := str(achievement.get("date", ""))
 		if unlocked and not unlock_date.is_empty():
 			description += "\nUnlocked: %s" % unlock_date
@@ -480,8 +464,16 @@ func _populate_achievements() -> void:
 			"",
 			false,
 			progress_ratio,
-			progress if shows_progress else ""
+			progress if shows_progress else "",
+			bool(achievement.get("new", false))
 		)
+
+
+func _font_display_name(font_id: StringName) -> String:
+	for font_data in font_catalog.available_fonts:
+		if font_data != null and font_data.id == font_id:
+			return font_data.display_name
+	return String(font_id)
 
 
 func _add_category_heading(category: String) -> void:
@@ -519,7 +511,10 @@ func _populate_discoveries(entries_value: Variant) -> void:
 			CHECKED_TEXTURE if obtained and max_level <= 1 else UNCHECKED_TEXTURE,
 			not obtained,
 			level_text,
-			obtained and max_level > 1 and highest_level >= max_level
+			obtained and max_level > 1 and highest_level >= max_level,
+			-1.0,
+			"",
+			bool(entry.get("new", false))
 		)
 
 
@@ -804,12 +799,23 @@ func _add_entry(
 	status_text := "",
 	gold_status := false,
 	progress_ratio := -1.0,
-	progress_tooltip := ""
+	progress_tooltip := "",
+	is_new := false
 ) -> void:
 	var entry := VBoxContainer.new()
 	entry.add_theme_constant_override("separation", 1)
 	var heading_row := HBoxContainer.new()
 	heading_row.add_theme_constant_override("separation", 3)
+	if is_new:
+		var new_label := Label.new()
+		new_label.name = "NewLabel"
+		new_label.text = "NEW"
+		new_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		if entry_details_font != null:
+			new_label.add_theme_font_override("font", entry_details_font)
+		new_label.add_theme_font_size_override("font_size", entry_details_font_size)
+		new_label.add_theme_color_override("font_color", SELECTED_COLOR)
+		heading_row.add_child(new_label)
 	if status_texture != null:
 		var status_icon := TextureRect.new()
 		status_icon.custom_minimum_size = Vector2(12.0, 13.0)
@@ -892,8 +898,8 @@ func _add_progress_bar(
 ) -> void:
 	var bar := NinePatchRect.new()
 	bar.set_script(ProgressionCompletionBarScript)
-	bar.custom_minimum_size = Vector2(80.0, 6.0)
-	bar.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	bar.custom_minimum_size.y = 6.0
+	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bar.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	bar.texture = PROGRESS_BAR_TEXTURE
 	bar.patch_margin_left = 2

@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://my77xpqqf7a2"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_4eeop"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1_4eeop"]
 
 [resource]
 script = ExtResource("1_4eeop")
@@ -9,3 +9,4 @@ title = "BUILD COMPLETE"
 description = "Own five different bonuses in one run."
 category = &"BONUSES & RULES"
 reward_font = &"boiled_pasta"
+required_count = 5

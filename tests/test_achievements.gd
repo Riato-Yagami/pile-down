@@ -26,13 +26,13 @@ func _new_manager() -> AchievementManager:
 
 func _test_registry_and_feasibility() -> void:
 	var declared := AchievementRegistry.create_declared()
-	assert(declared.size() == 30)
+	assert(declared.size() == 31)
 	var ids: Array[StringName] = []
 	for data in declared:
 		assert(not ids.has(data.id))
 		assert(not data.category.is_empty())
 		ids.append(data.id)
-	assert(AchievementRegistry.create_all().size() == 30)
+	assert(AchievementRegistry.create_all().size() == 31)
 	assert(AchievementRegistry.create_all().any(
 		func(data: AchievementData) -> bool:
 			return data.id == &"all_bonuses_maxed_once"
@@ -70,6 +70,10 @@ func _test_rounds_lives_checkpoints_and_speedruns() -> void:
 	var no_rules: Array[StringName] = []
 	var summary := RunSummary.new()
 	summary.mode = RunSummary.Mode.NORMAL
+	summary.completed_rounds = 1
+	manager.round_completed.emit(summary, 1, no_rules)
+	assert(manager.unlocked.has(&"first_round"))
+	manager.unlocked.clear()
 	summary.completed_rounds = half - 1
 	summary.run_time_seconds = 10.0
 	manager.round_completed.emit(summary, half - 1, no_rules)
@@ -104,6 +108,13 @@ func _test_rounds_lives_checkpoints_and_speedruns() -> void:
 	summary.run_time_seconds = 299.999
 	manager.round_completed.emit(summary, 10, no_rules)
 	assert(manager.unlocked.has(&"speedrun_10_rounds"))
+	var speedrun_data := manager.find(&"speedrun_10_rounds")
+	speedrun_data.time_limit_seconds = 250.0
+	manager.unlocked.clear()
+	summary.run_time_seconds = 275.0
+	manager.round_completed.emit(summary, 10, no_rules)
+	assert(not manager.unlocked.has(&"speedrun_10_rounds"))
+	speedrun_data.time_limit_seconds = 300.0
 	manager.unlocked.clear()
 	summary.completed_rounds = 20
 	summary.run_time_seconds = 600.0

@@ -18,6 +18,15 @@ func _run() -> void:
 	assert(game.debug_help.text.contains("[L] LOSE ONE LIFE"))
 	assert(game.debug_help.text.contains("[K] DIE NOW"))
 	assert(game.debug_help.text.contains("[U] TOGGLE UNLOCK EVERYTHING"))
+	assert(game.debug_help.text.contains("[P] DIFFICULTY PROBABILITIES: OFF"))
+	var probability_event := InputEventKey.new()
+	probability_event.keycode = KEY_P
+	probability_event.pressed = true
+	assert(game._handle_debug_shortcut(probability_event))
+	assert(game.debug_probability_panel.visible)
+	assert(game.debug_probability_panel.text.contains("NO CHANGE"))
+	assert(game.debug_probability_panel.text.contains("EXTRA STAT"))
+	assert(game.debug_help.text.contains("[P] DIFFICULTY PROBABILITIES: ON"))
 	var section_event := InputEventKey.new()
 	section_event.keycode = KEY_S
 	section_event.pressed = true

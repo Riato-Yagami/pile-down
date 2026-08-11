@@ -3,6 +3,7 @@ extends SceneTree
 const PileScene := preload("res://resources/scenes/Pile.tscn")
 const CardScene := preload("res://resources/scenes/Card.tscn")
 const FlashlightScene := preload("res://resources/scenes/FlashlightOverlay.tscn")
+const PixelationScene := preload("res://resources/scenes/PixelationOverlay.tscn")
 const TinyRegularFont := preload("res://resources/fonts/Tiny5-Regular.ttf")
 
 
@@ -160,6 +161,32 @@ func _run() -> void:
 	assert(is_equal_approx(flashlight.animated_radius, flashlight.flashlight_radius))
 	await flashlight.open_out()
 	assert(not flashlight.visible)
+	stage.remove_child(flashlight)
+	flashlight.visible = true
+	# Deferred/process callbacks must tolerate the overlay being detached while
+	# a scene is reloaded.
+	flashlight._process(0.016)
+	stage.add_child(flashlight)
+	flashlight.visible = false
+
+	var pixelation := PixelationScene.instantiate()
+	stage.add_child(pixelation)
+	pixelation.transition_duration = 0.05
+	pixelation.show_pixelation(DifficultySettings.PIXELATION_PIXEL_SIZE)
+	assert(pixelation.visible)
+	assert(is_equal_approx(pixelation.pixel_size, 1.0))
+	await create_timer(0.08).timeout
+	assert(is_equal_approx(
+		pixelation.pixel_size,
+		DifficultySettings.PIXELATION_PIXEL_SIZE
+	))
+	assert(is_equal_approx(
+		(pixelation.material as ShaderMaterial).get_shader_parameter("pixel_size"),
+		DifficultySettings.PIXELATION_PIXEL_SIZE
+	))
+	await pixelation.hide_pixelation()
+	assert(not pixelation.visible)
+	assert(is_equal_approx(pixelation.pixel_size, 1.0))
 
 	stage.queue_free()
 	print("Special Rule effect tests passed.")

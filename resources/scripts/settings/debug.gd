@@ -28,14 +28,15 @@ const SHOW_DUST_DEBUG := false
 # shell_game, merry_go_stack, free_range_cards, pile_up, lights_out,
 # peek_a_card, stack_attack, roman_holiday, musical_stacks, sticky_fingers,
 # hot_potatoes, blind_delivery, mirror_match, sudden_death, grace_period,
-# colorblind, floor_is_lava, shaking_piles, wavy_baby.
+# colorblind, floor_is_lava, pixelated, shaking_piles, wavy_baby.
 const LOCK_SPECIAL_RULES: Array[StringName] = [
-	#"merry_go_stack",
+	"pixelated",
 	#"wavy_baby",
 	#"shaking_piles",
 	#"lights_out",
 	#"shell_game",
 	#"musical_stacks"
+	#"pixelated"
 ]
 
 # Bonuses granted at the start of every debug run. A positive value locks the
@@ -47,10 +48,11 @@ const LOCK_SPECIAL_RULES: Array[StringName] = [
 # lucky_hand, time_bank, slow_start, spare_life, safety_net, clean_slate,
 # bring_a_friend, pile_mover, double_down, deja_vu, rule_breaker, adaptation.
 const LOCK_BONUSES: Dictionary = {
-	#&"lucky_hand": 3,
-	#&"bring_a_friend": 3,
+	&"lucky_hand": 1,
+	&"bring_a_friend": 3,
+	&"pile_mover":1,
 	#&"double_down": 3,
-	#&"deja_vu":3,
+	&"deja_vu":2,
 }
 
 static var _runtime_god_mode := GOD_MODE
@@ -95,6 +97,10 @@ static func unlock_endless_mode() -> bool:
 
 static func unlock_all_checkpoints() -> bool:
 	return ENABLED and (UNLOCK_ALL_CHECKPOINTS or _runtime_unlock_everything)
+
+
+static func is_dust_debug_visible() -> bool:
+	return ENABLED and SHOW_DUST_DEBUG
 
 
 static func start_from_checkpoint() -> int:

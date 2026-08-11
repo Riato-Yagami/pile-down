@@ -14,6 +14,7 @@ const Debug := preload("res://resources/scripts/settings/debug.gd")
 
 @onready var announcement: SpecialRuleAnnouncement = %SpecialRuleAnnouncement
 @onready var flashlight_overlay: FlashlightOverlay = %FlashlightOverlay
+@onready var pixelation_overlay = %PixelationOverlay
 @onready var moving_pile_pattern: MovingPilePattern = %MovingPilePattern
 
 var active_rules: Array[SpecialRuleData] = []
@@ -146,6 +147,13 @@ func begin_round(round_number: int) -> RoundModifiers:
 			flashlight_overlay.close_in()
 		else:
 			flashlight_overlay.visible = false
+	if pixelation_overlay != null:
+		if modifiers.pixelation_enabled:
+			pixelation_overlay.show_pixelation(
+				Difficulty.PIXELATION_PIXEL_SIZE * adaptation_intensity
+			)
+		else:
+			pixelation_overlay.hide_pixelation(false)
 	if (
 		not active_rules.is_empty()
 		and announcement != null
@@ -261,6 +269,8 @@ func end_round(piles_to_clean: Array[MemoryPile] = []) -> void:
 			pile.disable_regeneration()
 	if flashlight_overlay != null and flashlight_overlay.visible:
 		await flashlight_overlay.open_out()
+	if pixelation_overlay != null:
+		await pixelation_overlay.hide_pixelation()
 	for index in range(active_rules.size() - 1, -1, -1):
 		active_rules[index].deactivate(context)
 	modifiers.reset()

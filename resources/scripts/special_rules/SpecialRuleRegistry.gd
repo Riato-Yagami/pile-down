@@ -109,6 +109,15 @@ static func create_all_rules() -> Array[SpecialRuleData]:
 			0.8,
 			10
 		),
+		RuleData.new(
+			&"pixelated",
+			"PIXELATED",
+			"Now with fewer pixels.",
+			[],
+			[],
+			0.8,
+			8
+		),
 	]
 	var effect_descriptions := {
 		&"shell_game": "Piles swap positions after each correct card.",
@@ -130,6 +139,7 @@ static func create_all_rules() -> Array[SpecialRuleData]:
 		&"grace_period": "The timer disappears shortly before it expires.",
 		&"colorblind": "Cards and piles lose their identifying colors.",
 		&"floor_is_lava": "Cards touching the lava zone return to your hand.",
+		&"pixelated": "The entire gameplay screen is rendered in large pixel blocks.",
 	}
 	for rule in rules:
 		rule.description = str(effect_descriptions.get(rule.id, ""))

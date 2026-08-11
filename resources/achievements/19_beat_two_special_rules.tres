@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://bumqsrlqmyudh"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_e7lgq"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1_e7lgq"]
 
 [resource]
 script = ExtResource("1_e7lgq")
@@ -9,3 +9,4 @@ title = "DOUBLE TROUBLE"
 description = "Beat a round with at least two Special Rules."
 category = &"BONUSES & RULES"
 reward_font = &"pixel_western"
+required_count = 2

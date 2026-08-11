@@ -92,6 +92,8 @@ func activate(context: RoundContext) -> void:
 			context.modifiers.colorblind_enabled = true
 		&"floor_is_lava":
 			context.modifiers.floor_is_lava_enabled = true
+		&"pixelated":
+			context.modifiers.pixelation_enabled = true
 
 
 func deactivate(context: RoundContext) -> void:
@@ -143,3 +145,5 @@ func deactivate(context: RoundContext) -> void:
 			context.modifiers.colorblind_enabled = false
 		&"floor_is_lava":
 			context.modifiers.floor_is_lava_enabled = false
+		&"pixelated":
+			context.modifiers.pixelation_enabled = false

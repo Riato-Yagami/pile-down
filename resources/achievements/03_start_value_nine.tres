@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://e4a00uoq56l5"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_gv1ed"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1_gv1ed"]
 
 [resource]
 script = ExtResource("1_gv1ed")
@@ -9,3 +9,4 @@ title = "CLOUD NINE"
 description = "Reach a starting tile value of 9."
 category = &"STATS"
 reward_font = &"digitalix"
+required_count = 9

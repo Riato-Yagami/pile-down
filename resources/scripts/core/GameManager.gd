@@ -16,9 +16,19 @@ const PILE_SCENE := preload("res://resources/scenes/Pile.tscn")
 const HIGHLIGHT_BUTTON_SCRIPT := preload(
 	"res://resources/scripts/ui/HighlightButton.gd"
 )
-const SELECTED_TEXTURE := preload("res://resources/sprites/ui/check/selected.png")
-const UNCHECKED_TEXTURE := preload("res://resources/sprites/ui/check/unchecked.png")
+const DustPoolScript := preload("res://resources/scripts/effects/DustPool.gd")
+const SELECTED_TEXTURE := preload(
+	"res://resources/materials/textures/ui/check/selected.tres"
+)
+const UNCHECKED_TEXTURE := preload(
+	"res://resources/materials/textures/ui/check/unchecked.tres"
+)
 const Difficulty := preload("res://resources/scripts/settings/difficulty.gd")
+const PROGRESSION_BONUS_ICON := "res://resources/materials/icons/bonuses.tres"
+const PROGRESSION_RULE_ICON := "res://resources/materials/icons/rules.tres"
+const PROGRESSION_ACHIEVEMENT_ICON := (
+	"res://resources/materials/icons/trophies.tres"
+)
 const Debug := preload("res://resources/scripts/settings/debug.gd")
 const MUSIC_BUS_NAME := &"Music"
 const SFX_BUS_NAME := &"SFX"
@@ -64,7 +74,12 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var transient_label: Label = %TransientLabel
 @onready var achievement_popup: Control = %AchievementPopup
 @onready var achievement_popup_title: Label = %AchievementPopupTitle
+@onready var bonus_selection: BonusSelection = %BonusSelection
 @onready var skippable_sequence: SkippableSequence = %SkippableSequence
+@onready var quit_popup: Control = %QuitPopup
+@onready var quit_continue_button: Button = %QuitContinueButton
+@onready var quit_restart_button: Button = %QuitRestartButton
+@onready var quit_run_button: Button = %QuitRunButton
 @onready var overlay: Control = %Overlay
 @onready var overlay_title: RichTextLabel = %OverlayTitle
 @onready var overlay_details: RichTextLabel = %OverlayDetails
@@ -104,7 +119,11 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var save_options: Control = %SaveOptions
 @onready var links_options: Control = %LinksOptions
 @onready var adaptive_resolution_button: Button = %AdaptiveResolutionButton
-@onready var locked_resolution_button: Button = %LockedResolutionButton
+@onready var dust_effects_button: Button = %DustEffectsButton
+@onready var background_enabled_button: Button = %BackgroundEnabledButton
+@onready var relief_lighting: ReliefLighting = %ReliefLighting
+@onready var uniform_relief_light: DirectionalLight2D = %UniformReliefLight
+@onready var pointer_relief_light: PointLight2D = %PointerReliefLight
 @onready var achievement_notifications_button: Button = %AchievementNotificationsButton
 @onready var timer_display_button: Button = %TimerDisplayButton
 @onready var itch_link_button: Button = %ItchLinkButton
@@ -121,6 +140,7 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var music_volume_slider: HSlider = %MusicVolumeSlider
 @onready var sound_volume_slider: HSlider = %SoundVolumeSlider
 @onready var debug_help: Label = %DebugHelp
+@onready var debug_probability_panel: Label = %DebugProbabilityPanel
 @onready var soft_audio: SoftAudio = %SoftAudio
 @onready var music_manager: MusicManager = %MusicManager
 @onready var special_rule_manager: SpecialRuleManager = %SpecialRuleManager
@@ -131,7 +151,7 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var flashlight_overlay: FlashlightOverlay = %FlashlightOverlay
 @onready var lava_layer: Control = %LavaLayer
 @onready var redraw_button: RedrawBonusButton = %RedrawButton
-@onready var active_bonus_bar: HBoxContainer = %ActiveBonusBar
+@onready var active_bonus_bar: GridContainer = %ActiveBonusBar
 @onready var back_button: TextureHighlightButton = %BackButton
 @onready var overlay_back_button: TextureButton = %OverlayBackButton
 
@@ -187,6 +207,7 @@ var newly_unlocked_achievements: Array[StringName] = []
 var newly_unlocked_fonts: Array[StringName] = []
 var newly_unlocked_checkpoints: Array[int] = []
 var unread_progression_pages: Array[int] = []
+var unread_progression_items: Dictionary = {}
 var achievement_manager := AchievementManager.new()
 var font_manager := FontManager.new()
 var palette_manager := ColorPaletteManager.new()
@@ -214,6 +235,7 @@ var round_modifiers := RoundModifiers.new()
 var tier_reliefs_applied := 0
 var _debug_action_in_progress := false
 var _debug_help_enabled := true
+var _debug_probability_visible := false
 var _hand_cycle_generation := 0
 var _pending_interactive_generation := -1
 var _regeneration_hand_check_pending := false
@@ -221,11 +243,18 @@ var _music_volume_before_mute := 100.0
 var _sound_volume_before_mute := 100.0
 var _options_page := OPTION_GAMEPLAY
 var _adaptive_resolution := false
+var _dust_enabled := true
+var _background_enabled := true
+var dust_pool: DustPool
+var deformable_stripe_background: DeformableStripeBackground
+var _dust_previous_positions: Dictionary = {}
 var _achievement_notifications_enabled := true
 var _global_timer_enabled := true
 var _achievement_notification_queue: Array[AchievementData] = []
 var _achievement_notification_active := false
 var _achievement_popup_tween: Tween
+var _important_announcement_sources: Dictionary = {}
+var _achievement_resume_delay_pending := false
 var _timer_display_hidden := false
 var _timer_visibility_tween: Tween
 var _gameplay_back_cursor_update_queued := false
@@ -247,6 +276,34 @@ var _card_touch_index := -1
 @export var gameplay_pop_duration := 0.24
 @export var gameplay_pop_stagger := 0.1
 @export var gameplay_pop_scale := 0.82
+@export_category("Difficulty Announcement")
+@export_range(0.0, 0.75, 0.05, "suffix:s")
+var extra_difficulty_reveal_delay := 0.2
+@export_range(0.0, 2.0, 0.05, "suffix:s")
+var extra_difficulty_hold_duration := 0.45
+@export_category("Visual Effects")
+@export var dust_particles_per_10000_pixels := 6.0:
+	set(value):
+		dust_particles_per_10000_pixels = maxf(value, 0.0)
+		_rebuild_dust_pool()
+@export var dust_viscosity := 2.2:
+	set(value):
+		dust_viscosity = maxf(value, 0.0)
+		if is_instance_valid(dust_pool):
+			dust_pool.viscosity = dust_viscosity
+@export var dust_particle_color := Color("77746d"):
+	set(value):
+		dust_particle_color = value
+		if is_instance_valid(dust_pool):
+			dust_pool.particle_color = dust_particle_color
+			dust_pool.queue_redraw()
+@export var dust_mouse_influence := 0.12
+@export var dust_dragged_tile_influence := 1.0
+@export var dust_automatic_tile_influence := 0.28
+@export var dust_completion_wave_influence := 0.85
+@export_category("Achievement Popup")
+@export_range(0.0, 2.0, 0.05, "suffix:s")
+var achievement_popup_after_announcements_delay := 0.25
 @export_category("Editor Display")
 @export var start_adaptive_in_editor := false
 
@@ -259,6 +316,12 @@ func _ready() -> void:
 	font_manager.definitions = progression_menu.get_available_fonts()
 	palette_manager.definitions = progression_menu.get_available_palettes()
 	achievement_manager.definitions = progression_menu.get_achievements()
+	var default_font := progression_menu.get_default_font()
+	if default_font != null:
+		font_manager.selected_font = default_font.id
+	var default_palette := progression_menu.get_default_palette()
+	if default_palette != null:
+		palette_manager.selected_palette = default_palette.id
 	achievement_manager.load_progress()
 	font_manager.load_progress()
 	palette_manager.load_progress()
@@ -298,8 +361,9 @@ func _ready() -> void:
 	graphics_options_button.pressed.connect(_show_options_page.bind(OPTION_GRAPHICS))
 	save_options_button.pressed.connect(_show_options_page.bind(OPTION_SAVE))
 	links_options_button.pressed.connect(_show_options_page.bind(OPTION_LINKS))
-	adaptive_resolution_button.pressed.connect(_set_adaptive_resolution.bind(true))
-	locked_resolution_button.pressed.connect(_set_adaptive_resolution.bind(false))
+	adaptive_resolution_button.pressed.connect(_toggle_adaptive_resolution)
+	dust_effects_button.pressed.connect(_toggle_dust_effects)
+	background_enabled_button.pressed.connect(_toggle_background)
 	achievement_notifications_button.pressed.connect(
 		_toggle_achievement_notifications
 	)
@@ -327,14 +391,24 @@ func _ready() -> void:
 	special_rule_manager.rules_selected.connect(_on_special_rules_selected)
 	bonus_manager.bonus_selected.connect(_on_bonus_selected)
 	bonus_manager.bonuses_seen.connect(_on_bonuses_seen)
+	bonus_selection.visibility_changed.connect(_on_bonus_selection_visibility_changed)
 	redraw_button.pressed.connect(_on_redraw_pressed)
-	back_button.pressed.connect(_return_to_menu)
+	back_button.pressed.connect(_open_quit_popup)
+	quit_continue_button.pressed.connect(_close_quit_popup)
+	quit_restart_button.pressed.connect(_restart_from_quit_popup)
+	quit_run_button.pressed.connect(_return_to_menu)
 	overlay_back_button.pressed.connect(_return_to_menu)
-	resized.connect(_layout_piles)
+	# The game control stays at 256x320 in adaptive mode, so its `resized`
+	# signal does not track changes to the expanded viewport.
+	get_viewport().size_changed.connect(_resize_dust_distribution)
+	# CenterContainer can reposition the fixed game after the background setup.
+	# Track that layout pass as well so Artwork remains in viewport space.
+	item_rect_changed.connect(_resize_dust_distribution)
 	_setup_gameplay_options()
 	_setup_audio_controls()
 	_style_option_list_buttons()
 	_setup_graphics_options()
+	_setup_dust_pool()
 	_setup_save_dialogs()
 	_load_high_score()
 	_apply_debug_unlock_everything()
@@ -380,7 +454,8 @@ func _style_option_list_buttons() -> void:
 		achievement_notifications_button,
 		timer_display_button,
 		adaptive_resolution_button,
-		locked_resolution_button,
+		dust_effects_button,
+		background_enabled_button,
 		export_save_button,
 		import_save_button,
 		delete_save_button,
@@ -388,6 +463,7 @@ func _style_option_list_buttons() -> void:
 		kofi_link_button,
 	]
 	for button in buttons:
+		button.add_theme_stylebox_override(&"focus", StyleBoxEmpty.new())
 		for color_name in [&"font_color", &"font_disabled_color"]:
 			button.add_theme_color_override(color_name, OPTION_TEXT_COLOR)
 		for color_name in [
@@ -451,9 +527,115 @@ func _setup_graphics_options() -> void:
 	_adaptive_resolution = bool(config.get_value(
 		"graphics", "adaptive_resolution", false
 	))
+	_dust_enabled = bool(config.get_value("graphics", "dust_effects", true))
+	_background_enabled = bool(config.get_value(
+		"graphics", "background_enabled", true
+	))
 	if OS.has_feature("editor") and start_adaptive_in_editor:
 		_adaptive_resolution = true
 	_apply_resolution_mode()
+	_refresh_dust_option()
+	_refresh_background_option()
+	# Lighting is intentionally dormant for now. Keep its nodes and normal-map
+	# pipeline available so the feature can return without rebuilding assets.
+	relief_lighting.set_enabled(false)
+
+
+func _setup_dust_pool() -> void:
+	deformable_stripe_background = $Artwork as DeformableStripeBackground
+	deformable_stripe_background.setup()
+	deformable_stripe_background.enabled = _dust_enabled
+	deformable_stripe_background.visible = _background_enabled
+	var pool_control := Control.new()
+	pool_control.set_script(DustPoolScript)
+	dust_pool = pool_control as DustPool
+	dust_pool.name = "DustPool"
+	# Artwork is ordered before Gameplay: bands and dust stay behind every tile.
+	$Artwork.add_child(dust_pool)
+	dust_pool.setup(
+		_dust_particle_target_count(),
+		Debug.is_dust_debug_visible(),
+		dust_viscosity,
+		dust_particle_color
+	)
+	# Keep the particle simulation available while only the continuous background
+	# deformation is presented in the current visual direction.
+	dust_pool.particles_visible = false
+	dust_pool.enabled = _dust_enabled
+
+
+func _resize_dust_distribution() -> void:
+	if is_instance_valid(relief_lighting):
+		var viewport_size := get_viewport_rect().size
+		relief_lighting.follow_pointer(viewport_size * 0.5, viewport_size)
+	if is_instance_valid(deformable_stripe_background):
+		deformable_stripe_background.call_deferred("resize_to_viewport")
+	if is_instance_valid(dust_pool):
+		dust_pool.call_deferred(
+			"resize_to_viewport", _dust_particle_target_count()
+		)
+
+
+func _dust_particle_target_count() -> int:
+	var viewport_area := get_viewport_rect().size.x * get_viewport_rect().size.y
+	return maxi(roundi(
+		dust_particles_per_10000_pixels * viewport_area / 10000.0
+	), 0)
+
+
+func _rebuild_dust_pool() -> void:
+	if not is_instance_valid(dust_pool):
+		return
+	dust_pool.setup(
+		_dust_particle_target_count(),
+		Debug.is_dust_debug_visible(),
+		dust_viscosity,
+		dust_particle_color
+	)
+	dust_pool.enabled = _dust_enabled
+
+
+func _toggle_dust_effects() -> void:
+	_dust_enabled = not _dust_enabled
+	var config := ConfigFile.new()
+	config.load(AUDIO_CONFIG_PATH)
+	config.set_value("graphics", "dust_effects", _dust_enabled)
+	config.save(AUDIO_CONFIG_PATH)
+	if is_instance_valid(dust_pool):
+		dust_pool.enabled = _dust_enabled
+	if is_instance_valid(deformable_stripe_background):
+		deformable_stripe_background.enabled = _dust_enabled
+	_refresh_dust_option()
+
+
+func _refresh_dust_option() -> void:
+	dust_effects_button.modulate = Color.WHITE
+	dust_effects_button.icon = (
+		SELECTED_TEXTURE if _dust_enabled else UNCHECKED_TEXTURE
+	)
+
+
+func _toggle_background() -> void:
+	_background_enabled = not _background_enabled
+	var config := ConfigFile.new()
+	config.load(AUDIO_CONFIG_PATH)
+	config.set_value("graphics", "background_enabled", _background_enabled)
+	config.save(AUDIO_CONFIG_PATH)
+	if is_instance_valid(deformable_stripe_background):
+		deformable_stripe_background.visible = _background_enabled
+	_refresh_background_option()
+
+
+func _refresh_background_option() -> void:
+	background_enabled_button.modulate = Color.WHITE
+	background_enabled_button.icon = (
+		SELECTED_TEXTURE if _background_enabled else UNCHECKED_TEXTURE
+	)
+	dust_effects_button.visible = _background_enabled
+
+
+func _is_background_deformation_active() -> bool:
+	return _background_enabled and _dust_enabled
 
 
 func _toggle_debug_unlock_everything() -> void:
@@ -497,6 +679,10 @@ func _set_adaptive_resolution(adaptive: bool) -> void:
 	_apply_resolution_mode()
 
 
+func _toggle_adaptive_resolution() -> void:
+	_set_adaptive_resolution(not _adaptive_resolution)
+
+
 func _apply_resolution_mode() -> void:
 	var window := get_window()
 	# Both modes keep the same logical viewport so sprites retain their scale.
@@ -509,12 +695,8 @@ func _apply_resolution_mode() -> void:
 		else Window.CONTENT_SCALE_ASPECT_KEEP
 	)
 	adaptive_resolution_button.modulate = Color.WHITE
-	locked_resolution_button.modulate = Color.WHITE
 	adaptive_resolution_button.icon = (
 		SELECTED_TEXTURE if _adaptive_resolution else UNCHECKED_TEXTURE
-	)
-	locked_resolution_button.icon = (
-		UNCHECKED_TEXTURE if _adaptive_resolution else SELECTED_TEXTURE
 	)
 
 
@@ -586,7 +768,7 @@ func _apply_bus_volume(bus_name: StringName, linear_volume: float) -> void:
 	AudioServer.set_bus_mute(bus_index, is_zero_approx(linear_volume))
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	debug_help.visible = (
 		Debug.is_enabled()
 		and _debug_help_enabled
@@ -601,11 +783,17 @@ func _process(_delta: float) -> void:
 		and not checkpoint_menu.visible
 		and not progression_menu.visible
 	)
+	debug_probability_panel.visible = (
+		Debug.is_enabled() and _debug_probability_visible
+	)
+	if debug_probability_panel.visible:
+		debug_probability_panel.text = _difficulty_probability_debug_text()
 	if run_time_label.visible:
 		run_time_label.text = _format_duration(_total_time_milliseconds())
 	if _regeneration_hand_check_pending and not input_locked:
 		_regeneration_hand_check_pending = false
 		_reroll_unplayable_hand()
+	_try_start_touch_card_drag()
 	if (
 		moving_pile != null
 		and is_instance_valid(moving_pile)
@@ -614,6 +802,8 @@ func _process(_delta: float) -> void:
 		moving_pile.global_position = (
 			_moving_pile_pointer - _moving_pile_offset
 		).round()
+	_emit_motion_dust(delta)
+	_update_tile_background_weight()
 	if selected_card == null or not is_instance_valid(selected_card) or not selected_card.dragging:
 		return
 	for companion in drag_companions:
@@ -639,7 +829,104 @@ func _process(_delta: float) -> void:
 		soft_audio.play_tone(520.0, 0.035, 0.035)
 
 
+func _emit_motion_dust(delta: float) -> void:
+	if not is_instance_valid(dust_pool) or delta <= 0.0:
+		return
+	var moving_items: Array[Dictionary] = []
+	if selected_card != null and is_instance_valid(selected_card) and selected_card.dragging:
+		moving_items.append({
+			"control": selected_card,
+			"impulse": dust_dragged_tile_influence,
+		})
+		for companion in drag_companions:
+			if is_instance_valid(companion):
+				moving_items.append({
+					"control": companion,
+					"impulse": dust_dragged_tile_influence * 0.42,
+				})
+	if round_modifiers.moving_pile_pattern:
+		for pile in piles:
+			if is_instance_valid(pile) and pile.visible and not pile.completed:
+				moving_items.append({
+					"control": pile,
+					"impulse": dust_automatic_tile_influence,
+				})
+	elif moving_pile != null and is_instance_valid(moving_pile):
+		moving_items.append({
+			"control": moving_pile,
+			"impulse": dust_dragged_tile_influence,
+		})
+	var active_ids: Array[int] = []
+	for item in moving_items:
+		var control := item["control"] as Control
+		var center := control.get_global_rect().abs().get_center()
+		var instance_id := control.get_instance_id()
+		active_ids.append(instance_id)
+		if _dust_previous_positions.has(instance_id):
+			var previous := _dust_previous_positions[instance_id] as Vector2
+			if previous.distance_squared_to(center) >= 4.0:
+				dust_pool.emit_motion(
+					center,
+					(center - previous) / delta,
+					float(item["impulse"])
+				)
+				deformable_stripe_background.emit_motion(
+					center,
+					(center - previous) / delta,
+					float(item["impulse"])
+				)
+		_dust_previous_positions[instance_id] = center
+	for tracked_id in _dust_previous_positions.keys():
+		if not active_ids.has(int(tracked_id)):
+			_dust_previous_positions.erase(tracked_id)
+
+
+func _update_tile_background_weight() -> void:
+	if not is_instance_valid(deformable_stripe_background):
+		return
+	var weighted_tiles: Array[Control] = []
+	var strength_multipliers: Dictionary = {}
+	for pile in piles:
+		if is_instance_valid(pile) and pile.visible:
+			weighted_tiles.append(pile)
+			strength_multipliers[pile.get_instance_id()] = (
+				deformable_stripe_background.pile_weight_multiplier
+				* pile.background_weight
+			)
+	for card in hand_manager.current_cards:
+		if is_instance_valid(card) and card.visible:
+			weighted_tiles.append(card)
+			strength_multipliers[card.get_instance_id()] = (
+				deformable_stripe_background.card_weight_multiplier
+			)
+	var dragged_tile: Control = null
+	if selected_card != null and is_instance_valid(selected_card) and selected_card.dragging:
+		dragged_tile = selected_card
+	elif moving_pile != null and is_instance_valid(moving_pile):
+		dragged_tile = moving_pile
+	deformable_stripe_background.set_tile_weights(
+		weighted_tiles, dragged_tile, strength_multipliers
+	)
+
+
 func _input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		var mouse_motion := event as InputEventMouseMotion
+		if is_instance_valid(relief_lighting):
+			relief_lighting.follow_pointer(
+				mouse_motion.position, get_viewport_rect().size
+			)
+		if is_instance_valid(dust_pool):
+			dust_pool.emit_motion(
+				mouse_motion.position,
+				mouse_motion.velocity,
+				dust_mouse_influence
+			)
+			deformable_stripe_background.emit_motion(
+				mouse_motion.position,
+				mouse_motion.velocity,
+				dust_mouse_influence
+			)
 	_update_gameplay_back_hover(event)
 	if _is_overlay_back_pointer_event(event):
 		_set_input_as_handled()
@@ -647,13 +934,17 @@ func _input(event: InputEvent) -> void:
 		return
 	if _is_gameplay_back_pointer_event(event):
 		_set_input_as_handled()
-		_return_to_menu()
+		_open_quit_popup()
 		return
 	if _handle_global_shortcut(event):
 		return
 	if _handle_debug_shortcut(event):
 		# A debug shortcut can reload the scene and detach this node immediately.
 		_set_input_as_handled()
+		return
+	# Opening the confirmation does not pause either run clock. Its full-screen
+	# Control blocks board input while the simulation continues normally.
+	if quit_popup.visible:
 		return
 	if round_modifiers.flashlight_enabled:
 		if event is InputEventScreenTouch or event is InputEventScreenDrag:
@@ -712,7 +1003,7 @@ func _is_overlay_back_pointer_event(event: InputEvent) -> bool:
 
 
 func _is_gameplay_back_pointer_event(event: InputEvent) -> bool:
-	if splash.visible or overlay.visible or not back_button.visible:
+	if splash.visible or overlay.visible or quit_popup.visible or not back_button.visible:
 		return false
 	return _is_button_pointer_press(event, back_button)
 
@@ -720,7 +1011,7 @@ func _is_gameplay_back_pointer_event(event: InputEvent) -> bool:
 func _update_gameplay_back_hover(event: InputEvent) -> void:
 	if not event is InputEventMouseMotion:
 		return
-	if splash.visible or overlay.visible or not back_button.visible:
+	if splash.visible or overlay.visible or quit_popup.visible or not back_button.visible:
 		return
 	var hovered := (
 		back_button.get_global_rect().has_point(event.position)
@@ -733,12 +1024,17 @@ func _update_gameplay_back_hover(event: InputEvent) -> void:
 
 func _apply_gameplay_back_cursor() -> void:
 	_gameplay_back_cursor_update_queued = false
+	var viewport := get_viewport()
+	# This deferred callback can outlive the node's attachment during a scene
+	# reload or shutdown.
+	if viewport == null:
+		return
 	var hovered := (
 		back_button.visible
 		and not splash.visible
 		and not overlay.visible
 		and back_button.get_global_rect().has_point(
-			get_viewport().get_mouse_position()
+			viewport.get_mouse_position()
 		)
 	)
 	if hovered:
@@ -768,6 +1064,9 @@ func _handle_global_shortcut(event: InputEvent) -> bool:
 		return false
 	match key_event.keycode:
 		KEY_ESCAPE:
+			if quit_popup.visible:
+				_close_quit_popup()
+				return true
 			if progression_menu.visible:
 				progression_menu.close()
 				return true
@@ -781,8 +1080,16 @@ func _handle_global_shortcut(event: InputEvent) -> bool:
 				if not OS.has_feature("web"):
 					get_tree().quit()
 			else:
-				_return_to_menu()
+				_open_quit_popup()
 			return true
+		KEY_ENTER, KEY_KP_ENTER:
+			if quit_popup.visible:
+				_return_to_menu()
+				return true
+		KEY_R:
+			if quit_popup.visible:
+				_restart_from_quit_popup()
+				return true
 		KEY_SPACE:
 			if progression_menu.visible or options_menu.visible:
 				return false
@@ -806,6 +1113,28 @@ func _handle_global_shortcut(event: InputEvent) -> bool:
 
 func _return_to_menu() -> void:
 	get_tree().reload_current_scene()
+
+
+func _open_quit_popup() -> void:
+	if splash.visible or overlay.visible or quit_popup.visible:
+		return
+	quit_popup.visible = true
+	quit_continue_button.release_focus()
+	quit_restart_button.release_focus()
+	quit_run_button.release_focus()
+
+
+func _close_quit_popup() -> void:
+	quit_popup.visible = false
+	back_button.grab_focus()
+
+
+func _restart_from_quit_popup() -> void:
+	quit_popup.visible = false
+	if game_mode == GameMode.CHECKPOINT:
+		start_from_checkpoint(current_checkpoint_id)
+	else:
+		start_game(game_mode == GameMode.ENDLESS)
 
 
 func _open_progression_menu() -> void:
@@ -950,15 +1279,36 @@ func _load_unread_progression_pages() -> void:
 	var config := ConfigFile.new()
 	config.load(AUDIO_CONFIG_PATH)
 	unread_progression_pages.clear()
+	unread_progression_items.clear()
 	for value in config.get_value("progression", "unread_pages", []):
 		var page := int(value)
-		if page >= ProgressionMenu.Page.HIGHSCORES and page <= ProgressionMenu.Page.SPECIAL_RULES:
+		if (
+			page > ProgressionMenu.Page.HIGHSCORES
+			and page <= ProgressionMenu.Page.FONTS
+		):
 			if not unread_progression_pages.has(page):
 				unread_progression_pages.append(page)
+	var saved_items: Dictionary = config.get_value(
+		"progression", "unread_items", {}
+	)
+	for page_key in saved_items:
+		var page := int(page_key)
+		if page <= ProgressionMenu.Page.HIGHSCORES or page > ProgressionMenu.Page.FONTS:
+			continue
+		var ids: Array[StringName] = []
+		for value in saved_items[page_key]:
+			var item_id := StringName(value)
+			if not item_id.is_empty() and not ids.has(item_id):
+				ids.append(item_id)
+		if not ids.is_empty():
+			unread_progression_items[page] = ids
+	_save_unread_progression_pages()
 	_refresh_progression_notification()
 
 
 func _mark_progression_page_unread(page: int) -> void:
+	if page == ProgressionMenu.Page.HIGHSCORES:
+		return
 	if unread_progression_pages.has(page):
 		return
 	unread_progression_pages.append(page)
@@ -966,10 +1316,28 @@ func _mark_progression_page_unread(page: int) -> void:
 	_refresh_progression_notification()
 
 
+func _mark_progression_item_unread(page: int, item_id: StringName) -> void:
+	if item_id.is_empty():
+		return
+	var items: Array[StringName] = []
+	items.assign(unread_progression_items.get(page, []))
+	if not items.has(item_id):
+		items.append(item_id)
+		unread_progression_items[page] = items
+	_mark_progression_page_unread(page)
+	# The page may already be unread, in which case marking it does not save again.
+	_save_unread_progression_pages()
+
+
+func _is_progression_item_unread(page: int, item_id: StringName) -> bool:
+	return (unread_progression_items.get(page, []) as Array).has(item_id)
+
+
 func _on_progression_page_viewed(page: int) -> void:
-	if not unread_progression_pages.has(page):
+	if not unread_progression_pages.has(page) and not unread_progression_items.has(page):
 		return
 	unread_progression_pages.erase(page)
+	unread_progression_items.erase(page)
 	_save_unread_progression_pages()
 	_refresh_progression_notification()
 
@@ -978,6 +1346,7 @@ func _save_unread_progression_pages() -> void:
 	var config := ConfigFile.new()
 	config.load(AUDIO_CONFIG_PATH)
 	config.set_value("progression", "unread_pages", unread_progression_pages)
+	config.set_value("progression", "unread_items", unread_progression_items)
 	config.save(AUDIO_CONFIG_PATH)
 
 
@@ -1066,6 +1435,9 @@ func _progression_achievements() -> Array[Dictionary]:
 			"unlocked": achievement_manager.unlocked.has(data.id),
 			"date": str(achievement_manager.unlock_dates.get(data.id, "")),
 			"reward_font": data.reward_font,
+			"new": _is_progression_item_unread(
+				ProgressionMenu.Page.ACHIEVEMENTS, data.id
+			),
 			"progress": progress,
 			"progress_current": progress_current,
 			"progress_target": progress_target,
@@ -1077,6 +1449,7 @@ func _progression_bonuses() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for data in bonus_manager.definitions:
 		result.append({
+			"id": data.id,
 			"title": data.title,
 			"description": data.description,
 			"seen": seen_bonuses.has(data.id) or discovered_bonuses.has(data.id),
@@ -1085,6 +1458,9 @@ func _progression_bonuses() -> Array[Dictionary]:
 				achievement_manager.bonus_highest_levels.get(data.id, 0)
 			),
 			"max_level": data.max_level,
+			"new": _is_progression_item_unread(
+				ProgressionMenu.Page.BONUSES, data.id
+			),
 		})
 	return result
 
@@ -1093,10 +1469,14 @@ func _progression_special_rules() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for data in SpecialRuleRegistry.create_all_rules():
 		result.append({
+			"id": data.id,
 			"title": data.title,
 			"description": data.description,
 			"discovered": encountered_special_rules.has(data.id),
 			"obtained": beaten_special_rules.has(data.id),
+			"new": _is_progression_item_unread(
+				ProgressionMenu.Page.SPECIAL_RULES, data.id
+			),
 		})
 	return result
 
@@ -1177,6 +1557,17 @@ func _handle_debug_shortcut(event: InputEvent) -> bool:
 			return true
 		KEY_G:
 			Debug.toggle_god_mode()
+			_refresh_debug_help()
+			return true
+		KEY_P:
+			_debug_probability_visible = not _debug_probability_visible
+			debug_probability_panel.visible = _debug_probability_visible
+			if _debug_probability_visible:
+				debug_probability_panel.text = _difficulty_probability_debug_text()
+			_refresh_debug_help()
+			return true
+		KEY_V:
+			relief_lighting.toggle_debug_boost()
 			_refresh_debug_help()
 			return true
 		KEY_R:
@@ -1268,13 +1659,19 @@ func _debug_reset_progression() -> void:
 	for font_data in font_manager.definitions:
 		if font_data.default_unlocked:
 			font_manager.unlocked.append(font_data.id)
-	font_manager.selected_font = &"press_start_2p"
+	var default_font := progression_menu.get_default_font()
+	font_manager.selected_font = (
+		default_font.id if default_font != null else &"press_start_2p"
+	)
 	font_manager.select(font_manager.selected_font)
 	palette_manager.unlocked.clear()
 	for palette_data in palette_manager.definitions:
 		if palette_data.default_unlocked:
 			palette_manager.unlocked.append(palette_data.id)
-	palette_manager.selected_palette = &"arcade"
+	var default_palette := progression_menu.get_default_palette()
+	palette_manager.selected_palette = (
+		default_palette.id if default_palette != null else &"arcade"
+	)
 	palette_manager.select(palette_manager.selected_palette)
 	_apply_tile_font()
 	_apply_tile_palette()
@@ -1310,6 +1707,12 @@ func _refresh_debug_help() -> void:
 		+ "[H] CLEAR GLOBAL PROGRESSION\n"
 		+ "[L] LOSE ONE LIFE\n"
 		+ "[K] DIE NOW\n"
+		+ "[P] DIFFICULTY PROBABILITIES: %s\n" % (
+			"ON" if _debug_probability_visible else "OFF"
+		)
+		+ "[V] RELIEF LIGHT BOOST: %s\n" % (
+			"ON" if relief_lighting.debug_boosted else "OFF"
+		)
 		+ "[T] SHOW RUN TIME\n"
 		+ "[M] MUTE AUDIO\n"
 		+ "[F1] HIDE DEBUG HELP\n"
@@ -1318,6 +1721,75 @@ func _refresh_debug_help() -> void:
 	debug_help.text = help_text
 	splash_debug_help.text = help_text
 	splash_debug_help.visible = _debug_help_enabled and splash.visible
+
+
+func _difficulty_probability_debug_text() -> String:
+	var progression_round := _progression_round()
+	var first_upgrade := progression_round == 2
+	var options: Array[StringName] = []
+	var stat_ids: Array[StringName] = []
+	var weights: Array[float] = []
+	var pile_weight := (
+		Difficulty.FIRST_ADD_PILE_WEIGHT
+		if first_upgrade else Difficulty.ADD_PILE_WEIGHT
+	)
+	var hand_weight := (
+		Difficulty.FIRST_ADD_CARD_WEIGHT
+		if first_upgrade else Difficulty.ADD_CARD_WEIGHT
+	)
+	if pile_count < Difficulty.MAX_PILES:
+		options.append(&"PILE")
+		stat_ids.append(&"pile")
+		if pile_count == 1:
+			pile_weight *= Difficulty.STARTER_STAT_MULTIPLIER
+		weights.append(get_directed_weight(pile_weight, difficulty_droughts[&"pile"]))
+	if hand_size < Difficulty.MAX_HAND_SIZE:
+		options.append(&"CARD")
+		stat_ids.append(&"hand")
+		if hand_size == 1:
+			hand_weight *= Difficulty.STARTER_STAT_MULTIPLIER
+		weights.append(get_directed_weight(hand_weight, difficulty_droughts[&"hand"]))
+	if not first_upgrade and start_value < Difficulty.MAX_CARD_VALUE:
+		options.append(&"START VALUE")
+		stat_ids.append(&"start_value")
+		weights.append(get_directed_weight(
+			Difficulty.ADD_START_VALUE_WEIGHT, difficulty_droughts[&"start_value"]
+		))
+	if not first_upgrade and turn_time > Difficulty.MIN_TURN_TIME:
+		options.append(&"TIME")
+		stat_ids.append(&"time")
+		weights.append(get_directed_weight(
+			Difficulty.REDUCE_TURN_TIME_WEIGHT, difficulty_droughts[&"time"]
+		))
+	var guaranteed_indices: Array[int] = []
+	for index in stat_ids.size():
+		if int(difficulty_droughts.get(stat_ids[index], 0)) >= Difficulty.MAX_STAT_DROUGHT:
+			guaranteed_indices.append(index)
+	var total := 0.0
+	for index in weights.size():
+		if guaranteed_indices.is_empty() or guaranteed_indices.has(index):
+			total += weights[index]
+	var no_change_chance := (
+		0.0 if not guaranteed_indices.is_empty()
+		else get_no_difficulty_change_chance(progression_round)
+	)
+	var lines := PackedStringArray([
+		"DIFFICULTY / ROUND %d" % progression_round,
+		"NO CHANGE  %5.1f%%" % (no_change_chance * 100.0),
+		"EXTRA STAT %5.1f%%" % (get_extra_difficulty_chance(progression_round) * 100.0),
+		"FIRST PICK",
+	])
+	for index in options.size():
+		var effective_weight := (
+			weights[index]
+			if guaranteed_indices.is_empty() or guaranteed_indices.has(index)
+			else 0.0
+		)
+		lines.append("%s %5.1f%%" % [
+			String(options[index]),
+			(effective_weight / total * 100.0) if total > 0.0 else 0.0,
+		])
+	return "\n".join(lines)
 
 
 func start_game(endless_mode := false) -> void:
@@ -1363,6 +1835,7 @@ func start_game(endless_mode := false) -> void:
 	round_reached_time_ms = 0
 	run_time_label.visible = _global_timer_enabled
 	overlay.visible = false
+	quit_popup.visible = false
 	overlay_mode = ""
 	bonus_manager.begin_run()
 	if animate_menu_exit:
@@ -1714,7 +2187,7 @@ func _on_card_entered_screen(card: PlayingCard) -> void:
 	hand_manager.unlock_hand()
 
 
-func _on_card_drag_started(card: PlayingCard) -> void:
+func _on_card_drag_started(card: PlayingCard, tactile := false) -> void:
 	if input_locked:
 		return
 	# A single hand may only own one drag transition. Without this guard,
@@ -1759,12 +2232,12 @@ func _on_card_drag_started(card: PlayingCard) -> void:
 		drag_placeholder = _create_hand_slot_placeholder(card)
 	hand_manager.lock_all_cards_except(card)
 	_prepare_drag_companions(card)
-	card.prepare_external_drag()
+	card.prepare_external_drag(tactile)
 	var start_position := card.global_position
 	if card.get_parent() != drag_layer:
 		card.reparent(drag_layer, false)
 	card.global_position = start_position
-	card.begin_external_drag(card.drag_target)
+	card.begin_external_drag(card.drag_target, tactile)
 	soft_audio.play_tone(330.0, 0.045, 0.035)
 
 
@@ -2165,31 +2638,52 @@ func _handle_card_touch_input(event: InputEvent) -> bool:
 			_card_touch_index = touch.index
 			touched_card.drag_target = touch.position
 			_on_card_selected(touched_card)
-			_on_card_drag_started(touched_card)
-			if not touched_card.dragging:
-				_card_touch_index = -1
-				return false
+			touched_card.begin_touch_interaction(touch.index, touch.position)
 			return true
 		if (
 			selected_card != null
 			and is_instance_valid(selected_card)
-			and selected_card.dragging
 			and _card_touch_index == touch.index
 		):
-			selected_card.update_touch_drag(touch.position)
-			_on_card_drag_released(selected_card, touch.position)
+			if selected_card.dragging:
+				selected_card.update_touch_drag(touch.position)
+				_on_card_drag_released(selected_card, touch.position)
+			else:
+				selected_card.update_touch_interaction(touch.position)
+				selected_card.finish_touch_tap()
+				_card_touch_index = -1
+				selected_card = null
+				hand_manager.clear_selection()
 			return true
 	elif event is InputEventScreenDrag:
 		var drag := event as InputEventScreenDrag
 		if (
 			selected_card != null
 			and is_instance_valid(selected_card)
-			and selected_card.dragging
 			and _card_touch_index == drag.index
 		):
-			selected_card.update_touch_drag(drag.position)
+			if selected_card.dragging:
+				selected_card.update_touch_drag(drag.position)
+			else:
+				selected_card.update_touch_interaction(drag.position)
+				_try_start_touch_card_drag()
 			return true
 	return false
+
+
+func _try_start_touch_card_drag() -> void:
+	if (
+		_card_touch_index < 0
+		or selected_card == null
+		or not is_instance_valid(selected_card)
+		or selected_card.dragging
+		or not selected_card.touch_drag_is_ready()
+	):
+		return
+	selected_card.drag_target = selected_card.touch_position
+	_on_card_drag_started(selected_card, true)
+	if selected_card.dragging:
+		selected_card.update_touch_drag(selected_card.touch_position)
 
 
 func _card_at_touch_position(touch_position: Vector2) -> PlayingCard:
@@ -2353,6 +2847,9 @@ func _stack_card(
 	await card.animate_valid_drop(destination, placement_duration)
 	var placed_value := pile.expected_value() if card.is_joker else card.card_value
 	pile.place(placed_value)
+	deformable_stripe_background.emit_tile_impact_wave(
+		pile.get_global_rect().abs().get_center()
+	)
 	if bonus_manager.has_bonus(&"last_reminder") and not pile.is_complete_value():
 		if (
 			_last_reminder_pile != null
@@ -2443,7 +2940,16 @@ func _complete_pile(pile: MemoryPile) -> void:
 	if pile.completed:
 		return
 	soft_audio.play_tone(760.0, 0.14, 0.06)
-	await pile.complete_animation()
+	if is_instance_valid(dust_pool):
+		dust_pool.emit_wave(
+			pile.get_global_rect().abs().get_center(),
+			dust_completion_wave_influence
+		)
+		deformable_stripe_background.emit_wave(
+			pile.get_global_rect().abs().get_center(),
+			dust_completion_wave_influence
+		)
+	await pile.complete_animation(_is_background_deformation_active())
 	var recovered := bonus_manager.recover_on_completed_pile(
 		mistakes_left,
 		maximum_mistakes
@@ -2809,21 +3315,38 @@ func _finish_round() -> void:
 	if change.is_empty():
 		start_round()
 		return
-	transient_label.text = change
+	_pause_achievement_notifications(&"difficulty")
+	var change_lines := change.split("\n", false)
+	transient_label.text = change_lines[0]
 	transient_label.visible = true
 	transient_label.modulate.a = 0.0
 	var tween := create_tween()
 	tween.tween_property(transient_label, "modulate:a", 1.0, 0.2)
-	tween.tween_interval(0.75)
+	if change_lines.size() > 1:
+		tween.tween_interval(extra_difficulty_reveal_delay)
+		tween.tween_callback(
+			func() -> void: transient_label.text = "\n".join(change_lines)
+		)
+		tween.tween_interval(
+			maxf(0.75 - extra_difficulty_reveal_delay, 0.0)
+			+ extra_difficulty_hold_duration
+		)
+	else:
+		tween.tween_interval(0.75)
 	tween.tween_property(transient_label, "modulate:a", 0.0, 0.2)
 	skippable_sequence.begin(tween)
 	await tween.finished
 	skippable_sequence.finish()
 	transient_label.visible = false
+	_resume_achievement_notifications(&"difficulty")
 	start_round()
 
 
 func _show_round_wave() -> void:
+	# The deformable background emits its own completion wave.
+	if _is_background_deformation_active():
+		return
+	_pause_achievement_notifications(&"round_wave")
 	var wave := %RoundWave as Control
 	wave.visible = true
 	wave.scale = Vector2(0.2, 0.2)
@@ -2833,6 +3356,7 @@ func _show_round_wave() -> void:
 	tween.tween_property(wave, "modulate:a", 0.0, 0.55)
 	await tween.finished
 	wave.visible = false
+	_resume_achievement_notifications(&"round_wave")
 
 
 func _finish_game(completed_all_rounds := false) -> void:
@@ -2948,21 +3472,29 @@ func _append_new_progression_summary() -> void:
 		lines.append(checkpoint_line)
 	var bonus_titles := _new_bonus_titles()
 	if not bonus_titles.is_empty():
-		lines.append("NEW BONUSES: %s" % ", ".join(bonus_titles))
+		lines.append(_progression_icon_line(PROGRESSION_BONUS_ICON, bonus_titles))
 	var rule_titles := _new_rule_titles()
 	if not rule_titles.is_empty():
-		lines.append("NEW RULES: %s" % ", ".join(rule_titles))
+		lines.append(_progression_icon_line(PROGRESSION_RULE_ICON, rule_titles))
 	var achievement_titles := _new_achievement_titles()
 	if not achievement_titles.is_empty():
-		lines.append("NEW ACHIEVEMENTS: %s" % ", ".join(achievement_titles))
+		lines.append(
+			_progression_icon_line(
+				PROGRESSION_ACHIEVEMENT_ICON, achievement_titles
+			)
+		)
 	if lines.is_empty():
 		overlay_unlocks.visible = false
 		overlay_unlocks.text = ""
 		return
-	overlay_unlocks.text = (
-		"[center]NEW PROGRESSION\n%s[/center]" % "\n".join(lines)
-	)
+	overlay_unlocks.text = "[center]%s[/center]" % "\n".join(lines)
 	overlay_unlocks.visible = true
+
+
+func _progression_icon_line(icon_path: String, titles: PackedStringArray) -> String:
+	return "+ [color=#4D82C2]NEW[/color] [img=16x16]%s[/img] %s" % [
+		icon_path, " + ".join(titles),
+	]
 
 
 func _new_checkpoint_summary_line() -> String:
@@ -2976,8 +3508,10 @@ func _new_checkpoint_summary_line() -> String:
 	var labels := PackedStringArray()
 	for checkpoint_id in checkpoint_ids:
 		labels.append(str(checkpoint_id))
-	var heading := "NEW CHECKPOINTS" if checkpoint_ids.size() > 1 else "NEW CHECKPOINT"
-	return "%s: %s" % [heading, " AND ".join(labels)]
+	var heading := "CHECKPOINTS" if checkpoint_ids.size() > 1 else "CHECKPOINT"
+	return "+ [color=#4D82C2]NEW[/color] %s: %s" % [
+		heading, " + ".join(labels),
+	]
 
 
 func _new_bonus_titles() -> PackedStringArray:
@@ -3154,6 +3688,7 @@ func _show_selected_checkpoint() -> void:
 
 
 func _show_checkpoint_unlocked(checkpoint_id: int) -> void:
+	_pause_achievement_notifications(&"checkpoint")
 	transient_label.text = "CHECKPOINT %d\nUNLOCKED" % checkpoint_id
 	transient_label.visible = true
 	transient_label.modulate.a = 0.0
@@ -3165,9 +3700,11 @@ func _show_checkpoint_unlocked(checkpoint_id: int) -> void:
 	await tween.finished
 	skippable_sequence.finish()
 	transient_label.visible = false
+	_resume_achievement_notifications(&"checkpoint")
 
 
 func _on_special_rules_announcing(_rules: Array[SpecialRuleData]) -> void:
+	_pause_achievement_notifications(&"special_rules")
 	_pause_run_time()
 	music_manager.set_low_pass_enabled(true)
 	soft_audio.play_special_rule()
@@ -3176,6 +3713,7 @@ func _on_special_rules_announcing(_rules: Array[SpecialRuleData]) -> void:
 func _on_special_rules_announcement_finished() -> void:
 	_resume_run_time()
 	music_manager.set_low_pass_enabled(false, true)
+	_resume_achievement_notifications(&"special_rules")
 
 
 func _increase_difficulty(first_upgrade_override := -1) -> String:
@@ -3236,11 +3774,6 @@ func _increase_difficulty(first_upgrade_override := -1) -> String:
 	if not guaranteed_options.is_empty():
 		options = guaranteed_options
 		weights = guaranteed_weights
-	if Difficulty.NO_DIFFICULTY_CHANGE_WEIGHT > 0.0:
-		# A no-change result cannot bypass a due guarantee.
-		if guaranteed_options.is_empty():
-			options.append(&"none")
-			weights.append(Difficulty.NO_DIFFICULTY_CHANGE_WEIGHT)
 	if options.is_empty():
 		return ""
 	var total := 0.0
@@ -3270,8 +3803,6 @@ func _increase_difficulty(first_upgrade_override := -1) -> String:
 		&"time":
 			turn_time -= 1.0
 			return "-1 SECOND"
-		&"none":
-			return ""
 	return ""
 
 
@@ -3302,10 +3833,59 @@ func _update_difficulty_droughts(
 
 
 func _advance_difficulty(next_progression_round: int, first_upgrade_override := -1) -> String:
-	if not _is_special_tier_relief_round(next_progression_round):
-		return _increase_difficulty(first_upgrade_override)
-	_apply_special_tier_relief()
-	return "TIER RELIEF"
+	if _is_special_tier_relief_round(next_progression_round):
+		_apply_special_tier_relief()
+		return "TIER RELIEF"
+	if (
+		not _has_due_difficulty_guarantee()
+		and rng.randf() < get_no_difficulty_change_chance(next_progression_round)
+	):
+		return ""
+	var changes: Array[String] = []
+	var first_change := _increase_difficulty(first_upgrade_override)
+	if not first_change.is_empty():
+		changes.append(first_change)
+	if rng.randf() < get_extra_difficulty_chance(next_progression_round):
+		var extra_change := _increase_difficulty(0)
+		if not extra_change.is_empty():
+			changes.append(extra_change)
+	return "\n".join(changes)
+
+
+func _has_due_difficulty_guarantee() -> bool:
+	return (
+		pile_count < Difficulty.MAX_PILES
+		and int(difficulty_droughts.get(&"pile", 0)) >= Difficulty.MAX_STAT_DROUGHT
+	) or (
+		hand_size < Difficulty.MAX_HAND_SIZE
+		and int(difficulty_droughts.get(&"hand", 0)) >= Difficulty.MAX_STAT_DROUGHT
+	) or (
+		start_value < Difficulty.MAX_CARD_VALUE
+		and int(difficulty_droughts.get(&"start_value", 0)) >= Difficulty.MAX_STAT_DROUGHT
+	) or (
+		turn_time > Difficulty.MIN_TURN_TIME
+		and int(difficulty_droughts.get(&"time", 0)) >= Difficulty.MAX_STAT_DROUGHT
+	)
+
+
+func get_extra_difficulty_chance(progression_round: int) -> float:
+	var completed_increases := maxi(progression_round - 2, 0)
+	return clampf(
+		Difficulty.EXTRA_DIFFICULTY_START_CHANCE
+		- completed_increases * Difficulty.EXTRA_DIFFICULTY_CHANCE_LOSS_PER_ROUND,
+		0.0,
+		1.0
+	)
+
+
+func get_no_difficulty_change_chance(progression_round: int) -> float:
+	var completed_increases := maxi(progression_round - 2, 0)
+	return clampf(
+		Difficulty.NO_DIFFICULTY_START_CHANCE
+		+ completed_increases * Difficulty.NO_DIFFICULTY_CHANCE_GAIN_PER_ROUND,
+		0.0,
+		Difficulty.MAX_NO_DIFFICULTY_CHANCE
+	)
 
 
 func _is_special_tier_relief_round(progression_round: int) -> bool:
@@ -3855,7 +4435,6 @@ func _unlock_completed_checkpoint(completed_round: int) -> bool:
 	unlocked_checkpoints.sort()
 	checkpoint_snapshots[checkpoint_id] = _pending_checkpoint_snapshot.to_dictionary()
 	newly_unlocked_checkpoints.append(checkpoint_id)
-	_mark_progression_page_unread(ProgressionMenu.Page.HIGHSCORES)
 	_save_checkpoint_progress()
 	_pending_checkpoint_snapshot = null
 	checkpoint_segment_damage_count = 0
@@ -4186,7 +4765,7 @@ func _on_bonus_selected(bonus_id: StringName) -> void:
 	if not discovered_bonuses.has(bonus_id):
 		discovered_bonuses.append(bonus_id)
 		newly_discovered_bonuses.append(bonus_id)
-		_mark_progression_page_unread(ProgressionMenu.Page.BONUSES)
+		_mark_progression_item_unread(ProgressionMenu.Page.BONUSES, bonus_id)
 		_save_discoveries()
 	achievement_manager.bonus_acquired.emit(
 		bonus_id,
@@ -4220,7 +4799,7 @@ func _on_special_rules_selected(rules: Array[SpecialRuleData]) -> void:
 			continue
 		encountered_special_rules.append(rule.id)
 		newly_encountered_rules.append(rule.id)
-		_mark_progression_page_unread(ProgressionMenu.Page.SPECIAL_RULES)
+		_mark_progression_item_unread(ProgressionMenu.Page.SPECIAL_RULES, rule.id)
 	_save_discoveries()
 
 
@@ -4277,7 +4856,7 @@ func _build_run_summary(normal_game_completed: bool) -> RunSummary:
 
 func _on_achievement_unlocked(data: AchievementData) -> void:
 	newly_unlocked_achievements.append(data.id)
-	_mark_progression_page_unread(ProgressionMenu.Page.ACHIEVEMENTS)
+	_mark_progression_item_unread(ProgressionMenu.Page.ACHIEVEMENTS, data.id)
 	for font_id in font_manager.unlock_for_achievement(data.id):
 		newly_unlocked_fonts.append(font_id)
 	palette_manager.unlock_for_achievement(data.id)
@@ -4289,20 +4868,40 @@ func _queue_achievement_notification(data: AchievementData) -> void:
 		return
 	_achievement_notification_queue.append(data)
 	if not _achievement_notification_active:
-		_play_achievement_notifications()
+		call_deferred("_play_achievement_notifications")
 
 
 func _play_achievement_notifications() -> void:
+	if _achievement_notification_active:
+		return
 	_achievement_notification_active = true
 	while (
 		_achievement_notifications_enabled
 		and not _achievement_notification_queue.is_empty()
 	):
+		while (
+			not _important_announcement_sources.is_empty()
+			or _achievement_resume_delay_pending
+		):
+			if not _important_announcement_sources.is_empty():
+				await get_tree().process_frame
+			else:
+				_achievement_resume_delay_pending = false
+				if achievement_popup_after_announcements_delay > 0.0:
+					await get_tree().create_timer(
+						achievement_popup_after_announcements_delay
+					).timeout
+			if not _achievement_notifications_enabled:
+				break
+		if not _achievement_notifications_enabled:
+			break
 		var data: AchievementData = _achievement_notification_queue.pop_front()
 		achievement_popup_title.text = data.title
+		_position_achievement_popup()
 		achievement_popup.visible = true
 		achievement_popup.modulate.a = 0.0
-		achievement_popup.position.y = -8.0
+		var target_y := achievement_popup.position.y
+		achievement_popup.position.y = target_y - 16.0
 		soft_audio.play_achievement()
 		_achievement_popup_tween = create_tween()
 		_achievement_popup_tween.set_trans(Tween.TRANS_QUAD)
@@ -4312,7 +4911,7 @@ func _play_achievement_notifications() -> void:
 			achievement_popup, "modulate:a", 1.0, 0.18
 		)
 		_achievement_popup_tween.tween_property(
-			achievement_popup, "position:y", 8.0, 0.18
+			achievement_popup, "position:y", target_y, 0.18
 		)
 		_achievement_popup_tween.chain().tween_interval(1.5)
 		_achievement_popup_tween.chain().tween_property(
@@ -4321,3 +4920,40 @@ func _play_achievement_notifications() -> void:
 		await _achievement_popup_tween.finished
 	achievement_popup.visible = false
 	_achievement_notification_active = false
+
+
+func _pause_achievement_notifications(source: StringName) -> void:
+	_important_announcement_sources[source] = true
+
+
+func _resume_achievement_notifications(source: StringName) -> void:
+	var was_paused := not _important_announcement_sources.is_empty()
+	_important_announcement_sources.erase(source)
+	if was_paused and _important_announcement_sources.is_empty():
+		_achievement_resume_delay_pending = true
+	if not _achievement_notification_active and not _achievement_notification_queue.is_empty():
+		call_deferred("_play_achievement_notifications")
+
+
+func _on_bonus_selection_visibility_changed() -> void:
+	if bonus_selection.visible:
+		_pause_achievement_notifications(&"bonus_selection")
+	else:
+		_resume_achievement_notifications(&"bonus_selection")
+
+
+func _position_achievement_popup() -> void:
+	var timer_bottom := 0.0
+	for timer_control: Control in [timer_ring, run_time_label]:
+		if timer_control.visible:
+			timer_bottom = maxf(timer_bottom, timer_control.get_global_rect().end.y)
+	var viewport_size := get_viewport_rect().size
+	achievement_popup.position.x = floorf(
+		(viewport_size.x - achievement_popup.size.x) * 0.5
+	)
+	achievement_popup.position.y = minf(
+		# The entrance starts 16 px above this target, so the full animation
+		# retains an 8 px gap below every visible timer.
+		maxf(50.0, timer_bottom + 24.0),
+		viewport_size.y - achievement_popup.size.y - 4.0
+	)

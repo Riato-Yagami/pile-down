@@ -20,6 +20,7 @@ simulés, sans dépendance externe.
 - `resources/scripts/` contient tous les scripts GDScript.
 - `resources/fonts/` regroupe les polices et leurs licences.
 - `resources/sprites/` regroupe les textures utilisées par le jeu.
+- `resources/normals/` regroupe les normal maps utilisées pour le relief 2D.
 - `project.godot` et la documentation restent à la racine.
 - Les nouvelles ressources vont dans le sous-dossier approprié de `resources/`.
 - Les tests automatisés éventuels vont dans `tests/`.

@@ -29,18 +29,25 @@ const ADD_PILE_WEIGHT := 35.0
 const ADD_CARD_WEIGHT := 25.0
 const ADD_START_VALUE_WEIGHT := 15.0
 const REDUCE_TURN_TIME_WEIGHT := 5.0
-const NO_DIFFICULTY_CHANGE_WEIGHT := 10.0
+
+# Early rounds can gain a second stat, making the opening ramp up faster. This
+# chance fades as the run progresses, while the chance of a breather grows.
+const EXTRA_DIFFICULTY_START_CHANCE := 0.45
+const EXTRA_DIFFICULTY_CHANCE_LOSS_PER_ROUND := 0.02
+const NO_DIFFICULTY_START_CHANCE := 0.05
+const NO_DIFFICULTY_CHANCE_GAIN_PER_ROUND := 0.01
+const MAX_NO_DIFFICULTY_CHANCE := 0.35
 
 const STAT_PITY_RATE := 0.25
 const MAX_STAT_DROUGHT := 5
 const STARTER_STAT_MULTIPLIER := 2.0
 
 # Permanent progression checkpoints use the internal, increasing round number.
-const CHECKPOINT_INTERVAL := 2
+const CHECKPOINT_INTERVAL := 5
 const ENABLE_CHECKPOINTS := true
 
 # The first round uses these pile/card weights independently from the regular
-# weights above. NO_DIFFICULTY_CHANGE_WEIGHT remains available.
+# weights above.
 const FIRST_ADD_PILE_WEIGHT := 70.0
 const FIRST_ADD_CARD_WEIGHT := 30.0
 
@@ -65,6 +72,7 @@ const ENABLED_SPECIAL_RULES: Array[StringName] = [
 	&"sudden_death",
 	&"grace_period",
 	&"colorblind",
+	&"pixelated",
 	#&"floor_is_lava",
 ]
 
@@ -75,6 +83,8 @@ const THREE_PILE_SHELL_GAME_ROUND := 30
 const REGENERATING_PILE_RATIO := 0.35
 const REGENERATION_DURATION := 8.0
 const LIGHTS_OUT_RADIUS := 60.0
+# Size, in native viewport pixels, of each block created by PIXELATED.
+const PIXELATION_PIXEL_SIZE := 4.0
 const HOT_POTATO_DURATION := 1
 const STICKY_HOT_POTATO_DURATION := 2
 # During Grace Period, reveal the running clock this many seconds before expiry.
@@ -150,8 +160,6 @@ const MISTAKE_REVEAL_DURATIONS := [0.0, 0.25, 0.4, 0.6]
 const TOUCH_PEEK_DRAG_DELAY := 0.12
 const TOUCH_PEEK_VISIBLE_GRACE := 0.18
 const TOUCH_DRAG_DISTANCE := 5.0
-
-const DUST_PARTICLE_COUNT := 48
 
 const WILD_CARD_CHANCES := [0.0, 0.05, 0.1, 0.15]
 const LUCKY_HAND_CHANCES := [0.0, 0.2, 0.35, 0.45]

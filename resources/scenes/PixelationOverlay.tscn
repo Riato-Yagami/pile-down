@@ -1,0 +1,34 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/special_rules/rules/PixelationOverlay.gd" id="1_script"]
+
+[sub_resource type="Shader" id="PixelationShader"]
+code = "shader_type canvas_item;
+
+uniform sampler2D screen_texture : hint_screen_texture, filter_nearest;
+uniform float pixel_size : hint_range(1.0, 32.0, 1.0) = 4.0;
+
+void fragment() {
+	vec2 screen_size = 1.0 / SCREEN_PIXEL_SIZE;
+	vec2 block_uv = vec2(pixel_size) / screen_size;
+	vec2 pixel_uv = floor(SCREEN_UV / block_uv) * block_uv + block_uv * 0.5;
+	COLOR = textureLod(screen_texture, pixel_uv, 0.0);
+}"
+
+[sub_resource type="ShaderMaterial" id="PixelationMaterial"]
+resource_local_to_scene = true
+shader = SubResource("PixelationShader")
+shader_parameter/pixel_size = 4.0
+
+[node name="PixelationOverlay" type="ColorRect"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+material = SubResource("PixelationMaterial")
+script = ExtResource("1_script")
+transition_duration = 0.4

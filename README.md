@@ -159,13 +159,25 @@ ou plus hauts utilisent la même couleur beige que le fond du jeu. La scène
 `Main.tscn` fournit ce cadre adaptatif autour de la scène de jeu, directement
 dans le canvas principal afin de conserver des coordonnées tactiles exactes.
 
-La touche `Échap` ou le petit bouton `ESC` en haut de l'écran revient à l'écran
-d'accueil depuis le jeu. Le bouton fournit notamment ce contrôle aux écrans
+La touche `Échap` ou le petit bouton `ESC` en haut de l'écran ouvre une
+confirmation de sortie pendant une partie. `RESTART` relance le même mode avec
+ses valeurs initiales, `QUIT` revient à l'écran titre et `CONTINUE` referme la
+popup sans modifier la partie. Cette confirmation ne
+met en pause ni le compte à rebours du round ni le temps global de la run ; un
+second appui sur `Échap` la ferme. Dans cette popup, `Entrée` quitte la run et
+`R` la redémarre. Depuis les écrans de résultat, `ESC` revient à l'écran
+d'accueil. Le bouton fournit notamment ce contrôle aux écrans
 tactiles. Sur l'écran d'accueil, `Échap` ferme l'application desktop et reste
 sans effet dans la version Web. La
 barre d'espace lance la partie depuis l'accueil et relance une partie depuis
 l'écran de fin. La touche `M` coupe ou réactive tous les sons. Pendant une
 partie, `T` affiche ou masque le temps total écoulé.
+Le panneau de confirmation et ses trois boutons verticaux utilisent des marges
+nine-slice : leurs coins pixel-art restent intacts lorsque le contenu est mis
+en page. Les boutons s'élargissent sans réduire la police de 20 px, et le
+panneau conserve une marge supplémentaire au-dessus et en dessous de la
+colonne. Les cases d'acronymes des bonus emploient le même découpage pour
+s'élargir selon leur texte sans déformer leurs bords.
 Le titre du menu utilise le même effet ondulé que l'annonce `HIGHSCORE`. Le
 temps du meilleur score reprend la police Tiny5 et la taille de l'écran de fin.
 
@@ -322,6 +334,13 @@ forme `in 1 min 12 s 323 ms`.
 
 Tous les réglages sont centralisés dans `resources/scripts/settings/difficulty.gd` :
 
+La montée en difficulté est plus rapide au début : après une hausse normale,
+un second attribut peut augmenter avec une probabilité qui diminue à chaque
+round. En contrepartie, la probabilité qu'un round n'ajoute aucune difficulté
+augmente progressivement. Les chances initiales, leur variation par round et
+le plafond des rounds sans hausse sont configurables avec les constantes
+`EXTRA_DIFFICULTY_*` et `NO_DIFFICULTY_*`.
+
 - valeurs initiales de piles, cartes, valeur de départ et timer ;
 - limites maximales, ainsi que le temps minimal ;
 - nombre total de rounds ;
@@ -409,14 +428,20 @@ préfixe numérique. La liste des achievements est chargée depuis
 au titre de la police dans sa liste et immédiatement dans l'aperçu de l'éditeur
 lorsqu'elle est modifiée. Dans le preview de l'éditeur uniquement, la police et
 la palette sélectionnées apparaissent en tête de leurs listes ; leur ordre en jeu
-reste celui des catalogues. Le bouton `Reload Editor Preview` de l'inspecteur
-permet de forcer le rendu. La
+reste celui des catalogues. Les réglages `Defaults` et `Editor Preview` sont
+centralisés sur le nœud `FontCatalog` de `ProgressionMenu`. `Default Font` et
+`Default Palette` déterminent les choix initiaux et de réinitialisation du jeu.
+Le bouton `Reload Editor Preview` de ce même nœud permet de forcer le rendu. La
 police choisie s'applique uniquement aux valeurs des cartes et des piles, sans
 modifier les textes de l'interface. Les cinq pages utilisent les
 icônes sans panneau du dossier `resources/sprites/ui/icons/` (`stats.png`,
 `trophies.png`, `bonuses.png`, `rules.png` et `fonts.png`) dans la
 navigation. Tous les boutons fonctionnent à la souris, au clavier et au
 tactile ; la touche `Escape` ou le bouton illustré `escape.png` ferme le menu.
+Les pastilles de ces boutons reprennent le même placement visuel que celle du
+bouton de progression principal, après compensation du centrage de l'icône
+23×25 dans les boutons 30×34 du panneau. L'aperçu éditeur simule uniquement
+un nouvel achievement et n'affiche donc la pastille que sur `ACHIEVEMENTS`.
 
 Le catalogue contient 28 polices, dont `PRESS START 2P`, `TINY5`, `VCR OSD
 MONO`, `8-BIT ARCADE`, `EDIT UNDO DOT`, `PIXEL WESTERN`, `UPHEAVAL`, `VHS
@@ -465,12 +490,15 @@ droite sans déplacer les icônes.
 Les bonus obtenus sur plusieurs niveaux inscrivent leur meilleur niveau
 dans le carré ; le carré devient doré au niveau maximal. Les états binaires
 utilisent les sprites `ui/check/checked.png` et `ui/check/unchecked.png`.
-Les 30 achievements permanents sont décrits individuellement dans
+Les 31 achievements permanents sont décrits individuellement dans
 `resources/achievements/`. `AchievementRegistry` charge automatiquement les
 fichiers `.tres` dans l'ordre de leur préfixe numérique. Ils sont évalués uniquement
 sur les événements de jeu concernés et regroupés sous `STATS`, `ROUNDS`,
 `CHECKPOINTS`, `ENDLESS`, `BONUSES & RULES`, `COMBOS` et `SPEEDRUN`. Les
-achievements cumulatifs affichent leur complétion avec le sprite et le shader
+seuils modifiables sont stockés dans chaque ressource via `required_count` et,
+pour les speedruns, `time_limit_seconds` exprimé en secondes. Le succès
+`FIRST STEP` se débloque après le premier round terminé.
+Les achievements cumulatifs affichent leur complétion avec le sprite et le shader
 des barres de volume. Leur détail numérique apparaît au survol de la barre,
 tient sur plusieurs lignes si nécessaire et les embouts restent intacts grâce
 à un découpage nine-patch horizontal de 2 pixels. Les barres de progression,
@@ -505,17 +533,28 @@ d'achievements et le chronomètre global de la partie. Cette option ne masque
 jamais l'horloge ni la valeur du compte à rebours du round. Une notification
 active s'affiche sans panneau de fond, avec l'icône achievement à gauche et le
 nom obtenu à droite, accompagnée d'un court son ascendant ; plusieurs
-achievements simultanés sont présentés successivement. Les choix sont appliqués
+achievements simultanés sont présentés successivement. Ces popups attendent la
+fin des annonces de règles, checkpoints, changements de difficulté et choix de
+bonus, ainsi que la vague de fin de round. Une popup dont l'animation a déjà
+commencé n'est jamais masquée ou relancée : elle se termine normalement, tandis
+que les suivantes restent en file. Leur position est recalculée sous les timers visibles avec une marge de
+8 pixels, y compris lorsque la résolution adaptative modifie la zone logique.
+Les choix sont appliqués
 immédiatement et sauvegardés dans `gameplay/achievement_notifications` et
 `gameplay/show_timer`.
 
-L'écran de fin de partie regroupe sous `NEW PROGRESSION` les checkpoints
-débloqués, bonus découverts, règles rencontrées et achievements obtenus pendant
-la partie. Les catégories sans nouveauté sont omises.
+L'écran de fin de partie affiche les checkpoints débloqués, bonus découverts,
+règles rencontrées et achievements obtenus pendant la partie sans titre
+supplémentaire. Les bonus, règles et achievements sont précédés de leur icône ;
+plusieurs éléments d'une même catégorie sont séparés par `+`. Le récapitulatif
+préfixe également chaque ligne par `+ NEW`, avec `NEW` en bleu, et s'agrandit
+uniquement vers le bas afin de ne jamais recouvrir les boutons.
+Les catégories sans nouveauté sont omises.
 
 Ces nouveautés ajoutent `notification.png` au bouton Progression du menu
-principal et à l'onglet concerné (`STATS`, `ACHIEVEMENTS`, `BONUSES` ou
-`SPECIAL RULES`). Cliquer sur l'icône d'un onglet acquitte cette catégorie ; le
+principal et à l'onglet concerné (`ACHIEVEMENTS`, `BONUSES` ou `SPECIAL RULES`).
+Les highscores ne produisent jamais de notification. Cliquer sur l'icône d'un
+onglet acquitte cette catégorie ; le
 badge principal disparaît lorsque toutes les catégories ont été consultées.
 Dans `ProgressionMenu.tscn`, `StatsNotification` est le modèle éditable du
 placement. Le bouton d'inspecteur `Copy Notification Placement` recopie sa
@@ -529,11 +568,128 @@ Les sélecteurs d'import et d'export utilisent les dialogues natifs du système
 pour ne pas dépasser la fenêtre logique du jeu ; la confirmation de suppression
 reste compacte et replie son texte automatiquement.
 La page `GRAPHICS` conserve toujours le viewport logique 256×320 afin que le
-zoom et la taille des sprites ne changent pas. `LOCKED` maintient son ratio avec
-des marges si nécessaire, tandis que `ADAPTIVE` étend la zone logique sur l'axe
-supplémentaire afin de remplir les écrans de formats différents, notamment les
-tablettes. Le choix est sauvegardé dans `graphics/adaptive_resolution` et
-appliqué immédiatement. Comme les choix de police et de palette, les options à
+zoom et la taille des sprites ne changent pas. La case unique `ADAPTIVE SCREEN
+SIZE` étend la zone logique sur l'axe supplémentaire afin de remplir les écrans
+de formats différents, notamment les tablettes. Lorsqu'elle est désactivée, le
+ratio reste fixe avec des marges si nécessaire. Le choix est sauvegardé dans
+`graphics/adaptive_resolution` et appliqué immédiatement. Dans la sous-rubrique
+`BACKGROUND`, `BACKGROUND DEFORMATION` active uniquement la déformation et
+conserve les bandes lorsqu'elle est désactivée. Le choix reste sauvegardé dans
+`graphics/dust_effects`. `SHOW BACKGROUND`, sauvegardé dans
+`graphics/background_enabled`, est l'option parente et permet de masquer
+entièrement le fond généré. Sa sous-option indentée `BACKGROUND DEFORMATION`
+n'est affichée que lorsque le fond est actif.
+Le pool léger de poussière volatile est réparti dans tout le viewport. Les cartes la
+repoussent localement à leur passage et les piles mobiles appliquent une
+impulsion réduite. La souris produit elle aussi une impulsion discrète, bien
+plus faible que celle d'une tile. Les complétions de piles propagent une onde
+radiale dans la poussière. La quantité se règle désormais comme une densité
+avec `Visual Effects > Dust Particles Per 10000 Pixels`, ce qui conserve la
+même concentration sur les petits écrans et les viewports adaptatifs wide.
+`Dust Viscosity` règle la force amortie qui ramène chaque particule vers sa
+position d'origine après le passage d'une tile (2,2 par défaut). En résolution
+adaptative, les ancres sont remises à l'échelle pour couvrir tout le viewport.
+La simulation de poussière reste active pour fournir son champ d'impulsion,
+mais ses particules ne sont actuellement pas dessinées.
+Le fond utilise deux passes distinctes sans `CanvasGroup` imbriqués :
+`StripeBackground.gdshader`, appliqué à `BackgroundArt`, génère les bandes ;
+`BackgroundCopy` capture ce rendu avec un `BackBufferCopy`, puis
+`DeformableBackground.gdshader`, appliqué au `DeformationOverlay`, échantillonne
+la capture via `hint_screen_texture` et la déforme. L'échantillonnage emploie
+les UV locaux du rectangle plein écran afin de rester aligné en mode adaptatif
+et dans le viewport de jeu intégré à l'éditeur. `BackgroundArt` est un
+`ColorRect` plein écran plutôt qu'une texture de taille
+fixe. Sa couleur uniforme se règle avec `background_color` dans le matériau des
+bandes. Dans `Game.tscn`, `Artwork` utilise aussi des ancres plein écran afin
+que les bandes occupent immédiatement le cadre 256×320 dans l'aperçu 2D de
+l'éditeur, sans attendre l'exécution du script. Le gameplay reste volontairement centré en 256×320 par `GameCenter`,
+mais le contrôleur détache le rectangle `Artwork` de ce parent : il place son
+origine globale en `(0, 0)` et lui attribue la taille réelle du viewport à
+chaque redimensionnement. Le fond et le post-traitement couvrent ainsi tous les
+ratios adaptatifs sans étirer la disposition du gameplay.
+Les deux passes partagent un filtre de pixellisation en espace écran. Le réglage
+`Pixel Filter > Background Pixel Size` du nœud `Artwork` fixe la taille commune
+des blocs (2 pixels par défaut) pour les bandes et leur déformation. Cette
+quantification dans les shaders évite un `SubViewport`, dont la texture aurait
+compliqué l'alignement du back-buffer en résolution adaptative.
+`PilesBoard` conserve de son côté une taille fixe de 164×163 et utilise des
+ancres centrales. Les positions locales des piles ne sont jamais recalculées
+pendant un round ; lors d'un redimensionnement, seul le plateau complet suit le
+centre horizontal du viewport.
+Le shader de bandes calcule son motif dans un espace pixel de référence 256×320,
+à partir des uniforms `viewport_size` et `reference_size`. Un élargissement
+horizontal ajoute donc des bandes de même largeur au lieu d'étirer le motif
+existant ; les changements proportionnels conservent également le rendu.
+Un tableau circulaire de huit impulsions transmet au GPU
+les passages des cartes et de la souris ainsi que les ondes de complétion. Les
+impulsions s'estompent progressivement sans reconstruire de géométrie côté CPU.
+Une complétion se propage sous forme d'un anneau de déformation à largeur
+constante. Son rayon maximal et sa durée sont calculés depuis la distance au coin
+le plus éloigné du viewport ; l'anneau conserve son intensité jusqu'à ce que son
+bord extérieur ait dépassé ce coin, puis fond pendant sa courte durée de queue.
+`Background Deformation Speed` règle la vitesse globale de ces animations entre
+0,1 et 2,0 (0,6 par défaut) sans modifier leur amplitude ; `1,0` correspond à
+la vitesse d'origine. Ce réglage reste côté contrôleur, car il fait progresser
+la durée de vie et le rayon des impulsions avant leur envoi au shader.
+Les deux `ShaderMaterial` sont enregistrés dans `resources/materials/` et
+assignés à `BackgroundArt` et `DeformationOverlay` dans `Game.tscn`. Les bandes sont donc
+visibles dans l'aperçu 2D de l'éditeur et leurs uniforms restent accessibles en
+ouvrant les matériaux depuis l'inspecteur. Le shader de bandes expose `stripe_color`,
+`stripe_count`, `stripe_slope`, `stripe_core` et `stripe_softness`. Le shader de
+déformation expose `wave_inner_width` et `wave_outer_width`.
+Le script du nœud `Artwork` expose en plus dans l'inspecteur les groupes
+`Deformation Timing` et `Deformation Shape`. `Stripe Scroll Speed` se règle
+uniquement dans `StripeBackgroundMaterial.tres` : `0` arrête les bandes et une
+valeur négative inverse leur direction. Le contrôleur ne remplace jamais cette
+valeur au lancement, donc l'aperçu de l'éditeur et le jeu utilisent exactement
+le même réglage. Les autres groupes règlent vitesse, durées, rayons et forces
+qui alimentent les uniforms dynamiques.
+Le rayon final d'une onde n'est pas configurable : il est calculé depuis son
+origine jusqu'au coin le plus éloigné du viewport, marge du shader comprise.
+Les impulsions de mouvement ne peuvent pas évincer une onde encore active.
+Chaque carte et pile visible transmet son centre, sa taille et ses coins arrondis
+au shader du fond. La zone sous la tuile reste stable et les bandes se courbent
+autour de son contour comme une toile tendue sous une pierre, sans ombre ni
+assombrissement ; le poids apparent augmente pendant un drag. Les réglages `Tile Weight Radius`,
+`Tile Weight Strength`, `Pile Weight Multiplier`, `Card Weight Multiplier` et
+`Dragged Weight Multiplier` sont exposés sur `Artwork` dans l'inspecteur. Les
+piles pèsent davantage que les cartes de la main ; leur poids apparaît pendant
+l'entrée et retombe progressivement à zéro pendant la dissolution de fin.
+Dans l'éditeur, `Editor Preview > Show Pile Weight Preview` sur `Artwork`
+affiche une pile de démonstration au centre du fond. Elle réagit immédiatement
+aux réglages de masse de ce nœud. Son nœud et ses uniforms sont supprimés au
+démarrage du jeu. Chaque carte ajoutée à une pile émet aussi une petite onde
+qui disparaît rapidement ; sa durée, sa vitesse et sa force se règlent dans
+`Tile Impact Wave` sur `Artwork`.
+Lorsqu'une pile atteint zéro, son matériau échantillonne le fond déjà rendu :
+la tuile se contracte, courbe les bandes dans sa silhouette puis se dissout
+dans celles-ci. L'onde émise au même centre prolonge ensuite la transition dans
+le reste du viewport.
+Toutes les textures raster utilisées par le rendu du jeu (tuiles, main, vies,
+boutons, cases, icônes, notifications et panneaux) sont exposées comme des
+`CanvasTexture` dans `resources/materials/`. Leurs normal maps correspondantes,
+aux mêmes dimensions que les sprites diffus, sont regroupées sous
+`resources/normals/`. Les maps dérivées encodent les pentes X/Y d'un champ de
+hauteur construit depuis la transparence et la luminance du pixel art, avec un
+canal Z reconstruit ; elles ne sont donc pas de simples aplats. Une lumière
+directionnelle uniforme accentue leur relief
+sans éclaircir localement le fond, tandis qu'une lumière locale très légère suit
+la souris sur les tuiles et icônes principales. En mode debug, `V` renforce ou
+rétablit temporairement ces deux lumières pour inspecter clairement le relief.
+La page `GRAPHICS` regroupe `BACKGROUND DEFORMATION` et `SHOW BACKGROUND` dans
+la même sous-rubrique `BACKGROUND`. Quand la déformation est inactive, les
+bandes restent visibles et l'onde `RoundWave` du gameplay remplace l'onde du
+shader. Les piles terminées reprennent alors leur ancienne animation de montée
+et disparition ; la dissolution dans les bandes est réservée au fond déformé.
+Le relief lumineux et son option `3D LIGHTING` sont
+temporairement désactivés ; les nœuds, normal maps et matériaux sont conservés
+pour une réactivation ultérieure. L'ancien champ de sauvegarde
+`graphics/lighting_effects` est ignoré.
+`Dust Particle Color`, `Dust Mouse Influence`, `Dust Dragged Tile Influence`,
+`Dust Automatic Tile Influence` et `Dust Completion Wave Influence` permettent
+d'ajuster séparément la couleur et chaque interaction depuis l'inspecteur.
+`SHOW_DUST_DEBUG` dans `debug.gd` affiche son repère de
+diagnostic. Comme les choix de police et de palette, les options à
 sélection unique affichent le carré `selected` pour la valeur active et le
 carré `unchecked` pour les autres valeurs. Leur couleur reste inchangée ; seule
 la surbrillance commune aux boutons apparaît au survol. Ces choix sont affichés
@@ -579,9 +735,10 @@ La règle `COLORBLIND` ne modifie jamais la palette sélectionnée : elle rempla
 seulement son rendu par les teintes grises pendant le round concerné, puis la
 palette choisie réapparaît automatiquement au round suivant.
 
-`ProgressionMenu.tscn` fournit un aperçu directement dans l'éditeur. Les
-propriétés `Editor Preview/Enabled` et `Editor Preview/Page` permettent
-d'afficher chacune des cinq pages. `Editor Preview Font` et
+`ProgressionMenu.tscn` reste masqué par défaut dans l'éditeur. Pour afficher son
+aperçu ponctuellement, activer `Menu Editor Preview/Show Editor Preview` sur sa
+racine, puis `Editor Preview/Enabled` sur `FontCatalog`. `Editor Preview/Page`
+permet d'afficher chacune des cinq pages. `Editor Preview Font` et
 `Editor Preview Palette` permettent de choisir indépendamment la police et la
 palette appliquées aux tuiles de démonstration, sans modifier la sauvegarde ni
 la sélection du joueur. La section `Entry Style` expose les polices
@@ -605,6 +762,7 @@ jeu :
 - `S` prépare la section musicale suivante, jouée à la fin du segment de cinq
   secondes en cours ;
 - `G` active ou désactive le god mode pendant l'exécution ;
+- `P` affiche ou masque en direct les probabilités de difficulté du round ;
 - `R` réinitialise immédiatement la partie avec les valeurs de départ ;
 - `H` efface le high score sauvegardé.
 
@@ -637,6 +795,7 @@ const ENABLED_SPECIAL_RULES: Array[StringName] = [
     &"sudden_death",
     &"grace_period",
     &"colorblind",
+    &"pixelated",
     &"floor_is_lava",
 ]
 
@@ -644,6 +803,7 @@ const FIRST_SPECIAL_RULE_ROUND := 4
 const EXTRA_SPECIAL_RULE_CHANCE := 0.75
 const MAX_COMBINED_RULES := 5
 const LIGHTS_OUT_RADIUS := 60.0
+const PIXELATION_PIXEL_SIZE := 4.0
 const HOT_POTATO_DURATION := 1.0
 const STICKY_HOT_POTATO_DURATION := 2.0
 const GRACE_PERIOD_REVEAL_TIME := 1.25
@@ -741,7 +901,12 @@ Les règles disponibles sont :
   touchée sans revenir à une position de souris inactive. Le cercle lumineux
   se referme progressivement à l'activation et se rouvre à la fin du round.
   Son rayon en pixels se règle avec `LIGHTS_OUT_RADIUS` dans `difficulty.gd` ;
-- `PEEK-A-CARD` : cartes cachées révélées au survol ou au premier toucher ;
+- `PEEK-A-CARD` : cartes cachées révélées au survol ou au premier toucher. Sur
+  écran tactile, un premier contact passe la carte de `IDLE` à `REVEALED`. Le
+  même doigt peut ensuite déclencher `DRAGGING`, sans second tap, après 0,12 s
+  et 8 pixels de déplacement. Un simple tap garde la face visible 0,35 s avant
+  de la masquer. Avec `BLIND DELIVERY`, la face reste encore visible 0,18 s au
+  début du drag, puis se retourne pendant le transport ;
 - `STACK ATTACK` : régénération temporisée d'une sélection de piles, affichée
   avec le masque pixel-art `resources/sprites/tiles/tile-regen.png`. Une main
   devenue entièrement injouable après une régénération est immédiatement
@@ -771,6 +936,10 @@ Les règles disponibles sont :
   `GRACE_PERIOD_REVEAL_TIME` secondes avant la fin, avec une transition animée ;
 - `COLORBLIND` : les couleurs permanentes des cartes et piles sont remplacées
   par une palette grise, sans supprimer les feedbacks temporaires ;
+- `PIXELATED` : toute la zone de jeu est regroupée en blocs dont la taille se
+  règle avec `PIXELATION_PIXEL_SIZE`. Les blocs grandissent progressivement à
+  l'activation puis retrouvent doucement leur taille normale en fin de round.
+  La fenêtre de sortie reste rendue au-dessus du filtre et demeure nette ;
 - `THE FLOOR IS LAVA` : une grande masse corail part des bords de l'écran et
   entoure une baie centrale sûre ouverte vers la main, comme une île de jeu.
   Son contour repose sur quelques points d'ancrage reliés par des courbes de
@@ -957,9 +1126,24 @@ joker et de `LUCKY HAND`, les durées de révélation et les valeurs de chaque
 niveau. La liste `ENABLED_BONUSES` permet de retirer un bonus de toutes les
 sélections automatiques en commentant simplement son identifiant, comme
 `ENABLED_SPECIAL_RULES` pour les règles. Les bonus verrouillés par le mode
-debug peuvent toujours contourner cette liste. La barre récapitulative des
-bonus possédés est réservée au mode debug ;
-les bonus restent actifs lorsqu'elle est masquée.
+debug peuvent toujours contourner cette liste. Les bonus possédés sont affichés
+en permanence dans des cases d'acronymes au-dessus de la main.
+Le premier badge apparaît au-dessus du bord droit de la main et les suivants
+remplissent la ligne vers la gauche. Le niveau est omis au niveau I puis ajouté,
+après une espace, en chiffres romains à partir du niveau II. L'acronyme conserve
+l'initiale de chaque mot, sans limite de longueur (`BRING A FRIEND` devient
+`BAF`), tandis qu'un titre en un seul mot garde ses deux premières lettres. Six
+En cas de doublon, les mots concernés sont allongés progressivement avec des
+lettres minuscules (`OB` peut ainsi devenir `OpB` ou `OlB`) jusqu'à rendre
+chaque acronyme unique. Six cases tiennent sur une ligne ;
+la grille ajoute ensuite les lignes suivantes au-dessus de la main. Un badge
+`EditorBonusBadgePreview` reste visible dans `Game.tscn` pour régler directement
+son texte, sa police et son échelle depuis l'aperçu 2D. Le survol éclaircit le
+badge et affiche uniquement la description dans `ActiveBonusDescription`, une
+boîte repliable limitée à la moitié de la largeur de l'écran. La boîte se centre
+sur le badge survolé tant qu'elle tient dans l'écran, puis se cale contre le bord
+le plus proche. Son label reste visible dans l'éditeur afin d'y régler
+directement sa police.
 `BonusManager.gd` conserve l'état de la partie et pilote
 `BonusSelection.tscn`. Les propositions, le titre, le fond, les colonnes et les
 valeurs d'animation sont éditables dans cette scène, également ouverte comme

@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://bsdhf3t1kff8i"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_w4e0m"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1_w4e0m"]
 
 [resource]
 script = ExtResource("1_w4e0m")
@@ -9,3 +9,4 @@ title = "SEEING TRIPLE"
 description = "Use every possible Deja Vu placement in one activation."
 category = &"COMBOS"
 reward_font = &"pixellari"
+required_count = 3

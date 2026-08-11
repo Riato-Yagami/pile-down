@@ -36,6 +36,7 @@ var colorblind_enabled := false
 var keep_face_up := false
 var bonus_highlight := false
 var movable := false
+var background_weight := 1.0
 var _value_font: Font
 var _value_font_size := 20
 var _value_font_offset := Vector2.ZERO
@@ -102,6 +103,10 @@ func setup(
 	modulate = Color.WHITE
 	scale = Vector2.ONE
 	rotation = 0.0
+	background_weight = 1.0
+	face.modulate = Color.WHITE
+	value_label.modulate = Color.WHITE
+	_set_completion_morph(0.0)
 	keep_face_up = false
 	bonus_highlight = false
 	_refresh()
@@ -356,7 +361,7 @@ func impact() -> void:
 		glow.modulate = Color("#D9A514", 0.4)
 
 
-func complete_animation() -> void:
+func complete_animation(use_background_dissolve := true) -> void:
 	completed = true
 	disable_regeneration()
 	face.disabled = true
@@ -364,15 +369,53 @@ func complete_animation() -> void:
 	_refresh()
 	glow.visible = true
 	glow.modulate = Color(0.31, 0.64, 0.63, 0.25)
-	var tween := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
-	tween.tween_property(self, "position:y", position.y - 3.0, 0.18)
-	tween.parallel().tween_property(self, "scale", Vector2(1.06, 1.06), 0.18)
-	tween.tween_interval(0.28)
-	tween.tween_property(self, "scale", Vector2(0.82, 0.82), 0.22)
-	tween.parallel().tween_property(self, "modulate:a", 0.0, 0.22)
+	if not use_background_dissolve:
+		# Without background deformation, retain the original lift-and-fade
+		# completion so the pile does not appear to merge into a static surface.
+		var fade_tween := (
+			create_tween()
+			.set_trans(Tween.TRANS_QUAD)
+			.set_ease(Tween.EASE_IN_OUT)
+		)
+		fade_tween.tween_property(self, "position:y", position.y - 3.0, 0.18)
+		fade_tween.parallel().tween_property(
+			self, "scale", Vector2(1.06, 1.06), 0.18
+		)
+		fade_tween.tween_interval(0.28)
+		fade_tween.tween_property(self, "scale", Vector2(0.82, 0.82), 0.22)
+		fade_tween.parallel().tween_property(self, "modulate:a", 0.0, 0.22)
+		await fade_tween.finished
+		visible = false
+		pile_completed.emit(self)
+		return
+	var tween := (
+		create_tween()
+		.set_parallel()
+		.set_trans(Tween.TRANS_SINE)
+		.set_ease(Tween.EASE_IN_OUT)
+	)
+	tween.tween_method(_set_completion_morph, 0.0, 1.0, 0.62)
+	# Compressing towards the background reinforces the impression that the pile
+	# is being absorbed without moving any surviving pile from its layout slot.
+	tween.tween_property(self, "scale", Vector2(0.9, 0.72), 0.62)
+	tween.tween_property(value_label, "modulate:a", 0.0, 0.34)
+	tween.tween_property(face, "modulate:a", 0.0, 0.34)
+	tween.tween_property(glow, "modulate:a", 0.0, 0.46)
+	tween.tween_property(self, "background_weight", 0.0, 0.52)
 	await tween.finished
 	visible = false
 	pile_completed.emit(self)
+
+
+func _set_completion_morph(progress: float) -> void:
+	for sprite in [face_sprite, back_sprite]:
+		if not is_instance_valid(sprite):
+			continue
+		var shader_material := sprite.material as ShaderMaterial
+		if shader_material != null:
+			shader_material.set_shader_parameter(
+				"completion_morph", clampf(progress, 0.0, 1.0)
+			)
 
 
 func play_entrance(delay: float) -> void:
@@ -380,11 +423,13 @@ func play_entrance(delay: float) -> void:
 	position.y += 3.0
 	scale = Vector2(0.85, 0.85)
 	modulate.a = 0.0
+	background_weight = 0.0
 	var tween := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_interval(delay)
 	tween.tween_property(self, "position", destination, 0.25)
 	tween.parallel().tween_property(self, "scale", Vector2.ONE, 0.25)
 	tween.parallel().tween_property(self, "modulate:a", 1.0, 0.2)
+	tween.parallel().tween_property(self, "background_weight", 1.0, 0.25)
 
 
 func _refresh() -> void:

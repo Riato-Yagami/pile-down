@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://csg0sfqi87rcr"]
 
 [ext_resource type="Script" uid="uid://cgq5p8m16pb3q" path="res://resources/scripts/gameplay/Pile.gd" id="1"]
-[ext_resource type="Texture2D" uid="uid://cbvvr23hcu7c0" path="res://resources/sprites/tiles/tile-face.png" id="2"]
-[ext_resource type="Texture2D" uid="uid://q0b5vyg8qs6k" path="res://resources/sprites/tiles/tile-back.png" id="3"]
+[ext_resource type="Texture2D" path="res://resources/materials/TileFaceLitTexture.tres" id="2"]
+[ext_resource type="Texture2D" path="res://resources/materials/TileBackLitTexture.tres" id="3"]
 [ext_resource type="PackedScene" path="res://resources/scenes/RegenerationRing.tscn" id="4"]
 [ext_resource type="FontFile" uid="uid://0lls67bvy7ct" path="res://resources/fonts/VCR_OSD_MONO_1.001.ttf" id="5"]
 
@@ -24,17 +24,45 @@ shadow_size = 18
 code = "shader_type canvas_item;
 
 uniform vec4 tile_color : source_color = vec4(0.0, 1.0, 0.0, 1.0);
+uniform float completion_morph : hint_range(0.0, 1.0) = 0.0;
+uniform vec4 morph_edge_color : source_color = vec4(0.31, 0.64, 0.63, 1.0);
+uniform sampler2D screen_texture : hint_screen_texture, repeat_disable, filter_linear;
+
+float pixel_noise(vec2 pixel) {
+	return fract(sin(dot(pixel, vec2(12.9898, 78.233))) * 43758.5453);
+}
 
 void fragment() {
 	vec4 source = texture(TEXTURE, UV);
 	bool is_green = source.g > 0.65 && source.g > source.r * 1.6 && source.g > source.b * 1.6;
-	COLOR = is_green ? vec4(tile_color.rgb, source.a * tile_color.a) : source;
+	vec4 colored_tile = is_green ? vec4(tile_color.rgb, source.a * tile_color.a) : source;
+	if (completion_morph <= 0.001 || source.a <= 0.001) {
+		COLOR = colored_tile;
+	} else {
+		vec2 centered = UV - vec2(0.5);
+		float radial = clamp(length(centered) * 1.4, 0.0, 1.0);
+		float noise = pixel_noise(floor(UV / TEXTURE_PIXEL_SIZE));
+		float field = mix(noise, radial, 0.58);
+		float morph = smoothstep(field - 0.12, field + 0.12, completion_morph);
+		if (completion_morph >= 0.999) {
+			morph = 1.0;
+		}
+		vec2 direction = normalize(centered + vec2(0.0001));
+		float bend = sin(completion_morph * 3.14159265) * (1.0 - radial) * 0.009;
+		vec3 background = texture(screen_texture, SCREEN_UV + direction * bend).rgb;
+		vec4 merged = vec4(background, source.a);
+		float edge = 1.0 - smoothstep(0.0, 0.09, abs(field - completion_morph));
+		merged.rgb = mix(merged.rgb, morph_edge_color.rgb, edge * 0.32);
+		COLOR = mix(colored_tile, merged, morph);
+	}
 }"
 
 [sub_resource type="ShaderMaterial" id="TileColorMaterial"]
 resource_local_to_scene = true
 shader = SubResource("TileColorShader")
 shader_parameter/tile_color = Color(0, 1, 0, 1)
+shader_parameter/completion_morph = 0.0
+shader_parameter/morph_edge_color = Color(0.31, 0.64, 0.63, 1)
 
 [sub_resource type="Shader" id="RegenProgressShader"]
 code = "shader_type canvas_item;
@@ -85,6 +113,7 @@ theme_override_styles/panel = SubResource("GlowStyle")
 
 [node name="FaceSprite" type="TextureRect" parent="." unique_id=486208176]
 unique_name_in_owner = true
+light_mask = 2
 texture_filter = 1
 material = SubResource("TileColorMaterial")
 layout_mode = 1
@@ -99,6 +128,7 @@ texture = ExtResource("2")
 [node name="BackSprite" type="TextureRect" parent="." unique_id=1336485702]
 unique_name_in_owner = true
 visible = false
+light_mask = 2
 material = SubResource("TileColorMaterial")
 texture_filter = 1
 layout_mode = 1

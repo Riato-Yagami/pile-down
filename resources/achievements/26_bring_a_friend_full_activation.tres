@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://1wxb00gvaq0x"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_6x175"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1_6x175"]
 
 [resource]
 script = ExtResource("1_6x175")
@@ -8,3 +8,4 @@ id = &"bring_a_friend_full_activation"
 title = "THE WHOLE GANG"
 description = "Successfully play every companion with Bring a Friend III."
 category = &"COMBOS"
+required_count = 3
