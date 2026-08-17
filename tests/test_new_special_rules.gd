@@ -1,8 +1,8 @@
 extends SceneTree
 
-const CardScene := preload("res://resources/scenes/Card.tscn")
-const PileScene := preload("res://resources/scenes/Pile.tscn")
-const LavaScene := preload("res://resources/scenes/LavaZone.tscn")
+const CardScene := preload("res://resources/scenes/gameplay/Card.tscn")
+const PileScene := preload("res://resources/scenes/gameplay/Pile.tscn")
+const LavaScene := preload("res://resources/scenes/special_rules/LavaZone.tscn")
 
 
 func _init() -> void:

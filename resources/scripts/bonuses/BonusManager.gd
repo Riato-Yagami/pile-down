@@ -8,7 +8,7 @@ signal bonuses_seen(bonus_ids: Array[StringName])
 const Difficulty := preload("res://resources/scripts/settings/difficulty.gd")
 const Debug := preload("res://resources/scripts/settings/debug.gd")
 const ACTIVE_BADGE_SCENE := preload(
-	"res://resources/scenes/ActiveBonusBadge.tscn"
+	"res://resources/scenes/bonuses/ActiveBonusBadge.tscn"
 )
 
 @onready var selection: BonusSelection = %BonusSelection
@@ -29,6 +29,7 @@ var banked_time := 0.0
 var force_next_joker := false
 var _debug_locked_bonus_ids: Array[StringName] = []
 var _debug_forced_activation_bonus_ids: Array[StringName] = []
+var disabled_bonus_ids: Array[StringName] = []
 
 
 func _ready() -> void:
@@ -43,6 +44,39 @@ func begin_run() -> void:
 	force_next_joker = false
 	_apply_debug_locked_bonuses()
 	_refresh_bar()
+
+
+func end_run() -> void:
+	selection.cancel()
+	active.clear()
+	completed_rounds = 0
+	banked_time = 0.0
+	force_next_joker = false
+	active_description.visible = false
+	_refresh_bar()
+
+
+func grant_starting_bonuses(configured_bonuses: Dictionary) -> void:
+	for id_value in configured_bonuses:
+		var id := StringName(id_value)
+		if disabled_bonus_ids.has(id):
+			push_warning("Starting bonus '%s' is also disabled; ignoring it." % id)
+			continue
+		var data := _find_definition(id)
+		if data == null:
+			push_warning("Unknown starting bonus id '%s'." % id)
+			continue
+		var requested_level := int(configured_bonuses[id_value])
+		if requested_level <= 0:
+			push_warning("Starting bonus '%s' must have a positive level." % id)
+			continue
+		var owned := ActiveBonus.new(data)
+		owned.level = clampi(requested_level, 1, data.max_level)
+		active[id] = owned
+		if id == &"wild_card":
+			force_next_joker = true
+	_refresh_bar()
+	bonuses_changed.emit()
 
 
 func begin_round() -> void:
@@ -68,6 +102,12 @@ func offer_if_due(completed_round_number: int) -> bool:
 	_emit_bonuses_seen(choices)
 	active_bar.visible = false
 	var chosen_index := await selection.present(choices, levels)
+	if chosen_index == BonusSelection.SKIPPED_INDEX:
+		active_bar.visible = not active.is_empty()
+		return true
+	if chosen_index < 0 or chosen_index >= choices.size():
+		active_bar.visible = not active.is_empty()
+		return false
 	_add_or_upgrade(choices[chosen_index])
 	active_bar.visible = not active.is_empty()
 	return true
@@ -83,6 +123,12 @@ func offer_bonus_choice(round_number: int, _choice_index := 0) -> bool:
 	_emit_bonuses_seen(choices)
 	active_bar.visible = false
 	var chosen_index := await selection.present(choices, levels)
+	if chosen_index == BonusSelection.SKIPPED_INDEX:
+		active_bar.visible = not active.is_empty()
+		return true
+	if chosen_index < 0 or chosen_index >= choices.size():
+		active_bar.visible = not active.is_empty()
+		return false
 	_add_or_upgrade(choices[chosen_index])
 	active_bar.visible = not active.is_empty()
 	return true
@@ -98,6 +144,8 @@ func _emit_bonuses_seen(choices: Array[BonusData]) -> void:
 func generate_choices(round_number: int) -> Array[BonusData]:
 	var pool: Array[BonusData] = []
 	for data in definitions:
+		if disabled_bonus_ids.has(data.id):
+			continue
 		if not Difficulty.is_bonus_enabled(data.id):
 			continue
 		if _debug_locked_bonus_ids.has(data.id):
@@ -157,6 +205,8 @@ func _apply_debug_locked_bonuses() -> void:
 	var locked := Debug.get_locked_bonuses()
 	for locked_id_value in locked:
 		var locked_id := StringName(locked_id_value)
+		if disabled_bonus_ids.has(locked_id):
+			continue
 		var data := _find_definition(locked_id)
 		if data == null:
 			push_warning("Bonus debug lock: unknown bonus id '%s'." % locked_id)
@@ -265,6 +315,13 @@ func bank_remaining_time(time_left: float) -> void:
 	)
 
 
+func shared_clock_time_bonus(base_hand_time: float) -> float:
+	return minf(
+		base_hand_time * Difficulty.TIME_BANK_RATES[level(&"time_bank")],
+		Difficulty.TIME_BANK_MAXIMUM
+	)
+
+
 func joker_chance() -> float:
 	if _debug_forced_activation_bonus_ids.has(&"wild_card"):
 		return 1.0
@@ -333,7 +390,7 @@ func choose_rule_to_break(rules: Array[SpecialRuleData]) -> int:
 	active_bar.visible = false
 	var chosen_index := await selection.present_rules(rules)
 	active_bar.visible = not active.is_empty()
-	return chosen_index
+	return chosen_index if chosen_index >= 0 and chosen_index < rules.size() else -1
 
 
 func _refresh_bar() -> void:

@@ -10,9 +10,13 @@ enum GameMode {
 	STANDARD,
 	CHECKPOINT,
 	ENDLESS,
+	CHALLENGE,
 }
 
-const PILE_SCENE := preload("res://resources/scenes/Pile.tscn")
+const PILE_SCENE := preload("res://resources/scenes/gameplay/Pile.tscn")
+# A replay has no menu transition to let the player settle before memorizing.
+# Keep the opening pile values visible long enough to establish a fresh run.
+const RESTART_PILE_REVEAL_BONUS := 1.0
 const HIGHLIGHT_BUTTON_SCRIPT := preload(
 	"res://resources/scripts/ui/HighlightButton.gd"
 )
@@ -24,8 +28,30 @@ const UNCHECKED_TEXTURE := preload(
 	"res://resources/materials/textures/ui/check/unchecked.tres"
 )
 const Difficulty := preload("res://resources/scripts/settings/difficulty.gd")
+const DifficultyProgressionScript := preload(
+	"res://resources/scripts/gameplay/DifficultyProgression.gd"
+)
+const ProgressionSnapshotBuilderScript := preload(
+	"res://resources/scripts/progression/ProgressionSnapshotBuilder.gd"
+)
+const SubmenuSwipeControllerScript := preload(
+	"res://resources/scripts/ui/SubmenuSwipeController.gd"
+)
+const GameOptionsControllerScript := preload(
+	"res://resources/scripts/settings/GameOptionsController.gd"
+)
+const CheckpointMenuControllerScript := preload(
+	"res://resources/scripts/progression/checkpoints/CheckpointMenuController.gd"
+)
+const ProgressionUnreadStoreScript := preload(
+	"res://resources/scripts/progression/ProgressionUnreadStore.gd"
+)
+const AchievementNotificationControllerScript := preload(
+	"res://resources/scripts/progression/AchievementNotificationController.gd"
+)
 const PROGRESSION_BONUS_ICON := "res://resources/materials/icons/bonuses.tres"
 const PROGRESSION_RULE_ICON := "res://resources/materials/icons/rules.tres"
+const PROGRESSION_CHECKPOINT_ICON := "res://resources/materials/icons/saves.tres"
 const PROGRESSION_ACHIEVEMENT_ICON := (
 	"res://resources/materials/icons/trophies.tres"
 )
@@ -43,7 +69,8 @@ const ITCH_URL := "https://juel-s.itch.io/"
 const KOFI_URL := "https://ko-fi.com/juels"
 const LOCKED_VIEWPORT_SIZE := Vector2i(256, 320)
 const AUDIO_CONFIG_PATH := "user://pile_down.cfg"
-const DEATH_POPUP_DELAY := 0.35
+const DEATH_POPUP_DELAY := 0.1
+const DEATH_PILE_REVEAL_HOLD_DURATION := 0.25
 const SAVE_SCHEMA_VERSION := 4
 const URGENT_TICK_THRESHOLDS: Array[float] = [
 	2.0,
@@ -60,7 +87,7 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 
 @onready var piles_board: Control = %PilesBoard
 @onready var hand_container: HBoxContainer = %HandContainer
-@onready var hand_tray: NinePatchRect = %HandTray
+@onready var hand_tray: ConveyorHandTray = %HandTray
 @onready var drag_layer: Control = %DragLayer
 @onready var hand_manager: HandManager = %HandManager
 @onready var pile_manager: PileManager = %PileManager
@@ -87,8 +114,12 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var overlay_endless_button: Button = %OverlayEndlessButton
 @onready var overlay_high_score: RichTextLabel = %OverlayHighScore
 @onready var overlay_unlocks: RichTextLabel = %OverlayUnlocks
+@onready var overlay_quit_button: Button = %OverlayQuitButton
 @onready var overlay_scrim: ColorRect = $Screens/Overlay/Scrim
-@onready var overlay_panel: TextureRect = $Screens/Overlay/Center/Panel
+@onready var overlay_panel: NinePatchRect = $Screens/Overlay/Center/ResultStack/Panel
+@onready var replay_transition_mask: ColorRect = %ReplayTransitionMask
+@onready var menu_transition_layer: CanvasLayer = %MenuTransitionLayer
+@onready var screens: Node = $Screens
 @onready var splash: Control = %Splash
 @onready var splash_button: Button = %SplashButton
 @onready var endless_button: Button = %EndlessButton
@@ -103,6 +134,8 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var splash_debug_mode: Label = %SplashDebugMode
 @onready var splash_debug_help: Label = %SplashDebugHelp
 @onready var progression_button: TextureButton = %ProgressionButton
+@onready var challenge_button: TextureButton = %ChallengeButton
+@onready var challenge_selection: ChallengeSelection = %ChallengeSelection
 @onready var progression_notification: TextureRect = %ProgressionNotification
 @onready var options_button: TextureButton = %OptionsButton
 @onready var options_menu: Control = %OptionsMenu
@@ -153,13 +186,21 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var redraw_button: RedrawBonusButton = %RedrawButton
 @onready var active_bonus_bar: GridContainer = %ActiveBonusBar
 @onready var back_button: TextureHighlightButton = %BackButton
-@onready var overlay_back_button: TextureButton = %OverlayBackButton
 
-var pile_count: int = Difficulty.START_PILES
-var hand_size: int = Difficulty.START_HAND_SIZE
-var start_value: int = Difficulty.START_CARD_VALUE
+var difficulty_progression := DifficultyProgressionScript.new()
+var pile_count: int:
+	get: return difficulty_progression.pile_count
+	set(value): difficulty_progression.pile_count = value
+var hand_size: int:
+	get: return difficulty_progression.hand_size
+	set(value): difficulty_progression.hand_size = value
+var start_value: int:
+	get: return difficulty_progression.start_value
+	set(value): difficulty_progression.start_value = value
 var max_discovered_tile_value: int = Difficulty.START_CARD_VALUE
-var turn_time: float = Difficulty.START_TURN_TIME
+var turn_time: float:
+	get: return difficulty_progression.turn_time
+	set(value): difficulty_progression.turn_time = value
 var round_number: int = Difficulty.TOTAL_ROUNDS
 var best_rounds_left := -1
 var best_score_time_ms := -1
@@ -170,12 +211,13 @@ var classic_no_mistake_rounds_left := -1
 var classic_no_mistake_time_ms := -1
 var endless_no_mistake_round := -1
 var game_mode := GameMode.STANDARD
-var difficulty_droughts := {
-	&"pile": 0,
-	&"hand": 0,
-	&"start_value": 0,
-	&"time": 0,
-}
+var challenge_manager := ChallengeManager.new()
+var current_challenge: ChallengeData
+var challenge_endless := false
+var challenge_modifiers := ChallengeModifiers.new()
+var difficulty_droughts: Dictionary:
+	get: return difficulty_progression.droughts
+	set(value): difficulty_progression.droughts = value
 var run_mistake_count := 0
 var run_lives_lost := 0
 var run_completed_rounds := 0
@@ -195,6 +237,7 @@ var current_checkpoint_id := 0
 var selected_checkpoint_id := 0
 var checkpoint_uses_endless_progression := false
 var checkpoint_segment_damage_count := 0
+var checkpoint_bonus_backlog := 0
 var _pending_checkpoint_snapshot: CheckpointSnapshot
 var _quick_peek_pending := false
 var discovered_bonuses: Array[StringName] = []
@@ -231,9 +274,31 @@ var _last_clock_second := -1
 var _urgent_tick_index := 0
 var _clock_flash_tween: Tween
 var _menu_exit_tween: Tween
+var _screen_transition_active := false
+var _submenu_swipe_controller := SubmenuSwipeControllerScript.new()
+var _run_transition_generation := 0
+var _gameplay_generation := 0
+var _replay_iris_radius := 0.0
+var _replay_board_ready := false
+var _splash_screen_index := -1
 var round_modifiers := RoundModifiers.new()
-var tier_reliefs_applied := 0
+var tier_reliefs_applied: int:
+	get: return difficulty_progression.tier_reliefs_applied
+	set(value): difficulty_progression.tier_reliefs_applied = value
 var _debug_action_in_progress := false
+var _restart_pile_reveal_pending := false
+var _restart_hand_immediate_pending := false
+var _debug_round_wins_queued := 0
+var _reload_tutorial_hand_pending := false
+var _preserve_timer_through_quick_peek := false
+var _shared_clock_initialized := false
+var _shared_clock_timeout_pending := false
+var _shared_clock_mistake_feedback_active := false
+var _conveyor_active := false
+var _conveyor_left_to_right := true
+var _conveyor_spawn_distance := 0.0
+var _conveyor_unplayable_spawns := 0
+var _lucky_conveyor_queue: Array[int] = []
 var _debug_help_enabled := true
 var _debug_probability_visible := false
 var _hand_cycle_generation := 0
@@ -273,9 +338,12 @@ var _card_touch_index := -1
 
 @export_category("Start Transition")
 @export var menu_swipe_duration := 0.62
+@export_range(0.1, 0.8, 0.05, "suffix:s") var submenu_swipe_duration := 0.28
 @export var gameplay_pop_duration := 0.24
 @export var gameplay_pop_stagger := 0.1
 @export var gameplay_pop_scale := 0.82
+@export_range(0.1, 1.0, 0.05, "suffix:s") var replay_mask_duration := 0.3
+@export_range(0.5, 3.0, 0.1, "suffix:s") var pile_value_hold_duration := 1.0
 @export_category("Difficulty Announcement")
 @export_range(0.0, 0.75, 0.05, "suffix:s")
 var extra_difficulty_reveal_delay := 0.2
@@ -310,7 +378,9 @@ var achievement_popup_after_announcements_delay := 0.25
 
 func _ready() -> void:
 	rng.randomize()
+	_submenu_swipe_controller.duration = submenu_swipe_duration
 	add_child(achievement_manager)
+	add_child(challenge_manager)
 	add_child(font_manager)
 	add_child(palette_manager)
 	font_manager.definitions = progression_menu.get_available_fonts()
@@ -323,6 +393,7 @@ func _ready() -> void:
 	if default_palette != null:
 		palette_manager.selected_palette = default_palette.id
 	achievement_manager.load_progress()
+	challenge_manager.load_progress()
 	font_manager.load_progress()
 	palette_manager.load_progress()
 	_load_unread_progression_pages()
@@ -342,6 +413,7 @@ func _ready() -> void:
 	timer_manager.timer_visibility_requested.connect(_on_timer_visibility_requested)
 	overlay_button.pressed.connect(_on_overlay_pressed)
 	overlay_endless_button.pressed.connect(_on_overlay_endless_pressed)
+	overlay_quit_button.pressed.connect(_return_to_menu)
 	splash_button.pressed.connect(_on_splash_pressed)
 	endless_button.pressed.connect(_on_endless_pressed)
 	checkpoint_button.pressed.connect(_start_selected_checkpoint)
@@ -354,6 +426,9 @@ func _ready() -> void:
 	checkpoint_button.gui_input.connect(_on_checkpoint_button_input)
 	checkpoint_back_button.pressed.connect(_close_checkpoint_menu)
 	progression_button.pressed.connect(_open_progression_menu)
+	challenge_button.pressed.connect(_open_challenge_selection)
+	challenge_selection.challenge_selected.connect(_start_challenge)
+	challenge_selection.closed.connect(_on_challenge_selection_closed)
 	options_button.pressed.connect(_open_options_menu)
 	options_back_button.pressed.connect(_close_options_menu)
 	gameplay_options_button.pressed.connect(_show_options_page.bind(OPTION_GAMEPLAY))
@@ -397,7 +472,6 @@ func _ready() -> void:
 	quit_continue_button.pressed.connect(_close_quit_popup)
 	quit_restart_button.pressed.connect(_restart_from_quit_popup)
 	quit_run_button.pressed.connect(_return_to_menu)
-	overlay_back_button.pressed.connect(_return_to_menu)
 	# The game control stays at 256x320 in adaptive mode, so its `resized`
 	# signal does not track changes to the expanded viewport.
 	get_viewport().size_changed.connect(_resize_dust_distribution)
@@ -427,211 +501,67 @@ func _ready() -> void:
 
 
 func _setup_audio_controls() -> void:
-	var config := ConfigFile.new()
-	config.load(AUDIO_CONFIG_PATH)
-	music_volume_slider.set_value_no_signal(
-		float(config.get_value("audio", "music_volume", 1.0)) * 100.0
-	)
-	sound_volume_slider.set_value_no_signal(
-		float(config.get_value("audio", "sound_volume", 1.0)) * 100.0
-	)
-	if music_volume_slider.value > 0.0:
-		_music_volume_before_mute = music_volume_slider.value
-	if sound_volume_slider.value > 0.0:
-		_sound_volume_before_mute = sound_volume_slider.value
-	music_volume_slider.value_changed.connect(
-		_on_volume_changed.bind(MUSIC_BUS_NAME, "music_volume")
-	)
-	sound_volume_slider.value_changed.connect(
-		_on_volume_changed.bind(SFX_BUS_NAME, "sound_volume")
-	)
-	_apply_bus_volume(MUSIC_BUS_NAME, music_volume_slider.value / 100.0)
-	_apply_bus_volume(SFX_BUS_NAME, sound_volume_slider.value / 100.0)
+	GameOptionsControllerScript.setup_audio(self)
 
 
 func _style_option_list_buttons() -> void:
-	var buttons: Array[Button] = [
-		achievement_notifications_button,
-		timer_display_button,
-		adaptive_resolution_button,
-		dust_effects_button,
-		background_enabled_button,
-		export_save_button,
-		import_save_button,
-		delete_save_button,
-		itch_link_button,
-		kofi_link_button,
-	]
-	for button in buttons:
-		button.add_theme_stylebox_override(&"focus", StyleBoxEmpty.new())
-		for color_name in [&"font_color", &"font_disabled_color"]:
-			button.add_theme_color_override(color_name, OPTION_TEXT_COLOR)
-		for color_name in [
-			&"font_hover_color",
-			&"font_pressed_color",
-			&"font_hover_pressed_color",
-			&"font_focus_color",
-		]:
-			button.add_theme_color_override(color_name, OPTIONS_SELECTED_COLOR)
+	GameOptionsControllerScript.style_buttons(self)
 
 
 func _setup_gameplay_options() -> void:
-	var config := ConfigFile.new()
-	config.load(AUDIO_CONFIG_PATH)
-	_achievement_notifications_enabled = bool(config.get_value(
-		"gameplay", "achievement_notifications", true
-	))
-	_global_timer_enabled = bool(config.get_value(
-		"gameplay", "show_timer", true
-	))
-	_refresh_gameplay_options()
+	GameOptionsControllerScript.setup_gameplay(self)
 
 
 func _toggle_achievement_notifications() -> void:
-	_achievement_notifications_enabled = not _achievement_notifications_enabled
-	if not _achievement_notifications_enabled:
-		_achievement_notification_queue.clear()
-		achievement_popup.visible = false
-	_save_gameplay_option(
-		"achievement_notifications", _achievement_notifications_enabled
-	)
-	_refresh_gameplay_options()
+	GameOptionsControllerScript.toggle_achievement_notifications(self)
 
 
 func _toggle_timer_display() -> void:
-	_global_timer_enabled = not _global_timer_enabled
-	_save_gameplay_option("show_timer", _global_timer_enabled)
-	_refresh_gameplay_options()
+	GameOptionsControllerScript.toggle_timer(self)
 
 
 func _save_gameplay_option(key: String, value: bool) -> void:
-	var config := ConfigFile.new()
-	config.load(AUDIO_CONFIG_PATH)
-	config.set_value("gameplay", key, value)
-	config.save(AUDIO_CONFIG_PATH)
+	GameOptionsControllerScript.save_gameplay(self, key, value)
 
 
 func _refresh_gameplay_options() -> void:
-	achievement_notifications_button.icon = (
-		SELECTED_TEXTURE if _achievement_notifications_enabled else UNCHECKED_TEXTURE
-	)
-	timer_display_button.icon = (
-		SELECTED_TEXTURE if _global_timer_enabled else UNCHECKED_TEXTURE
-	)
-	run_time_label.visible = _global_timer_enabled and not splash.visible
+	GameOptionsControllerScript.refresh_gameplay(self)
 
 
 func _setup_graphics_options() -> void:
-	var config := ConfigFile.new()
-	config.load(AUDIO_CONFIG_PATH)
-	_adaptive_resolution = bool(config.get_value(
-		"graphics", "adaptive_resolution", false
-	))
-	_dust_enabled = bool(config.get_value("graphics", "dust_effects", true))
-	_background_enabled = bool(config.get_value(
-		"graphics", "background_enabled", true
-	))
-	if OS.has_feature("editor") and start_adaptive_in_editor:
-		_adaptive_resolution = true
-	_apply_resolution_mode()
-	_refresh_dust_option()
-	_refresh_background_option()
-	# Lighting is intentionally dormant for now. Keep its nodes and normal-map
-	# pipeline available so the feature can return without rebuilding assets.
-	relief_lighting.set_enabled(false)
+	GameOptionsControllerScript.setup_graphics(self)
 
 
 func _setup_dust_pool() -> void:
-	deformable_stripe_background = $Artwork as DeformableStripeBackground
-	deformable_stripe_background.setup()
-	deformable_stripe_background.enabled = _dust_enabled
-	deformable_stripe_background.visible = _background_enabled
-	var pool_control := Control.new()
-	pool_control.set_script(DustPoolScript)
-	dust_pool = pool_control as DustPool
-	dust_pool.name = "DustPool"
-	# Artwork is ordered before Gameplay: bands and dust stay behind every tile.
-	$Artwork.add_child(dust_pool)
-	dust_pool.setup(
-		_dust_particle_target_count(),
-		Debug.is_dust_debug_visible(),
-		dust_viscosity,
-		dust_particle_color
-	)
-	# Keep the particle simulation available while only the continuous background
-	# deformation is presented in the current visual direction.
-	dust_pool.particles_visible = false
-	dust_pool.enabled = _dust_enabled
+	GameOptionsControllerScript.setup_dust_pool(self)
 
 
 func _resize_dust_distribution() -> void:
-	if is_instance_valid(relief_lighting):
-		var viewport_size := get_viewport_rect().size
-		relief_lighting.follow_pointer(viewport_size * 0.5, viewport_size)
-	if is_instance_valid(deformable_stripe_background):
-		deformable_stripe_background.call_deferred("resize_to_viewport")
-	if is_instance_valid(dust_pool):
-		dust_pool.call_deferred(
-			"resize_to_viewport", _dust_particle_target_count()
-		)
+	GameOptionsControllerScript.resize_dust_distribution(self)
 
 
 func _dust_particle_target_count() -> int:
-	var viewport_area := get_viewport_rect().size.x * get_viewport_rect().size.y
-	return maxi(roundi(
-		dust_particles_per_10000_pixels * viewport_area / 10000.0
-	), 0)
+	return GameOptionsControllerScript.dust_particle_target_count(self)
 
 
 func _rebuild_dust_pool() -> void:
-	if not is_instance_valid(dust_pool):
-		return
-	dust_pool.setup(
-		_dust_particle_target_count(),
-		Debug.is_dust_debug_visible(),
-		dust_viscosity,
-		dust_particle_color
-	)
-	dust_pool.enabled = _dust_enabled
+	GameOptionsControllerScript.rebuild_dust_pool(self)
 
 
 func _toggle_dust_effects() -> void:
-	_dust_enabled = not _dust_enabled
-	var config := ConfigFile.new()
-	config.load(AUDIO_CONFIG_PATH)
-	config.set_value("graphics", "dust_effects", _dust_enabled)
-	config.save(AUDIO_CONFIG_PATH)
-	if is_instance_valid(dust_pool):
-		dust_pool.enabled = _dust_enabled
-	if is_instance_valid(deformable_stripe_background):
-		deformable_stripe_background.enabled = _dust_enabled
-	_refresh_dust_option()
+	GameOptionsControllerScript.toggle_dust(self)
 
 
 func _refresh_dust_option() -> void:
-	dust_effects_button.modulate = Color.WHITE
-	dust_effects_button.icon = (
-		SELECTED_TEXTURE if _dust_enabled else UNCHECKED_TEXTURE
-	)
+	GameOptionsControllerScript.refresh_dust(self)
 
 
 func _toggle_background() -> void:
-	_background_enabled = not _background_enabled
-	var config := ConfigFile.new()
-	config.load(AUDIO_CONFIG_PATH)
-	config.set_value("graphics", "background_enabled", _background_enabled)
-	config.save(AUDIO_CONFIG_PATH)
-	if is_instance_valid(deformable_stripe_background):
-		deformable_stripe_background.visible = _background_enabled
-	_refresh_background_option()
+	GameOptionsControllerScript.toggle_background(self)
 
 
 func _refresh_background_option() -> void:
-	background_enabled_button.modulate = Color.WHITE
-	background_enabled_button.icon = (
-		SELECTED_TEXTURE if _background_enabled else UNCHECKED_TEXTURE
-	)
-	dust_effects_button.visible = _background_enabled
+	GameOptionsControllerScript.refresh_background(self)
 
 
 func _is_background_deformation_active() -> bool:
@@ -646,6 +576,7 @@ func _toggle_debug_unlock_everything() -> void:
 func _apply_debug_unlock_everything() -> void:
 	if not Debug.is_unlock_everything_enabled():
 		return
+	challenge_manager.debug_unlock_all = true
 	max_discovered_tile_value = Difficulty.MAX_CARD_VALUE
 	achievement_manager.unlocked.clear()
 	for achievement in achievement_manager.definitions:
@@ -668,15 +599,13 @@ func _apply_debug_unlock_everything() -> void:
 	for rule_data in SpecialRuleRegistry.create_all_rules():
 		encountered_special_rules.append(rule_data.id)
 		beaten_special_rules.append(rule_data.id)
+	challenge_manager.completed.clear()
+	for challenge_data in challenge_manager.definitions:
+		challenge_manager.completed.append(challenge_data.id)
 
 
 func _set_adaptive_resolution(adaptive: bool) -> void:
-	_adaptive_resolution = adaptive
-	var config := ConfigFile.new()
-	config.load(AUDIO_CONFIG_PATH)
-	config.set_value("graphics", "adaptive_resolution", adaptive)
-	config.save(AUDIO_CONFIG_PATH)
-	_apply_resolution_mode()
+	GameOptionsControllerScript.set_adaptive_resolution(self, adaptive)
 
 
 func _toggle_adaptive_resolution() -> void:
@@ -684,33 +613,11 @@ func _toggle_adaptive_resolution() -> void:
 
 
 func _apply_resolution_mode() -> void:
-	var window := get_window()
-	# Both modes keep the same logical viewport so sprites retain their scale.
-	# Adaptive only exposes more logical space on screens with a different ratio.
-	window.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
-	window.content_scale_size = LOCKED_VIEWPORT_SIZE
-	window.content_scale_aspect = (
-		Window.CONTENT_SCALE_ASPECT_EXPAND
-		if _adaptive_resolution
-		else Window.CONTENT_SCALE_ASPECT_KEEP
-	)
-	adaptive_resolution_button.modulate = Color.WHITE
-	adaptive_resolution_button.icon = (
-		SELECTED_TEXTURE if _adaptive_resolution else UNCHECKED_TEXTURE
-	)
+	GameOptionsControllerScript.apply_resolution(self)
 
 
 func _setup_save_dialogs() -> void:
-	export_save_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
-	import_save_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
-	for dialog in [export_save_dialog, import_save_dialog]:
-		dialog.access = FileDialog.ACCESS_FILESYSTEM
-		dialog.filters = PackedStringArray(["*.json ; JSON save files"])
-		dialog.use_native_dialog = true
-	export_save_dialog.current_file = "pile-down-save.json"
-	var confirmation_label := delete_save_confirmation.get_label()
-	confirmation_label.custom_minimum_size.x = 180.0
-	confirmation_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	GameOptionsControllerScript.setup_save_dialogs(self)
 
 
 func _open_export_save_dialog() -> void:
@@ -728,44 +635,25 @@ func _open_delete_save_confirmation() -> void:
 
 
 func _export_save_json(path: String) -> void:
-	var error := save_data_manager.export_json(path)
-	save_status.text = "SAVE EXPORTED" if error == OK else "EXPORT FAILED"
+	GameOptionsControllerScript.export_save(self, path)
 
 
 func _import_save_json(path: String) -> void:
-	var error := save_data_manager.import_json(path)
-	if error != OK:
-		save_status.text = "INVALID SAVE FILE"
-		return
-	get_tree().reload_current_scene()
+	GameOptionsControllerScript.import_save(self, path)
 
 
 func _delete_save() -> void:
-	var error := save_data_manager.delete_save()
-	if error != OK:
-		save_status.text = "DELETE FAILED"
-		return
-	get_tree().reload_current_scene()
+	GameOptionsControllerScript.delete_save(self)
 
 
 func _on_volume_changed(value: float, bus_name: StringName, config_key: String) -> void:
-	var linear_volume := value / 100.0
-	_apply_bus_volume(bus_name, linear_volume)
-	var config := ConfigFile.new()
-	config.load(AUDIO_CONFIG_PATH)
-	config.set_value("audio", config_key, linear_volume)
-	config.save(AUDIO_CONFIG_PATH)
+	GameOptionsControllerScript.volume_changed(
+		self, value, bus_name, config_key
+	)
 
 
 func _apply_bus_volume(bus_name: StringName, linear_volume: float) -> void:
-	var bus_index := AudioServer.get_bus_index(bus_name)
-	if bus_index < 0:
-		return
-	AudioServer.set_bus_volume_db(
-		bus_index,
-		linear_to_db(maxf(linear_volume, 0.0001))
-	)
-	AudioServer.set_bus_mute(bus_index, is_zero_approx(linear_volume))
+	GameOptionsControllerScript.apply_bus_volume(bus_name, linear_volume)
 
 
 func _process(delta: float) -> void:
@@ -782,6 +670,7 @@ func _process(delta: float) -> void:
 		and not options_menu.visible
 		and not checkpoint_menu.visible
 		and not progression_menu.visible
+		and not challenge_selection.visible
 	)
 	debug_probability_panel.visible = (
 		Debug.is_enabled() and _debug_probability_visible
@@ -794,6 +683,7 @@ func _process(delta: float) -> void:
 		_regeneration_hand_check_pending = false
 		_reroll_unplayable_hand()
 	_try_start_touch_card_drag()
+	_process_conveyor(delta)
 	if (
 		moving_pile != null
 		and is_instance_valid(moving_pile)
@@ -928,10 +818,6 @@ func _input(event: InputEvent) -> void:
 				dust_mouse_influence
 			)
 	_update_gameplay_back_hover(event)
-	if _is_overlay_back_pointer_event(event):
-		_set_input_as_handled()
-		_return_to_menu()
-		return
 	if _is_gameplay_back_pointer_event(event):
 		_set_input_as_handled()
 		_open_quit_popup()
@@ -994,12 +880,6 @@ func _set_input_as_handled() -> void:
 	var viewport := get_viewport()
 	if viewport != null:
 		viewport.set_input_as_handled()
-
-
-func _is_overlay_back_pointer_event(event: InputEvent) -> bool:
-	if not overlay.visible or not overlay_back_button.visible:
-		return false
-	return _is_button_pointer_press(event, overlay_back_button)
 
 
 func _is_gameplay_back_pointer_event(event: InputEvent) -> bool:
@@ -1073,6 +953,9 @@ func _handle_global_shortcut(event: InputEvent) -> bool:
 			if options_menu.visible:
 				_close_options_menu()
 				return true
+			if challenge_selection.visible:
+				challenge_selection.close()
+				return true
 			if checkpoint_menu.visible:
 				_close_checkpoint_menu()
 				return true
@@ -1091,13 +974,13 @@ func _handle_global_shortcut(event: InputEvent) -> bool:
 				_restart_from_quit_popup()
 				return true
 		KEY_SPACE:
-			if progression_menu.visible or options_menu.visible:
+			if progression_menu.visible or options_menu.visible or challenge_selection.visible:
 				return false
 			if splash.visible or (overlay.visible and overlay_mode == "restart"):
-				if overlay.visible and game_mode == GameMode.CHECKPOINT:
-					start_from_checkpoint(current_checkpoint_id)
+				if overlay.visible:
+					_restart_current_mode()
 				else:
-					start_game(game_mode == GameMode.ENDLESS if overlay.visible else false)
+					start_game()
 				return true
 		KEY_M:
 			_toggle_audio_sliders()
@@ -1112,7 +995,59 @@ func _handle_global_shortcut(event: InputEvent) -> bool:
 
 
 func _return_to_menu() -> void:
-	get_tree().reload_current_scene()
+	if _screen_transition_active:
+		return
+	_screen_transition_active = true
+	# Stop a round-completion coroutine that may currently be awaiting a bonus
+	# choice; it must not resume behind the returning menu.
+	_run_transition_generation += 1
+	_gameplay_generation += 1
+	_debug_round_wins_queued = 0
+	input_locked = true
+	timer_manager.stop_countdown()
+	_splash_screen_index = splash.get_index()
+	splash.reparent(menu_transition_layer, true)
+	await _play_return_to_menu_transition()
+	# The raised menu now covers the popup completely, so hiding it cannot cut
+	# the animation short.
+	bonus_selection.cancel()
+	special_rule_manager.cancel_pending_round()
+	quit_popup.visible = false
+	await _reset_to_menu_state()
+	splash.reparent(screens, true)
+	if _splash_screen_index >= 0:
+		screens.move_child(splash, _splash_screen_index)
+	_screen_transition_active = false
+
+
+func _reset_to_menu_state() -> void:
+	# The raised Splash already presents the complete menu. Reset the run behind
+	# it instead of reloading the scene, which would introduce a blank frame.
+	_conveyor_active = false
+	bonus_selection.cancel()
+	active_bonus_bar.visible = false
+	_hand_cycle_generation += 1
+	_pending_interactive_generation = -1
+	await cleanup_special_rule_state()
+	await special_rule_manager.end_round(piles)
+	bonus_manager.end_run()
+	hand_manager.clear_hand(hand_container, true)
+	_clear_drag_placeholder()
+	for child in drag_layer.get_children():
+		child.queue_free()
+	for child in piles_board.get_children():
+		child.queue_free()
+	piles.clear()
+	selected_card = null
+	hovered_pile = null
+	overlay.visible = false
+	overlay_mode = ""
+	back_button.visible = false
+	run_time_label.visible = false
+	music_manager.transition_to_menu_music()
+	_refresh_checkpoint_button()
+	_refresh_high_score()
+	_refresh_debug_help()
 
 
 func _open_quit_popup() -> void:
@@ -1130,20 +1065,138 @@ func _close_quit_popup() -> void:
 
 
 func _restart_from_quit_popup() -> void:
+	_restart_current_mode()
+
+
+func _restart_current_mode() -> void:
+	if _screen_transition_active:
+		return
+	_screen_transition_active = true
+	# Invalidate an in-flight round-completion coroutine immediately. The replay
+	# iris is allowed to cover that transition instead of waiting for it to end.
+	_run_transition_generation += 1
+	_gameplay_generation += 1
+	_debug_round_wins_queued = 0
+	input_locked = true
+	timer_manager.stop_countdown()
+	await _mask_replay_transition()
+	# Keep the popup visible during the iris close and remove it only while the
+	# transition color fully covers the old run.
+	bonus_selection.cancel()
+	special_rule_manager.cancel_pending_round()
 	quit_popup.visible = false
+	await cleanup_special_rule_state(false)
+	await special_rule_manager.end_round(piles, false)
+	_clear_gameplay_pieces_immediately()
+	_replay_board_ready = false
+	_restart_pile_reveal_pending = true
+	_restart_hand_immediate_pending = true
+	special_rule_manager.suppress_next_announcement = true
 	if game_mode == GameMode.CHECKPOINT:
+		# A checkpoint replay is a fresh attempt: discard the old loadout and let
+		# the player make the checkpoint's bonus choices again.
 		start_from_checkpoint(current_checkpoint_id)
+	elif game_mode == GameMode.CHALLENGE:
+		start_game(false, current_challenge, challenge_endless)
 	else:
 		start_game(game_mode == GameMode.ENDLESS)
+	# Special-rule cleanup (notably pixelation) is asynchronous. Keep the iris
+	# shut until the replacement board exists instead of exposing stale effects.
+	var ready_deadline := Time.get_ticks_msec() + 3000
+	while (
+		not _replay_board_ready
+		and not bonus_selection.visible
+		and Time.get_ticks_msec() < ready_deadline
+	):
+		await get_tree().process_frame
+	await _unmask_replay_transition()
+	_screen_transition_active = false
+
+
+func _mask_replay_transition() -> void:
+	replay_transition_mask.visible = true
+	replay_transition_mask.mouse_filter = Control.MOUSE_FILTER_STOP
+	replay_transition_mask.modulate.a = 1.0
+	var mask_size := replay_transition_mask.size
+	var center := replay_transition_mask.get_local_mouse_position().clamp(
+		Vector2.ZERO, mask_size
+	)
+	var material := replay_transition_mask.material as ShaderMaterial
+	var center_uv := Vector2(center.x / mask_size.x, center.y / mask_size.y)
+	var aspect_ratio := mask_size.x / mask_size.y
+	material.set_shader_parameter(&"center_uv", center_uv)
+	material.set_shader_parameter(&"aspect_ratio", aspect_ratio)
+	_replay_iris_radius = _maximum_iris_radius(center_uv, aspect_ratio) + 0.02
+	material.set_shader_parameter(&"radius", _replay_iris_radius)
+	var tween := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_property(
+		material, "shader_parameter/radius", 0.0, replay_mask_duration
+	)
+	await tween.finished
+
+
+func _unmask_replay_transition() -> void:
+	var material := replay_transition_mask.material as ShaderMaterial
+	var tween := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(
+		material,
+		"shader_parameter/radius",
+		_replay_iris_radius,
+		replay_mask_duration
+	)
+	await tween.finished
+	replay_transition_mask.visible = false
+	replay_transition_mask.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+
+func _maximum_iris_radius(center_uv: Vector2, aspect_ratio: float) -> float:
+	var top_left := (Vector2.ZERO - center_uv) * Vector2(aspect_ratio, 1.0)
+	var top_right := (Vector2.RIGHT - center_uv) * Vector2(aspect_ratio, 1.0)
+	var bottom_left := (Vector2.DOWN - center_uv) * Vector2(aspect_ratio, 1.0)
+	var bottom_right := (Vector2.ONE - center_uv) * Vector2(aspect_ratio, 1.0)
+	return maxf(
+		maxf(top_left.length(), top_right.length()),
+		maxf(bottom_left.length(), bottom_right.length())
+	)
+
+
+func _play_return_to_menu_transition() -> void:
+	var splash_destination := splash.global_position
+	# Position the menu from the viewport boundary, not from the fixed gameplay
+	# size: adaptive aspect ratios can expose extra canvas below the game Control.
+	splash.global_position.y = get_viewport_rect().end.y + 2.0
+	splash.visible = true
+	# Commit the off-screen placement before starting the tween. This prevents a
+	# single frame at the old position when Splash has just changed CanvasLayer.
+	await get_tree().process_frame
+	var tween := create_tween().set_parallel().set_trans(Tween.TRANS_QUAD)
+	tween.set_ease(Tween.EASE_OUT)
+	tween.tween_property(
+		splash, "global_position:y", splash_destination.y, menu_swipe_duration
+	)
+	for element in _start_transition_elements():
+		element.pivot_offset = element.size * 0.5
+		tween.tween_property(
+			element, "modulate:a", 0.0, gameplay_pop_duration
+		)
+		tween.tween_property(
+			element,
+			"scale",
+			Vector2.ONE * gameplay_pop_scale,
+			gameplay_pop_duration
+		)
+	await tween.finished
 
 
 func _open_progression_menu() -> void:
 	progression_menu.open(_progression_snapshot())
+	_submenu_swipe_controller.open(progression_menu, get_viewport_rect().size.x)
 
 
 func _open_options_menu() -> void:
 	options_menu.visible = true
 	_show_options_page(_options_page)
+	_submenu_swipe_controller.open(options_menu, get_viewport_rect().size.x)
 	match _options_page:
 		OPTION_GAMEPLAY:
 			achievement_notifications_button.grab_focus()
@@ -1202,11 +1255,14 @@ func _open_external_link(url: String) -> void:
 func _close_options_menu() -> void:
 	if not options_menu.visible:
 		return
-	options_menu.visible = false
+	await _submenu_swipe_controller.close(options_menu, get_viewport_rect().size.x)
 	options_button.grab_focus()
 
 
 func _on_progression_menu_closed() -> void:
+	await _submenu_swipe_controller.close(
+		progression_menu, get_viewport_rect().size.x
+	)
 	progression_button.grab_focus()
 
 
@@ -1263,257 +1319,59 @@ func _apply_tile_palette() -> void:
 
 
 func _progression_snapshot() -> Dictionary:
-	return {
-		"max_discovered_tile_value": max_discovered_tile_value,
-		"highscores": _progression_highscores(),
-		"achievements": _progression_achievements(),
-		"bonuses": _progression_bonuses(),
-		"special_rules": _progression_special_rules(),
-		"fonts": _progression_fonts(),
-		"palettes": _progression_palettes(),
-		"unread_progression_pages": unread_progression_pages.duplicate(),
-	}
+	return ProgressionSnapshotBuilderScript.build(self)
 
 
 func _load_unread_progression_pages() -> void:
-	var config := ConfigFile.new()
-	config.load(AUDIO_CONFIG_PATH)
-	unread_progression_pages.clear()
-	unread_progression_items.clear()
-	for value in config.get_value("progression", "unread_pages", []):
-		var page := int(value)
-		if (
-			page > ProgressionMenu.Page.HIGHSCORES
-			and page <= ProgressionMenu.Page.FONTS
-		):
-			if not unread_progression_pages.has(page):
-				unread_progression_pages.append(page)
-	var saved_items: Dictionary = config.get_value(
-		"progression", "unread_items", {}
-	)
-	for page_key in saved_items:
-		var page := int(page_key)
-		if page <= ProgressionMenu.Page.HIGHSCORES or page > ProgressionMenu.Page.FONTS:
-			continue
-		var ids: Array[StringName] = []
-		for value in saved_items[page_key]:
-			var item_id := StringName(value)
-			if not item_id.is_empty() and not ids.has(item_id):
-				ids.append(item_id)
-		if not ids.is_empty():
-			unread_progression_items[page] = ids
-	_save_unread_progression_pages()
-	_refresh_progression_notification()
+	ProgressionUnreadStoreScript.load(self)
 
 
 func _mark_progression_page_unread(page: int) -> void:
-	if page == ProgressionMenu.Page.HIGHSCORES:
-		return
-	if unread_progression_pages.has(page):
-		return
-	unread_progression_pages.append(page)
-	_save_unread_progression_pages()
-	_refresh_progression_notification()
+	ProgressionUnreadStoreScript.mark_page(self, page)
 
 
 func _mark_progression_item_unread(page: int, item_id: StringName) -> void:
-	if item_id.is_empty():
-		return
-	var items: Array[StringName] = []
-	items.assign(unread_progression_items.get(page, []))
-	if not items.has(item_id):
-		items.append(item_id)
-		unread_progression_items[page] = items
-	_mark_progression_page_unread(page)
-	# The page may already be unread, in which case marking it does not save again.
-	_save_unread_progression_pages()
+	ProgressionUnreadStoreScript.mark_item(self, page, item_id)
 
 
 func _is_progression_item_unread(page: int, item_id: StringName) -> bool:
-	return (unread_progression_items.get(page, []) as Array).has(item_id)
+	return ProgressionUnreadStoreScript.is_item_unread(self, page, item_id)
 
 
 func _on_progression_page_viewed(page: int) -> void:
-	if not unread_progression_pages.has(page) and not unread_progression_items.has(page):
-		return
-	unread_progression_pages.erase(page)
-	unread_progression_items.erase(page)
-	_save_unread_progression_pages()
-	_refresh_progression_notification()
+	ProgressionUnreadStoreScript.mark_page_viewed(self, page)
 
 
 func _save_unread_progression_pages() -> void:
-	var config := ConfigFile.new()
-	config.load(AUDIO_CONFIG_PATH)
-	config.set_value("progression", "unread_pages", unread_progression_pages)
-	config.set_value("progression", "unread_items", unread_progression_items)
-	config.save(AUDIO_CONFIG_PATH)
+	ProgressionUnreadStoreScript.save(self)
 
 
 func _refresh_progression_notification() -> void:
-	if is_instance_valid(progression_notification):
-		progression_notification.visible = not unread_progression_pages.is_empty()
+	ProgressionUnreadStoreScript.refresh_notification(self)
 
 
 func _progression_highscores() -> Array[Dictionary]:
-	var classic_value := "--"
-	if best_rounds_left >= 0:
-		classic_value = "%d rounds left" % best_rounds_left
-		if best_score_time_ms >= 0:
-			classic_value += "\n" + _format_duration(best_score_time_ms)
-	var endless_value := "--"
-	if endless_best_round >= 0:
-		endless_value = "round %d" % endless_best_round
-		if endless_best_time_ms >= 0:
-			endless_value += "\n" + _format_duration(endless_best_time_ms)
-	var checkpoint_lines := PackedStringArray()
-	if checkpoint_best_rounds_left >= 0:
-		checkpoint_lines.append("%d rounds left" % checkpoint_best_rounds_left)
-	if checkpoint_endless_best_round >= 0:
-		checkpoint_lines.append("round %d reached" % checkpoint_endless_best_round)
-	return [
-		{"title": "CLASSIC", "value": classic_value},
-		{"title": "ENDLESS", "value": endless_value},
-		{
-			"title": "CHECKPOINTS",
-			"value": "\n".join(checkpoint_lines) if not checkpoint_lines.is_empty() else "--",
-		},
-	]
+	return ProgressionSnapshotBuilderScript.highscores(self)
 
 
 func _progression_achievements() -> Array[Dictionary]:
-	var result: Array[Dictionary] = []
-	for data in achievement_manager.definitions:
-		var progress := ""
-		var progress_current := 0
-		var progress_target := 0
-		match data.id:
-			&"all_checkpoints":
-				progress_current = unlocked_checkpoints.size()
-				progress_target = AchievementManager.normal_checkpoint_ids().size()
-				progress = "Checkpoints unlocked: %d / %d" % [
-					progress_current, progress_target,
-				]
-			&"all_bonuses_discovered":
-				var discovered_enabled := discovered_bonuses.filter(
-					func(id: StringName) -> bool:
-						return Difficulty.ENABLED_BONUSES.has(id)
-				).size()
-				progress_current = discovered_enabled
-				progress_target = Difficulty.ENABLED_BONUSES.size()
-				progress = "Bonuses discovered: %d / %d" % [
-					progress_current, progress_target,
-				]
-			&"all_bonuses_maxed_once":
-				var maxed_enabled := 0
-				for bonus_id in Difficulty.ENABLED_BONUSES:
-					if bool(achievement_manager.bonuses_maxed_once.get(
-						bonus_id, false
-					)):
-						maxed_enabled += 1
-				progress_current = maxed_enabled
-				progress_target = Difficulty.ENABLED_BONUSES.size()
-				progress = "BONUSES MAXED\n%d / %d" % [
-					progress_current, progress_target,
-				]
-			&"beat_all_special_rules":
-				var beaten_enabled := beaten_special_rules.filter(
-					func(id: StringName) -> bool:
-						return Difficulty.ENABLED_SPECIAL_RULES.has(id)
-				).size()
-				progress_current = beaten_enabled
-				progress_target = Difficulty.ENABLED_SPECIAL_RULES.size()
-				progress = "Special Rules beaten: %d / %d" % [
-					progress_current, progress_target,
-				]
-		result.append({
-			"id": data.id,
-			"title": data.title,
-			"description": data.description,
-			"category": data.category,
-			"hidden": data.hidden,
-			"unlocked": achievement_manager.unlocked.has(data.id),
-			"date": str(achievement_manager.unlock_dates.get(data.id, "")),
-			"reward_font": data.reward_font,
-			"new": _is_progression_item_unread(
-				ProgressionMenu.Page.ACHIEVEMENTS, data.id
-			),
-			"progress": progress,
-			"progress_current": progress_current,
-			"progress_target": progress_target,
-		})
-	return result
+	return ProgressionSnapshotBuilderScript.achievements(self)
 
 
 func _progression_bonuses() -> Array[Dictionary]:
-	var result: Array[Dictionary] = []
-	for data in bonus_manager.definitions:
-		result.append({
-			"id": data.id,
-			"title": data.title,
-			"description": data.description,
-			"seen": seen_bonuses.has(data.id) or discovered_bonuses.has(data.id),
-			"discovered": discovered_bonuses.has(data.id),
-			"highest_level": int(
-				achievement_manager.bonus_highest_levels.get(data.id, 0)
-			),
-			"max_level": data.max_level,
-			"new": _is_progression_item_unread(
-				ProgressionMenu.Page.BONUSES, data.id
-			),
-		})
-	return result
+	return ProgressionSnapshotBuilderScript.bonuses(self)
 
 
 func _progression_special_rules() -> Array[Dictionary]:
-	var result: Array[Dictionary] = []
-	for data in SpecialRuleRegistry.create_all_rules():
-		result.append({
-			"id": data.id,
-			"title": data.title,
-			"description": data.description,
-			"discovered": encountered_special_rules.has(data.id),
-			"obtained": beaten_special_rules.has(data.id),
-			"new": _is_progression_item_unread(
-				ProgressionMenu.Page.SPECIAL_RULES, data.id
-			),
-		})
-	return result
+	return ProgressionSnapshotBuilderScript.special_rules(self)
 
 
 func _progression_fonts() -> Array[Dictionary]:
-	var result: Array[Dictionary] = []
-	for data in font_manager.definitions:
-		result.append({
-			"id": data.id,
-			"title": data.display_name,
-			"font": data.font,
-			"font_size": data.tile_font_size,
-			"font_offset": data.tile_font_offset,
-			"title_font_offset": data.title_font_offset,
-			"title_font_size": (
-				data.title_font_size
-				if data.title_font_size > 0
-				else data.tile_font_size
-			),
-			"override_hidden_tile_with_font": data.override_hidden_tile_with_font,
-			"unlocked": font_manager.unlocked.has(data.id),
-			"selected": font_manager.selected_font == data.id,
-		})
-	return result
+	return ProgressionSnapshotBuilderScript.fonts(self)
 
 
 func _progression_palettes() -> Array[Dictionary]:
-	var result: Array[Dictionary] = []
-	for data in palette_manager.definitions:
-		result.append({
-			"id": data.id,
-			"title": data.display_name,
-			"colors": data.normalized_colors(),
-			"unlocked": palette_manager.unlocked.has(data.id),
-			"selected": palette_manager.selected_palette == data.id,
-		})
-	return result
+	return ProgressionSnapshotBuilderScript.palettes(self)
 
 
 func _toggle_audio_sliders() -> void:
@@ -1535,7 +1393,30 @@ func _handle_debug_shortcut(event: InputEvent) -> bool:
 	if not Debug.is_enabled() or not event is InputEventKey:
 		return false
 	var key_event := event as InputEventKey
-	if not key_event.pressed or key_event.echo or _debug_action_in_progress:
+	if not key_event.pressed or key_event.echo:
+		return false
+	# The main menu only exposes debug actions that operate on menu/progression
+	# state. Gameplay controls must not leak through the hidden board; notably R
+	# must never restart a run from behind the Splash.
+	if splash.visible and key_event.keycode not in [KEY_F1, KEY_U, KEY_H]:
+		return false
+	# Result screens and modal menus own their explicit shortcuts. Keep all
+	# unrelated debug gameplay actions dormant while one of them is open.
+	if (
+		(overlay.visible or quit_popup.visible or progression_menu.visible
+		or options_menu.visible or challenge_selection.visible
+		or checkpoint_menu.visible)
+		and key_event.keycode != KEY_F1
+	):
+		return false
+	# Round wins are intentionally queueable so rapid debug presses can drive a
+	# run through successive rounds while skipping transition animations.
+	if key_event.keycode == KEY_E:
+		if splash.visible or overlay.visible:
+			return false
+		_debug_win_round()
+		return true
+	if _debug_action_in_progress and key_event.keycode != KEY_R:
 		return false
 	match key_event.keycode:
 		KEY_F1:
@@ -1543,11 +1424,6 @@ func _handle_debug_shortcut(event: InputEvent) -> bool:
 			return true
 		KEY_U:
 			_toggle_debug_unlock_everything()
-			return true
-		KEY_E:
-			if splash.visible or overlay.visible or input_locked:
-				return false
-			_debug_win_round()
 			return true
 		KEY_S:
 			if splash.visible or overlay.visible:
@@ -1571,8 +1447,6 @@ func _handle_debug_shortcut(event: InputEvent) -> bool:
 			_refresh_debug_help()
 			return true
 		KEY_R:
-			if input_locked and not splash.visible and not overlay.visible:
-				return false
 			_debug_reset_game()
 			return true
 		KEY_H:
@@ -1592,8 +1466,34 @@ func _handle_debug_shortcut(event: InputEvent) -> bool:
 
 
 func _debug_win_round() -> void:
+	_debug_round_wins_queued += 1
+	# Debug round completion supersedes the current turn. Stop its timer before
+	# raising time scale, otherwise it can expire during the few locked transition
+	# frames and resolve as delayed damage in a later round.
+	timer_manager.stop_countdown()
+	_shared_clock_timeout_pending = false
+	if skippable_sequence.can_skip:
+		skippable_sequence.skip_to_end()
+	if _debug_action_in_progress:
+		return
 	_debug_action_in_progress = true
-	await _finish_round()
+	var previous_time_scale := Engine.time_scale
+	Engine.time_scale = maxf(previous_time_scale, 20.0)
+	while _debug_round_wins_queued > 0 and not splash.visible and not overlay.visible:
+		timer_manager.stop_countdown()
+		_shared_clock_timeout_pending = false
+		var transition_frames := 0
+		while input_locked and not overlay.visible and transition_frames < 5:
+			await get_tree().process_frame
+			transition_frames += 1
+		if overlay.visible:
+			break
+		# A queued debug win deliberately supersedes any remaining transition.
+		input_locked = false
+		_debug_round_wins_queued -= 1
+		await _finish_round()
+	_debug_round_wins_queued = 0
+	Engine.time_scale = previous_time_scale
 	_debug_action_in_progress = false
 
 
@@ -1614,14 +1514,7 @@ func _debug_die() -> void:
 
 func _debug_reset_game() -> void:
 	_debug_action_in_progress = true
-	input_locked = true
-	timer_manager.stop_countdown()
-	await cleanup_special_rule_state()
-	await special_rule_manager.end_round(piles)
-	if game_mode == GameMode.CHECKPOINT:
-		start_from_checkpoint(current_checkpoint_id)
-	else:
-		start_game(game_mode == GameMode.ENDLESS)
+	await _restart_current_mode()
 	_debug_action_in_progress = false
 
 
@@ -1645,12 +1538,18 @@ func _debug_reset_progression() -> void:
 	checkpoint_no_mistake_rounds_left = -1
 	checkpoint_endless_no_mistake_round = -1
 	current_checkpoint_id = 0
+	checkpoint_bonus_backlog = 0
 	selected_checkpoint_id = 0
 	discovered_bonuses.clear()
 	max_discovered_tile_value = Difficulty.START_CARD_VALUE
 	seen_bonuses.clear()
 	encountered_special_rules.clear()
 	beaten_special_rules.clear()
+	challenge_manager.debug_unlock_all = false
+	challenge_manager.completed.clear()
+	challenge_manager.highscores.clear()
+	challenge_manager.endless_highscores.clear()
+	challenge_manager.best_times_ms.clear()
 	achievement_manager.unlocked.clear()
 	achievement_manager.unlock_dates.clear()
 	achievement_manager.bonuses_maxed_once.clear()
@@ -1679,7 +1578,9 @@ func _debug_reset_progression() -> void:
 	if config.load("user://pile_down.cfg") == OK:
 		# Whole sections are removed so achievements and progression fields added
 		# in future versions are reset without extending this debug command.
-		for section in ["progress", "highscores", "checkpoints", "progression"]:
+		for section in [
+			"progress", "highscores", "checkpoints", "progression", "challenges"
+		]:
 			if config.has_section(section):
 				config.erase_section(section)
 		if config.has_section_key("settings", "selected_font"):
@@ -1724,78 +1625,53 @@ func _refresh_debug_help() -> void:
 
 
 func _difficulty_probability_debug_text() -> String:
-	var progression_round := _progression_round()
-	var first_upgrade := progression_round == 2
-	var options: Array[StringName] = []
-	var stat_ids: Array[StringName] = []
-	var weights: Array[float] = []
-	var pile_weight := (
-		Difficulty.FIRST_ADD_PILE_WEIGHT
-		if first_upgrade else Difficulty.ADD_PILE_WEIGHT
-	)
-	var hand_weight := (
-		Difficulty.FIRST_ADD_CARD_WEIGHT
-		if first_upgrade else Difficulty.ADD_CARD_WEIGHT
-	)
-	if pile_count < Difficulty.MAX_PILES:
-		options.append(&"PILE")
-		stat_ids.append(&"pile")
-		if pile_count == 1:
-			pile_weight *= Difficulty.STARTER_STAT_MULTIPLIER
-		weights.append(get_directed_weight(pile_weight, difficulty_droughts[&"pile"]))
-	if hand_size < Difficulty.MAX_HAND_SIZE:
-		options.append(&"CARD")
-		stat_ids.append(&"hand")
-		if hand_size == 1:
-			hand_weight *= Difficulty.STARTER_STAT_MULTIPLIER
-		weights.append(get_directed_weight(hand_weight, difficulty_droughts[&"hand"]))
-	if not first_upgrade and start_value < Difficulty.MAX_CARD_VALUE:
-		options.append(&"START VALUE")
-		stat_ids.append(&"start_value")
-		weights.append(get_directed_weight(
-			Difficulty.ADD_START_VALUE_WEIGHT, difficulty_droughts[&"start_value"]
-		))
-	if not first_upgrade and turn_time > Difficulty.MIN_TURN_TIME:
-		options.append(&"TIME")
-		stat_ids.append(&"time")
-		weights.append(get_directed_weight(
-			Difficulty.REDUCE_TURN_TIME_WEIGHT, difficulty_droughts[&"time"]
-		))
-	var guaranteed_indices: Array[int] = []
-	for index in stat_ids.size():
-		if int(difficulty_droughts.get(stat_ids[index], 0)) >= Difficulty.MAX_STAT_DROUGHT:
-			guaranteed_indices.append(index)
-	var total := 0.0
-	for index in weights.size():
-		if guaranteed_indices.is_empty() or guaranteed_indices.has(index):
-			total += weights[index]
-	var no_change_chance := (
-		0.0 if not guaranteed_indices.is_empty()
-		else get_no_difficulty_change_chance(progression_round)
-	)
-	var lines := PackedStringArray([
-		"DIFFICULTY / ROUND %d" % progression_round,
-		"NO CHANGE  %5.1f%%" % (no_change_chance * 100.0),
-		"EXTRA STAT %5.1f%%" % (get_extra_difficulty_chance(progression_round) * 100.0),
-		"FIRST PICK",
-	])
-	for index in options.size():
-		var effective_weight := (
-			weights[index]
-			if guaranteed_indices.is_empty() or guaranteed_indices.has(index)
-			else 0.0
-		)
-		lines.append("%s %5.1f%%" % [
-			String(options[index]),
-			(effective_weight / total * 100.0) if total > 0.0 else 0.0,
-		])
-	return "\n".join(lines)
+	return difficulty_progression.probability_debug_text(_progression_round())
 
 
-func start_game(endless_mode := false) -> void:
+func start_game(
+	endless_mode := false,
+	challenge_data: ChallengeData = null,
+	challenge_is_endless := false
+) -> void:
+	_gameplay_generation += 1
 	var animate_menu_exit := splash.visible
 	back_button.visible = not animate_menu_exit
-	game_mode = GameMode.ENDLESS if endless_mode else GameMode.STANDARD
+	current_challenge = challenge_data
+	challenge_endless = challenge_is_endless
+	_reload_tutorial_hand_pending = (
+		challenge_data != null and challenge_data.id == &"reload_required"
+	)
+	challenge_modifiers = (
+		challenge_manager.modifiers_for(current_challenge)
+		if current_challenge != null
+		else ChallengeModifiers.new()
+	)
+	_configure_challenge_hand_tray()
+	bonus_manager.disabled_bonus_ids.assign(challenge_modifiers.disabled_bonuses)
+	special_rule_manager.disabled_rule_ids.assign(challenge_modifiers.disabled_special_rules)
+	special_rule_manager.forced_rule_ids.assign(
+		current_challenge.forced_rules if current_challenge != null else []
+	)
+	special_rule_manager.force_rules_every_round = (
+		challenge_modifiers.force_special_rules_every_round
+	)
+	special_rule_manager.forced_rule_count = challenge_modifiers.forced_special_rule_count
+	special_rule_manager.disable_rules_on_challenge_first_round = (
+		current_challenge != null
+		and challenge_modifiers.disable_special_rules_on_first_round
+	)
+	special_rule_manager.challenge_start_round = (
+		current_challenge.start_round if current_challenge != null else 1
+	)
+	special_rule_manager.challenge_target_round = (
+		current_challenge.target_round if current_challenge != null else 1
+	)
+	special_rule_manager.challenge_endless = challenge_endless
+	game_mode = (
+		GameMode.CHALLENGE
+		if current_challenge != null
+		else (GameMode.ENDLESS if endless_mode else GameMode.STANDARD)
+	)
 	soft_audio.play_start()
 	music_manager.set_low_pass_enabled(false, true)
 	_hand_cycle_generation += 1
@@ -1817,8 +1693,19 @@ func start_game(endless_mode := false) -> void:
 	newly_unlocked_fonts.clear()
 	newly_unlocked_checkpoints.clear()
 	current_checkpoint_id = 0
+	checkpoint_bonus_backlog = 0
 	_pending_checkpoint_snapshot = null
-	if game_mode == GameMode.ENDLESS:
+	if game_mode == GameMode.CHALLENGE:
+		round_number = (
+			current_challenge.start_round
+			if challenge_endless
+			else current_challenge.target_round - current_challenge.start_round
+		)
+		run_start_round = current_challenge.start_round
+		started_from_checkpoint = false
+		_apply_debug_progression(current_challenge.start_round)
+		_apply_challenge_starting_difficulty(current_challenge)
+	elif game_mode == GameMode.ENDLESS:
 		round_number = 1
 		run_start_round = 1
 	else:
@@ -1838,6 +1725,8 @@ func start_game(endless_mode := false) -> void:
 	quit_popup.visible = false
 	overlay_mode = ""
 	bonus_manager.begin_run()
+	if current_challenge != null:
+		bonus_manager.grant_starting_bonuses(current_challenge.forced_bonuses)
 	if animate_menu_exit:
 		_prepare_gameplay_start_reveal()
 		_update_hud()
@@ -1911,7 +1800,17 @@ func _start_transition_elements() -> Array[Control]:
 	return [timer_ring, round_panel, back_button, piles_board, hand_tray]
 
 
+func _restore_gameplay_transition_elements() -> void:
+	# Checkpoint starts do not use the ordinary menu-exit animation. Restore the
+	# controls faded by the preceding quit transition before revealing gameplay.
+	for element in _start_transition_elements():
+		element.modulate.a = 1.0
+		element.scale = Vector2.ONE
+	back_button.z_index = 10
+
+
 func start_round() -> void:
+	var gameplay_generation := _gameplay_generation
 	_resume_run_time()
 	input_locked = true
 	_emit_difficulty_stats()
@@ -1926,6 +1825,9 @@ func start_round() -> void:
 	_last_clock_second = -1
 	_urgent_tick_index = 0
 	timer_manager.stop_countdown()
+	_shared_clock_initialized = false
+	_shared_clock_timeout_pending = false
+	_conveyor_active = false
 	hand_manager.clear_hand(hand_container)
 	_clear_drag_placeholder()
 	for child in drag_layer.get_children():
@@ -1936,6 +1838,9 @@ func start_round() -> void:
 	_last_reminder_pile = null
 	bonus_manager.begin_round()
 	round_modifiers = await special_rule_manager.begin_round(_progression_round())
+	if gameplay_generation != _gameplay_generation:
+		return
+	round_modifiers.hide_tile_numbers = challenge_modifiers.hide_tile_numbers
 	var rule_intensity := bonus_manager.adaptation_multiplier()
 	if round_modifiers.hot_potatoes_enabled:
 		round_modifiers.hot_potato_drag_duration /= rule_intensity
@@ -1945,7 +1850,9 @@ func start_round() -> void:
 	if round_modifiers.mirror_match_enabled:
 		mirror_match_controller.begin_round(self, round_modifiers)
 	maximum_mistakes = (
-		round_modifiers.maximum_mistakes_override
+		1
+		if challenge_modifiers.force_single_life
+		else round_modifiers.maximum_mistakes_override
 		if round_modifiers.maximum_mistakes_override > 0
 		else 3 + bonus_manager.spare_lives()
 	)
@@ -1981,7 +1888,8 @@ func start_round() -> void:
 			start_value,
 			round_modifiers.stack_direction,
 			round_modifiers.roman_numerals_enabled,
-			round_modifiers.colorblind_enabled
+			round_modifiers.colorblind_enabled,
+			round_modifiers.hide_tile_numbers
 		)
 		pile.set_movable(bonus_manager.has_bonus(&"pile_mover"))
 		pile.pile_selected.connect(_on_pile_selected)
@@ -1990,6 +1898,7 @@ func start_round() -> void:
 		pile.regenerated.connect(_on_pile_regenerated)
 		piles.append(pile)
 	_layout_piles()
+	_replay_board_ready = true
 	for index in piles.size():
 		piles[index].play_entrance(index * 0.055)
 	var open_book_count := bonus_manager.level(&"open_book")
@@ -1999,11 +1908,27 @@ func start_round() -> void:
 		for index in mini(open_book_count, open_book_candidates.size()):
 			open_book_candidates[index].keep_face_up = true
 	_update_hud()
-	await get_tree().create_timer(0.75 + piles.size() * 0.055).timeout
+	# Start the readable hold only once the final entrance has completed. The old
+	# timing included entrance motion, leaving the number legible for too little
+	# time before its flip.
+	var last_pile_entrance_delay := maxf(float(piles.size() - 1) * 0.055, 0.0)
+	var pile_reveal_duration := (
+		last_pile_entrance_delay + 0.25 + pile_value_hold_duration
+	)
+	if _restart_pile_reveal_pending:
+		pile_reveal_duration += RESTART_PILE_REVEAL_BONUS
+	_restart_pile_reveal_pending = false
+	await get_tree().create_timer(
+		0.0 if _debug_action_in_progress else pile_reveal_duration
+	).timeout
+	if gameplay_generation != _gameplay_generation:
+		return
 	# Continuous movement owns pile.position, so start it only after every
 	# entrance tween has released that property. Position-dependent board
 	# effects are generated afterwards from the final movement layout.
 	await special_rule_manager.activate_board_effects(piles, _progression_round())
+	if gameplay_generation != _gameplay_generation:
+		return
 	if round_modifiers.floor_is_lava_enabled:
 		lava_rule_controller.generate(
 			_progression_round(),
@@ -2016,7 +1941,9 @@ func start_round() -> void:
 	for pile in piles:
 		if is_instance_valid(pile):
 			pile.hide_value(true)
-	await get_tree().create_timer(0.26).timeout
+	await get_tree().create_timer(0.0 if _debug_action_in_progress else 0.26).timeout
+	if gameplay_generation != _gameplay_generation:
+		return
 	_begin_turn()
 
 
@@ -2037,14 +1964,23 @@ func _layout_piles() -> void:
 	pile_manager.configure(piles_board, piles, slots)
 
 
-func _begin_turn(hand_prepared := false, enter_from_right := false) -> void:
+func _begin_turn(
+	hand_prepared := false,
+	enter_from_right := false,
+	preserve_timer := false
+) -> void:
 	if _all_piles_complete():
+		# Debug round skipping can reach this point while the previous completed
+		# board is being replaced; never leave the transition permanently locked.
+		input_locked = false
 		return
 	selected_card = null
 	input_locked = true
 	if not hand_prepared:
 		if enter_from_right:
-			_generate_next_hand(_hand_cycle_generation, true, true)
+			_generate_next_hand(
+				_hand_cycle_generation, true, true, not preserve_timer
+			)
 		else:
 			await _prepare_next_hand(true, false)
 	if _quick_peek_pending:
@@ -2066,27 +2002,42 @@ func _begin_turn(hand_prepared := false, enter_from_right := false) -> void:
 			_pending_interactive_generation = -1
 			input_locked = false
 			hand_manager.unlock_hand()
-		return
+			_resolve_pending_shared_clock_timeout()
+			return
 	input_locked = false
 	hand_manager.unlock_hand()
+	_resolve_pending_shared_clock_timeout()
 
 
 func _prepare_next_hand(clear_existing: bool, enter_from_right: bool) -> void:
 	var requested_generation := _hand_cycle_generation
-	await music_manager.wait_for_next_hand_beat()
+	if _restart_hand_immediate_pending:
+		_restart_hand_immediate_pending = false
+	elif not _debug_action_in_progress:
+		await music_manager.wait_for_next_hand_beat()
 	_generate_next_hand(requested_generation, clear_existing, enter_from_right)
 
 
 func _generate_next_hand(
 	requested_generation: int,
 	clear_existing: bool,
-	enter_from_right: bool
+	enter_from_right: bool,
+	start_timer := true
 ) -> void:
 	if requested_generation != _hand_cycle_generation or _all_piles_complete():
 		return
 	var wandering_cards := round_modifiers.wandering_hand_cards
 	if clear_existing:
 		_clear_all_hand_slot_placeholders()
+	if challenge_modifiers.conveyor_hand:
+		if not _conveyor_active:
+			_start_conveyor()
+		_start_turn_countdown(bonus_manager.next_hand_time(turn_time))
+		redraw_button.visible = false
+		_quick_peek_pending = false
+		return
+	var force_reload_tutorial_hand := _reload_tutorial_hand_pending
+	_reload_tutorial_hand_pending = false
 	hand_manager.generate_hand(
 		drag_layer if wandering_cards else hand_container,
 		hand_size,
@@ -2105,11 +2056,24 @@ func _generate_next_hand(
 		bonus_manager.level(&"lucky_hand"),
 		bonus_manager.level(&"double_down"),
 		bonus_manager.level(&"deja_vu"),
-		piles
+		piles,
+		challenge_modifiers.guarantee_playable_hand,
+		force_reload_tutorial_hand
 	)
 	if wandering_cards:
 		_draw_wandering_hand()
-	redraw_button.visible = bonus_manager.redraws_left > 0 and not wandering_cards
+	var challenge_reload := (
+		game_mode == GameMode.CHALLENGE
+		and current_challenge.id == &"reload_required"
+	)
+	redraw_button.set_as_hand_slot(hand_container, false)
+	redraw_button.visible = (
+		(challenge_reload or bonus_manager.redraws_left > 0)
+		and not wandering_cards
+	)
+	# Reload is always visible in its challenge, so its hover feedback is the
+	# icon highlight rather than a tooltip popup over the hand.
+	redraw_button.tooltip_text = "" if challenge_reload else "REDRAW"
 	redraw_button.set_remaining(
 		bonus_manager.redraws_left,
 		bonus_manager.level(&"redraw") >= 2
@@ -2119,7 +2083,7 @@ func _generate_next_hand(
 		input_locked = true
 		hand_manager.lock_hand()
 		call_deferred("_run_quick_peek")
-	else:
+	elif start_timer:
 		_start_turn_countdown(bonus_manager.next_hand_time(turn_time))
 
 
@@ -2149,6 +2113,207 @@ func _draw_wandering_hand() -> void:
 			size,
 			index * 0.055
 		)
+
+
+func _start_conveyor() -> void:
+	_conveyor_active = true
+	_conveyor_spawn_distance = 0.0
+	_conveyor_unplayable_spawns = 0
+	_lucky_conveyor_queue.clear()
+	# Cards enter directly from the right in the hand lane, then cross over the
+	# life counter before leaving on the left.
+	_conveyor_left_to_right = false
+	_spawn_conveyor_card()
+
+
+func _process_conveyor(delta: float) -> void:
+	if not _conveyor_active or overlay.visible or splash.visible:
+		return
+	var speed := Difficulty.get_conveyor_speed(
+		_progression_round(),
+		challenge_modifiers.conveyor_speed
+		if challenge_modifiers.conveyor_speed >= 0.0
+		else Difficulty.CONVEYOR_BASE_SPEED
+	)
+	var direction := 1.0 if _conveyor_left_to_right else -1.0
+	for card in hand_manager.current_cards.duplicate():
+		if not is_instance_valid(card) or not card.has_meta(&"conveyor_card"):
+			continue
+		if (
+			card == selected_card
+			or card.dragging
+			or card.drag_state != PlayingCard.DragState.IDLE
+		):
+			continue
+		if card.has_meta(&"conveyor_exiting_down"):
+			card.global_position.y += (
+				speed * Difficulty.CONVEYOR_EXIT_SPEED_MULTIPLIER * delta
+			)
+		else:
+			card.global_position.x += speed * direction * delta
+			if (
+				not _conveyor_left_to_right
+				and card.get_global_rect().get_center().x
+				<= hand_tray.conveyor_turn_point_x
+			):
+				card.global_position.x = (
+					hand_tray.conveyor_turn_point_x - card.size.x * 0.5
+				)
+				card.set_meta(&"conveyor_exiting_down", true)
+		var outside: bool = (
+			card.global_position.y > get_viewport_rect().size.y + card.size.y
+			if card.has_meta(&"conveyor_exiting_down")
+			else card.global_position.x > get_viewport_rect().size.x + card.size.x
+		)
+		if outside:
+			hand_manager.forget_card(card)
+			card.queue_free()
+	_conveyor_spawn_distance += speed * delta
+	while _conveyor_spawn_distance >= Difficulty.CONVEYOR_MIN_CARD_SPACING:
+		_spawn_conveyor_card()
+		_conveyor_spawn_distance -= Difficulty.CONVEYOR_MIN_CARD_SPACING
+	_refresh_conveyor_pointer_hover()
+
+
+func _refresh_conveyor_pointer_hover() -> void:
+	var card_under_pointer := false
+	for card in hand_manager.current_cards:
+		if (
+			is_instance_valid(card)
+			and card.has_meta(&"conveyor_card")
+			and card.refresh_pointer_hover()
+		):
+			card_under_pointer = true
+	if hand_tray.get_global_rect().has_point(get_global_mouse_position()):
+		DisplayServer.cursor_set_shape(
+			DisplayServer.CURSOR_POINTING_HAND
+			if card_under_pointer
+			else DisplayServer.CURSOR_ARROW
+		)
+
+
+func _spawn_conveyor_card() -> PlayingCard:
+	var playable_values := _playable_values_with_duplicates()
+	if playable_values.is_empty():
+		return null
+	var force_playable := (
+		_conveyor_unplayable_spawns
+		>= (
+			challenge_modifiers.conveyor_guaranteed_interval
+			if challenge_modifiers.conveyor_guaranteed_interval > 0
+			else Difficulty.CONVEYOR_MAX_UNPLAYABLE_SPAWNS
+		)
+	)
+	var useful_card_visible := false
+	for existing_card in hand_manager.active_cards():
+		if (
+			existing_card.has_meta(&"conveyor_card")
+			and not existing_card.has_meta(&"conveyor_exiting_down")
+			and not existing_card.dragging
+			and playable_values.has(existing_card.card_value)
+		):
+			useful_card_visible = true
+			break
+	# Random junk is allowed only while a solution is already on screen. The
+	# player can miss that card, but can never lose because no solution spawned.
+	force_playable = force_playable or not useful_card_visible
+	var lucky := (
+		bonus_manager.lucky_hand_chance() > 0.0
+		and rng.randf() < bonus_manager.lucky_hand_chance()
+	)
+	var value := rng.randi_range(
+		1 if round_modifiers.stack_direction == RoundModifiers.StackDirection.UP else 0,
+		start_value if round_modifiers.stack_direction == RoundModifiers.StackDirection.UP else start_value - 1
+	)
+	var spawn_high_tile := (
+		not force_playable
+		and not lucky
+		and round_modifiers.stack_direction == RoundModifiers.StackDirection.DOWN
+		and start_value < Difficulty.MAX_CARD_VALUE
+		and rng.randf() < Difficulty.CONVEYOR_HIGH_TILE_CHANCE
+	)
+	if spawn_high_tile:
+		value = rng.randi_range(start_value + 1, Difficulty.MAX_CARD_VALUE)
+	if lucky and _lucky_conveyor_queue.is_empty():
+		var lucky_value := hand_manager.get_most_advanced_value(
+			playable_values,
+			round_modifiers.stack_direction == RoundModifiers.StackDirection.UP
+		)
+		_lucky_conveyor_queue.append(lucky_value)
+		for copy_index in mini(
+			bonus_manager.level(&"deja_vu"),
+			maxi(playable_values.count(lucky_value) - 1, 0)
+		):
+			_lucky_conveyor_queue.append(lucky_value)
+		var step := (
+			1
+			if round_modifiers.stack_direction == RoundModifiers.StackDirection.UP
+			else -1
+		)
+		for chain_index in bonus_manager.level(&"double_down"):
+			var chain_value := lucky_value + step * (chain_index + 1)
+			if chain_value >= 0 and chain_value <= start_value:
+				_lucky_conveyor_queue.append(chain_value)
+	if not _lucky_conveyor_queue.is_empty():
+		value = _lucky_conveyor_queue.pop_front()
+	elif force_playable:
+		value = hand_manager.get_most_advanced_value(
+			playable_values,
+			round_modifiers.stack_direction == RoundModifiers.StackDirection.UP
+		)
+	if playable_values.has(value):
+		_conveyor_unplayable_spawns = 0
+	else:
+		_conveyor_unplayable_spawns += 1
+	var card := hand_manager._create_card(
+		drag_layer,
+		value,
+		false,
+		round_modifiers.hover_reveal_enabled,
+		round_modifiers.roman_numerals_enabled,
+		round_modifiers,
+		false,
+		false
+	)
+	card.set_meta(&"conveyor_card", true)
+	_return_card_to_conveyor(card)
+	return card
+
+
+func _return_card_to_conveyor(card: PlayingCard) -> void:
+	if not is_instance_valid(card):
+		return
+	if card.get_parent() != drag_layer:
+		card.reparent(drag_layer, false)
+	var tray_rect := hand_tray.get_global_rect()
+	# Spawn the whole tile beyond the right edge. It only becomes visible after
+	# the belt has physically carried it onto the screen.
+	var entry_x := get_viewport_rect().size.x + 2.0
+	for other in hand_manager.current_cards:
+		if (
+			is_instance_valid(other)
+			and other != card
+			and other.has_meta(&"conveyor_card")
+			and absf(other.global_position.x - entry_x)
+			< Difficulty.CONVEYOR_MIN_CARD_SPACING
+		):
+			entry_x += (
+				-Difficulty.CONVEYOR_MIN_CARD_SPACING
+				if _conveyor_left_to_right
+				else Difficulty.CONVEYOR_MIN_CARD_SPACING
+			)
+	card.global_position = Vector2(
+		entry_x,
+		tray_rect.get_center().y
+		+ Difficulty.CONVEYOR_CARD_VERTICAL_OFFSET
+		- card.size.y * 0.5
+	)
+	card.set_meta(&"conveyor_card", true)
+	card.remove_meta(&"conveyor_exiting_down")
+
+
+func _configure_challenge_hand_tray() -> void:
+	hand_tray.set_conveyor_enabled(challenge_modifiers.conveyor_hand)
 
 
 func _on_card_selected(card: PlayingCard) -> void:
@@ -2223,7 +2388,7 @@ func _on_card_drag_started(card: PlayingCard, tactile := false) -> void:
 		card.flash_error()
 		return
 	selected_card = card
-	if round_modifiers.wandering_hand_cards:
+	if round_modifiers.wandering_hand_cards or challenge_modifiers.conveyor_hand:
 		drag_home_index = -1
 		_clear_drag_placeholder()
 	else:
@@ -2238,6 +2403,12 @@ func _on_card_drag_started(card: PlayingCard, tactile := false) -> void:
 		card.reparent(drag_layer, false)
 	card.global_position = start_position
 	card.begin_external_drag(card.drag_target, tactile)
+	if challenge_modifiers.commit_selected_cards:
+		card.begin_commit()
+		if challenge_modifiers.hide_selected_card_value:
+			for companion in drag_companions:
+				if is_instance_valid(companion):
+					companion.begin_commit()
 	soft_audio.play_tone(330.0, 0.045, 0.035)
 
 
@@ -2385,13 +2556,22 @@ func _on_card_drag_released(card: PlayingCard, release_position: Vector2) -> voi
 		hovered_pile.set_drop_feedback(false)
 	hovered_pile = null
 	if target == null:
-		if round_modifiers.sticky_fingers_enabled:
+		if (
+			round_modifiers.sticky_fingers_enabled
+			or challenge_modifiers.commit_selected_cards
+		):
 			card.keep_attached_to_pointer()
 			hand_manager.finish_all_card_entrances(card)
 			hand_manager.lock_all_cards_except(card)
 			return
 		card.finish_drag()
 		await _return_drag_companions()
+		if challenge_modifiers.conveyor_hand:
+			await _discard_rejected_conveyor_card(card)
+			selected_card = null
+			hand_manager.clear_selection()
+			hand_manager.unlock_hand()
+			return
 		await _return_card_to_hand(card)
 		card.set_selectable(true)
 		selected_card = null
@@ -2629,6 +2809,15 @@ func _handle_card_touch_input(event: InputEvent) -> bool:
 		var touch := event as InputEventScreenTouch
 		if touch.pressed:
 			if selected_card != null and is_instance_valid(selected_card):
+				if (
+					challenge_modifiers.commit_selected_cards
+					and selected_card.drag_state == PlayingCard.DragState.LOCKED_OUT
+				):
+					_card_touch_index = touch.index
+					selected_card.touch_index = touch.index
+					selected_card.drag_state = PlayingCard.DragState.DRAGGING
+					selected_card.update_touch_drag(touch.position)
+					return true
 				return _card_touch_index == touch.index
 			if input_locked:
 				return false
@@ -2751,6 +2940,8 @@ func _on_pile_regenerated(_pile: MemoryPile, _delta: int) -> void:
 
 
 func _reroll_unplayable_hand() -> void:
+	if not challenge_modifiers.guarantee_playable_hand:
+		return
 	if hand_manager.current_cards.is_empty():
 		return
 	var playable_values := _playable_values()
@@ -2773,8 +2964,11 @@ func _place_selected_card(pile: MemoryPile) -> void:
 	_hand_cycle_generation += 1
 	var placement_generation := _hand_cycle_generation
 	input_locked = true
-	bonus_manager.bank_remaining_time(timer_manager.time_left)
-	timer_manager.stop_countdown()
+	if challenge_modifiers.shared_round_clock:
+		timer_manager.add_time(bonus_manager.shared_clock_time_bonus(turn_time))
+	else:
+		bonus_manager.bank_remaining_time(timer_manager.time_left)
+		timer_manager.stop_countdown()
 	hand_manager.lock_hand()
 	var card := selected_card
 	var placed_value := pile.expected_value() if card.is_joker else card.card_value
@@ -2816,6 +3010,12 @@ func _place_selected_card(pile: MemoryPile) -> void:
 	achievement_manager.hand_combo_resolved.emit(combo_summary)
 	if _all_piles_complete():
 		await _finish_round()
+		return
+	if challenge_modifiers.conveyor_hand:
+		selected_card = null
+		input_locked = false
+		hand_manager.unlock_hand()
+		_start_turn_countdown(bonus_manager.next_hand_time(turn_time))
 		return
 	_start_discard_current_hand()
 	if placement_generation == _hand_cycle_generation:
@@ -2979,11 +3179,13 @@ func _after_valid_card_played() -> void:
 func _handle_mistake(
 	pile: MemoryPile = null,
 	caused_by_timeout := false,
-	force_damage := false
+	force_damage := false,
+	instant_death := false
 ) -> void:
 	if input_locked:
 		return
 	input_locked = true
+	var shared_clock_time := timer_manager.time_left
 	timer_manager.stop_countdown()
 	hand_manager.lock_hand()
 	run_mistake_count += 1
@@ -2991,7 +3193,7 @@ func _handle_mistake(
 		false if force_damage else bonus_manager.consume_safety_net()
 	)
 	if force_damage or (not Debug.is_god_mode_enabled() and not protected_by_safety_net):
-		mistakes_left -= 1
+		mistakes_left = 0 if instant_death else mistakes_left - 1
 		run_lives_lost += 1
 		checkpoint_segment_damage_count += 1
 		achievement_manager.life_lost.emit()
@@ -3011,9 +3213,13 @@ func _handle_mistake(
 	_update_hud()
 	await _return_drag_companions()
 	if selected_card != null and is_instance_valid(selected_card) and selected_card.get_parent() == drag_layer:
-		await _return_card_to_hand(selected_card, 0.14)
+		if challenge_modifiers.conveyor_hand and not caused_by_timeout:
+			await _discard_rejected_conveyor_card(selected_card)
+		else:
+			await _return_card_to_hand(selected_card, 0.14)
 	if mistakes_left <= 0:
 		await get_tree().create_timer(DEATH_POPUP_DELAY).timeout
+		await _reveal_piles_before_game_over()
 		_start_discard_current_hand()
 		await _finish_game()
 	else:
@@ -3025,10 +3231,36 @@ func _handle_mistake(
 					bonus_manager.level(&"mistake_reveal")
 				]
 			)
+		var wait_for_shared_clock_feedback := (
+			challenge_modifiers.shared_round_clock
+			and pile != null
+			and is_instance_valid(pile)
+			and not pile.completed
+		)
+		# Input returns before the pile feedback finishes so another tile can be
+		# dragged immediately. Shared Clock itself remains frozen until the
+		# animation has fully resolved.
+		_shared_clock_mistake_feedback_active = wait_for_shared_clock_feedback
 		input_locked = false
 		hand_manager.unlock_hand()
-		_start_turn_countdown()
-		if pile != null and is_instance_valid(pile) and not pile.completed:
+		if wait_for_shared_clock_feedback:
+			await _reveal_mistake_pile(pile)
+			_shared_clock_mistake_feedback_active = false
+		if challenge_modifiers.shared_round_clock:
+			if not caused_by_timeout and not input_locked and not overlay.visible:
+				timer_manager.time_left = maxf(
+					shared_clock_time - Difficulty.SHARED_CLOCK_LIFE_PENALTY,
+					0.0
+				)
+				_start_turn_countdown()
+		else:
+			_start_turn_countdown()
+		if (
+			not challenge_modifiers.shared_round_clock
+			and pile != null
+			and is_instance_valid(pile)
+			and not pile.completed
+		):
 			_reveal_mistake_pile(pile)
 
 
@@ -3038,7 +3270,43 @@ func _reveal_mistake_pile(pile: MemoryPile) -> void:
 		await pile.reveal_value_temporarily(0.65)
 
 
+func _reveal_piles_before_game_over() -> void:
+	var final_tween: Tween
+	for pile in piles:
+		if not is_instance_valid(pile) or not pile.visible or pile.completed:
+			continue
+		final_tween = pile.reveal_for_game_over()
+	if final_tween != null and final_tween.is_valid():
+		await final_tween.finished
+	await get_tree().create_timer(DEATH_PILE_REVEAL_HOLD_DURATION).timeout
+
+
+func _discard_rejected_conveyor_card(card: PlayingCard) -> void:
+	card.finish_drag()
+	card.end_commit()
+	card.set_selectable(false)
+	_clear_drag_placeholder()
+	var tween := (
+		card.create_tween()
+		.set_trans(Tween.TRANS_QUAD)
+		.set_ease(Tween.EASE_IN)
+		.set_parallel()
+	)
+	tween.tween_property(card, "global_position:y", card.global_position.y + 20.0, 0.24)
+	tween.tween_property(card, "modulate:a", 0.0, 0.2)
+	tween.tween_property(card, "scale", Vector2(0.72, 0.72), 0.24)
+	tween.tween_property(card, "rotation", -0.12, 0.24)
+	await tween.finished
+	hand_manager.forget_card(card)
+	card.queue_free()
+
+
 func _return_card_to_hand(card: PlayingCard, duration := 0.26) -> void:
+	if challenge_modifiers.conveyor_hand:
+		card.end_commit()
+		_return_card_to_conveyor(card)
+		card.set_selectable(not input_locked)
+		return
 	var destination := card.hand_return_position()
 	await card.animate_return(destination, duration)
 	if round_modifiers.wandering_hand_cards:
@@ -3200,9 +3468,27 @@ func _pile_at(global_point: Vector2) -> MemoryPile:
 
 
 func _on_time_expired() -> void:
-	if input_locked:
+	if _debug_action_in_progress or _debug_round_wins_queued > 0:
+		timer_manager.stop_countdown()
+		_shared_clock_timeout_pending = false
 		return
-	await _handle_mistake(null, true)
+	if input_locked:
+		if challenge_modifiers.shared_round_clock:
+			_shared_clock_timeout_pending = true
+		return
+	await _handle_mistake(
+		null,
+		true,
+		challenge_modifiers.shared_round_clock,
+		challenge_modifiers.shared_round_clock
+	)
+
+
+func _resolve_pending_shared_clock_timeout() -> void:
+	if not _shared_clock_timeout_pending or input_locked:
+		return
+	_shared_clock_timeout_pending = false
+	_handle_mistake(null, true, true, true)
 
 
 func _on_lava_card_entered(card: PlayingCard) -> void:
@@ -3211,7 +3497,11 @@ func _on_lava_card_entered(card: PlayingCard) -> void:
 
 
 func _on_redraw_pressed() -> void:
-	if input_locked or not bonus_manager.consume_redraw():
+	var challenge_reload := (
+		game_mode == GameMode.CHALLENGE
+		and current_challenge.id == &"reload_required"
+	)
+	if input_locked or (not challenge_reload and not bonus_manager.consume_redraw()):
 		return
 	input_locked = true
 	redraw_button.set_remaining(
@@ -3220,18 +3510,31 @@ func _on_redraw_pressed() -> void:
 	)
 	redraw_button.play_used_animation()
 	timer_manager.stop_countdown()
+	if challenge_reload and timer_manager.time_left < 1.0:
+		timer_manager.add_time(challenge_modifiers.reload_low_time_bonus)
+	if challenge_modifiers.shared_round_clock:
+		timer_manager.add_time(Difficulty.SHARED_CLOCK_RELOAD_TIME_BONUS)
 	_hand_cycle_generation += 1
 	await _discard_current_hand()
-	await _begin_turn(false, true)
-	redraw_button.visible = bonus_manager.redraws_left > 0
+	_preserve_timer_through_quick_peek = challenge_reload
+	await _begin_turn(false, true, challenge_reload)
+	if challenge_reload and not _quick_peek_pending and not overlay.visible:
+		_preserve_timer_through_quick_peek = false
+		timer_manager.resume_countdown()
+	redraw_button.visible = challenge_reload or bonus_manager.redraws_left > 0
 
 
-func cleanup_special_rule_state() -> void:
+func cleanup_special_rule_state(animated := true) -> void:
 	input_locked = true
 	sticky_fingers_controller.end_round()
 	mirror_match_controller.end_round(self)
 	timer_manager.stop_countdown()
-	await _return_drag_companions()
+	if animated:
+		await _return_drag_companions()
+	else:
+		drag_companions.clear()
+		_companion_offsets.clear()
+		_companion_home_positions.clear()
 	if moving_pile != null and is_instance_valid(moving_pile):
 		moving_pile.position = _moving_pile_last_valid_position
 	moving_pile = null
@@ -3239,7 +3542,7 @@ func cleanup_special_rule_state() -> void:
 	_card_touch_index = -1
 	if selected_card != null and is_instance_valid(selected_card):
 		selected_card.cancel_drag_timers()
-		if selected_card.get_parent() == drag_layer:
+		if animated and selected_card.get_parent() == drag_layer:
 			await _return_card_to_hand(selected_card, 0.16)
 	hand_manager.cancel_all_drags()
 	hand_manager.stop_all_card_timers()
@@ -3247,15 +3550,29 @@ func cleanup_special_rule_state() -> void:
 	hand_manager.refresh_all_card_themes(false)
 	pile_manager.stop_all_movements()
 	pile_manager.refresh_all_card_themes(false)
-	lava_rule_controller.clear(true)
+	lava_rule_controller.clear(animated)
 	_on_timer_visibility_requested(true)
 	mistakes_dots.set_maximum(3)
 	selected_card = null
 	hovered_pile = null
 
 
+func _clear_gameplay_pieces_immediately() -> void:
+	for card in hand_manager.current_cards:
+		if is_instance_valid(card):
+			card.queue_free()
+	hand_manager.current_cards.clear()
+	for child in hand_container.get_children():
+		if child is PlayingCard:
+			child.queue_free()
+	for child in drag_layer.get_children():
+		child.queue_free()
+	_clear_all_hand_slot_placeholders()
+
+
 func _finish_round() -> void:
 	input_locked = true
+	var transition_generation := _run_transition_generation
 	var completed_round_number := _progression_round()
 	var completed_rule_ids: Array[StringName] = []
 	for rule in special_rule_manager.active_rules:
@@ -3263,11 +3580,17 @@ func _finish_round() -> void:
 	_pause_run_time()
 	timer_manager.stop_countdown()
 	await cleanup_special_rule_state()
+	if transition_generation != _run_transition_generation:
+		return
 	# Clear the remaining hand as part of the victory sequence. Jokers persist
 	# between hands, but never carry over into the next round.
 	await _discard_current_hand(false)
+	if transition_generation != _run_transition_generation:
+		return
 	_clear_all_hand_slot_placeholders()
 	await special_rule_manager.end_round(piles)
+	if transition_generation != _run_transition_generation:
+		return
 	round_completed.emit()
 	run_completed_rounds += 1
 	for rule_id in completed_rule_ids:
@@ -3280,7 +3603,11 @@ func _finish_round() -> void:
 	achievement_manager.round_completed.emit(
 		_build_run_summary(false), completed_round_number, completed_rule_ids
 	)
-	var checkpoint_unlocked := _unlock_completed_checkpoint(completed_round_number)
+	var checkpoint_unlocked := (
+		false
+		if game_mode == GameMode.CHALLENGE
+		else _unlock_completed_checkpoint(completed_round_number)
+	)
 	if checkpoint_unlocked:
 		achievement_manager.checkpoint_unlocked.emit(
 			int(completed_round_number / Difficulty.CHECKPOINT_INTERVAL),
@@ -3289,15 +3616,29 @@ func _finish_round() -> void:
 		await _show_checkpoint_unlocked(
 			int(completed_round_number / Difficulty.CHECKPOINT_INTERVAL)
 		)
+		if transition_generation != _run_transition_generation:
+			return
 	soft_audio.play_tone(680.0, 0.16, 0.055)
 	await _show_round_wave()
-	if game_mode == GameMode.ENDLESS or game_mode == GameMode.CHECKPOINT:
+	if transition_generation != _run_transition_generation:
+		return
+	if (
+		game_mode in [GameMode.ENDLESS, GameMode.CHECKPOINT]
+		or (game_mode == GameMode.CHALLENGE and challenge_endless)
+	):
 		round_number += 1
 	else:
 		round_number -= 1
 	round_reached_time_ms = _total_time_milliseconds()
 	_update_hud()
 	if game_mode == GameMode.STANDARD and round_number <= 0:
+		await _finish_game(true)
+		return
+	if (
+		game_mode == GameMode.CHALLENGE
+		and not challenge_endless
+		and round_number <= 0
+	):
 		await _finish_game(true)
 		return
 	if (
@@ -3308,11 +3649,18 @@ func _finish_round() -> void:
 		await _finish_game(true)
 		return
 	await bonus_manager.offer_if_due(completed_round_number)
+	if transition_generation != _run_transition_generation:
+		return
+	await _offer_checkpoint_backlog_bonus(completed_round_number)
+	if transition_generation != _run_transition_generation:
+		return
 	var change := _advance_difficulty(_progression_round())
 	_emit_difficulty_stats()
 	if change == "TIER RELIEF":
 		music_manager.request_next_section()
 	if change.is_empty():
+		if _debug_round_wins_queued > 0:
+			return
 		start_round()
 		return
 	_pause_achievement_notifications(&"difficulty")
@@ -3335,10 +3683,19 @@ func _finish_round() -> void:
 		tween.tween_interval(0.75)
 	tween.tween_property(transient_label, "modulate:a", 0.0, 0.2)
 	skippable_sequence.begin(tween)
+	if _debug_round_wins_queued > 0:
+		skippable_sequence.call_deferred("skip_to_end")
 	await tween.finished
+	if transition_generation != _run_transition_generation:
+		skippable_sequence.finish()
+		transient_label.visible = false
+		_resume_achievement_notifications(&"difficulty")
+		return
 	skippable_sequence.finish()
 	transient_label.visible = false
 	_resume_achievement_notifications(&"difficulty")
+	if _debug_round_wins_queued > 0:
+		return
 	start_round()
 
 
@@ -3354,18 +3711,23 @@ func _show_round_wave() -> void:
 	var tween := create_tween().set_parallel()
 	tween.tween_property(wave, "scale", Vector2(2.4, 2.4), 0.55)
 	tween.tween_property(wave, "modulate:a", 0.0, 0.55)
+	skippable_sequence.begin(tween)
+	if _debug_round_wins_queued > 0:
+		skippable_sequence.call_deferred("skip_to_end")
 	await tween.finished
+	skippable_sequence.finish()
 	wave.visible = false
 	_resume_achievement_notifications(&"round_wave")
 
 
 func _finish_game(completed_all_rounds := false) -> void:
-	input_locked = true
-	timer_manager.stop_countdown()
+	_end_gameplay_for_result_screen()
 	music_manager.set_low_pass_enabled(true)
-	if completed_all_rounds and game_mode == GameMode.STANDARD:
+	var finite_victory := _is_finite_mode_victory(completed_all_rounds)
+	if finite_victory:
 		soft_audio.play_victory()
-		_unlock_endless_mode()
+		if game_mode == GameMode.STANDARD:
+			_unlock_endless_mode()
 	else:
 		soft_audio.play_game_over()
 	# The death screen represents the whole run, including the round in which
@@ -3381,18 +3743,52 @@ func _finish_game(completed_all_rounds := false) -> void:
 			high_score_kind = _update_endless_high_score(round_number, score_time_ms)
 		GameMode.CHECKPOINT:
 			high_score_kind = _update_checkpoint_high_score(round_number)
+		GameMode.CHALLENGE:
+			var challenge_high_score := challenge_manager.record_result(
+				current_challenge,
+				_progression_round(),
+				challenge_endless,
+				score_time_ms
+			)
+			if challenge_high_score:
+				high_score_kind = challenge_manager.last_record_kind
+			if completed_all_rounds and not challenge_endless:
+				achievement_manager.record_challenge_completion(
+					current_challenge.id,
+					challenge_manager.completed,
+					challenge_manager.definitions
+				)
 		_:
 			high_score_kind = _update_high_score(round_number, score_time_ms)
-	_update_no_mistake_high_score(round_number, score_time_ms)
+	if game_mode != GameMode.CHALLENGE:
+		_update_no_mistake_high_score(round_number, score_time_ms)
 	game_over.emit()
 	overlay_unlocks.visible = false
 	overlay_unlocks.text = ""
 	overlay_high_score.visible = not high_score_kind.is_empty()
-	if completed_all_rounds and game_mode == GameMode.STANDARD:
+	if finite_victory:
 		overlay_title.text = (
 			"[center][color=#FFD700][wave amp=35.0 freq=4.0 connected=1]YOU WIN ![/wave][/color][/center]"
 		)
 		overlay_details.text = "[center]in %s[/center]" % formatted_time
+	elif game_mode == GameMode.CHALLENGE and challenge_endless:
+		overlay_title.text = "[center]%s[/center]" % current_challenge.title
+		overlay_details.text = "[center]ENDLESS\nROUND %d\nin %s[/center]" % [
+			round_number, formatted_time
+		]
+	elif game_mode == GameMode.CHALLENGE:
+		var challenge_rounds_text := "%d ROUNDS LEFT" % maxi(round_number, 0)
+		var challenge_time_text := "in %s" % formatted_time
+		if high_score_kind == "ROUND":
+			challenge_rounds_text = (
+				"[color=#4D82C2]%s[/color]" % challenge_rounds_text
+			)
+		elif high_score_kind == "TIME":
+			challenge_time_text = (
+				"[color=#4D82C2]%s[/color]" % challenge_time_text
+			)
+		overlay_title.text = "[center]%s[/center]" % challenge_rounds_text
+		overlay_details.text = "[center]%s[/center]" % challenge_time_text
 	elif not high_score_kind.is_empty():
 		var rounds_text := (
 			_checkpoint_result_text(round_number)
@@ -3427,7 +3823,14 @@ func _finish_game(completed_all_rounds := false) -> void:
 	overlay_button.text = "REPLAY"
 	overlay_endless_button.visible = (
 		completed_all_rounds
-		and game_mode == GameMode.STANDARD
+		and (
+			game_mode == GameMode.STANDARD
+			or (
+				game_mode == GameMode.CHALLENGE
+				and not challenge_endless
+				and current_challenge.allow_endless
+			)
+		)
 	)
 	overlay_mode = "restart"
 	_show_game_over_overlay(not completed_all_rounds)
@@ -3437,10 +3840,41 @@ func _finish_game(completed_all_rounds := false) -> void:
 	await special_rule_manager.end_round(piles)
 
 
+func _end_gameplay_for_result_screen() -> void:
+	# A result overlay is terminal for the current run. Invalidate every pending
+	# gameplay continuation, including accelerated debug wins, before building
+	# the screen so none can start a hand or apply delayed timeout damage behind it.
+	_run_transition_generation += 1
+	_gameplay_generation += 1
+	_hand_cycle_generation += 1
+	_debug_round_wins_queued = 0
+	_pending_interactive_generation = -1
+	_shared_clock_timeout_pending = false
+	_shared_clock_mistake_feedback_active = false
+	_quick_peek_pending = false
+	_preserve_timer_through_quick_peek = false
+	_conveyor_active = false
+	input_locked = true
+	timer_manager.stop_countdown()
+	hand_manager.lock_hand()
+	selected_card = null
+	hovered_pile = null
+	hand_manager.clear_selection()
+
+
+func _is_finite_mode_victory(completed_all_rounds: bool) -> bool:
+	if not completed_all_rounds:
+		return false
+	return (
+		game_mode == GameMode.STANDARD
+		or (game_mode == GameMode.CHECKPOINT and not checkpoint_uses_endless_progression)
+		or (game_mode == GameMode.CHALLENGE and not challenge_endless)
+	)
+
+
 func _show_game_over_overlay(animate_death: bool) -> void:
 	back_button.visible = false
 	overlay.visible = true
-	overlay_back_button.visible = true
 	overlay_scrim.modulate.a = 1.0
 	overlay_panel.modulate.a = 1.0
 	overlay_panel.scale = Vector2.ONE
@@ -3469,7 +3903,9 @@ func _append_new_progression_summary() -> void:
 	var lines := PackedStringArray()
 	var checkpoint_line := _new_checkpoint_summary_line()
 	if not checkpoint_line.is_empty():
-		lines.append(checkpoint_line)
+		lines.append(_progression_icon_line(
+			PROGRESSION_CHECKPOINT_ICON, PackedStringArray([checkpoint_line])
+		))
 	var bonus_titles := _new_bonus_titles()
 	if not bonus_titles.is_empty():
 		lines.append(_progression_icon_line(PROGRESSION_BONUS_ICON, bonus_titles))
@@ -3492,7 +3928,7 @@ func _append_new_progression_summary() -> void:
 
 
 func _progression_icon_line(icon_path: String, titles: PackedStringArray) -> String:
-	return "+ [color=#4D82C2]NEW[/color] [img=16x16]%s[/img] %s" % [
+	return "+ [img=16x16]%s[/img] %s" % [
 		icon_path, " + ".join(titles),
 	]
 
@@ -3509,7 +3945,7 @@ func _new_checkpoint_summary_line() -> String:
 	for checkpoint_id in checkpoint_ids:
 		labels.append(str(checkpoint_id))
 	var heading := "CHECKPOINTS" if checkpoint_ids.size() > 1 else "CHECKPOINT"
-	return "+ [color=#4D82C2]NEW[/color] %s: %s" % [
+	return "%s: %s" % [
 		heading, " + ".join(labels),
 	]
 
@@ -3545,14 +3981,14 @@ func _new_achievement_titles() -> PackedStringArray:
 
 func _on_overlay_pressed() -> void:
 	if overlay_mode == "restart":
-		if game_mode == GameMode.CHECKPOINT:
-			start_from_checkpoint(current_checkpoint_id)
-		else:
-			start_game(game_mode == GameMode.ENDLESS)
+		_restart_current_mode()
 
 
 func _on_overlay_endless_pressed() -> void:
-	start_game(true)
+	if game_mode == GameMode.CHALLENGE:
+		start_game(false, current_challenge, true)
+	else:
+		start_game(true)
 
 
 func _on_splash_pressed() -> void:
@@ -3563,51 +3999,48 @@ func _on_endless_pressed() -> void:
 	start_game(true)
 
 
+func _open_challenge_selection() -> void:
+	challenge_selection.open(challenge_manager, achievement_manager.unlocked)
+	_submenu_swipe_controller.open(
+		challenge_selection, get_viewport_rect().size.x
+	)
+
+
+func _on_challenge_selection_closed() -> void:
+	await _submenu_swipe_controller.close(
+		challenge_selection, get_viewport_rect().size.x
+	)
+	challenge_button.grab_focus()
+
+
+func _start_challenge(id: StringName, endless: bool) -> void:
+	var data := challenge_manager.find(id)
+	if data == null:
+		return
+	challenge_selection.visible = false
+	start_game(false, data, endless)
+
+
 func _open_checkpoint_menu() -> void:
-	_refresh_checkpoint_list()
-	checkpoint_menu.visible = true
-	var first := checkpoint_list.get_child(0) as Control if checkpoint_list.get_child_count() > 0 else null
-	if first != null:
-		first.grab_focus()
+	CheckpointMenuControllerScript.open(self)
+	_submenu_swipe_controller.open(checkpoint_menu, get_viewport_rect().size.x)
 
 
 func _close_checkpoint_menu() -> void:
-	checkpoint_menu.visible = false
-	checkpoint_button.grab_focus()
+	if not checkpoint_menu.visible:
+		return
+	await _submenu_swipe_controller.close(
+		checkpoint_menu, get_viewport_rect().size.x
+	)
+	CheckpointMenuControllerScript.close(self)
 
 
 func _refresh_checkpoint_button() -> void:
-	var checkpoints_available := (
-		Difficulty.ENABLE_CHECKPOINTS and not unlocked_checkpoints.is_empty()
-	)
-	# Hide the complete selector so its HBox separation cannot shift PLAY when
-	# no checkpoint is available.
-	checkpoint_button.get_parent().visible = checkpoints_available
-	checkpoint_button.visible = checkpoints_available
-	checkpoint_up_button.get_parent().visible = checkpoints_available
-	if checkpoints_available and not unlocked_checkpoints.has(selected_checkpoint_id):
-		# Always present the earliest unlocked starting point first.
-		selected_checkpoint_id = unlocked_checkpoints.front()
-	_update_checkpoint_button_text()
+	CheckpointMenuControllerScript.refresh_button(self)
 
 
 func _refresh_checkpoint_list() -> void:
-	for child in checkpoint_list.get_children():
-		child.queue_free()
-	for checkpoint_id in unlocked_checkpoints:
-		var snapshot_value: Variant = _checkpoint_value(checkpoint_snapshots, checkpoint_id, {})
-		if not snapshot_value is Dictionary:
-			continue
-		var snapshot := CheckpointSnapshot.from_dictionary(snapshot_value)
-		var best := int(_checkpoint_value(checkpoint_highscores, checkpoint_id, -1))
-		var button := Button.new()
-		button.set_script(HIGHLIGHT_BUTTON_SCRIPT)
-		button.custom_minimum_size = Vector2(210, 43)
-		button.text = "CHECKPOINT %d\nROUND %d   BEST: %s" % [
-			checkpoint_id, snapshot.start_round, str(best) if best >= 0 else "--"
-		]
-		button.pressed.connect(_on_checkpoint_selected.bind(checkpoint_id))
-		checkpoint_list.add_child(button)
+	CheckpointMenuControllerScript.refresh_list(self)
 
 
 func _on_checkpoint_selected(checkpoint_id: int) -> void:
@@ -3621,86 +4054,23 @@ func _start_selected_checkpoint() -> void:
 
 
 func _select_next_checkpoint(direction: int) -> void:
-	if unlocked_checkpoints.is_empty():
-		return
-	var current_index := unlocked_checkpoints.find(selected_checkpoint_id)
-	if current_index < 0:
-		current_index = 0
-	current_index = posmod(current_index + direction, unlocked_checkpoints.size())
-	selected_checkpoint_id = unlocked_checkpoints[current_index]
-	_update_checkpoint_button_text()
-	_show_selected_checkpoint()
+	CheckpointMenuControllerScript.select_next(self, direction)
 
 
 func _update_checkpoint_button_text() -> void:
-	var snapshot_value: Variant = _checkpoint_value(
-		checkpoint_snapshots, selected_checkpoint_id, null
-	)
-	if snapshot_value is Dictionary:
-		var snapshot := CheckpointSnapshot.from_dictionary(snapshot_value)
-		checkpoint_button.text = "FROM %d" % snapshot.start_round
-	else:
-		checkpoint_button.text = "FROM"
+	CheckpointMenuControllerScript.update_button_text(self)
 
 
 func _on_checkpoint_button_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed:
-		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			_select_next_checkpoint(1)
-			accept_event()
-		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			_select_next_checkpoint(-1)
-			accept_event()
-	elif event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_UP:
-			_select_next_checkpoint(1)
-			accept_event()
-		elif event.keycode == KEY_DOWN:
-			_select_next_checkpoint(-1)
-			accept_event()
+	CheckpointMenuControllerScript.handle_button_input(self, event)
 
 
 func _show_selected_checkpoint() -> void:
-	var snapshot_value: Variant = _checkpoint_value(
-		checkpoint_snapshots, selected_checkpoint_id, null
-	)
-	if not snapshot_value is Dictionary:
-		return
-	var snapshot := CheckpointSnapshot.from_dictionary(snapshot_value)
-	var endless_checkpoint := snapshot.start_round > Difficulty.TOTAL_ROUNDS
-	if not endless_checkpoint:
-		if checkpoint_best_rounds_left < 0:
-			splash_high_score.text = "[center]HIGHSCORE\n--[/center]"
-		else:
-			splash_high_score.text = (
-				"[center]HIGHSCORE\n%d rounds left[/center]"
-				% checkpoint_best_rounds_left
-			)
-		splash_high_score_time.visible = false
-		return
-	splash_high_score.text = "[center]CHECKPOINT HIGHSCORE\nROUND REACHED[/center]"
-	splash_high_score_time.text = "BEST: %s" % (
-		str(checkpoint_endless_best_round)
-		if checkpoint_endless_best_round >= 0
-		else "--"
-	)
-	splash_high_score_time.visible = true
+	CheckpointMenuControllerScript.show_selected(self)
 
 
 func _show_checkpoint_unlocked(checkpoint_id: int) -> void:
-	_pause_achievement_notifications(&"checkpoint")
-	transient_label.text = "CHECKPOINT %d\nUNLOCKED" % checkpoint_id
-	transient_label.visible = true
-	transient_label.modulate.a = 0.0
-	var tween := create_tween()
-	tween.tween_property(transient_label, "modulate:a", 1.0, 0.18)
-	tween.tween_interval(1.0)
-	tween.tween_property(transient_label, "modulate:a", 0.0, 0.18)
-	skippable_sequence.begin(tween)
-	await tween.finished
-	skippable_sequence.finish()
-	transient_label.visible = false
-	_resume_achievement_notifications(&"checkpoint")
+	await CheckpointMenuControllerScript.show_unlocked(self, checkpoint_id)
 
 
 func _on_special_rules_announcing(_rules: Array[SpecialRuleData]) -> void:
@@ -3722,220 +4092,50 @@ func _increase_difficulty(first_upgrade_override := -1) -> String:
 		if first_upgrade_override >= 0
 		else _progression_round() == 2
 	)
-	var options: Array[StringName] = []
-	var weights: Array[float] = []
-	var pile_weight := (
-		Difficulty.FIRST_ADD_PILE_WEIGHT
-		if first_upgrade
-		else Difficulty.ADD_PILE_WEIGHT
-	)
-	var card_weight := (
-		Difficulty.FIRST_ADD_CARD_WEIGHT
-		if first_upgrade
-		else Difficulty.ADD_CARD_WEIGHT
-	)
-	if pile_count < Difficulty.MAX_PILES and (first_upgrade or pile_weight > 0.0):
-		options.append(&"pile")
-		if pile_count == 1:
-			pile_weight *= Difficulty.STARTER_STAT_MULTIPLIER
-		weights.append(get_directed_weight(pile_weight, difficulty_droughts[&"pile"]))
-	if hand_size < Difficulty.MAX_HAND_SIZE and (first_upgrade or card_weight > 0.0):
-		options.append(&"hand")
-		if hand_size == 1:
-			card_weight *= Difficulty.STARTER_STAT_MULTIPLIER
-		weights.append(get_directed_weight(card_weight, difficulty_droughts[&"hand"]))
-	if (
-		not first_upgrade
-		and start_value < Difficulty.MAX_CARD_VALUE
-		and Difficulty.ADD_START_VALUE_WEIGHT > 0.0
-	):
-		options.append(&"start_value")
-		weights.append(get_directed_weight(
-			Difficulty.ADD_START_VALUE_WEIGHT,
-			difficulty_droughts[&"start_value"]
-		))
-	if (
-		not first_upgrade
-		and turn_time > Difficulty.MIN_TURN_TIME
-		and Difficulty.REDUCE_TURN_TIME_WEIGHT > 0.0
-	):
-		options.append(&"time")
-		weights.append(get_directed_weight(
-			Difficulty.REDUCE_TURN_TIME_WEIGHT,
-			difficulty_droughts[&"time"]
-		))
-	var guaranteed_options: Array[StringName] = []
-	var guaranteed_weights: Array[float] = []
-	var all_eligible_options := options.duplicate()
-	for index in options.size():
-		if int(difficulty_droughts.get(options[index], 0)) >= Difficulty.MAX_STAT_DROUGHT:
-			guaranteed_options.append(options[index])
-			guaranteed_weights.append(weights[index])
-	if not guaranteed_options.is_empty():
-		options = guaranteed_options
-		weights = guaranteed_weights
-	if options.is_empty():
-		return ""
-	var total := 0.0
-	for weight in weights:
-		total += weight
-	if total <= 0.0:
-		weights.fill(1.0)
-		total = float(weights.size())
-	var roll := rng.randf_range(0.0, total)
-	var choice: StringName = options[0]
-	for index in options.size():
-		roll -= weights[index]
-		if roll <= 0.0:
-			choice = options[index]
-			break
-	_update_difficulty_droughts(choice, all_eligible_options)
-	match choice:
-		&"pile":
-			pile_count += 1
-			return "+1 PILE"
-		&"hand":
-			hand_size += 1
-			return "+1 CARD"
-		&"start_value":
-			start_value += 1
-			return "+1 START VALUE"
-		&"time":
-			turn_time -= 1.0
-			return "-1 SECOND"
-	return ""
-
-
-func get_directed_weight(base_weight: float, drought_count: int) -> float:
-	return maxf(base_weight, 0.0) * (
-		1.0 + mini(drought_count, Difficulty.MAX_STAT_DROUGHT) * Difficulty.STAT_PITY_RATE
-	)
+	return difficulty_progression.increase(rng, first_upgrade)
 
 
 func _new_difficulty_droughts() -> Dictionary:
-	return {&"pile": 0, &"hand": 0, &"start_value": 0, &"time": 0}
-
-
-func _update_difficulty_droughts(
-	selected: StringName,
-	eligible_options: Array[StringName]
-) -> void:
-	for stat: StringName in difficulty_droughts.keys():
-		if not eligible_options.has(stat):
-			continue
-		if stat == selected:
-			difficulty_droughts[stat] = 0
-		else:
-			difficulty_droughts[stat] = mini(
-				int(difficulty_droughts[stat]) + 1,
-				Difficulty.MAX_STAT_DROUGHT
-			)
+	return DifficultyProgressionScript.new_droughts()
 
 
 func _advance_difficulty(next_progression_round: int, first_upgrade_override := -1) -> String:
-	if _is_special_tier_relief_round(next_progression_round):
-		_apply_special_tier_relief()
-		return "TIER RELIEF"
-	if (
-		not _has_due_difficulty_guarantee()
-		and rng.randf() < get_no_difficulty_change_chance(next_progression_round)
-	):
-		return ""
-	var changes: Array[String] = []
-	var first_change := _increase_difficulty(first_upgrade_override)
-	if not first_change.is_empty():
-		changes.append(first_change)
-	if rng.randf() < get_extra_difficulty_chance(next_progression_round):
-		var extra_change := _increase_difficulty(0)
-		if not extra_change.is_empty():
-			changes.append(extra_change)
-	return "\n".join(changes)
+	return difficulty_progression.advance(rng, next_progression_round, first_upgrade_override)
 
 
 func _has_due_difficulty_guarantee() -> bool:
-	return (
-		pile_count < Difficulty.MAX_PILES
-		and int(difficulty_droughts.get(&"pile", 0)) >= Difficulty.MAX_STAT_DROUGHT
-	) or (
-		hand_size < Difficulty.MAX_HAND_SIZE
-		and int(difficulty_droughts.get(&"hand", 0)) >= Difficulty.MAX_STAT_DROUGHT
-	) or (
-		start_value < Difficulty.MAX_CARD_VALUE
-		and int(difficulty_droughts.get(&"start_value", 0)) >= Difficulty.MAX_STAT_DROUGHT
-	) or (
-		turn_time > Difficulty.MIN_TURN_TIME
-		and int(difficulty_droughts.get(&"time", 0)) >= Difficulty.MAX_STAT_DROUGHT
-	)
+	return difficulty_progression.has_due_guarantee()
 
 
 func get_extra_difficulty_chance(progression_round: int) -> float:
-	var completed_increases := maxi(progression_round - 2, 0)
-	return clampf(
-		Difficulty.EXTRA_DIFFICULTY_START_CHANCE
-		- completed_increases * Difficulty.EXTRA_DIFFICULTY_CHANCE_LOSS_PER_ROUND,
-		0.0,
-		1.0
-	)
+	return DifficultyProgressionScript.extra_change_chance(progression_round)
 
 
 func get_no_difficulty_change_chance(progression_round: int) -> float:
-	var completed_increases := maxi(progression_round - 2, 0)
-	return clampf(
-		Difficulty.NO_DIFFICULTY_START_CHANCE
-		+ completed_increases * Difficulty.NO_DIFFICULTY_CHANCE_GAIN_PER_ROUND,
-		0.0,
-		Difficulty.MAX_NO_DIFFICULTY_CHANCE
-	)
+	return DifficultyProgressionScript.no_change_chance(progression_round)
 
 
 func _is_special_tier_relief_round(progression_round: int) -> bool:
-	# Reliefs keep following the combo milestone curve after the five-rule cap.
-	var theoretical_rule_count := 1
-	while true:
-		var milestone := Difficulty.special_rule_milestone(
-			theoretical_rule_count
-		)
-		if milestone >= progression_round:
-			return milestone == progression_round
-		theoretical_rule_count += 1
-	return false
+	return DifficultyProgressionScript.is_tier_relief_round(progression_round)
 
 
 func _apply_special_tier_relief() -> void:
-	var relief_count := mini(tier_reliefs_applied + 1, 4)
-	var stats: Array[StringName] = []
-	if pile_count > Difficulty.START_PILES:
-		stats.append(&"piles")
-	if hand_size > Difficulty.START_HAND_SIZE:
-		stats.append(&"hand")
-	if start_value > Difficulty.START_CARD_VALUE:
-		stats.append(&"value")
-	if turn_time < Difficulty.START_TURN_TIME:
-		stats.append(&"time")
-	for index in range(stats.size() - 1, 0, -1):
-		var swap_index := rng.randi_range(0, index)
-		var temporary := stats[index]
-		stats[index] = stats[swap_index]
-		stats[swap_index] = temporary
-	for index in mini(relief_count, stats.size()):
-		match stats[index]:
-			&"piles":
-				pile_count = maxi(pile_count - 1, Difficulty.START_PILES)
-			&"hand":
-				hand_size = maxi(hand_size - 1, Difficulty.START_HAND_SIZE)
-			&"value":
-				start_value = maxi(start_value - 1, Difficulty.START_CARD_VALUE)
-			&"time":
-				turn_time = minf(turn_time + 1.0, Difficulty.START_TURN_TIME)
-	tier_reliefs_applied += 1
+	difficulty_progression.apply_tier_relief(rng)
 
 
 func _apply_debug_progression(start_round: int) -> void:
-	for completed_round in range(1, start_round):
-		_advance_difficulty(
-			completed_round + 1,
-			1 if completed_round == 1 else 0
-		)
+	difficulty_progression.apply_until(rng, start_round)
+
+
+func _apply_challenge_starting_difficulty(data: ChallengeData) -> void:
+	if data.starting_pile_count >= 0:
+		pile_count = clampi(data.starting_pile_count, 1, Difficulty.MAX_PILES)
+	if data.starting_hand_size >= 0:
+		hand_size = clampi(data.starting_hand_size, 1, Difficulty.MAX_HAND_SIZE)
+	if data.starting_card_value >= 0:
+		start_value = clampi(data.starting_card_value, 2, Difficulty.MAX_CARD_VALUE)
+	if data.starting_turn_time >= 0.0:
+		turn_time = maxf(data.starting_turn_time, Difficulty.MIN_TURN_TIME)
 
 
 func _playable_values() -> Array[int]:
@@ -3967,6 +4167,23 @@ func _start_turn_countdown(duration_override := -1.0) -> void:
 	var effective_turn_time := (
 		duration_override if duration_override > 0.0 else turn_time
 	)
+	if challenge_modifiers.shared_round_clock:
+		if _shared_clock_initialized:
+			if not _shared_clock_mistake_feedback_active:
+				timer_manager.resume_countdown()
+			return
+		effective_turn_time = Difficulty.estimate_shared_round_time(
+			pile_count,
+			start_value,
+			hand_size,
+			challenge_modifiers.shared_clock_seconds_per_hand
+			if challenge_modifiers.shared_clock_seconds_per_hand >= 0.0
+			else turn_time
+		)
+		var warmup_level := bonus_manager.level(&"slow_start")
+		if warmup_level > 0:
+			effective_turn_time += float(warmup_level) * turn_time
+		_shared_clock_initialized = true
 	# Le premier tick correspond au passage à la seconde suivante, pas à
 	# l'initialisation du chronomètre.
 	_last_clock_second = ceili(effective_turn_time)
@@ -4012,7 +4229,11 @@ func _run_quick_peek() -> void:
 	_quick_peek_pending = false
 	if _all_piles_complete():
 		return
-	_start_turn_countdown(bonus_manager.next_hand_time(turn_time))
+	if _preserve_timer_through_quick_peek:
+		_preserve_timer_through_quick_peek = false
+		timer_manager.resume_countdown()
+	else:
+		_start_turn_countdown(bonus_manager.next_hand_time(turn_time))
 	input_locked = false
 	hand_manager.unlock_hand()
 
@@ -4032,9 +4253,14 @@ func _run_bonus_pile_flash(duration: float) -> void:
 
 func _on_time_updated(time_left: float) -> void:
 	var displayed_second := ceili(time_left)
-	timer_label.text = RoundModifiers.format_value(
+	var formatted_time := RoundModifiers.format_value(
 		displayed_second,
 		round_modifiers.roman_numerals_enabled
+	)
+	timer_label.text = (
+		str(ceili(time_left))
+		if challenge_modifiers.shared_round_clock
+		else formatted_time
 	)
 	timer_ring.set_ratio(timer_manager.ratio())
 	if (
@@ -4316,13 +4542,22 @@ func _show_endless_high_score() -> void:
 
 
 func _progression_round() -> int:
-	if game_mode == GameMode.ENDLESS or game_mode == GameMode.CHECKPOINT:
+	if game_mode == GameMode.CHALLENGE and not challenge_endless:
+		return current_challenge.start_round + run_completed_rounds
+	if game_mode in [GameMode.ENDLESS, GameMode.CHECKPOINT, GameMode.CHALLENGE]:
 		return round_number
 	return Difficulty.TOTAL_ROUNDS - round_number + 1
 
 
 func get_checkpoint_bonus_choice_count(start_round: int) -> int:
 	return int(floor(float(start_round - 1) / Difficulty.BONUS_INTERVAL))
+
+
+func _offer_checkpoint_backlog_bonus(completed_round_number: int) -> void:
+	if game_mode != GameMode.CHECKPOINT or checkpoint_bonus_backlog <= 0:
+		return
+	if await bonus_manager.offer_bonus_choice(completed_round_number):
+		checkpoint_bonus_backlog -= 1
 
 
 func _update_checkpoint_high_score(reached_round: int) -> String:
@@ -4442,17 +4677,35 @@ func _unlock_completed_checkpoint(completed_round: int) -> bool:
 	return true
 
 
-func start_from_checkpoint(checkpoint_id: int) -> bool:
+func start_from_checkpoint(
+	checkpoint_id: int,
+	restored_bonuses: Dictionary = {},
+	skip_bonus_choices := false
+) -> bool:
 	var snapshot_value: Variant = _checkpoint_value(checkpoint_snapshots, checkpoint_id, null)
 	if not snapshot_value is Dictionary:
 		return false
+	_gameplay_generation += 1
 	var snapshot := CheckpointSnapshot.from_dictionary(snapshot_value)
 	soft_audio.play_start()
 	music_manager.set_low_pass_enabled(false, true)
 	_hand_cycle_generation += 1
 	_pending_interactive_generation = -1
 	game_mode = GameMode.CHECKPOINT
+	current_challenge = null
+	challenge_endless = false
+	challenge_modifiers = ChallengeModifiers.new()
+	_configure_challenge_hand_tray()
+	bonus_manager.disabled_bonus_ids.clear()
+	special_rule_manager.disabled_rule_ids.clear()
+	special_rule_manager.forced_rule_ids.clear()
+	special_rule_manager.force_rules_every_round = false
+	special_rule_manager.forced_rule_count = 0
+	special_rule_manager.disable_rules_on_challenge_first_round = false
 	current_checkpoint_id = checkpoint_id
+	checkpoint_bonus_backlog = (
+		0 if skip_bonus_choices else get_checkpoint_bonus_choice_count(snapshot.start_round)
+	)
 	checkpoint_uses_endless_progression = (
 		snapshot.start_round > Difficulty.TOTAL_ROUNDS
 	)
@@ -4484,18 +4737,14 @@ func start_from_checkpoint(checkpoint_id: int) -> bool:
 	run_time_label.visible = _global_timer_enabled
 	overlay.visible = false
 	overlay_mode = ""
+	_restore_gameplay_transition_elements()
 	splash.visible = false
 	back_button.visible = true
 	bonus_manager.begin_run()
-	_start_checkpoint_bonus_choices(snapshot.start_round)
-	return true
-
-
-func _start_checkpoint_bonus_choices(checkpoint_round: int) -> void:
-	for choice_index in get_checkpoint_bonus_choice_count(checkpoint_round):
-		# Use the ordinary selection flow; no gameplay timer exists yet.
-		await bonus_manager.offer_bonus_choice(checkpoint_round, choice_index)
+	if skip_bonus_choices:
+		bonus_manager.grant_starting_bonuses(restored_bonuses)
 	start_round()
+	return true
 
 
 func _normalise_droughts(value: Dictionary) -> Dictionary:
@@ -4676,30 +4925,59 @@ func _apply_debug_checkpoints() -> void:
 	var requested_checkpoint := Debug.start_from_checkpoint()
 	if not Debug.unlock_all_checkpoints() and requested_checkpoint <= 0:
 		return
-	var simulated_piles := Difficulty.START_PILES
-	var simulated_hand := Difficulty.START_HAND_SIZE
-	var simulated_value := Difficulty.START_CARD_VALUE
-	var simulated_time := Difficulty.START_TURN_TIME
 	var last_checkpoint := (
 		int(Difficulty.TOTAL_ROUNDS / Difficulty.CHECKPOINT_INTERVAL)
 		if Debug.unlock_all_checkpoints()
 		else requested_checkpoint
 	)
-	for checkpoint_id in range(1, last_checkpoint + 1):
-		var checkpoint_round := checkpoint_id * Difficulty.CHECKPOINT_INTERVAL
+	_generate_debug_checkpoint_snapshots(last_checkpoint)
+
+
+func _generate_debug_checkpoint_snapshots(last_checkpoint: int) -> void:
+	var saved_difficulty := {
+		"pile_count": pile_count,
+		"hand_size": hand_size,
+		"start_value": start_value,
+		"turn_time": turn_time,
+		"difficulty_droughts": difficulty_droughts.duplicate(true),
+		"tier_reliefs_applied": tier_reliefs_applied,
+		"rng_state": rng.state,
+	}
+	pile_count = Difficulty.START_PILES
+	hand_size = Difficulty.START_HAND_SIZE
+	start_value = Difficulty.START_CARD_VALUE
+	turn_time = Difficulty.START_TURN_TIME
+	difficulty_droughts = _new_difficulty_droughts()
+	tier_reliefs_applied = 0
+	# Debug checkpoints must be reproducible and must not consume the gameplay
+	# RNG sequence used by the run that follows.
+	rng.seed = 0x50494C45
+	var final_round := last_checkpoint * Difficulty.CHECKPOINT_INTERVAL
+	for progression_round in range(2, final_round + 1):
+		_advance_difficulty(progression_round, 1 if progression_round == 2 else 0)
+		if progression_round % Difficulty.CHECKPOINT_INTERVAL != 0:
+			continue
+		var checkpoint_id := int(progression_round / Difficulty.CHECKPOINT_INTERVAL)
 		if unlocked_checkpoints.has(checkpoint_id):
 			continue
 		var snapshot := CheckpointSnapshot.new()
 		snapshot.checkpoint_id = checkpoint_id
-		snapshot.start_round = checkpoint_round
-		snapshot.pile_count = simulated_piles
-		snapshot.hand_size = simulated_hand
-		snapshot.start_value = simulated_value
-		snapshot.turn_time = simulated_time
-		snapshot.difficulty_droughts = _new_difficulty_droughts()
+		snapshot.start_round = progression_round
+		snapshot.pile_count = pile_count
+		snapshot.hand_size = hand_size
+		snapshot.start_value = start_value
+		snapshot.turn_time = turn_time
+		snapshot.difficulty_droughts = difficulty_droughts.duplicate(true)
 		snapshot.unlocked_endless = endless_unlocked
 		unlocked_checkpoints.append(checkpoint_id)
 		checkpoint_snapshots[checkpoint_id] = snapshot.to_dictionary()
+	pile_count = int(saved_difficulty.pile_count)
+	hand_size = int(saved_difficulty.hand_size)
+	start_value = int(saved_difficulty.start_value)
+	turn_time = float(saved_difficulty.turn_time)
+	difficulty_droughts = Dictionary(saved_difficulty.difficulty_droughts)
+	tier_reliefs_applied = int(saved_difficulty.tier_reliefs_applied)
+	rng.state = int(saved_difficulty.rng_state)
 	unlocked_checkpoints.sort()
 
 
@@ -4833,6 +5111,8 @@ func _build_run_summary(normal_game_completed: bool) -> RunSummary:
 			summary.mode = RunSummary.Mode.ENDLESS
 		GameMode.CHECKPOINT:
 			summary.mode = RunSummary.Mode.CHECKPOINT
+		GameMode.CHALLENGE:
+			summary.mode = RunSummary.Mode.CHALLENGE
 		_:
 			summary.mode = RunSummary.Mode.NORMAL
 	summary.started_from_checkpoint = started_from_checkpoint
@@ -4864,75 +5144,19 @@ func _on_achievement_unlocked(data: AchievementData) -> void:
 
 
 func _queue_achievement_notification(data: AchievementData) -> void:
-	if not _achievement_notifications_enabled:
-		return
-	_achievement_notification_queue.append(data)
-	if not _achievement_notification_active:
-		call_deferred("_play_achievement_notifications")
+	AchievementNotificationControllerScript.queue(self, data)
 
 
 func _play_achievement_notifications() -> void:
-	if _achievement_notification_active:
-		return
-	_achievement_notification_active = true
-	while (
-		_achievement_notifications_enabled
-		and not _achievement_notification_queue.is_empty()
-	):
-		while (
-			not _important_announcement_sources.is_empty()
-			or _achievement_resume_delay_pending
-		):
-			if not _important_announcement_sources.is_empty():
-				await get_tree().process_frame
-			else:
-				_achievement_resume_delay_pending = false
-				if achievement_popup_after_announcements_delay > 0.0:
-					await get_tree().create_timer(
-						achievement_popup_after_announcements_delay
-					).timeout
-			if not _achievement_notifications_enabled:
-				break
-		if not _achievement_notifications_enabled:
-			break
-		var data: AchievementData = _achievement_notification_queue.pop_front()
-		achievement_popup_title.text = data.title
-		_position_achievement_popup()
-		achievement_popup.visible = true
-		achievement_popup.modulate.a = 0.0
-		var target_y := achievement_popup.position.y
-		achievement_popup.position.y = target_y - 16.0
-		soft_audio.play_achievement()
-		_achievement_popup_tween = create_tween()
-		_achievement_popup_tween.set_trans(Tween.TRANS_QUAD)
-		_achievement_popup_tween.set_ease(Tween.EASE_OUT)
-		_achievement_popup_tween.set_parallel()
-		_achievement_popup_tween.tween_property(
-			achievement_popup, "modulate:a", 1.0, 0.18
-		)
-		_achievement_popup_tween.tween_property(
-			achievement_popup, "position:y", target_y, 0.18
-		)
-		_achievement_popup_tween.chain().tween_interval(1.5)
-		_achievement_popup_tween.chain().tween_property(
-			achievement_popup, "modulate:a", 0.0, 0.2
-		)
-		await _achievement_popup_tween.finished
-	achievement_popup.visible = false
-	_achievement_notification_active = false
+	await AchievementNotificationControllerScript.play(self)
 
 
 func _pause_achievement_notifications(source: StringName) -> void:
-	_important_announcement_sources[source] = true
+	AchievementNotificationControllerScript.pause(self, source)
 
 
 func _resume_achievement_notifications(source: StringName) -> void:
-	var was_paused := not _important_announcement_sources.is_empty()
-	_important_announcement_sources.erase(source)
-	if was_paused and _important_announcement_sources.is_empty():
-		_achievement_resume_delay_pending = true
-	if not _achievement_notification_active and not _achievement_notification_queue.is_empty():
-		call_deferred("_play_achievement_notifications")
+	AchievementNotificationControllerScript.resume(self, source)
 
 
 func _on_bonus_selection_visibility_changed() -> void:
@@ -4943,17 +5167,4 @@ func _on_bonus_selection_visibility_changed() -> void:
 
 
 func _position_achievement_popup() -> void:
-	var timer_bottom := 0.0
-	for timer_control: Control in [timer_ring, run_time_label]:
-		if timer_control.visible:
-			timer_bottom = maxf(timer_bottom, timer_control.get_global_rect().end.y)
-	var viewport_size := get_viewport_rect().size
-	achievement_popup.position.x = floorf(
-		(viewport_size.x - achievement_popup.size.x) * 0.5
-	)
-	achievement_popup.position.y = minf(
-		# The entrance starts 16 px above this target, so the full animation
-		# retains an 8 px gap below every visible timer.
-		maxf(50.0, timer_bottom + 24.0),
-		viewport_size.y - achievement_popup.size.y - 4.0
-	)
+	AchievementNotificationControllerScript.position(self)

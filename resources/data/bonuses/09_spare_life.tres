@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="BonusData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/bonuses/BonusData.gd" id="1_krp0h"]
+
+[resource]
+script = ExtResource("1_krp0h")
+title = "SPARE LIFE"
+description = "Adds one mistake point per level at the start of each round."
+category = 3
+max_level = 3
+weight = 1.0
+minimum_round = 1
+id = &"spare_life"

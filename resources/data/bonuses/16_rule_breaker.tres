@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BonusData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/bonuses/BonusData.gd" id="1_p3xiy"]
+
+[resource]
+script = ExtResource("1_p3xiy")
+title = "RULE BREAKER"
+description = "Before a round, lets you remove active special rules. Higher levels remove more or allow the last rule."
+category = 4
+rarity = 2
+max_level = 3
+weight = 0.55
+minimum_round = 10
+id = &"rule_breaker"

@@ -1,6 +1,6 @@
 extends SceneTree
 
-const PileScene := preload("res://resources/scenes/Pile.tscn")
+const PileScene := preload("res://resources/scenes/gameplay/Pile.tscn")
 const PatternScript := preload(
 	"res://resources/scripts/special_rules/rules/MovingPilePattern.gd"
 )

@@ -1,20 +1,15 @@
 class_name AchievementRegistry
 extends RefCounted
 
-const DATA_DIRECTORY := "res://resources/achievements"
+const CATALOG: DataCatalog = preload("res://resources/data/achievements.tres")
 
 
 static func create_all() -> Array[AchievementData]:
 	var result: Array[AchievementData] = []
-	var file_names := DirAccess.get_files_at(DATA_DIRECTORY)
-	file_names.sort()
-	for file_name in file_names:
-		if file_name.get_extension().to_lower() != "tres":
-			continue
-		var path := DATA_DIRECTORY.path_join(file_name)
-		var data := load(path) as AchievementData
+	for entry in CATALOG.enabled_data:
+		var data := entry as AchievementData
 		if data == null:
-			push_warning("Ignoring invalid AchievementData resource: %s" % path)
+			push_warning("Ignoring non-AchievementData entry in achievement catalog.")
 			continue
 		result.append(data)
 	return result

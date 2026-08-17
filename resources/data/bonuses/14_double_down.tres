@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BonusData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/bonuses/BonusData.gd" id="1_6j702"]
+
+[resource]
+script = ExtResource("1_6j702")
+title = "DOUBLE DOWN"
+description = "After a valid play, automatically plays up to one sequential card per level on the same pile."
+category = 1
+rarity = 1
+max_level = 3
+weight = 0.55
+minimum_round = 1
+id = &"double_down"

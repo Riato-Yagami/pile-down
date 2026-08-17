@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BonusData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/bonuses/BonusData.gd" id="1_oj6by"]
+
+[resource]
+script = ExtResource("1_oj6by")
+title = "BRING A FRIEND"
+description = "Dragging a card also carries neighboring hand cards, which try to play on nearby compatible piles."
+category = 1
+rarity = 1
+max_level = 3
+weight = 0.65
+minimum_round = 1
+id = &"bring_a_friend"

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ChallengeData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/challenges/ChallengeData.gd" id="1_data"]
+[ext_resource type="Resource" path="res://resources/data/achievements/26_bring_a_friend_full_activation.tres" id="2_achievement"]
+
+[resource]
+script = ExtResource("1_data")
+id = &"pool_party"
+title = "POOL PARTY"
+description = "Call the shot."
+required_achievement = ExtResource("2_achievement")
+start_round = 5
+target_round = 20
+allow_endless = true
+pool_physics_enabled = true
+disabled_bonuses = Array[StringName]([&"pile_mover"])
+disabled_rules = Array[StringName]([&"free_range_cards", &"sticky_fingers", &"hot_potatoes", &"floor_is_lava"])

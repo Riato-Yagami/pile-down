@@ -1,6 +1,8 @@
 class_name BonusSelection
 extends Control
 
+const SKIPPED_INDEX := -2
+
 signal bonus_chosen(index: int)
 signal rule_chosen(index: int)
 
@@ -14,19 +16,27 @@ signal rule_chosen(index: int)
 @onready var first_choice: BonusChoiceCard = %FirstChoice
 @onready var choices: VBoxContainer = %Choices
 @onready var rule_choices: GridContainer = %RuleChoices
+@onready var skip_button: Button = %SkipButton
 
 var _bonus_buttons: Array[BonusChoiceCard] = []
+var _presentation_mode := 0
+var _presentation_generation := 0
+var _animation_tween: Tween
 
 
 func _ready() -> void:
 	visible = false
 	_bonus_buttons.assign([first_choice])
 	first_choice.pressed.connect(_choose.bind(0))
+	skip_button.pressed.connect(_skip)
 
 
 func present(offered_bonuses: Array[BonusData], levels: Array[int]) -> int:
+	_presentation_generation += 1
+	_presentation_mode = 1
 	self.choices.visible = true
 	rule_choices.visible = false
+	skip_button.visible = true
 	_ensure_bonus_button_count(offered_bonuses.size())
 	for index in _bonus_buttons.size():
 		var button := _bonus_buttons[index]
@@ -38,9 +48,9 @@ func present(offered_bonuses: Array[BonusData], levels: Array[int]) -> int:
 	visible = true
 	modulate.a = 0.0
 	scale = entrance_scale
-	var entrance := create_tween().set_parallel()
-	entrance.tween_property(self, "modulate:a", 1.0, entrance_duration)
-	entrance.tween_property(self, "scale", Vector2.ONE, entrance_duration)
+	_animation_tween = create_tween().set_parallel()
+	_animation_tween.tween_property(self, "modulate:a", 1.0, entrance_duration)
+	_animation_tween.tween_property(self, "scale", Vector2.ONE, entrance_duration)
 	return await bonus_chosen
 
 
@@ -63,8 +73,11 @@ func _duplicate_choice_template() -> BonusChoiceCard:
 
 
 func present_rules(rules: Array[SpecialRuleData]) -> int:
+	_presentation_generation += 1
+	_presentation_mode = 2
 	choices.visible = false
 	rule_choices.visible = true
+	skip_button.visible = false
 	for child in rule_choices.get_children():
 		child.queue_free()
 	for index in rules.size():
@@ -75,10 +88,49 @@ func present_rules(rules: Array[SpecialRuleData]) -> int:
 	visible = true
 	modulate.a = 0.0
 	scale = entrance_scale
-	var entrance := create_tween().set_parallel()
-	entrance.tween_property(self, "modulate:a", 1.0, entrance_duration)
-	entrance.tween_property(self, "scale", Vector2.ONE, entrance_duration)
+	_animation_tween = create_tween().set_parallel()
+	_animation_tween.tween_property(self, "modulate:a", 1.0, entrance_duration)
+	_animation_tween.tween_property(self, "scale", Vector2.ONE, entrance_duration)
 	return await rule_chosen
+
+
+func cancel() -> void:
+	if _presentation_mode == 0 and not visible:
+		return
+	_presentation_generation += 1
+	if _animation_tween != null and _animation_tween.is_valid():
+		_animation_tween.kill()
+	_animation_tween = null
+	visible = false
+	skip_button.visible = false
+	for button in _bonus_buttons:
+		button.disabled = false
+		button.modulate = Color.WHITE
+	for child in rule_choices.get_children():
+		if child is Button:
+			(child as Button).disabled = false
+	var cancelled_mode := _presentation_mode
+	_presentation_mode = 0
+	if cancelled_mode == 1:
+		bonus_chosen.emit(-1)
+	elif cancelled_mode == 2:
+		rule_chosen.emit(-1)
+
+
+func _skip() -> void:
+	if _presentation_mode != 1:
+		return
+	_presentation_generation += 1
+	if _animation_tween != null and _animation_tween.is_valid():
+		_animation_tween.kill()
+	_animation_tween = null
+	for button in _bonus_buttons:
+		button.disabled = false
+		button.modulate = Color.WHITE
+	visible = false
+	skip_button.visible = false
+	_presentation_mode = 0
+	bonus_chosen.emit(SKIPPED_INDEX)
 
 
 func _choose(index: int) -> void:
@@ -87,8 +139,9 @@ func _choose(index: int) -> void:
 	for button in _bonus_buttons:
 		button.disabled = true
 	var selected := _bonus_buttons[index]
-	var tween := create_tween().set_parallel()
-	tween.tween_property(
+	var generation := _presentation_generation
+	_animation_tween = create_tween().set_parallel()
+	_animation_tween.tween_property(
 		selected,
 		"position:y",
 		selected.position.y - selected_lift,
@@ -96,14 +149,18 @@ func _choose(index: int) -> void:
 	)
 	for button in _bonus_buttons:
 		if button != selected and button.visible:
-			tween.tween_property(
+			_animation_tween.tween_property(
 				button,
 				"modulate:a",
 				0.0,
 				selection_duration
 			)
-	await tween.finished
+	await _animation_tween.finished
+	if generation != _presentation_generation:
+		return
 	visible = false
+	_presentation_mode = 0
+	_animation_tween = null
 	for button in _bonus_buttons:
 		button.disabled = false
 		button.modulate = Color.WHITE
@@ -111,11 +168,12 @@ func _choose(index: int) -> void:
 
 
 func _choose_rule(index: int) -> void:
+	var generation := _presentation_generation
 	for child in rule_choices.get_children():
 		(child as Button).disabled = true
 	var selected := rule_choices.get_child(index) as Button
-	var tween := create_tween().set_parallel()
-	tween.tween_property(
+	_animation_tween = create_tween().set_parallel()
+	_animation_tween.tween_property(
 		selected,
 		"position:y",
 		selected.position.y - selected_lift,
@@ -123,12 +181,16 @@ func _choose_rule(index: int) -> void:
 	)
 	for child in rule_choices.get_children():
 		if child != selected:
-			tween.tween_property(
+			_animation_tween.tween_property(
 				child,
 				"modulate:a",
 				0.0,
 				selection_duration
 			)
-	await tween.finished
+	await _animation_tween.finished
+	if generation != _presentation_generation:
+		return
 	visible = false
+	_presentation_mode = 0
+	_animation_tween = null
 	rule_chosen.emit(index)

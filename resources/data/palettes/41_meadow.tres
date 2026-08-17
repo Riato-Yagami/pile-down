@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ColorPaletteData" format=3]
+
+[ext_resource type="Resource" path="res://resources/data/achievements/25_deja_vu_full_activation.tres" id="1_ccvhp"]
+[ext_resource type="Script" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_eill7"]
+
+[resource]
+script = ExtResource("2_eill7")
+id = &"meadow"
+display_name = "MEADOW"
+colors = Array[Color]([Color(0.8509804, 0.92941177, 0.57254905, 1), Color(0.70980394, 0.89411765, 0.54901963, 1), Color(0.6, 0.8509804, 0.54901963, 1), Color(0.4627451, 0.78431374, 0.5764706, 1), Color(0.32156864, 0.7137255, 0.6039216, 1), Color(0.20392157, 0.627451, 0.6431373, 1), Color(0.08627451, 0.5411765, 0.6784314, 1), Color(0.101960786, 0.45882353, 0.62352943, 1), Color(0.11764706, 0.3764706, 0.5686275, 1), Color(0.09411765, 0.30588236, 0.46666667, 1)])
+required_achievement = ExtResource("1_ccvhp")

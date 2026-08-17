@@ -36,6 +36,9 @@ func _run() -> void:
 	game.options_button.pressed.emit()
 	await process_frame
 	assert(game.options_menu.visible)
+	assert(game.options_menu.position.x > 0.0)
+	await create_timer(game.submenu_swipe_duration + 0.05).timeout
+	assert(is_zero_approx(game.options_menu.position.x))
 	assert(game.options_back_button is TextureButton)
 	assert(game.options_back_button.texture_normal != null)
 	var options_title := game.get_node(
@@ -277,9 +280,12 @@ func _run() -> void:
 	assert(not game.itch_link_button.pressed.get_connections().is_empty())
 	assert(not game.kofi_link_button.pressed.get_connections().is_empty())
 	game.options_back_button.pressed.emit()
+	await create_timer(game.submenu_swipe_duration + 0.05).timeout
 	assert(not game.options_menu.visible)
 	game.progression_button.pressed.emit()
 	assert(game.progression_menu.visible)
+	assert(game.progression_menu.position.x > 0.0)
+	await create_timer(game.submenu_swipe_duration + 0.05).timeout
 	var snapshot := game._progression_snapshot()
 	assert((snapshot.achievements as Array).size() == AchievementRegistry.create_all().size())
 	assert((snapshot.bonuses as Array).size() == BonusRegistry.create_all().size())
@@ -310,6 +316,7 @@ func _run() -> void:
 	escape.keycode = KEY_ESCAPE
 	escape.pressed = true
 	assert(game._handle_global_shortcut(escape))
+	await create_timer(game.submenu_swipe_duration + 0.05).timeout
 	assert(not game.progression_menu.visible)
 	game.queue_free()
 	print("Progression game integration tests passed.")

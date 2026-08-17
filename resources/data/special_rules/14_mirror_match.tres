@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="SpecialRuleData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/special_rules/SpecialRuleData.gd" id="1_l5540"]
+
+[resource]
+script = ExtResource("1_l5540")
+title = "MIRROR MATCH"
+subtitle = "Turn the whole picture around."
+description = "Cards and piles are mirrored on one or both axes."
+weight = 0.8
+id = &"mirror_match"

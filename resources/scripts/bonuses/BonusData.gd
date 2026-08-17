@@ -1,10 +1,9 @@
 class_name BonusData
-extends Resource
+extends Data
 
 enum Category { MEMORY, HAND, TIME, SURVIVAL, SPECIAL_RULE }
 enum Rarity { COMMON, RARE, LEGENDARY }
 
-@export var id: StringName
 @export var title: String
 @export_multiline var description: String
 @export var category: Category

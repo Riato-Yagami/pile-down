@@ -1,14 +1,13 @@
 class_name SpecialRule
-extends RefCounted
+extends Data
 
-var id: StringName
-var title: String
-var subtitle: String
-var description: String
-var incompatible_rules: Array[StringName] = []
-var required_rules: Array[StringName] = []
-var minimum_round := 1
-var weight := 1.0
+@export var title: String
+@export var subtitle: String
+@export_multiline var description: String
+@export var incompatible_rules: Array[StringName] = []
+@export var required_rules: Array[StringName] = []
+@export var minimum_round := 1
+@export var weight := 1.0
 
 
 func activate(_context: RoundContext) -> void:

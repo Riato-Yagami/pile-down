@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BonusData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/bonuses/BonusData.gd" id="1_n7xbj"]
+
+[resource]
+script = ExtResource("1_n7xbj")
+title = "ADAPTATION"
+description = "Reduces the intensity of special rules, with a stronger reduction at each level."
+category = 4
+rarity = 1
+max_level = 3
+weight = 0.75
+minimum_round = 5
+id = &"adaptation"

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="SpecialRuleData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/special_rules/SpecialRuleData.gd" id="1_wxqbw"]
+
+[resource]
+script = ExtResource("1_wxqbw")
+title = "FREE-RANGE CARDS"
+subtitle = "They escaped again."
+description = "Cards wander across the screen instead of staying put."
+id = &"free_range_cards"

@@ -1,7 +1,7 @@
 class_name RunSummary
 extends RefCounted
 
-enum Mode { NORMAL, CHECKPOINT, ENDLESS }
+enum Mode { NORMAL, CHECKPOINT, ENDLESS, CHALLENGE }
 
 var mode := Mode.NORMAL
 var started_from_checkpoint := false

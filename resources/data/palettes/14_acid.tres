@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ColorPaletteData" format=3]
+
+[ext_resource type="Resource" path="res://resources/data/achievements/29_speedrun_full_game.tres" id="1_2lrl5"]
+[ext_resource type="Script" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_ir54g"]
+
+[resource]
+script = ExtResource("2_ir54g")
+id = &"acid"
+display_name = "ACID"
+colors = Array[Color]([Color(0, 0.84705883, 0.7058824, 1), Color(0.8509804, 0.9411765, 0, 1), Color(1, 0.23921569, 0.44313726, 1), Color(0.42352942, 0.3882353, 1, 1), Color(1, 0.62352943, 0.10980392, 1), Color(0, 0.68235296, 0.9372549, 1), Color(0.72156864, 0.8784314, 0, 1), Color(1, 0.32156864, 0.32156864, 1), Color(0.60784316, 0.31764707, 0.8784314, 1), Color(0, 0.70980394, 0.41568628, 1)])
+required_achievement = ExtResource("1_2lrl5")

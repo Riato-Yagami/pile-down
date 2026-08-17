@@ -15,17 +15,14 @@ func _run() -> void:
 	assert(game._start_transition_elements().has(game.back_button))
 	game.splash.visible = false
 	game.overlay.visible = true
-	game.overlay_back_button.visible = true
+	game.overlay_quit_button.visible = true
 	await process_frame
-	assert(game.overlay_back_button.get_parent() == game.overlay_panel)
-	var click_position := game.overlay_back_button.get_global_rect().get_center()
+	assert(game.overlay_quit_button.text == "QUIT")
+	assert(game.overlay_quit_button.get_parent().name == "OverlayButtons")
+	assert(game.overlay_quit_button.get_parent().get_child_count() == 3)
 	var press := InputEventMouseButton.new()
 	press.button_index = MOUSE_BUTTON_LEFT
-	press.position = click_position
 	press.pressed = true
-	assert(game._is_overlay_back_pointer_event(press))
-	press.position = Vector2.ZERO
-	assert(not game._is_overlay_back_pointer_event(press))
 
 	game.overlay.visible = false
 	game.back_button.visible = true
@@ -41,7 +38,7 @@ func _run() -> void:
 	motion.position = Vector2.ZERO
 	game._update_gameplay_back_hover(motion)
 	assert(game.back_button.material == null)
-	print("Overlay ESC button test passed.")
+	print("Overlay quit button test passed.")
 	game.queue_free()
 	await process_frame
 	quit()

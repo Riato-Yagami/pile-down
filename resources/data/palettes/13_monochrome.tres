@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ColorPaletteData" format=3]
+
+[ext_resource type="Resource" path="res://resources/data/achievements/09_half_no_life_lost.tres" id="1_lu712"]
+[ext_resource type="Script" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_56stl"]
+
+[resource]
+script = ExtResource("2_56stl")
+id = &"monochrome"
+display_name = "MONOCHROME"
+colors = Array[Color]([Color(0.24313726, 0.2627451, 0.2901961, 1), Color(0.33333334, 0.35686275, 0.3882353, 1), Color(0.4392157, 0.46666667, 0.5019608, 1), Color(0.5647059, 0.5882353, 0.6156863, 1), Color(0.6901961, 0.65882355, 0.627451, 1), Color(0.54509807, 0.5058824, 0.47058824, 1), Color(0.42352942, 0.39215687, 0.40784314, 1), Color(0.52156866, 0.5058824, 0.5529412, 1), Color(0.627451, 0.6039216, 0.654902, 1), Color(0.3372549, 0.32941177, 0.37254903, 1)])
+required_achievement = ExtResource("1_lu712")

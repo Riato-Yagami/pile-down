@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="FontData" format=3 uid="uid://c5iasnfes8385"]
+
+[ext_resource type="FontFile" uid="uid://camkk5gui0ppq" path="res://resources/fonts/Tiny5-Regular.ttf" id="1_qbnpx"]
+[ext_resource type="Resource" path="res://resources/data/achievements/04_complete_10_rounds.tres" id="2_qbnpx"]
+[ext_resource type="Script" uid="uid://dj883c8fbgkvi" path="res://resources/scripts/progression/FontData.gd" id="3_fmcux"]
+
+[resource]
+script = ExtResource("3_fmcux")
+id = &"tiny5"
+display_name = "TINY5"
+font = ExtResource("1_qbnpx")
+tile_font_offset = Vector2(1, 0)
+title_font_offset = Vector2(2, 0)
+default_unlocked = true
+required_achievement = ExtResource("2_qbnpx")

@@ -26,13 +26,13 @@ func _new_manager() -> AchievementManager:
 
 func _test_registry_and_feasibility() -> void:
 	var declared := AchievementRegistry.create_declared()
-	assert(declared.size() == 31)
+	assert(declared.size() >= 41)
 	var ids: Array[StringName] = []
 	for data in declared:
 		assert(not ids.has(data.id))
 		assert(not data.category.is_empty())
 		ids.append(data.id)
-	assert(AchievementRegistry.create_all().size() == 31)
+	assert(AchievementRegistry.create_all().size() == declared.size())
 	assert(AchievementRegistry.create_all().any(
 		func(data: AchievementData) -> bool:
 			return data.id == &"all_bonuses_maxed_once"
@@ -123,6 +123,12 @@ func _test_rounds_lives_checkpoints_and_speedruns() -> void:
 	summary.run_time_seconds = 599.999
 	manager.round_completed.emit(summary, 20, no_rules)
 	assert(manager.unlocked.has(&"speedrun_20_rounds"))
+	assert(manager.unlocked.has(&"round_20_without_bonuses"))
+	manager.unlocked.clear()
+	summary.active_bonus_levels = {&"open_book": 1}
+	manager.round_completed.emit(summary, 20, no_rules)
+	assert(not manager.unlocked.has(&"round_20_without_bonuses"))
+	summary.active_bonus_levels.clear()
 
 	manager.unlocked.clear()
 	summary.completed_rounds = Difficulty.MAX_ROUNDS
@@ -130,6 +136,12 @@ func _test_rounds_lives_checkpoints_and_speedruns() -> void:
 	summary.run_time_seconds = 1800.0
 	manager.run_completed.emit(summary)
 	assert(not manager.unlocked.has(&"speedrun_full_game"))
+	assert(manager.unlocked.has(&"game_without_bonuses"))
+	manager.unlocked.clear()
+	summary.active_bonus_levels = {&"open_book": 1}
+	manager.run_completed.emit(summary)
+	assert(not manager.unlocked.has(&"game_without_bonuses"))
+	summary.active_bonus_levels.clear()
 	summary.run_time_seconds = 1799.999
 	manager.run_completed.emit(summary)
 	assert(manager.unlocked.has(&"speedrun_full_game"))

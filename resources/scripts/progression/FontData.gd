@@ -1,8 +1,7 @@
 @tool
 class_name FontData
-extends Resource
+extends Data
 
-@export var id: StringName
 @export var display_name: String
 @export var font: Font
 @export var tile_font_size := 20:

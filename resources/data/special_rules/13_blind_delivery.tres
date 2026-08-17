@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="SpecialRuleData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/special_rules/SpecialRuleData.gd" id="1_03i2v"]
+
+[resource]
+script = ExtResource("1_03i2v")
+title = "BLIND DELIVERY"
+subtitle = "Remember the package."
+description = "A card becomes hidden while you drag it."
+weight = 0.9
+id = &"blind_delivery"

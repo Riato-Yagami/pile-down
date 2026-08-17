@@ -169,8 +169,12 @@ second appui sur `Échap` la ferme. Dans cette popup, `Entrée` quitte la run et
 d'accueil. Le bouton fournit notamment ce contrôle aux écrans
 tactiles. Sur l'écran d'accueil, `Échap` ferme l'application desktop et reste
 sans effet dans la version Web. La
-barre d'espace lance la partie depuis l'accueil et relance une partie depuis
-l'écran de fin. La touche `M` coupe ou réactive tous les sons. Pendant une
+barre d'espace lance la partie depuis l'accueil et relance le mode courant
+(normal, endless, checkpoint ou challenge) depuis l'écran de fin. Lors d'un
+restart ou replay, les valeurs initiales des piles restent visibles un peu plus
+longtemps avant leur retournement. La durée lisible commence après la dernière
+animation d'entrée et se règle avec `pile_value_hold_duration` dans
+`GameManager`. La touche `M` coupe ou réactive tous les sons. Pendant une
 partie, `T` affiche ou masque le temps total écoulé.
 Le panneau de confirmation et ses trois boutons verticaux utilisent des marges
 nine-slice : leurs coins pixel-art restent intacts lorsque le contenu est mis
@@ -195,7 +199,9 @@ droite. Ces animations se jouent en parallèle du rappel complet de la pile,
 sans raccourcir celui-ci. La nouvelle main devient draggable dès qu'elle entre
 dans l'écran, même si son animation continue. Des signatures sonores courtes
 accompagnent aussi le lancement ou replay, l'annonce d'une règle spéciale, la
-défaite et la victoire. Quand toutes les piles sont terminées, les cartes
+défaite et la victoire. Lorsqu'une dernière erreur termine la partie, toutes
+les piles encore visibles se retournent ensemble, restent découvertes un court
+instant, puis la popup de game over apparaît. Quand toutes les piles sont terminées, les cartes
 restantes, jokers compris, sont défaussées vers le bas avant l'animation de
 victoire.
 La musique du menu joue en boucle sur l'accueil.
@@ -228,23 +234,35 @@ l'horloge produit un flash rouge synchronisé avec chaque tick.
 ```text
 pile-down/
 ├── resources/
-│   ├── achievements/             # un AchievementData `.tres` par succès
+│   ├── data/                     # définitions et catalogues ordonnés activés
+│   │   ├── achievements/
+│   │   ├── bonuses/
+│   │   ├── challenges/
+│   │   ├── fonts/
+│   │   ├── palettes/
+│   │   └── special_rules/
 │   ├── fonts/
-│   │   ├── data/                 # un FontData `.tres` par police
 │   │   ├── extra/
 │   │   │   ├── PressStart2P/
 │   │   │   └── autres polices et licences
 │   │   ├── Tiny5-Regular.ttf
 │   │   └── VCR_OSD_MONO_1.001.ttf
-│   ├── palettes/                 # un ColorPaletteData `.tres` par palette
 │   ├── scenes/
 │   │   ├── Game.tscn
-│   │   ├── Card.tscn
-│   │   └── Pile.tscn
+│   │   ├── Main.tscn
+│   │   ├── bonuses/
+│   │   ├── challenges/
+│   │   ├── gameplay/             # Card, Pile
+│   │   ├── progression/
+│   │   └── special_rules/
 │   ├── scripts/
 │   │   ├── audio/
+│   │   ├── bonuses/
+│   │   ├── challenges/
 │   │   ├── core/
+│   │   ├── data/                 # types Data et DataCatalog communs
 │   │   ├── gameplay/
+│   │   ├── progression/
 │   │   ├── special_rules/
 │   │   │   └── rules/
 │   │   └── ui/
@@ -263,22 +281,46 @@ pile-down/
 └── README.md
 ```
 
+Toutes les définitions persistantes héritent de `Data`, qui porte leur `id`
+stable. Chaque fichier catalogue à la racine de `resources/data/` est un
+`DataCatalog` : son tableau `enabled_data` active les définitions et fixe leur
+ordre de présentation et d'utilisation. Les bonus et règles spéciales sont donc
+éditables dans leurs propres `.tres`, au même titre que les achievements,
+challenges, polices et palettes.
+
 - `resources/scenes/Game.tscn` et `resources/scripts/core/GameManager.gd` : version principale en 2D,
   interface minimaliste, rounds, erreurs, drag-and-drop et progression.
 - `resources/scripts/gameplay/PileLayoutManager.gd` : dispositions compactes et stables des piles.
+- `resources/scripts/gameplay/DifficultyProgression.gd` : état et calculs pondérés
+  de la progression de difficulté, y compris les paliers de soulagement.
+- `resources/scripts/settings/GameOptionsController.gd` : chargement et
+  application des options audio, gameplay et graphiques, gestion de la
+  résolution, du fond, de la poussière et des dialogues de sauvegarde. Les
+  méthodes homonymes de `GameManager` restent des façades pour les signaux des
+  scènes et la compatibilité des tests.
+- `resources/scripts/progression/ProgressionSnapshotBuilder.gd` : conversion de
+  l'état de partie en données d'affichage pour les scores, succès, découvertes
+  et cosmétiques, sans responsabilité d'animation.
 - `resources/scripts/audio/SoftAudio.gd` : retours sonores doux générés sans ressource externe.
 - `resources/scripts/ui/RoundDots.gd` : indicateurs minimalistes des erreurs restantes.
-- `resources/scenes/Card.tscn` et `resources/scripts/gameplay/Card.gd` : carte réutilisable, sélection et
+- `resources/scenes/gameplay/Card.tscn` et `resources/scripts/gameplay/Card.gd` : carte réutilisable, sélection et
   retournement, avec relief et inclinaison simulés.
-- `resources/scenes/Pile.tscn` et `resources/scripts/gameplay/Pile.gd` : état d'une pile, valeur attendue et
+- `resources/scripts/gameplay/card/` : composants visuels spécialisés des cartes ;
+  `CardMotionController.gd` gère le mouvement par frame et
+  `CardAppearance.gd` applique les textures, couleurs, polices et valeurs.
+- `resources/scenes/gameplay/Pile.tscn` et `resources/scripts/gameplay/Pile.gd` : état d'une pile, valeur attendue et
   animations.
 - `resources/scripts/gameplay/HandManager.gd` : génération des mains avec garantie d'une carte
   jouable.
 - `resources/scripts/special_rules/rules/` : implémentations et contrôleurs propres
   aux règles spéciales (lave, Sticky Fingers, lampe, mouvements et anneaux).
 - `resources/scripts/gameplay/TimerManager.gd` : compte à rebours indépendant.
+- `resources/scripts/ui/progression/ProgressionPreviewBuilder.gd` : données de
+  prévisualisation éditeur du menu de progression, séparées de son contrôle UI.
 
 Les composants communiquent par signaux afin de rester faiblement couplés.
+L'index des responsabilités et façades encore exposées par `GameManager` est
+maintenu dans `docs/game-manager-function-index.md`.
 
 ## Direction artistique
 
@@ -367,6 +409,11 @@ règles, checkpoints et Endless débloqués uniquement en mémoire. Le désactiv
 recharge la progression réelle depuis la sauvegarde, qui n'est jamais modifiée
 par ce toggle.
 
+La touche `E` termine le round courant et peut être pressée rapidement pour
+mettre plusieurs victoires en file. Pendant cette séquence accélérée, le timer
+du tour est arrêté et ses expirations devenues obsolètes sont ignorées afin
+qu'elles ne provoquent pas de dégât dans un round suivant.
+
 En mode debug, la touche `H` efface toute la progression globale : highscores,
 Endless, checkpoints, découvertes, achievements présents ou ajoutés dans une
 future version, et polices débloquées. Les volumes audio ne sont pas modifiés.
@@ -409,7 +456,7 @@ reste toujours à sa taille native de 6×14 pixels, centré dans la piste et
 déplacé uniquement sur l'axe vertical ; le `VScrollBar` fonctionnel reste
 invisible derrière ce visuel.
 Le choix actif reprend la teinte bleue de la navigation. Chaque fichier de
-`resources/fonts/data/` décrit une police proposée et expose la ressource,
+`resources/data/fonts/` décrit une police proposée et expose la ressource,
 `Tile Font Size`, `Tile Font Offset`, `Title Font Size`, `Title Font Offset` et
 l'achievement requis pour la débloquer. La taille du titre peut ainsi différer
 de celle des chiffres ; une valeur de `0` la synchronise avec `Tile Font Size`.
@@ -421,10 +468,9 @@ second corrige indépendamment le titre rendu avec cette police dans la liste.
 par une tuile neutre et rend ce symbole avec la même police, taille et offset
 que les chiffres, dans le jeu comme dans les previews. Cette option est activée
 par défaut.
-`FontRegistry`
-charge automatiquement tous les `.tres` du dossier dans l'ordre de leur
-préfixe numérique. La liste des achievements est chargée depuis
-`resources/achievements/`. La taille choisie s'applique aux chiffres dans le jeu,
+`FontRegistry` charge les entrées activées de `resources/data/fonts.tres` dans
+l'ordre explicite du catalogue. La liste des achievements provient de
+`resources/data/achievements.tres`. La taille choisie s'applique aux chiffres dans le jeu,
 au titre de la police dans sa liste et immédiatement dans l'aperçu de l'éditeur
 lorsqu'elle est modifiée. Dans le preview de l'éditeur uniquement, la police et
 la palette sélectionnées apparaissent en tête de leurs listes ; leur ordre en jeu
@@ -462,9 +508,9 @@ ont été supprimées du dépôt car leurs licences jointes interdisaient l'usag
 commercial. Les fichiers `.fon` restent hors du catalogue, car Godot ne les
 prend pas en charge.
 
-Chaque fichier de `resources/palettes/` décrit une palette de dix couleurs
-modifiables dans l'inspecteur. `ColorPaletteRegistry` charge automatiquement
-ces `.tres` dans l'ordre de leur préfixe numérique. La page Fonts
+Chaque fichier de `resources/data/palettes/` décrit une palette de dix couleurs
+modifiables dans l'inspecteur. `ColorPaletteRegistry` charge les entrées
+activées de `resources/data/palettes.tres` dans l'ordre explicite du catalogue. La page Fonts
 présente les polices et les palettes comme les autres listes de progression,
 dans deux rangées verticales possédant chacune son propre défilement. Elle
 permet de sélectionner séparément la police et la palette ; la palette choisie
@@ -490,14 +536,16 @@ droite sans déplacer les icônes.
 Les bonus obtenus sur plusieurs niveaux inscrivent leur meilleur niveau
 dans le carré ; le carré devient doré au niveau maximal. Les états binaires
 utilisent les sprites `ui/check/checked.png` et `ui/check/unchecked.png`.
-Les 31 achievements permanents sont décrits individuellement dans
-`resources/achievements/`. `AchievementRegistry` charge automatiquement les
-fichiers `.tres` dans l'ordre de leur préfixe numérique. Ils sont évalués uniquement
+Les achievements permanents sont décrits individuellement dans
+`resources/data/achievements/`. `AchievementRegistry` charge les entrées
+activées de `resources/data/achievements.tres` dans leur ordre explicite. Ils sont évalués uniquement
 sur les événements de jeu concernés et regroupés sous `STATS`, `ROUNDS`,
 `CHECKPOINTS`, `ENDLESS`, `BONUSES & RULES`, `COMBOS` et `SPEEDRUN`. Les
 seuils modifiables sont stockés dans chaque ressource via `required_count` et,
 pour les speedruns, `time_limit_seconds` exprimé en secondes. Le succès
-`FIRST STEP` se débloque après le premier round terminé.
+`FIRST STEP` se débloque après le premier round terminé. `BARE HANDS` exige
+20 rounds d'une run normale sans bonus et `NO FRILLS` exige de terminer cette
+run entière sans bonus.
 Les achievements cumulatifs affichent leur complétion avec le sprite et le shader
 des barres de volume. Leur détail numérique apparaît au survol de la barre,
 tient sur plusieurs lignes si nécessaire et les embouts restent intacts grâce
@@ -528,6 +576,18 @@ la configuration complète en JSON, d'importer un export validé ou de supprimer
 la sauvegarde après confirmation. Un import ou une suppression recharge la
 scène afin de synchroniser immédiatement tout l'état en mémoire.
 
+Les sous-menus Options, Progression, Challenges et Checkpoints entrent depuis
+la droite par un swipe vers la gauche. Leur bouton retour ou la touche Échap
+joue le mouvement inverse avant de rendre l'accueil interactif. La durée commune
+est réglable avec `submenu_swipe_duration` sur `GameManager`.
+
+Les boutons textuels illustrés héritent de
+`resources/scenes/ui/RegionButton.tscn`. La section `Stretchable Texture` de sa
+racine expose la texture, `Region Rect`, les quatre `Patch Margins` nine-slice
+et les marges du contenu. Modifier ces valeurs dans la scène parente propage le
+découpage aux boutons Play, Endless, Checkpoint, Replay, Quit et aux choix de
+bonus ; une scène enfant peut toujours les surcharger dans son inspecteur.
+
 La page `GAMEPLAY` permet de désactiver séparément les notifications
 d'achievements et le chronomètre global de la partie. Cette option ne masque
 jamais l'horloge ni la valeur du compte à rebours du round. Une notification
@@ -545,18 +605,28 @@ immédiatement et sauvegardés dans `gameplay/achievement_notifications` et
 
 L'écran de fin de partie affiche les checkpoints débloqués, bonus découverts,
 règles rencontrées et achievements obtenus pendant la partie sans titre
-supplémentaire. Les bonus, règles et achievements sont précédés de leur icône ;
+supplémentaire. Les checkpoints, bonus, règles et achievements sont précédés
+de leurs icônes respectives (sauvegarde, bonus, règle et trophée) ;
 plusieurs éléments d'une même catégorie sont séparés par `+`. Le récapitulatif
-préfixe également chaque ligne par `+ NEW`, avec `NEW` en bleu, et s'agrandit
-uniquement vers le bas afin de ne jamais recouvrir les boutons.
+préfixe chaque ligne par `+`, sans libellé `NEW`. Il est placé 6 pixels sous la
+popup dans le même conteneur vertical : l'ensemble se recentre vers le haut
+lorsque des lignes sont ajoutées afin de rester dans l'écran. Le titre
+`HIGHSCORE` appartient également à ce conteneur et conserve un écart de 6 pixels
+au-dessus de la popup.
 Les catégories sans nouveauté sont omises.
+Quand tous les rounds d'un mode fini sont terminés, l'écran affiche `YOU WIN !`
+pour les runs Classic, Checkpoint et Challenge non-Endless ; il n'affiche jamais
+`0 ROUNDS LEFT` comme résultat d'une victoire. Les écrans de victoire et de mort
+terminent immédiatement le gameplay : timers, convoyeur, mains en attente,
+timeouts différés et victoires debug mises en file sont tous invalidés avant
+l'affichage du résultat.
 
 Ces nouveautés ajoutent `notification.png` au bouton Progression du menu
 principal et à l'onglet concerné (`ACHIEVEMENTS`, `BONUSES` ou `SPECIAL RULES`).
 Les highscores ne produisent jamais de notification. Cliquer sur l'icône d'un
 onglet acquitte cette catégorie ; le
 badge principal disparaît lorsque toutes les catégories ont été consultées.
-Dans `ProgressionMenu.tscn`, `StatsNotification` est le modèle éditable du
+Dans `resources/scenes/progression/ProgressionMenu.tscn`, `StatsNotification` est le modèle éditable du
 placement. Le bouton d'inspecteur `Copy Notification Placement` recopie sa
 position et sa taille sur les badges des autres onglets.
 
@@ -735,7 +805,7 @@ La règle `COLORBLIND` ne modifie jamais la palette sélectionnée : elle rempla
 seulement son rendu par les teintes grises pendant le round concerné, puis la
 palette choisie réapparaît automatiquement au round suivant.
 
-`ProgressionMenu.tscn` reste masqué par défaut dans l'éditeur. Pour afficher son
+`resources/scenes/progression/ProgressionMenu.tscn` reste masqué par défaut dans l'éditeur. Pour afficher son
 aperçu ponctuellement, activer `Menu Editor Preview/Show Editor Preview` sur sa
 racine, puis `Editor Preview/Enabled` sur `FontCatalog`. `Editor Preview/Page`
 permet d'afficher chacune des cinq pages. `Editor Preview Font` et
@@ -769,6 +839,105 @@ jeu :
 Dans `resources/scripts/settings/debug.gd`, `UNLOCK_ENDLESS_MODE` permet d'afficher
 le mode infini sans avoir préalablement terminé le jeu lorsque le debug est
 activé.
+
+## Challenge Runs
+
+L'icône Challenges placée à gauche des boutons Options et Progression ouvre les
+ressources `.tres` du dossier `resources/data/challenges/`, activées et ordonnées
+par `resources/data/challenges.tres`. Chaque carte indique son
+achievement de déblocage, ses rounds `start_round` et `target_round`, son
+meilleur round et, après réussite, son accès Endless. Les résultats sont
+sauvegardés séparément dans la section `challenges` de `pile_down.cfg` et ne
+modifient aucun highscore Classic, Checkpoint ou Endless classique.
+
+Chaque ressource `ChallengeData` est modifiable dans l'inspecteur. Elle expose
+le titre, la description, l'achievement requis, les rounds de départ et cible,
+l'accès Endless, ainsi que les modificateurs suivants : garantie d'une main
+jouable, vie unique, désactivation des bonus de vie, physique Pool Party et
+masquage des valeurs. Les listes de bonus et règles forcés ou désactivés sont
+également stockées dans la ressource. `forced_bonuses` associe chaque identifiant
+de bonus à son niveau initial (par exemple `{&"redraw": 2}`), tandis que
+`forced_rules` contient les identifiants des règles actives dès le départ.
+`disabled_bonuses` et `disabled_rules` les bannissent de toute la partie.
+`disable_special_rules_on_first_round`, activé par défaut, neutralise toutes
+les règles spéciales pendant le premier round du challenge, y compris les
+règles forcées. Le désactiver permet aux règles de s'appliquer immédiatement.
+
+La catégorie `Starting Difficulty` permet aussi de fixer directement
+`starting_pile_count`, `starting_hand_size`, `starting_card_value` et
+`starting_turn_time`. La valeur `-1` conserve pour la statistique concernée la
+difficulté simulée depuis `start_round`; toute autre valeur la surcharge après
+cette simulation. Ajouter un challenge consiste à créer un
+nouveau `.tres` dans `resources/data/challenges/`, puis à l'ajouter à
+`resources/data/challenges.tres` à la position voulue.
+
+Les challenges réutilisent la simulation de difficulté des checkpoints sans
+accorder les bonus des rounds précédents. `RELOAD REQUIRED` retire la garantie
+de main jouable et fournit un reload illimité. Le chrono est suspendu pendant
+le remplacement de la main et conserve son temps restant. S'il reste moins
+d'une seconde, le reload lui ajoute `reload_low_time_bonus` secondes (2 par
+défaut), puis le chrono reprend sans être réinitialisé. Sa toute
+première main est toujours injouable afin de présenter cette mécanique ; les
+mains suivantes retrouvent immédiatement le tirage habituel. `ONE SHOT`
+impose une vie et exclut les protections ; `POOL PARTY` active son contexte de
+physique et ses exclusions ; `TRUE COLORS` masque les valeurs tout en conservant
+les couleurs et le symbole des jokers.
+
+Le highscore standard de chaque challenge fonctionne comme celui du mode
+Classic : il compare d'abord le nombre de rounds restant avant `target_round`,
+puis le temps lorsque deux runs atteignent la même progression. La popup et le
+menu affichent ces deux valeurs. Les versions Endless conservent leur highscore
+en round atteint.
+
+Quatre variantes supplémentaires sont chargées par le même registre :
+
+- `SHARED CLOCK` remplace les timers de main par un budget commun au round,
+  affiché en secondes seules. Le nombre exact de tuiles à poser est
+  `pile_count * start_value`; le nombre de mains estimé est son quotient par la
+  taille de main, arrondi au supérieur. `shared_clock_seconds_per_hand` règle
+  dans chaque `ChallengeData` le temps accordé par main estimée ; `-1` utilise
+  le timer normal courant.
+  Son expiration termine immédiatement la run, quelles que soient les vies ou
+  protections restantes. Les bonus `TIME BANK` et `WARM-UP` alimentent
+  directement ce budget. Une erreur suspend le décompte jusqu'à la fin de son
+  animation complète, mais la main est déverrouillée pendant le feedback afin
+  de permettre immédiatement un nouveau drag. Utiliser `REDRAW` ajoute
+  `SHARED_CLOCK_RELOAD_TIME_BONUS` (3 secondes par défaut) au timer global.
+- `BOSS RUSH` demande des règles à chaque round. Leur nombre suit
+  `BOSS_RUSH_RULE_PROGRESSION`, puis reste à `MAX_COMBINED_RULES` en Endless,
+  sans contourner les incompatibilités ni `RULE BREAKER`.
+- `NO LOOKING BACK` masque une carte dès son drag et conserve son engagement
+  après un relâchement dans le vide. Un retour forcé Hot Potatoes ou Lava annule
+  cet engagement. `BLIND DELIVERY` et `STICKY FINGERS` y sont exclus.
+- `CONVEYOR BELT` remplace la main par un flux horizontal dont la direction est
+  fixée de droite à gauche : les cartes entrent directement dans le tray depuis
+  une position entièrement hors écran à droite, puis tournent avant les vies
+  au niveau de la branche gauche du tapis et sortent par le bas. Le point de
+  virage et son aperçu sont configurables sur le nœud `HandTray` dans l'éditeur.
+  Les slots conservent un petit espace de quatre pixels. Lorsqu'une carte est
+  prise, une nouvelle tuile reprend immédiatement sa position afin qu'aucun
+  slot vide ne traverse le tapis. La vitesse de descente reste identique afin
+  de conserver la même cadence dans la branche. Chaque tirage non garanti possède aussi
+  `CONVEYOR_HIGH_TILE_CHANCE` de produire une valeur supérieure à la valeur de
+  départ, sans dépasser `MAX_CARD_VALUE`. Le tray utilise
+  `resources/sprites/hand/conveyer.png`, étiré en NinePatch jusqu'au bord droit.
+  Leur trajectoire verticale suit le
+  centre de sa surface visible via `CONVEYOR_CARD_VERTICAL_OFFSET`. Les spawns
+  conservent leur reliquat de distance et ne sont pas limités par un plafond de
+  cartes visibles, afin que le flux reste continu sans pause.
+  Les cartes sorties disparaissent sans erreur. Tant qu'aucune solution n'est
+  visible, le prochain spawn est obligatoirement jouable. La limite de tirages
+  morts reste réglée par `CONVEYOR_MAX_UNPLAYABLE_SPAWNS`. La vitesse plafonne à
+  `CONVEYOR_MAX_SPEED` et sa base est configurable par `conveyor_speed` dans le
+  challenge. Un dépôt incorrect applique l'erreur normale, puis éjecte la carte
+  avec une animation au lieu de la réinsérer. `REDRAW` et `FREE-RANGE CARDS`
+  sont exclus.
+
+Les réglages de ces modes sont centralisés dans
+`resources/scripts/settings/difficulty.gd`. Leurs achievements de déblocage et
+de completion sont des ressources ordinaires de `resources/data/achievements/`.
+`CHALLENGE ACCEPTED` parcourt dynamiquement toutes les définitions chargées par
+`ChallengeRegistry`.
 
 ## Special Rules
 
@@ -1004,7 +1173,9 @@ godot --headless --path . --script res://tests/test_game_start.gd
 Tous les `BONUS_INTERVAL` rounds terminés (4 par défaut), le chrono s'arrête et
 deux bonus persistants de catégories différentes sont proposés. Un doublon
 améliore le bonus jusqu'au niveau III et un bonus au niveau maximal quitte le
-pool. Les constantes de fréquence, de nombre de choix et de types actifs se
+pool. Le bouton `SKIP`, en bas à droite, permet de refuser le choix sans obtenir
+de bonus ; pour une réserve Checkpoint, ce refus consomme bien un choix dû. Les
+constantes de fréquence, de nombre de choix et de types actifs se
 trouvent dans `resources/scripts/settings/difficulty.gd`.
 
 Les bonus disponibles sont :
@@ -1057,11 +1228,19 @@ premier). Une erreur absorbée sans dégât ne bloque pas le déblocage. Le bout
 de `PLAY`, lance le palier sélectionné. Les petites flèches, la molette ou les
 touches haut/bas changent ce palier ; ses
 statistiques permanentes sont restaurées et
-les choix de bonus dus avant ce round sont proposés avant le lancement du
-timer. Un départ inférieur ou égal à `TOTAL_ROUNDS` conserve le compteur visuel
+les choix de bonus dus avant ce round alimentent la réserve distribuée aux fins
+de rounds suivantes. Un départ inférieur ou égal à `TOTAL_ROUNDS` conserve le compteur visuel
 descendant et un highscore partagé en rounds restants. Un checkpoint situé
 au-delà de `TOTAL_ROUNDS` continue comme Endless et utilise un highscore partagé
 en round atteint. Aucun classement checkpoint n'utilise le temps.
+
+Une run Checkpoint commence avec une sélection de bonus vierge et sans empiler
+au lancement tous les choix dus aux rounds sautés. Ces choix forment une réserve
+et un seul choix supplémentaire est proposé après chaque round gagné jusqu'à
+épuisement de la réserve. Les choix gagnés normalement tous les
+`BONUS_INTERVAL` rounds restent indépendants. Le replay réinitialise également
+cette réserve, rétablit la main standard et applique les règles du round sans
+rejouer leur annonce.
 
 Les checkpoints sont séquentiels : le checkpoint `N` exige que `N - 1` soit
 déjà débloqué. Plusieurs checkpoints peuvent néanmoins être obtenus pendant
@@ -1148,7 +1327,7 @@ directement sa police.
 `BonusSelection.tscn`. Les propositions, le titre, le fond, les colonnes et les
 valeurs d'animation sont éditables dans cette scène, également ouverte comme
 instance éditable dans `Game.tscn`. `BonusChoiceCard.tscn` contient le sprite
-et le shader des boutons, tandis que `ActiveBonusBadge.tscn` définit les
+et le shader des boutons, tandis que `resources/scenes/bonuses/ActiveBonusBadge.tscn` définit les
 indicateurs de la barre. Une nouvelle partie réinitialise toujours les bonus.
 Pour les tests, `LOCK_BONUSES` dans `resources/scripts/settings/debug.gd`
 accepte des entrées `bonus_id: niveau`. Ces bonus sont accordés au lancement

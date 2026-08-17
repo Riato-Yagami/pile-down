@@ -1,9 +1,9 @@
 extends SceneTree
 
-const PileScene := preload("res://resources/scenes/Pile.tscn")
-const CardScene := preload("res://resources/scenes/Card.tscn")
-const FlashlightScene := preload("res://resources/scenes/FlashlightOverlay.tscn")
-const PixelationScene := preload("res://resources/scenes/PixelationOverlay.tscn")
+const PileScene := preload("res://resources/scenes/gameplay/Pile.tscn")
+const CardScene := preload("res://resources/scenes/gameplay/Card.tscn")
+const FlashlightScene := preload("res://resources/scenes/special_rules/FlashlightOverlay.tscn")
+const PixelationScene := preload("res://resources/scenes/special_rules/PixelationOverlay.tscn")
 const TinyRegularFont := preload("res://resources/fonts/Tiny5-Regular.ttf")
 
 

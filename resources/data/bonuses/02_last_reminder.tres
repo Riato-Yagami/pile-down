@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="BonusData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/bonuses/BonusData.gd" id="1_7ihyg"]
+
+[resource]
+script = ExtResource("1_7ihyg")
+title = "LAST REMINDER"
+description = "Keeps the pile you most recently played on face up."
+max_level = 1
+weight = 1.0
+minimum_round = 1
+id = &"last_reminder"

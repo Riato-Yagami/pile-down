@@ -1,7 +1,7 @@
 class_name LavaRuleController
 extends Node
 
-const LAVA_ZONE_SCENE := preload("res://resources/scenes/LavaZone.tscn")
+const LAVA_ZONE_SCENE := preload("res://resources/scenes/special_rules/LavaZone.tscn")
 
 signal card_entered_lava(card: PlayingCard)
 

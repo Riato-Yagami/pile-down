@@ -33,6 +33,7 @@ var regeneration_enabled := false
 var _hovered_for_drop := false
 var _visual_tween: Tween
 var colorblind_enabled := false
+var hide_tile_numbers := false
 var keep_face_up := false
 var bonus_highlight := false
 var movable := false
@@ -87,13 +88,15 @@ func setup(
 	value: int,
 	direction := RoundModifiers.StackDirection.DOWN,
 	use_roman_numerals := false,
-	colorblind := false
+	colorblind := false,
+	hide_numbers := false
 ) -> void:
 	pile_index = index
 	start_value = value
 	stack_direction = direction
 	roman_numerals_enabled = use_roman_numerals
 	colorblind_enabled = colorblind
+	hide_tile_numbers = hide_numbers
 	current_value = 0 if stack_direction == RoundModifiers.StackDirection.UP else value
 	completed = false
 	face_up = true
@@ -234,6 +237,24 @@ func reveal_value_temporarily(visible_duration := 0.45) -> void:
 	)
 	tween.tween_property(self, "scale:x", 1.0, 0.1)
 	await tween.finished
+
+
+func reveal_for_game_over() -> Tween:
+	set_drop_feedback(false)
+	if _visual_tween != null and _visual_tween.is_valid():
+		_visual_tween.kill()
+	disable_regeneration()
+	face.disabled = true
+	var restored_scale_x := scale.x
+	var collapsed_scale_x := -0.02 if restored_scale_x < 0.0 else 0.02
+	_visual_tween = create_tween().set_trans(Tween.TRANS_SINE)
+	_visual_tween.tween_property(self, "scale:x", collapsed_scale_x, 0.12)
+	_visual_tween.tween_callback(func() -> void:
+		face_up = true
+		_refresh()
+	)
+	_visual_tween.tween_property(self, "scale:x", restored_scale_x, 0.14)
+	return _visual_tween
 
 
 func _show_floating_text(text_value: String) -> void:
@@ -446,7 +467,7 @@ func _refresh() -> void:
 	tile_material.set_shader_parameter(
 		"tile_color", HIDDEN_TILE_COLOR if custom_hidden_tile else visual_color
 	)
-	value_label.visible = face_up or custom_hidden_tile
+	value_label.visible = (face_up or custom_hidden_tile) and not hide_tile_numbers
 	value_label.text = (
 		"?"
 		if custom_hidden_tile

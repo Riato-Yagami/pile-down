@@ -19,7 +19,7 @@ const LitPanelTexture := preload(
 const LitHandTexture := preload(
 	"res://resources/materials/textures/hand/hand-background.tres"
 )
-const PileScene := preload("res://resources/scenes/Pile.tscn")
+const PileScene := preload("res://resources/scenes/gameplay/Pile.tscn")
 
 
 func _init() -> void:

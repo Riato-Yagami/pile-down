@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="BonusData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/bonuses/BonusData.gd" id="1_w72ey"]
+
+[resource]
+script = ExtResource("1_w72ey")
+title = "REDRAW"
+description = "Replaces the current hand. Grants one use per level each round."
+category = 1
+max_level = 3
+weight = 1.0
+minimum_round = 1
+id = &"redraw"

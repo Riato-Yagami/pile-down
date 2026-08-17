@@ -1,7 +1,6 @@
 class_name AchievementData
-extends Resource
+extends Data
 
-@export var id: StringName
 @export var title: String
 @export var description: String
 @export var category: StringName

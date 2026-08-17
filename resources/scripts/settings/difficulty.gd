@@ -7,6 +7,12 @@ const START_HAND_SIZE := 1
 const START_CARD_VALUE := 3
 const START_TURN_TIME := 5.0
 
+# Shared Clock derives its budget from the current round difficulty.
+const SHARED_CLOCK_BASE_MULTIPLIER := 1.0
+const SHARED_CLOCK_MIN_TIME := 8.0
+const SHARED_CLOCK_LIFE_PENALTY := 0.0
+const SHARED_CLOCK_RELOAD_TIME_BONUS := 3.0
+
 # Limits. Keep these aligned with the gameplay invariants.
 const MAX_PILES := 25
 const MAX_HAND_SIZE := 4
@@ -79,6 +85,70 @@ const ENABLED_SPECIAL_RULES: Array[StringName] = [
 const FIRST_SPECIAL_RULE_ROUND := 4
 const EXTRA_SPECIAL_RULE_CHANCE := 0.75
 const MAX_COMBINED_RULES := 5
+const BOSS_RUSH_REPEAT_WEIGHT := 0.35
+const BOSS_RUSH_RULE_PROGRESSION := [
+	{"progress": 0.00, "rules": 2},
+	{"progress": 0.25, "rules": 3},
+	{"progress": 0.50, "rules": 4},
+	{"progress": 0.75, "rules": MAX_COMBINED_RULES},
+]
+
+const CONVEYOR_RANDOM_DIRECTION := false
+const CONVEYOR_BASE_SPEED := 22.0
+const CONVEYOR_MAX_SPEED := 42.0
+const CONVEYOR_SPEED_PER_ROUND := 0.5
+# Cards are 34 px wide, leaving a small readable gap between belt slots.
+const CONVEYOR_MIN_CARD_SPACING := 38.0
+const CONVEYOR_MAX_VISIBLE_CARDS := 5
+const CONVEYOR_MAX_UNPLAYABLE_SPAWNS := 3
+const CONVEYOR_HIGH_TILE_CHANCE := 0.08
+const CONVEYOR_CARD_VERTICAL_OFFSET := -5.0
+const CONVEYOR_EXIT_SPEED_MULTIPLIER := 1.0
+
+
+static func estimate_shared_round_time(
+	piles: int, card_value: int, cards_per_hand: int, seconds_per_hand: float
+) -> float:
+	var estimated_hands := estimate_required_hands(
+		required_tiles_to_complete_round(piles, card_value), cards_per_hand
+	)
+	return maxf(
+		SHARED_CLOCK_MIN_TIME,
+		estimated_hands * seconds_per_hand * SHARED_CLOCK_BASE_MULTIPLIER
+	)
+
+
+static func required_tiles_to_complete_round(piles: int, card_value: int) -> int:
+	# Every pile must receive each value between its start and zero exactly once.
+	return maxi(piles, 1) * maxi(card_value, 1)
+
+
+static func estimate_required_hands(required_tiles: int, cards_per_hand: int) -> int:
+	return ceili(float(maxi(required_tiles, 1)) / maxi(cards_per_hand, 1))
+
+
+static func get_conveyor_speed(
+	round_number: int, configured_base_speed := CONVEYOR_BASE_SPEED
+) -> float:
+	return minf(
+		configured_base_speed
+		+ maxi(round_number - 1, 0) * CONVEYOR_SPEED_PER_ROUND,
+		CONVEYOR_MAX_SPEED
+	)
+
+
+static func boss_rush_rule_count(
+	current_round: int, start_round: int, target_round: int, endless: bool
+) -> int:
+	if endless:
+		return MAX_COMBINED_RULES
+	var span := maxi(target_round - start_round, 1)
+	var progress := clampf(float(current_round - start_round) / span, 0.0, 1.0)
+	var result := 1
+	for tier in BOSS_RUSH_RULE_PROGRESSION:
+		if progress >= float(tier.progress):
+			result = int(tier.rules)
+	return clampi(result, 1, MAX_COMBINED_RULES)
 const THREE_PILE_SHELL_GAME_ROUND := 30
 const REGENERATING_PILE_RATIO := 0.35
 const REGENERATION_DURATION := 8.0

@@ -39,7 +39,9 @@ func generate_hand(
 	lucky_hand_level := 0,
 	double_down_level := 0,
 	deja_vu_level := 0,
-	active_piles: Array[MemoryPile] = []
+	active_piles: Array[MemoryPile] = [],
+	guarantee_playable_card := true,
+	force_unplayable_hand := false
 ) -> void:
 	if clear_existing:
 		clear_hand(container, true)
@@ -53,9 +55,17 @@ func generate_hand(
 	var cards_to_create := maxi(hand_size - existing_card_count, 0)
 	if cards_to_create == 0:
 		return
+	var unplayable_values: Array[int] = []
+	if force_unplayable_hand:
+		for value in range(1 if pile_up else 0, start_value + (1 if pile_up else 0)):
+			if not playable_values.has(value):
+				unplayable_values.append(value)
+		if unplayable_values.is_empty():
+			push_warning("Cannot force an unplayable hand with the current values.")
+			force_unplayable_hand = false
 	var should_create_joker := (
-		force_joker
-		or (joker_chance > 0.0 and rng.randf() < joker_chance)
+		not force_unplayable_hand
+		and (force_joker or (joker_chance > 0.0 and rng.randf() < joker_chance))
 	)
 	var joker_position := (
 		rng.randi_range(0, cards_to_create - 1)
@@ -65,13 +75,17 @@ func generate_hand(
 	var guaranteed_value := playable_values[rng.randi_range(0, playable_values.size() - 1)]
 	var values: Array[int] = []
 	for i in cards_to_create:
-		values.append(rng.randi_range(1 if pile_up else 0, start_value if pile_up else start_value - 1))
+		if force_unplayable_hand:
+			values.append(unplayable_values[rng.randi_range(0, unplayable_values.size() - 1)])
+		else:
+			values.append(rng.randi_range(1 if pile_up else 0, start_value if pile_up else start_value - 1))
 	var regular_slots: Array[int] = []
 	for index in cards_to_create:
 		if index != joker_position:
 			regular_slots.append(index)
 	var lucky_hand_triggered := (
-		lucky_hand_chance > 0.0
+		not force_unplayable_hand
+		and lucky_hand_chance > 0.0
 		and rng.randf() < lucky_hand_chance
 	)
 	var guaranteed_position := (
@@ -80,7 +94,7 @@ func generate_hand(
 			if lucky_hand_triggered
 			else regular_slots[rng.randi_range(0, regular_slots.size() - 1)]
 		)
-		if not regular_slots.is_empty()
+		if not regular_slots.is_empty() and (guarantee_playable_card or lucky_hand_triggered)
 		else -1
 	)
 	if guaranteed_position >= 0:
@@ -255,7 +269,7 @@ func _create_card(
 	modifiers: RoundModifiers,
 	animate_draw: bool,
 	enter_from_right: bool
-) -> void:
+) -> PlayingCard:
 	var card := card_scene.instantiate() as PlayingCard
 	container.add_child(card)
 	card.set_value_font(
@@ -292,6 +306,7 @@ func _create_card(
 			card.call_deferred("play_draw_from_right", (current_cards.size() - 1) * 0.045)
 		else:
 			card.call_deferred("play_draw", (current_cards.size() - 1) * 0.045)
+	return card
 
 
 func discard_hand(
@@ -376,6 +391,9 @@ func clear_hand(container: Control, preserve_unused_jokers := false) -> void:
 				retained_jokers.append(card)
 	current_cards.assign(retained_jokers)
 	for child in container.get_children():
+		# Challenge actions can occupy a hand slot without being part of the hand.
+		if child is RedrawBonusButton:
+			continue
 		if not retained_jokers.has(child):
 			child.queue_free()
 	for index in retained_jokers.size():

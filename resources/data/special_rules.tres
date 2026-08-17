@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="DataCatalog" format=3 uid="uid://cd4gtjghquj7k"]
+
+[ext_resource type="Script" uid="uid://dm521878vp1q2" path="res://resources/scripts/data/DataCatalog.gd" id="1_catalog"]
+[ext_resource type="Script" uid="uid://cy6e6jkbx5406" path="res://resources/scripts/data/Data.gd" id="1_y5tp1"]
+[ext_resource type="Resource" path="res://resources/data/special_rules/00_shell_game.tres" id="2_data"]
+[ext_resource type="Resource" path="res://resources/data/special_rules/01_merry_go_stack.tres" id="3_data"]
+[ext_resource type="Resource" path="res://resources/data/special_rules/02_shaking_piles.tres" id="4_data"]
+[ext_resource type="Resource" path="res://resources/data/special_rules/03_wavy_baby.tres" id="5_data"]
+[ext_resource type="Resource" path="res://resources/data/special_rules/04_free_range_cards.tres" id="6_data"]
+[ext_resource type="Resource" path="res://resources/data/special_rules/05_pile_up.tres" id="7_data"]
+[ext_resource type="Resource" path="res://resources/data/special_rules/06_lights_out.tres" id="8_data"]
+[ext_resource type="Resource" path="res://resources/data/special_rules/07_peek_a_card.tres" id="9_data"]
+[ext_resource type="Resource" path="res://resources/data/special_rules/08_stack_attack.tres" id="10_data"]
+[ext_resource type="Resource" path="res://resources/data/special_rules/09_roman_holiday.tres" id="11_data"]
+[ext_resource type="Resource" path="res://resources/data/special_rules/10_musical_stacks.tres" id="12_data"]
+[ext_resource type="Resource" path="res://resources/data/special_rules/11_sticky_fingers.tres" id="13_data"]
+[ext_resource type="Resource" path="res://resources/data/special_rules/12_hot_potatoes.tres" id="14_data"]
+[ext_resource type="Resource" path="res://resources/data/special_rules/13_blind_delivery.tres" id="15_data"]
+[ext_resource type="Resource" path="res://resources/data/special_rules/14_mirror_match.tres" id="16_data"]
+[ext_resource type="Resource" path="res://resources/data/special_rules/15_sudden_death.tres" id="17_data"]
+[ext_resource type="Resource" path="res://resources/data/special_rules/16_grace_period.tres" id="18_data"]
+[ext_resource type="Resource" path="res://resources/data/special_rules/17_colorblind.tres" id="19_data"]
+[ext_resource type="Resource" path="res://resources/data/special_rules/19_pixelated.tres" id="21_data"]
+
+[resource]
+script = ExtResource("1_catalog")
+enabled_data = Array[ExtResource("1_y5tp1")]([ExtResource("2_data"), ExtResource("3_data"), ExtResource("4_data"), ExtResource("5_data"), ExtResource("6_data"), ExtResource("7_data"), ExtResource("8_data"), ExtResource("9_data"), ExtResource("10_data"), ExtResource("11_data"), ExtResource("12_data"), ExtResource("13_data"), ExtResource("14_data"), ExtResource("15_data"), ExtResource("16_data"), ExtResource("17_data"), ExtResource("18_data"), ExtResource("19_data"), ExtResource("21_data")])

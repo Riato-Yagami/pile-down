@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="DataCatalog" format=3 uid="uid://cdoj6gmlu7iyd"]
+
+[ext_resource type="Script" uid="uid://dm521878vp1q2" path="res://resources/scripts/data/DataCatalog.gd" id="1_catalog"]
+[ext_resource type="Script" uid="uid://cy6e6jkbx5406" path="res://resources/scripts/data/Data.gd" id="1_t7tn5"]
+[ext_resource type="Resource" uid="uid://c8ixku6kjlrji" path="res://resources/data/challenges/00_reload_required.tres" id="2_data"]
+[ext_resource type="Resource" uid="uid://djc7na1rwvu7d" path="res://resources/data/challenges/01_one_shot.tres" id="3_data"]
+[ext_resource type="Resource" path="res://resources/data/challenges/02_pool_party.tres" id="4_data"]
+[ext_resource type="Resource" uid="uid://dk7vnk6s8fupo" path="res://resources/data/challenges/03_true_colors.tres" id="5_data"]
+[ext_resource type="Resource" uid="uid://dlijbv4pk6lq8" path="res://resources/data/challenges/04_shared_clock.tres" id="6_data"]
+[ext_resource type="Resource" uid="uid://bmvmcvf67vfqn" path="res://resources/data/challenges/05_conveyor_belt.tres" id="7_data"]
+[ext_resource type="Resource" uid="uid://demmgrjv0cysu" path="res://resources/data/challenges/06_boss_rush.tres" id="8_data"]
+[ext_resource type="Resource" path="res://resources/data/challenges/07_no_looking_back.tres" id="9_data"]
+
+[resource]
+script = ExtResource("1_catalog")
+enabled_data = Array[ExtResource("1_t7tn5")]([ExtResource("2_data"), ExtResource("3_data"), ExtResource("4_data"), ExtResource("5_data"), ExtResource("6_data"), ExtResource("7_data"), ExtResource("8_data"), ExtResource("9_data")])

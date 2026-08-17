@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ColorPaletteData" format=3]
+
+[ext_resource type="Resource" path="res://resources/data/achievements/11_first_checkpoint.tres" id="1_j7abs"]
+[ext_resource type="Script" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_jj5yh"]
+
+[resource]
+script = ExtResource("2_jj5yh")
+id = &"minty"
+display_name = "MINTY"
+colors = Array[Color]([Color(0.6313726, 0.9372549, 0.47843137, 1), Color(0.6901961, 0.9372549, 0.5568628, 1), Color(0.7294118, 0.94509804, 0.6117647, 1), Color(0.8156863, 0.95686275, 0.7294118, 1), Color(0.91764706, 0.972549, 0.85490197, 1), Color(0.8627451, 0.9137255, 0.9882353, 1), Color(0.73333335, 0.87058824, 0.9764706, 1), Color(0.6117647, 0.8235294, 0.96862745, 1), Color(0.5372549, 0.8, 0.9647059, 1), Color(0.47058824, 0.7764706, 0.96862745, 1)])
+required_achievement = ExtResource("1_j7abs")

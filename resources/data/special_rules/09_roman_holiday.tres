@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="SpecialRuleData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/special_rules/SpecialRuleData.gd" id="1_ungkl"]
+
+[resource]
+script = ExtResource("1_ungkl")
+title = "ROMAN HOLIDAY"
+subtitle = "When in Rome..."
+description = "All card and pile values use Roman numerals."
+id = &"roman_holiday"

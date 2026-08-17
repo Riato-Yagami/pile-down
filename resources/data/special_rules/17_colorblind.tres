@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="SpecialRuleData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/special_rules/SpecialRuleData.gd" id="1_pdttb"]
+
+[resource]
+script = ExtResource("1_pdttb")
+title = "COLORBLIND"
+subtitle = "Fifty shades of stack."
+description = "Cards and piles lose their identifying colors."
+weight = 1.1
+id = &"colorblind"

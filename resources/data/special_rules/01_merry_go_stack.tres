@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="SpecialRuleData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/special_rules/SpecialRuleData.gd" id="1_v3gaa"]
+
+[resource]
+script = ExtResource("1_v3gaa")
+title = "MERRY-GO-STACK"
+subtitle = "Please remain seated."
+description = "Piles orbit continuously around the center pile."
+incompatible_rules = Array[StringName]([&"shaking_piles", &"wavy_baby"])
+id = &"merry_go_stack"

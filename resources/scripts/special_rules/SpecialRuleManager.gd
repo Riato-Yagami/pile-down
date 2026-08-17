@@ -23,8 +23,18 @@ var context := RoundContext.new(1, modifiers)
 var rng := RandomNumberGenerator.new()
 var _last_special_rule_round := -1000
 var _previous_drawn_rule_ids: Array[StringName] = []
+var disabled_rule_ids: Array[StringName] = []
+var forced_rule_ids: Array[StringName] = []
+var force_rules_every_round := false
+var forced_rule_count := 0
+var challenge_start_round := 1
+var challenge_target_round := 1
+var challenge_endless := false
+var disable_rules_on_challenge_first_round := false
+var suppress_next_announcement := false
 
 var _rules: Array[SpecialRuleData] = Registry.create_all_rules()
+var _begin_round_generation := 0
 
 
 func _ready() -> void:
@@ -74,11 +84,31 @@ func _round_precedes_guaranteed_combo(round_number: int) -> bool:
 
 
 func begin_round(round_number: int) -> RoundModifiers:
+	_begin_round_generation += 1
+	var generation := _begin_round_generation
 	await end_round()
-	var locked_rule_ids := Debug.get_locked_special_rules()
-	if locked_rule_ids.is_empty():
+	if generation != _begin_round_generation:
+		return RoundModifiers.new()
+	var suppress_announcement := suppress_next_announcement
+	suppress_next_announcement = false
+	var locked_rule_ids := forced_rule_ids if not forced_rule_ids.is_empty() else Debug.get_locked_special_rules()
+	if disable_rules_on_challenge_first_round and round_number == challenge_start_round:
+		active_rules.clear()
+	elif locked_rule_ids.is_empty():
 		var requested_count := 0
-		if (
+		if force_rules_every_round:
+			requested_count = maxi(
+				forced_rule_count,
+				Difficulty.boss_rush_rule_count(
+					round_number,
+					challenge_start_round,
+					challenge_target_round,
+					challenge_endless
+				)
+			)
+			if challenge_endless:
+				requested_count = Difficulty.MAX_COMBINED_RULES
+		elif (
 			_last_special_rule_round != round_number - 1
 			and not _round_precedes_guaranteed_combo(round_number)
 		):
@@ -106,12 +136,15 @@ func begin_round(round_number: int) -> RoundModifiers:
 			)
 		)
 		and announcement != null
+		and not suppress_announcement
 	):
 		var removed_indices := await announcement.choose_rules_to_delete(
 			active_rules,
 			bonus_manager.rule_breaker_deletion_count(),
 			bonus_manager.rule_breaker_can_delete_last_rule()
 		)
+		if generation != _begin_round_generation:
+			return RoundModifiers.new()
 		removed_indices.sort()
 		removed_indices.reverse()
 		for removed_index in removed_indices:
@@ -158,15 +191,25 @@ func begin_round(round_number: int) -> RoundModifiers:
 		not active_rules.is_empty()
 		and announcement != null
 		and not rule_breaker_used
+		and not suppress_announcement
 	):
 		rules_announcing.emit(active_rules)
 		await announcement.show_rules(
 			active_rules,
-			get_guaranteed_rule_count(round_number) > 0
+			get_guaranteed_rule_count(round_number) > 0,
+			force_rules_every_round
 		)
+		if generation != _begin_round_generation:
+			return RoundModifiers.new()
 		rules_announcement_finished.emit()
 	rules_selected.emit(active_rules)
 	return modifiers
+
+
+func cancel_pending_round() -> void:
+	_begin_round_generation += 1
+	if announcement != null:
+		announcement.cancel()
 
 
 func _select_locked_rules(
@@ -261,16 +304,18 @@ func after_card_played(piles: Array[MemoryPile], round_number: int) -> void:
 	await tweens[0].finished
 
 
-func end_round(piles_to_clean: Array[MemoryPile] = []) -> void:
+func end_round(
+	piles_to_clean: Array[MemoryPile] = [], animated := true
+) -> void:
 	if moving_pile_pattern != null:
 		await moving_pile_pattern.stop()
 	for pile in piles_to_clean:
 		if is_instance_valid(pile):
 			pile.disable_regeneration()
 	if flashlight_overlay != null and flashlight_overlay.visible:
-		await flashlight_overlay.open_out()
+		await flashlight_overlay.open_out(animated)
 	if pixelation_overlay != null:
-		await pixelation_overlay.hide_pixelation()
+		await pixelation_overlay.hide_pixelation(animated)
 	for index in range(active_rules.size() - 1, -1, -1):
 		active_rules[index].deactivate(context)
 	modifiers.reset()
@@ -284,6 +329,7 @@ func select_special_rules(round_number: int, requested_count: int) -> Array[Spec
 	for rule in _rules:
 		if (
 			Difficulty.is_special_rule_enabled(rule.id)
+			and not disabled_rule_ids.has(rule.id)
 			and round_number >= rule.minimum_round
 		):
 			if _previous_drawn_rule_ids.has(rule.id):

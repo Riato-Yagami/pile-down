@@ -1,0 +1,176 @@
+[gd_scene format=3 uid="uid://csg0sfqi87rcr"]
+
+[ext_resource type="Script" uid="uid://cgq5p8m16pb3q" path="res://resources/scripts/gameplay/Pile.gd" id="1"]
+[ext_resource type="Texture2D" path="res://resources/materials/TileFaceLitTexture.tres" id="2"]
+[ext_resource type="Texture2D" path="res://resources/materials/TileBackLitTexture.tres" id="3"]
+[ext_resource type="PackedScene" path="res://resources/scenes/special_rules/RegenerationRing.tscn" id="4"]
+[ext_resource type="FontFile" uid="uid://0lls67bvy7ct" path="res://resources/fonts/VCR_OSD_MONO_1.001.ttf" id="5"]
+
+[sub_resource type="StyleBoxFlat" id="GlowStyle"]
+bg_color = Color(0.1, 0.8, 0.3, 0.08)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.1, 0.9, 0.35, 0.75)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+shadow_color = Color(0.31, 0.64, 0.63, 0.18)
+shadow_size = 18
+
+[sub_resource type="Shader" id="TileColorShader"]
+code = "shader_type canvas_item;
+
+uniform vec4 tile_color : source_color = vec4(0.0, 1.0, 0.0, 1.0);
+uniform float completion_morph : hint_range(0.0, 1.0) = 0.0;
+uniform vec4 morph_edge_color : source_color = vec4(0.31, 0.64, 0.63, 1.0);
+uniform sampler2D screen_texture : hint_screen_texture, repeat_disable, filter_linear;
+
+float pixel_noise(vec2 pixel) {
+	return fract(sin(dot(pixel, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+void fragment() {
+	vec4 source = texture(TEXTURE, UV);
+	bool is_green = source.g > 0.65 && source.g > source.r * 1.6 && source.g > source.b * 1.6;
+	vec4 colored_tile = is_green ? vec4(tile_color.rgb, source.a * tile_color.a) : source;
+	if (completion_morph <= 0.001 || source.a <= 0.001) {
+		COLOR = colored_tile;
+	} else {
+		vec2 centered = UV - vec2(0.5);
+		float radial = clamp(length(centered) * 1.4, 0.0, 1.0);
+		float noise = pixel_noise(floor(UV / TEXTURE_PIXEL_SIZE));
+		float field = mix(noise, radial, 0.58);
+		float morph = smoothstep(field - 0.12, field + 0.12, completion_morph);
+		if (completion_morph >= 0.999) {
+			morph = 1.0;
+		}
+		vec2 direction = normalize(centered + vec2(0.0001));
+		float bend = sin(completion_morph * 3.14159265) * (1.0 - radial) * 0.009;
+		vec3 background = texture(screen_texture, SCREEN_UV + direction * bend).rgb;
+		vec4 merged = vec4(background, source.a);
+		float edge = 1.0 - smoothstep(0.0, 0.09, abs(field - completion_morph));
+		merged.rgb = mix(merged.rgb, morph_edge_color.rgb, edge * 0.32);
+		COLOR = mix(colored_tile, merged, morph);
+	}
+}"
+
+[sub_resource type="ShaderMaterial" id="TileColorMaterial"]
+resource_local_to_scene = true
+shader = SubResource("TileColorShader")
+shader_parameter/tile_color = Color(0, 1, 0, 1)
+shader_parameter/completion_morph = 0.0
+shader_parameter/morph_edge_color = Color(0.31, 0.64, 0.63, 1)
+
+[sub_resource type="Shader" id="RegenProgressShader"]
+code = "shader_type canvas_item;
+
+uniform float progress : hint_range(0.0, 1.0) = 1.0;
+uniform vec4 progress_color : source_color = vec4(0.816, 0.631, 0.227, 1.0);
+
+void fragment() {
+	vec4 source = texture(TEXTURE, UV);
+	bool green_key = source.g > 0.6 && source.g > source.r * 1.35 && source.g > source.b * 1.35;
+	if (source.a > 0.0 && green_key) {
+		float angle = atan(UV.y - 0.5, UV.x - 0.5);
+		float clockwise_from_top = fract((angle + 1.57079632679) / 6.28318530718);
+		COLOR = clockwise_from_top <= progress ? vec4(progress_color.rgb, source.a * progress_color.a) : vec4(0.0);
+	} else {
+		COLOR = vec4(0.0);
+	}
+}"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_l7etc"]
+resource_local_to_scene = true
+shader = SubResource("RegenProgressShader")
+shader_parameter/progress = 1.0
+shader_parameter/progress_color = Color(0.816, 0.631, 0.227, 1)
+
+[node name="Pile" type="Control" unique_id=243529465]
+custom_minimum_size = Vector2(34, 37)
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 1
+script = ExtResource("1")
+
+[node name="Glow" type="Panel" parent="." unique_id=515175369]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -2.0
+offset_top = -2.0
+offset_right = 2.0
+offset_bottom = 2.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("GlowStyle")
+
+[node name="FaceSprite" type="TextureRect" parent="." unique_id=486208176]
+unique_name_in_owner = true
+light_mask = 2
+texture_filter = 1
+material = SubResource("TileColorMaterial")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2")
+
+[node name="BackSprite" type="TextureRect" parent="." unique_id=1336485702]
+unique_name_in_owner = true
+visible = false
+light_mask = 2
+material = SubResource("TileColorMaterial")
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3")
+
+[node name="Face" type="Button" parent="." unique_id=893331256]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+flat = true
+
+[node name="ValueLabel" type="Label" parent="." unique_id=1994399035]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.05, 0.05, 0.05, 1)
+theme_override_fonts/font = ExtResource("5")
+theme_override_font_sizes/font_size = 20
+text = "5"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RegenerationRing" parent="." unique_id=175188807 instance=ExtResource("4")]
+visible = false
+material = SubResource("ShaderMaterial_l7etc")
+offset_left = -12.0
+offset_top = -15.0
+offset_right = -3.0
+offset_bottom = -6.0

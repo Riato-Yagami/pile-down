@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="SpecialRuleData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/special_rules/SpecialRuleData.gd" id="1_k0wtg"]
+
+[resource]
+script = ExtResource("1_k0wtg")
+title = "LIGHTS OUT"
+subtitle = "Hope you brought a mouse."
+description = "Darkness covers the board except around your pointer."
+incompatible_rules = Array[StringName]([&"shell_game", &"merry_go_stack"])
+id = &"lights_out"

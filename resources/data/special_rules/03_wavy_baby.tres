@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SpecialRuleData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/special_rules/SpecialRuleData.gd" id="1_ttrss"]
+
+[resource]
+script = ExtResource("1_ttrss")
+title = "WAVY BABY"
+subtitle = "Go with the flow."
+description = "A continuous wave moves through all the piles."
+incompatible_rules = Array[StringName]([&"merry_go_stack", &"shaking_piles"])
+minimum_round = 8
+weight = 0.8
+id = &"wavy_baby"

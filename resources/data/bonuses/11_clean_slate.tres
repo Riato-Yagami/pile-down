@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="BonusData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/bonuses/BonusData.gd" id="1_3ymac"]
+
+[resource]
+script = ExtResource("1_3ymac")
+title = "CLEAN SLATE"
+description = "Completing a pile restores a mistake point. Higher levels add uses; level 3 fully restores them."
+category = 3
+max_level = 3
+weight = 1.0
+minimum_round = 1
+id = &"clean_slate"

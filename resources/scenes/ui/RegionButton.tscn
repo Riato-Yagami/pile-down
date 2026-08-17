@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/ui/RegionButton.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://resources/materials/textures/ui/buttons/button.tres" id="2_texture"]
+
+[node name="RegionButton" type="Button"]
+custom_minimum_size = Vector2(86, 31)
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "BUTTON"
+script = ExtResource("1_script")
+button_texture = ExtResource("2_texture")
+region_rect = Rect2(0, 0, 86, 31)

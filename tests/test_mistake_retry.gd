@@ -55,11 +55,17 @@ func _run() -> void:
 
 	assert(game.mistakes_left == 1)
 	game._handle_mistake(game.piles[0])
-	await create_timer(0.25).timeout
+	var reveal_deadline := Time.get_ticks_msec() + 2000
+	while not _all_visible_piles_revealed(game) and Time.get_ticks_msec() < reveal_deadline:
+		assert(not game.overlay.visible)
+		await process_frame
 	assert(game.mistakes_left == 0)
 	assert(not game.overlay.visible)
 	assert(game.music_manager.low_pass_enabled)
-	await create_timer(0.55).timeout
+	assert(_all_visible_piles_revealed(game))
+	var overlay_deadline := Time.get_ticks_msec() + 2000
+	while not game.overlay.visible and Time.get_ticks_msec() < overlay_deadline:
+		await process_frame
 	assert(game.overlay.visible)
 	assert(game.overlay_mode == "restart")
 	assert(game.input_locked)
@@ -74,3 +80,10 @@ func _wait_until_unlocked(game: GameManager) -> void:
 	while game.input_locked and Time.get_ticks_msec() < deadline:
 		await process_frame
 	assert(not game.input_locked)
+
+
+func _all_visible_piles_revealed(game: GameManager) -> bool:
+	for pile in game.piles:
+		if pile.visible and not pile.completed and not pile.face_up:
+			return false
+	return true

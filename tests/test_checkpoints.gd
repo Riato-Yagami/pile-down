@@ -13,6 +13,21 @@ func _run() -> void:
 	assert(game.get_checkpoint_bonus_choice_count(10) == 2)
 	assert(game.get_checkpoint_bonus_choice_count(20) == 4)
 	assert(game.get_checkpoint_bonus_choice_count(30) == 7)
+	game.unlocked_checkpoints.clear()
+	game.checkpoint_snapshots.clear()
+	game._generate_debug_checkpoint_snapshots(2)
+	var debug_checkpoint: Dictionary = game._checkpoint_value(
+		game.checkpoint_snapshots, 2, {}
+	)
+	assert(not debug_checkpoint.is_empty())
+	assert(
+		int(debug_checkpoint.pile_count) > DifficultySettings.START_PILES
+		or int(debug_checkpoint.hand_size) > DifficultySettings.START_HAND_SIZE
+		or int(debug_checkpoint.start_value) > DifficultySettings.START_CARD_VALUE
+		or float(debug_checkpoint.turn_time) < DifficultySettings.START_TURN_TIME
+	)
+	game.unlocked_checkpoints.clear()
+	game.checkpoint_snapshots.clear()
 
 	var snapshot := CheckpointSnapshot.new()
 	snapshot.checkpoint_id = 1
@@ -91,25 +106,26 @@ func _run() -> void:
 	game._append_new_checkpoint_summary()
 	assert(not game.overlay_details.text.contains("NEW CHECKPOINT"))
 	assert(game.overlay_unlocks.visible)
-	assert(game.overlay_unlocks.text.contains("NEW[/color] CHECKPOINTS:"))
+	assert(game.overlay_unlocks.text.contains("icons/saves.tres"))
+	assert(game.overlay_unlocks.text.contains("CHECKPOINTS:"))
+	assert(not game.overlay_unlocks.text.contains("NEW"))
 	assert(game.overlay_unlocks.text.contains("1 + 5"))
 	game.newly_unlocked_checkpoints.assign([1])
 	game._append_new_checkpoint_summary()
-	assert(game.overlay_unlocks.text.contains("NEW[/color] CHECKPOINT: 1"))
+	assert(game.overlay_unlocks.text.contains("CHECKPOINT: 1"))
 	assert(not game.overlay_unlocks.text.contains("CHECKPOINTS"))
 	game.newly_discovered_bonuses.assign([&"open_book"])
 	game.newly_encountered_rules.assign([&"shell_game"])
 	game.newly_unlocked_achievements.assign([&"max_piles"])
 	game._append_new_progression_summary()
 	assert(not game.overlay_unlocks.text.contains("NEW PROGRESSION"))
-	assert(game.overlay_unlocks.text.contains("icons/bonuses.png"))
-	assert(game.overlay_unlocks.text.contains(
-		"+ [color=#4D82C2]NEW[/color] [img=16x16]"
-	))
+	assert(game.overlay_unlocks.text.contains("icons/bonuses.tres"))
+	assert(game.overlay_unlocks.text.contains("+ [img=16x16]"))
+	assert(not game.overlay_unlocks.text.contains("NEW"))
 	assert(game.overlay_unlocks.text.contains("OPEN BOOK"))
-	assert(game.overlay_unlocks.text.contains("icons/rules.png"))
+	assert(game.overlay_unlocks.text.contains("icons/rules.tres"))
 	assert(game.overlay_unlocks.text.contains("SHELL GAME"))
-	assert(game.overlay_unlocks.text.contains("icons/trophies.png"))
+	assert(game.overlay_unlocks.text.contains("icons/trophies.tres"))
 	assert(game.overlay_unlocks.text.contains("STACK OVERFLOW"))
 	game.unread_progression_pages.clear()
 	game._mark_progression_page_unread(ProgressionMenu.Page.HIGHSCORES)
@@ -122,7 +138,81 @@ func _run() -> void:
 	game.progression_menu.page_buttons[ProgressionMenu.Page.BONUSES].pressed.emit()
 	assert(not game.progression_menu._page_badges[ProgressionMenu.Page.BONUSES].visible)
 	assert(not game.progression_notification.visible)
-	assert(game.overlay_back_button.z_index > 0)
+	assert(game.overlay_quit_button.text == "QUIT")
+
+	# Checkpoint startup always restores the regular hand configuration. Replays
+	# discard the previous loadout and defer missed choices to later victories.
+	game.challenge_modifiers.conveyor_hand = true
+	game._configure_challenge_hand_tray()
+	game.special_rule_manager.forced_rule_ids.assign([&"shell_game"])
+	assert(game.start_from_checkpoint(1, {&"open_book": 1}, true))
+	var deadline := Time.get_ticks_msec() + 6000
+	while game.input_locked and Time.get_ticks_msec() < deadline:
+		await process_frame
+	assert(not game.input_locked)
+	assert(not game.challenge_modifiers.conveyor_hand)
+	assert(game.special_rule_manager.forced_rule_ids.is_empty())
+	assert(game.hand_manager.current_cards.size() == game.hand_size)
+	for card in game.hand_manager.current_cards:
+		assert(is_instance_valid(card))
+		assert(card.visible)
+		assert(card.get_parent() in [game.hand_container, game.drag_layer])
+	assert(game.bonus_manager.level(&"open_book") == 1)
+	var restart_started := Time.get_ticks_msec()
+	game._restart_current_mode()
+	await process_frame
+	assert(game.replay_transition_mask.visible)
+	deadline = Time.get_ticks_msec() + 6000
+	while game._screen_transition_active and Time.get_ticks_msec() < deadline:
+		await process_frame
+	assert(not game._screen_transition_active)
+	assert(Time.get_ticks_msec() - restart_started < 4000)
+	assert(game.bonus_manager.active.is_empty())
+	assert(
+		game.checkpoint_bonus_backlog
+		== game.get_checkpoint_bonus_choice_count(snapshot.start_round)
+	)
+	deadline = Time.get_ticks_msec() + 6000
+	while game.input_locked and Time.get_ticks_msec() < deadline:
+		await process_frame
+	assert(not game.input_locked)
+	assert(not game.bonus_selection.visible)
+	assert(game.hand_manager.current_cards.size() == game.hand_size)
+	for card in game.hand_manager.current_cards:
+		assert(is_instance_valid(card))
+		assert(card.visible)
+		assert(card.get_parent() in [game.hand_container, game.drag_layer])
+	game._offer_checkpoint_backlog_bonus(10)
+	deadline = Time.get_ticks_msec() + 2000
+	while not game.bonus_selection.visible and Time.get_ticks_msec() < deadline:
+		await process_frame
+	assert(game.bonus_selection.visible)
+	assert(game.bonus_selection.skip_button.visible)
+	game.bonus_selection._skip()
+	while game.bonus_selection.visible and Time.get_ticks_msec() < deadline:
+		await process_frame
+	assert(
+		game.checkpoint_bonus_backlog
+		== game.get_checkpoint_bonus_choice_count(snapshot.start_round) - 1
+	)
+	assert(game.bonus_manager.active.is_empty())
+
+	# Quitting fades the gameplay controls. A later checkpoint start must restore
+	# them before generating its first hand.
+	await game._return_to_menu()
+	assert(game.splash.visible)
+	assert(is_zero_approx(game.hand_tray.modulate.a))
+	assert(game.start_from_checkpoint(1, {&"open_book": 1}, true))
+	deadline = Time.get_ticks_msec() + 6000
+	while game.input_locked and Time.get_ticks_msec() < deadline:
+		await process_frame
+	assert(not game.input_locked)
+	assert(is_equal_approx(game.hand_tray.modulate.a, 1.0))
+	assert(game.hand_tray.scale.is_equal_approx(Vector2.ONE))
+	assert(game.hand_manager.current_cards.size() == game.hand_size)
+	for card in game.hand_manager.current_cards:
+		assert(is_instance_valid(card))
+		assert(card.visible)
 
 	print("Checkpoint tests passed.")
 	game.queue_free()

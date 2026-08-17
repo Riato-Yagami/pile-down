@@ -30,7 +30,7 @@ const SHOW_DUST_DEBUG := false
 # hot_potatoes, blind_delivery, mirror_match, sudden_death, grace_period,
 # colorblind, floor_is_lava, pixelated, shaking_piles, wavy_baby.
 const LOCK_SPECIAL_RULES: Array[StringName] = [
-	"pixelated",
+	#"pixelated",
 	#"wavy_baby",
 	#"shaking_piles",
 	#"lights_out",
@@ -48,11 +48,11 @@ const LOCK_SPECIAL_RULES: Array[StringName] = [
 # lucky_hand, time_bank, slow_start, spare_life, safety_net, clean_slate,
 # bring_a_friend, pile_mover, double_down, deja_vu, rule_breaker, adaptation.
 const LOCK_BONUSES: Dictionary = {
-	&"lucky_hand": 1,
-	&"bring_a_friend": 3,
-	&"pile_mover":1,
+	#&"lucky_hand": 1,
+	#&"bring_a_friend": 3,
+	#&"pile_mover":1,
 	#&"double_down": 3,
-	&"deja_vu":2,
+	#&"redraw":2,u
 }
 
 static var _runtime_god_mode := GOD_MODE

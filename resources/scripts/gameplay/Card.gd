@@ -28,9 +28,13 @@ enum ForcedReturnReason {
 	MANUAL_CANCEL,
 }
 
-const TINY_REGULAR_FONT := preload("res://resources/fonts/Tiny5-Regular.ttf")
 const Settings := preload("res://resources/scripts/settings/settings.gd")
-const HIDDEN_TILE_COLOR := Color("b8b8b8")
+const CardMotionControllerScript := preload(
+	"res://resources/scripts/gameplay/card/CardMotionController.gd"
+)
+const CardAppearanceScript := preload(
+	"res://resources/scripts/gameplay/card/CardAppearance.gd"
+)
 
 @export var card_value := 0
 @export_group("Touch Interaction")
@@ -82,6 +86,7 @@ var placement_confirmed := false
 var forced_return_in_progress := false
 var pointer_inside := false
 var hidden_by_blind_delivery := false
+var hidden_by_commit := false
 var round_modifiers: RoundModifiers
 var colorblind_enabled := false
 var is_joker := false
@@ -132,56 +137,7 @@ func set_tile_palette(colors: Array[Color]) -> void:
 
 
 func _process(delta: float) -> void:
-	if is_joker:
-		_joker_phase = fmod(_joker_phase + delta * 0.35, 1.0)
-		var palette_position := _joker_phase * _tile_colors.size()
-		var first_index := int(floor(palette_position)) % _tile_colors.size()
-		var second_index := (first_index + 1) % _tile_colors.size()
-		var joker_color := _tile_colors[first_index].lerp(
-			_tile_colors[second_index],
-			fmod(palette_position, 1.0)
-		)
-		var joker_material := face_sprite.material as ShaderMaterial
-		joker_material.set_shader_parameter("tile_color", joker_color)
-		# The glyph follows the exact same interpolated palette position as the
-		# border, keeping both parts of the joker visually synchronized.
-		value_label.add_theme_color_override("font_color", joker_color)
-	if wandering_enabled and not dragging:
-		wandering_phase += delta * wandering_speed
-		global_position = (
-			wandering_origin
-			+ Vector2(sin(wandering_phase), sin(wandering_phase * 1.7 + card_value)) * wandering_radius
-		).round()
-	if not dragging:
-		if not drag_timer.is_stopped():
-			drag_timer.stop()
-			drag_timer_ring.visible = false
-		return
-	if not drag_timer.is_stopped():
-		drag_timer_ring.ratio = drag_timer.time_left / maxf(drag_timer.wait_time, 0.001)
-	var previous := global_position
-	# Keep the exact grabbed point under the pointer. Its global offset includes
-	# Mirror Match's negative axes, unlike a simple position subtraction.
-	var drag_parent := get_parent() as CanvasItem
-	if drag_parent != null:
-		var pointer_in_parent := (
-			drag_parent.get_global_transform().affine_inverse() * drag_target
-		)
-		var grab_offset := get_transform().basis_xform(_pointer_offset)
-		var desired_position := pointer_in_parent - grab_offset
-		position = position.lerp(desired_position, minf(delta * 20.0, 1.0))
-	else:
-		var grab_offset := get_global_transform().basis_xform(_pointer_offset)
-		var desired_position := drag_target - grab_offset
-		global_position = global_position.lerp(
-			desired_position,
-			minf(delta * 20.0, 1.0)
-		)
-	var velocity := (drag_target - _last_target) / maxf(delta, 0.001)
-	rotation = lerpf(rotation, clampf(velocity.x * 0.00004, -0.07, 0.07), minf(delta * 12.0, 1.0))
-	_last_target = drag_target
-	if previous.distance_to(global_position) > 0.1:
-		move_to_front()
+	CardMotionControllerScript.process(self, delta)
 
 
 func setup(
@@ -250,10 +206,30 @@ func set_selected_visual(is_selected: bool) -> void:
 	_selected = is_selected
 
 
+func refresh_pointer_hover() -> bool:
+	# Godot does not always emit hover signals when this Control moves beneath a
+	# stationary pointer, so moving hand modes refresh the state explicitly.
+	var is_inside := (
+		selectable
+		and not dragging
+		and face.get_global_rect().abs().has_point(get_global_mouse_position())
+	)
+	if is_inside and not pointer_inside:
+		_on_mouse_entered()
+	elif not is_inside and pointer_inside:
+		_on_mouse_exited()
+	return is_inside
+
+
 func begin_external_drag(pointer_position: Vector2, preserve_touch_face := false) -> void:
 	_materialize_entrance_for_drag()
 	wandering_enabled = false
 	if (
+		hidden_by_commit
+	):
+		face_up = false
+		_update_appearance()
+	elif (
 		round_modifiers != null
 		and round_modifiers.blind_delivery_enabled
 		and not preserve_touch_face
@@ -435,6 +411,22 @@ func request_forced_return(reason: ForcedReturnReason) -> void:
 func complete_forced_return() -> void:
 	forced_return_in_progress = false
 	drag_state = DragState.IDLE
+	end_commit()
+
+
+func begin_commit() -> void:
+	hidden_by_commit = true
+	_cancel_flip_animation()
+	face_up = false
+	_update_appearance()
+
+
+func end_commit() -> void:
+	if not hidden_by_commit:
+		return
+	hidden_by_commit = false
+	face_up = not hover_reveal_enabled
+	_update_appearance()
 
 
 func animate_return(destination: Vector2, duration := 0.26) -> void:
@@ -448,6 +440,7 @@ func animate_return(destination: Vector2, duration := 0.26) -> void:
 	tween.tween_property(self, "global_position", destination, duration)
 	await tween.finished
 	drag_state = DragState.IDLE
+	end_commit()
 	if hover_reveal_enabled:
 		await flip_down(true)
 	elif (
@@ -721,7 +714,7 @@ func _on_face_input(event: InputEvent) -> void:
 		round_modifiers != null
 		and round_modifiers.blind_delivery_enabled
 	)
-	if hover_reveal_enabled and not blind_delivery_enabled and not face_up:
+	if hover_reveal_enabled and not blind_delivery_enabled and not hidden_by_commit and not face_up:
 		await flip_up(true)
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
@@ -737,10 +730,12 @@ func _on_face_input(event: InputEvent) -> void:
 
 
 func _on_mouse_entered() -> void:
+	if pointer_inside:
+		return
 	pointer_inside = true
 	if selectable and not dragging:
 		_hide_generation += 1
-		if hover_reveal_enabled:
+		if hover_reveal_enabled and not hidden_by_commit:
 			flip_up(true)
 		elif (
 			round_modifiers != null
@@ -752,6 +747,8 @@ func _on_mouse_entered() -> void:
 
 
 func _on_mouse_exited() -> void:
+	if not pointer_inside:
+		return
 	pointer_inside = false
 	if selectable and not dragging and not _drag_starting:
 		if hover_reveal_enabled:
@@ -799,48 +796,7 @@ func _apply_value_label_offset(pose_y := 0.0) -> void:
 
 
 func _update_appearance() -> void:
-	if not is_node_ready():
-		return
-	var color: Color = _tile_colors[card_value % _tile_colors.size()]
-	var visual_color := Color("#8B8B8B") if colorblind_enabled else color
-	var custom_hidden_tile := not face_up and _override_hidden_tile_with_font
-	face_sprite.visible = face_up or custom_hidden_tile
-	back_sprite.visible = not face_up and not custom_hidden_tile
-	back_sprite.modulate = Color.WHITE
-	var tile_material := face_sprite.material as ShaderMaterial
-	tile_material.set_shader_parameter(
-		"tile_color", HIDDEN_TILE_COLOR if custom_hidden_tile else visual_color
-	)
-	value_label.visible = face_up or custom_hidden_tile
-	value_label.text = (
-		"?"
-		if custom_hidden_tile
-		else "J"
-		if is_joker
-		else RoundModifiers.format_value(card_value, roman_numerals_enabled)
-	)
-	_apply_value_label_offset(face_sprite.position.y)
-	value_label.add_theme_font_size_override(
-		"font_size",
-		int(round(
-			_value_font_size
-			* (0.7 if roman_numerals_enabled and card_value in [7, 8] else 1.0)
-		))
-	)
-	if face_up and roman_numerals_enabled and card_value in [7, 8]:
-		value_label.add_theme_font_override("font", TINY_REGULAR_FONT)
-	elif _value_font != null:
-		value_label.add_theme_font_override("font", _value_font)
-	else:
-		value_label.remove_theme_font_override("font")
-	value_label.add_theme_color_override(
-		"font_color",
-		HIDDEN_TILE_COLOR
-		if custom_hidden_tile
-		else Settings.COLORBLIND_VALUE_COLOR
-		if colorblind_enabled
-		else color.darkened(0.35)
-	)
+	CardAppearanceScript.update(self)
 
 
 func set_colorblind_enabled(enabled: bool) -> void:

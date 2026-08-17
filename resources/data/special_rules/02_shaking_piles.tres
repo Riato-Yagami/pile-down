@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SpecialRuleData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/special_rules/SpecialRuleData.gd" id="1_hy625"]
+
+[resource]
+script = ExtResource("1_hy625")
+title = "SHAKING PILES"
+subtitle = "Please remain unstable."
+description = "Every pile shakes around its normal position."
+incompatible_rules = Array[StringName]([&"merry_go_stack", &"wavy_baby"])
+minimum_round = 6
+weight = 0.9
+id = &"shaking_piles"

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ColorPaletteData" format=3]
+
+[ext_resource type="Resource" path="res://resources/data/achievements/13_endless_max_plus_one.tres" id="1_4tjd8"]
+[ext_resource type="Script" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_whxob"]
+
+[resource]
+script = ExtResource("2_whxob")
+id = &"lemonade"
+display_name = "LEMONADE"
+colors = Array[Color]([Color(0.02745098, 0.16470589, 0.78431374, 1), Color(0.07450981, 0.3764706, 0.8862745, 1), Color(0.11764706, 0.5882353, 0.9882353, 1), Color(0.3764706, 0.7137255, 0.9843137, 1), Color(0.63529414, 0.8392157, 0.9764706, 1), Color(0.8117647, 0.8980392, 0.49019608, 1), Color(0.9882353, 0.9529412, 0, 1), Color(0.99607843, 0.8666667, 0, 1), Color(1, 0.7764706, 0, 1), Color(1, 0.79607844, 0.09019608, 1)])
+required_achievement = ExtResource("1_4tjd8")

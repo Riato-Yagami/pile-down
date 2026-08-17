@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ColorPaletteData" format=3]
+
+[ext_resource type="Resource" path="res://resources/data/achievements/01_max_hand.tres" id="1_ionio"]
+[ext_resource type="Script" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_fdc2a"]
+
+[resource]
+script = ExtResource("2_fdc2a")
+id = &"candy"
+display_name = "CANDY"
+colors = Array[Color]([Color(0.2627451, 0.6627451, 0.78039217, 1), Color(0.8784314, 0.3647059, 0.6156863, 1), Color(0.46666667, 0.4, 0.8, 1), Color(0.90588236, 0.4117647, 0.32156864, 1), Color(0.8392157, 0.6509804, 0.16470589, 1), Color(0.3882353, 0.6627451, 0.3372549, 1), Color(0.8156863, 0.32941177, 0.49411765, 1), Color(0.90588236, 0.5176471, 0.21568628, 1), Color(0.40392157, 0.35686275, 0.7647059, 1), Color(0.7137255, 0.36078432, 0.6039216, 1)])
+required_achievement = ExtResource("1_ionio")

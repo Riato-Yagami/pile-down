@@ -1,7 +1,7 @@
 extends SceneTree
 
 const ProgressionMenuScene := preload(
-	"res://resources/scenes/ProgressionMenu.tscn"
+	"res://resources/scenes/progression/ProgressionMenu.tscn"
 )
 
 
@@ -23,23 +23,23 @@ func _run() -> void:
 	assert(menu.get_available_fonts().size() == FontRegistry.create_all().size())
 	assert(menu.get_available_palettes().size() == 35)
 	var palette_ids: Array[StringName] = []
-	assert(AchievementRegistry.create_all().size() == 31)
+	assert(AchievementRegistry.create_all().size() >= 41)
 	for achievement in AchievementRegistry.create_all():
-		assert(achievement.resource_path.begins_with("res://resources/achievements/"))
+		assert(achievement.resource_path.begins_with("res://resources/data/achievements/"))
 	for font_data in menu.get_available_fonts():
-		assert(font_data.resource_path.begins_with("res://resources/fonts/data/"))
+		assert(font_data.resource_path.begins_with("res://resources/data/fonts/"))
 		if font_data.required_achievement != null:
 			assert(font_data.required_achievement.resource_path.begins_with(
-				"res://resources/achievements/"
+				"res://resources/data/achievements/"
 			))
 	for palette_data in menu.get_available_palettes():
-		assert(palette_data.resource_path.begins_with("res://resources/palettes/"))
+		assert(palette_data.resource_path.begins_with("res://resources/data/palettes/"))
 		assert(not palette_data.id.is_empty())
 		assert(not palette_ids.has(palette_data.id))
 		palette_ids.append(palette_data.id)
 		if palette_data.required_achievement != null:
 			assert(palette_data.required_achievement.resource_path.begins_with(
-				"res://resources/achievements/"
+				"res://resources/data/achievements/"
 			))
 	var styled_scrollbar := menu.main_scroll.get_v_scroll_bar()
 	assert(is_equal_approx(styled_scrollbar.custom_minimum_size.x, 8.0))

@@ -58,10 +58,15 @@ func close_in() -> void:
 	_transition_tween.tween_property(self, "animated_radius", flashlight_radius, 0.65)
 
 
-func open_out() -> void:
+func open_out(animated := true) -> void:
 	if not visible:
 		return
 	_kill_transition()
+	if not animated:
+		visible = false
+		animated_radius = flashlight_radius
+		_update_shader()
+		return
 	_transition_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_transition_tween.tween_property(self, "animated_radius", _fully_open_radius(), 0.55)
 	await _transition_tween.finished

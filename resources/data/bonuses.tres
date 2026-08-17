@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="DataCatalog" load_steps=20 format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/data/DataCatalog.gd" id="1_catalog"]
+[ext_resource type="Resource" path="res://resources/data/bonuses/00_open_book.tres" id="2_data"]
+[ext_resource type="Resource" path="res://resources/data/bonuses/01_quick_peek.tres" id="3_data"]
+[ext_resource type="Resource" path="res://resources/data/bonuses/02_last_reminder.tres" id="4_data"]
+[ext_resource type="Resource" path="res://resources/data/bonuses/03_mistake_reveal.tres" id="5_data"]
+[ext_resource type="Resource" path="res://resources/data/bonuses/04_wild_card.tres" id="6_data"]
+[ext_resource type="Resource" path="res://resources/data/bonuses/05_redraw.tres" id="7_data"]
+[ext_resource type="Resource" path="res://resources/data/bonuses/06_lucky_hand.tres" id="8_data"]
+[ext_resource type="Resource" path="res://resources/data/bonuses/07_time_bank.tres" id="9_data"]
+[ext_resource type="Resource" path="res://resources/data/bonuses/08_slow_start.tres" id="10_data"]
+[ext_resource type="Resource" path="res://resources/data/bonuses/09_spare_life.tres" id="11_data"]
+[ext_resource type="Resource" path="res://resources/data/bonuses/10_safety_net.tres" id="12_data"]
+[ext_resource type="Resource" path="res://resources/data/bonuses/11_clean_slate.tres" id="13_data"]
+[ext_resource type="Resource" path="res://resources/data/bonuses/12_bring_a_friend.tres" id="14_data"]
+[ext_resource type="Resource" path="res://resources/data/bonuses/13_pile_mover.tres" id="15_data"]
+[ext_resource type="Resource" path="res://resources/data/bonuses/14_double_down.tres" id="16_data"]
+[ext_resource type="Resource" path="res://resources/data/bonuses/15_deja_vu.tres" id="17_data"]
+[ext_resource type="Resource" path="res://resources/data/bonuses/16_rule_breaker.tres" id="18_data"]
+[ext_resource type="Resource" path="res://resources/data/bonuses/17_adaptation.tres" id="19_data"]
+
+[resource]
+script = ExtResource("1_catalog")
+enabled_data = Array[Resource]([ExtResource("2_data"), ExtResource("3_data"), ExtResource("4_data"), ExtResource("5_data"), ExtResource("6_data"), ExtResource("7_data"), ExtResource("8_data"), ExtResource("9_data"), ExtResource("10_data"), ExtResource("11_data"), ExtResource("12_data"), ExtResource("13_data"), ExtResource("14_data"), ExtResource("15_data"), ExtResource("16_data"), ExtResource("17_data"), ExtResource("18_data"), ExtResource("19_data")])
+

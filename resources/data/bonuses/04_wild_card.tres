@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="BonusData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/bonuses/BonusData.gd" id="1_rctgi"]
+
+[resource]
+script = ExtResource("1_rctgi")
+title = "WILD CARD"
+description = "Adds a growing chance for a joker to appear in each new hand."
+category = 1
+max_level = 3
+weight = 1.0
+minimum_round = 1
+id = &"wild_card"

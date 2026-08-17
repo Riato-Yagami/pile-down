@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="SpecialRuleData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/special_rules/SpecialRuleData.gd" id="1_ve82g"]
+
+[resource]
+script = ExtResource("1_ve82g")
+title = "PIXELATED"
+subtitle = "Now with fewer pixels."
+description = "The entire gameplay screen is rendered in large pixel blocks."
+minimum_round = 8
+weight = 0.8
+id = &"pixelated"

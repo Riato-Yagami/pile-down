@@ -2,34 +2,39 @@
 
 [ext_resource type="Script" uid="uid://cndv55sh4bdu0" path="res://resources/scripts/core/GameManager.gd" id="1"]
 [ext_resource type="Script" uid="uid://dni0tcchvcu0r" path="res://resources/scripts/gameplay/HandManager.gd" id="2"]
-[ext_resource type="PackedScene" path="res://resources/scenes/Card.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://resources/scenes/gameplay/Card.tscn" id="3"]
 [ext_resource type="Script" uid="uid://dthcxl8xnj12n" path="res://resources/scripts/gameplay/TimerManager.gd" id="4"]
 [ext_resource type="Script" uid="uid://b85rd0kdrucci" path="res://resources/scripts/ui/CountdownRing.gd" id="6"]
 [ext_resource type="FontFile" uid="uid://camkk5gui0ppq" path="res://resources/fonts/Tiny5-Regular.ttf" id="6_1vynq"]
 [ext_resource type="Script" uid="uid://ddqbrodgb6dkh" path="res://resources/scripts/ui/RoundDots.gd" id="7"]
+[ext_resource type="Script" uid="uid://ctqpbdxh6qjkf" path="res://resources/scripts/gameplay/ConveyorHandTray.gd" id="7_conveyor_tray"]
 [ext_resource type="Script" uid="uid://ce08w1nx57g03" path="res://resources/scripts/audio/SoftAudio.gd" id="8"]
 [ext_resource type="Script" uid="uid://cq3bv2tiwdnnk" path="res://resources/scripts/audio/MusicManager.gd" id="8_music"]
 [ext_resource type="Texture2D" path="res://resources/materials/icons/clock.tres" id="9"]
 [ext_resource type="Texture2D" path="res://resources/materials/textures/ui/panels/round-background.tres" id="10"]
-[ext_resource type="Texture2D" path="res://resources/materials/textures/hand/hand-background.tres" id="11"]
 [ext_resource type="FontFile" uid="uid://0lls67bvy7ct" path="res://resources/fonts/VCR_OSD_MONO_1.001.ttf" id="12"]
 [ext_resource type="Texture2D" path="res://resources/materials/textures/hand/life/life-point-full.tres" id="13"]
-[ext_resource type="Texture2D" path="res://resources/materials/textures/ui/buttons/button.tres" id="14"]
+[ext_resource type="Texture2D" uid="uid://ckdjfkkb8bsph" path="res://resources/materials/textures/ui/buttons/button.tres" id="14"]
+[ext_resource type="Texture2D" path="res://resources/materials/textures/hand/hand-background.tres" id="14_regular_hand"]
+[ext_resource type="Texture2D" uid="uid://ttjqywqs10sf" path="res://resources/materials/textures/hand/conveyor-hand-background.tres" id="14_x8mwv"]
 [ext_resource type="Texture2D" path="res://resources/materials/textures/ui/panels/pop-up.tres" id="15"]
-[ext_resource type="PackedScene" path="res://resources/scenes/SpecialRuleAnnouncement.tscn" id="16"]
-[ext_resource type="PackedScene" path="res://resources/scenes/FlashlightOverlay.tscn" id="17"]
-[ext_resource type="PackedScene" path="res://resources/scenes/PixelationOverlay.tscn" id="17_pixelation"]
+[ext_resource type="PackedScene" path="res://resources/scenes/special_rules/SpecialRuleAnnouncement.tscn" id="16"]
+[ext_resource type="PackedScene" path="res://resources/scenes/special_rules/FlashlightOverlay.tscn" id="17"]
+[ext_resource type="PackedScene" path="res://resources/scenes/challenges/ChallengeSelection.tscn" id="17_challenges"]
+[ext_resource type="Texture2D" uid="uid://crbhkrx184vti" path="res://resources/sprites/ui/icons/challenges.png" id="17_challenge_icon"]
+[ext_resource type="PackedScene" path="res://resources/scenes/special_rules/PixelationOverlay.tscn" id="17_pixelation"]
 [ext_resource type="Script" uid="uid://cjc0st8mtcvw6" path="res://resources/scripts/special_rules/rules/MovingPilePattern.gd" id="18"]
 [ext_resource type="Script" uid="uid://cnisbqmpaaunh" path="res://resources/scripts/special_rules/SpecialRuleManager.gd" id="19"]
 [ext_resource type="Script" uid="uid://crqsmcucrpe54" path="res://resources/scripts/ui/VolumeSlider.gd" id="20_volume"]
 [ext_resource type="Texture2D" path="res://resources/materials/textures/ui/panels/bar.tres" id="21_bar"]
 [ext_resource type="Script" uid="uid://cwn1o83ir4ncd" path="res://resources/scripts/ui/HighlightButton.gd" id="22_highlight"]
+[ext_resource type="PackedScene" path="res://resources/scenes/ui/RegionButton.tscn" id="22_region_button"]
 [ext_resource type="Script" uid="uid://2c5oj66i5mwr" path="res://resources/scripts/gameplay/PileManager.gd" id="23_pile_manager"]
 [ext_resource type="Script" uid="uid://rwcvnmthxu04" path="res://resources/scripts/special_rules/rules/LavaRuleController.gd" id="24_lava_controller"]
 [ext_resource type="Script" uid="uid://cio7iabsofnac" path="res://resources/scripts/special_rules/rules/StickyFingersRuleController.gd" id="25_sticky_controller"]
 [ext_resource type="Script" uid="uid://dfiwboprme6qb" path="res://resources/scripts/special_rules/rules/MirrorMatchRuleController.gd" id="26_mirror_controller"]
 [ext_resource type="Script" uid="uid://crpwgx3t5ux8q" path="res://resources/scripts/bonuses/BonusManager.gd" id="27_bonus_manager"]
-[ext_resource type="PackedScene" path="res://resources/scenes/BonusSelection.tscn" id="28_bonus_selection"]
+[ext_resource type="PackedScene" uid="uid://4qoantl5j8b1" path="res://resources/scenes/bonuses/BonusSelection.tscn" id="28_bonus_selection"]
 [ext_resource type="Texture2D" path="res://resources/materials/textures/ui/buttons/redraw.tres" id="29_redraw"]
 [ext_resource type="Script" uid="uid://8hkg1ucpu274" path="res://resources/scripts/bonuses/RedrawBonusButton.gd" id="30_redraw_button"]
 [ext_resource type="Texture2D" path="res://resources/materials/textures/ui/buttons/escape.tres" id="31_escape"]
@@ -37,7 +42,7 @@
 [ext_resource type="Texture2D" path="res://resources/materials/textures/ui/icons/arrows/down.tres" id="33_arrow_down"]
 [ext_resource type="Script" uid="uid://dnwlhbj4lgun" path="res://resources/scripts/ui/TextureHighlightButton.gd" id="34_texture_highlight"]
 [ext_resource type="Script" uid="uid://dfi4cp4nlnhp2" path="res://resources/scripts/ui/SkippableSequence.gd" id="35_skippable_sequence"]
-[ext_resource type="PackedScene" uid="uid://c05lrwawno2fu" path="res://resources/scenes/ProgressionMenu.tscn" id="36_progression_menu"]
+[ext_resource type="PackedScene" uid="uid://c05lrwawno2fu" path="res://resources/scenes/progression/ProgressionMenu.tscn" id="36_progression_menu"]
 [ext_resource type="Texture2D" uid="uid://duvm78cx671an" path="res://resources/materials/icons/stats.tres" id="37_stats"]
 [ext_resource type="Texture2D" path="res://resources/materials/icons/options.tres" id="38_options"]
 [ext_resource type="Script" uid="uid://bsm56bnpm240e" path="res://resources/scripts/settings/SaveDataManager.gd" id="39_save_data"]
@@ -51,8 +56,8 @@
 [ext_resource type="Material" uid="uid://cu8wckhiq2csy" path="res://resources/materials/DeformableBackgroundMaterial.tres" id="47_deform_material"]
 [ext_resource type="Script" uid="uid://bw0xn7y3cadsc" path="res://resources/scripts/effects/DeformableStripeBackground.gd" id="48_deform_controller"]
 [ext_resource type="Script" uid="uid://dpro0nvh1a7iv" path="res://resources/scripts/effects/ReliefLighting.gd" id="49_relief_lighting"]
-[ext_resource type="PackedScene" uid="uid://csg0sfqi87rcr" path="res://resources/scenes/Pile.tscn" id="50_editor_pile_preview"]
-[ext_resource type="PackedScene" uid="uid://brvd6qt0cdmx4" path="res://resources/scenes/ActiveBonusBadge.tscn" id="51_active_bonus_badge"]
+[ext_resource type="PackedScene" uid="uid://csg0sfqi87rcr" path="res://resources/scenes/gameplay/Pile.tscn" id="50_editor_pile_preview"]
+[ext_resource type="PackedScene" uid="uid://brvd6qt0cdmx4" path="res://resources/scenes/bonuses/ActiveBonusBadge.tscn" id="51_active_bonus_badge"]
 
 [sub_resource type="Theme" id="PixelTheme"]
 default_font = ExtResource("12")
@@ -157,10 +162,35 @@ void fragment() {
 	COLOR = textureLod(screen_texture, pixel_uv, 0.0);
 }"
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_wijeq"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8uvgg"]
 resource_local_to_scene = true
 shader = SubResource("PixelationShader")
 shader_parameter/pixel_size = 4.0
+
+[sub_resource type="Shader" id="ReplayIrisShader"]
+code = "shader_type canvas_item;
+
+uniform vec2 center_uv = vec2(0.5);
+uniform float radius = 2.0;
+uniform float aspect_ratio = 1.0;
+uniform float feather = 0.008;
+uniform vec4 mask_color : source_color = vec4(0.969, 0.965, 0.949, 1.0);
+
+void fragment() {
+	vec2 delta = UV - center_uv;
+	delta.x *= aspect_ratio;
+	float cover = smoothstep(radius, radius + feather, length(delta));
+	COLOR = vec4(mask_color.rgb, mask_color.a * cover);
+}"
+
+[sub_resource type="ShaderMaterial" id="ReplayIrisMaterial"]
+resource_local_to_scene = true
+shader = SubResource("ReplayIrisShader")
+shader_parameter/center_uv = Vector2(0.5, 0.5)
+shader_parameter/radius = 2.0
+shader_parameter/aspect_ratio = 1.0
+shader_parameter/feather = 0.008
+shader_parameter/mask_color = Color(0.969, 0.965, 0.949, 1)
 
 [sub_resource type="Shader" id="ButtonHighlightShader"]
 code = "shader_type canvas_item;
@@ -181,7 +211,7 @@ void fragment() {
 	COLOR = source;
 }"
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_7jhjp"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_tx8cm"]
 resource_local_to_scene = true
 shader = SubResource("ButtonHighlightShader")
 shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
@@ -280,7 +310,7 @@ void fragment() {
 	COLOR = source;
 }"
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_wcc1r"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_t5h48"]
 resource_local_to_scene = true
 shader = SubResource("ProgressionButtonHighlightShader")
 shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
@@ -298,7 +328,7 @@ void fragment() {
 }
 "
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_x8mwv"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_f4jyj"]
 resource_local_to_scene = true
 shader = SubResource("FontPreviewTileShader")
 shader_parameter/tile_color = Color(0.302, 0.51, 0.761, 1)
@@ -312,6 +342,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = SubResource("PixelTheme")
 script = ExtResource("1")
+replay_mask_duration = 0.4
 dust_particles_per_10000_pixels = 100.0
 dust_viscosity = 10.0
 dust_particle_color = Color(0.46666667, 0.45490196, 0.6313726, 0.93333334)
@@ -531,22 +562,49 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="HandTray" type="NinePatchRect" parent="Gameplay" unique_id=1006987005]
+[node name="HandTray" type="Control" parent="Gameplay" unique_id=1006987005]
 unique_name_in_owner = true
-texture_filter = 1
+layout_mode = 3
 anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 18.0
 offset_top = -55.0
-offset_right = -18.0
-offset_bottom = -9.0
 grow_horizontal = 2
 grow_vertical = 0
-texture = ExtResource("11")
+script = ExtResource("7_conveyor_tray")
+conveyor_turn_point_x = 65.0
+
+[node name="RegularHandBackground" type="NinePatchRect" parent="Gameplay/HandTray" unique_id=1712941913]
+unique_name_in_owner = true
+visible = false
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("14_regular_hand")
 patch_margin_left = 18
-patch_margin_top = 8
+patch_margin_top = 7
+patch_margin_right = 18
+patch_margin_bottom = 8
+
+[node name="ConveyorBackground" type="NinePatchRect" parent="Gameplay/HandTray" unique_id=1280561164]
+unique_name_in_owner = true
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("14_x8mwv")
+region_rect = Rect2(0.18348694, 0, 237.81651, 55)
+patch_margin_left = 87
+patch_margin_top = 7
 patch_margin_right = 18
 patch_margin_bottom = 8
 
@@ -606,13 +664,17 @@ theme_override_constants/separation = 5
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
-offset_left = 197.0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -35.0
 offset_top = 1.0
-offset_right = 219.0
+offset_right = -6.0
 offset_bottom = 22.0
+grow_horizontal = 0
 mouse_default_cursor_shape = 2
 flat = true
 script = ExtResource("30_redraw_button")
+highlight_material = SubResource("EscapeButtonHighlightMaterial")
 
 [node name="RedrawIcon" type="TextureRect" parent="Gameplay/HandTray/RedrawButton" unique_id=1583627197]
 unique_name_in_owner = true
@@ -804,8 +866,27 @@ layer = 15
 
 [node name="PixelationOverlay" parent="PresentationLayers/PixelationLayer" unique_id=659575838 instance=ExtResource("17_pixelation")]
 unique_name_in_owner = true
-material = SubResource("ShaderMaterial_wijeq")
+material = SubResource("ShaderMaterial_8uvgg")
 layout_mode = 3
+
+[node name="TransitionLayer" type="CanvasLayer" parent="PresentationLayers" unique_id=1957222345]
+layer = 200
+
+[node name="ReplayTransitionMask" type="ColorRect" parent="PresentationLayers/TransitionLayer" unique_id=1501824415]
+unique_name_in_owner = true
+visible = false
+material = SubResource("ReplayIrisMaterial")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.969, 0.965, 0.949, 1)
+
+[node name="MenuTransitionLayer" type="CanvasLayer" parent="PresentationLayers" unique_id=1818659348]
+unique_name_in_owner = true
+layer = 50
 
 [node name="SpecialRuleAnnouncementLayer" type="CanvasLayer" parent="PresentationLayers" unique_id=1764101455]
 layer = 20
@@ -826,7 +907,7 @@ theme_override_font_sizes/normal_font_size = 20
 layout_mode = 2
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
-highlight_material = SubResource("ShaderMaterial_7jhjp")
+highlight_material = SubResource("ShaderMaterial_tx8cm")
 
 [node name="SkippableSequenceLayer" type="CanvasLayer" parent="PresentationLayers" unique_id=1910882523]
 layer = 30
@@ -841,57 +922,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("35_skippable_sequence")
 
-[node name="Screens" type="Node" parent="." unique_id=2062740707]
-
-[node name="AchievementPopup" type="Control" parent="Screens" unique_id=1735031890]
-unique_name_in_owner = true
-visible = false
-z_index = 100
-layout_mode = 3
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 38.0
-offset_top = 50.0
-offset_right = -38.0
-offset_bottom = 100.0
-grow_horizontal = 2
-mouse_filter = 2
-
-[node name="Center" type="CenterContainer" parent="Screens/AchievementPopup" unique_id=367203332]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-
-[node name="Content" type="HBoxContainer" parent="Screens/AchievementPopup/Center" unique_id=1978355019]
-layout_mode = 2
-theme_override_constants/separation = 2
-
-[node name="Icon" type="TextureRect" parent="Screens/AchievementPopup/Center/Content" unique_id=1990628588]
-light_mask = 2
-texture_filter = 1
-custom_minimum_size = Vector2(36, 36)
-layout_mode = 2
-mouse_filter = 2
-texture = ExtResource("44_achievement")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="AchievementPopupTitle" type="Label" parent="Screens/AchievementPopup/Center/Content" unique_id=1979825494]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(130, 0)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
-theme_override_fonts/font = ExtResource("12")
-theme_override_font_sizes/font_size = 20
-text = "STACK OVERFLOW"
-vertical_alignment = 1
-autowrap_mode = 2
-
-[node name="QuitPopupLayer" type="CanvasLayer" parent="PresentationLayers"]
+[node name="QuitPopupLayer" type="CanvasLayer" parent="PresentationLayers" unique_id=1070072091]
 layer = 40
 
 [node name="QuitPopup" type="Control" parent="PresentationLayers/QuitPopupLayer" unique_id=669933746]
@@ -953,7 +984,7 @@ size_flags_horizontal = 4
 theme_override_constants/separation = 6
 alignment = 1
 
-[node name="QuitContinueButton" type="Button" parent="PresentationLayers/QuitPopupLayer/QuitPopup/Center/Panel/Content/Buttons" unique_id=383857417]
+[node name="QuitContinueButton" parent="PresentationLayers/QuitPopupLayer/QuitPopup/Center/Panel/Content/Buttons" unique_id=383857417 instance=ExtResource("22_region_button")]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(110, 31)
 layout_mode = 2
@@ -966,7 +997,7 @@ text = "CONTINUE"
 script = ExtResource("22_highlight")
 highlight_material = SubResource("OverlayButtonHighlightMaterial")
 
-[node name="QuitRestartButton" type="Button" parent="PresentationLayers/QuitPopupLayer/QuitPopup/Center/Panel/Content/Buttons" unique_id=1150324439]
+[node name="QuitRestartButton" parent="PresentationLayers/QuitPopupLayer/QuitPopup/Center/Panel/Content/Buttons" unique_id=1150324439 instance=ExtResource("22_region_button")]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(110, 31)
 layout_mode = 2
@@ -979,7 +1010,7 @@ text = "RESTART"
 script = ExtResource("22_highlight")
 highlight_material = SubResource("OverlayButtonHighlightMaterial")
 
-[node name="QuitRunButton" type="Button" parent="PresentationLayers/QuitPopupLayer/QuitPopup/Center/Panel/Content/Buttons" unique_id=2042110092]
+[node name="QuitRunButton" parent="PresentationLayers/QuitPopupLayer/QuitPopup/Center/Panel/Content/Buttons" unique_id=2042110092 instance=ExtResource("22_region_button")]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(110, 31)
 layout_mode = 2
@@ -991,6 +1022,56 @@ theme_override_styles/hover = SubResource("SpriteButton")
 text = "QUIT"
 script = ExtResource("22_highlight")
 highlight_material = SubResource("OverlayButtonHighlightMaterial")
+
+[node name="Screens" type="Node" parent="." unique_id=2062740707]
+
+[node name="AchievementPopup" type="Control" parent="Screens" unique_id=1735031890]
+unique_name_in_owner = true
+visible = false
+z_index = 100
+layout_mode = 3
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 38.0
+offset_top = 50.0
+offset_right = -38.0
+offset_bottom = 100.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="Center" type="CenterContainer" parent="Screens/AchievementPopup" unique_id=367203332]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Content" type="HBoxContainer" parent="Screens/AchievementPopup/Center" unique_id=1978355019]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Icon" type="TextureRect" parent="Screens/AchievementPopup/Center/Content" unique_id=1990628588]
+light_mask = 2
+texture_filter = 1
+custom_minimum_size = Vector2(36, 36)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("44_achievement")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="AchievementPopupTitle" type="Label" parent="Screens/AchievementPopup/Center/Content" unique_id=1979825494]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_fonts/font = ExtResource("12")
+theme_override_font_sizes/font_size = 20
+text = "STACK OVERFLOW"
+vertical_alignment = 1
+autowrap_mode = 2
 
 [node name="Overlay" type="Control" parent="Screens" unique_id=1498983076]
 unique_name_in_owner = true
@@ -1011,28 +1092,6 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.969, 0.965, 0.949, 0.9)
 
-[node name="OverlayHighScore" type="RichTextLabel" parent="Screens/Overlay" unique_id=1165595282]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -128.0
-offset_top = -87.0
-offset_right = 128.0
-offset_bottom = -51.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_colors/default_color = Color(0.235, 0.235, 0.235, 1)
-theme_override_font_sizes/normal_font_size = 20
-bbcode_enabled = true
-text = "[center][wave amp=25.0 freq=3.0 connected=1]HIGHSCORE[/wave][/center]"
-fit_content = true
-scroll_active = false
-
 [node name="Center" type="CenterContainer" parent="Screens/Overlay" unique_id=282762708]
 layout_mode = 1
 anchors_preset = 15
@@ -1041,28 +1100,48 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Panel" type="TextureRect" parent="Screens/Overlay/Center" unique_id=100339681]
-texture_filter = 1
-custom_minimum_size = Vector2(256, 192)
+[node name="ResultStack" type="VBoxContainer" parent="Screens/Overlay/Center"]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="OverlayHighScore" type="RichTextLabel" parent="Screens/Overlay/Center/ResultStack" unique_id=1165595282]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(180, 20)
 layout_mode = 2
 mouse_filter = 2
-texture = ExtResource("15")
+theme_override_colors/default_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_font_sizes/normal_font_size = 20
+bbcode_enabled = true
+text = "[center][wave amp=25.0 freq=3.0 connected=1]HIGHSCORE[/wave][/center]"
+fit_content = true
+scroll_active = false
 
-[node name="Content" type="VBoxContainer" parent="Screens/Overlay/Center/Panel" unique_id=1887149846]
+[node name="Panel" type="NinePatchRect" parent="Screens/Overlay/Center/ResultStack" unique_id=100339681]
+texture_filter = 1
+custom_minimum_size = Vector2(180, 250)
+layout_mode = 2
+texture = ExtResource("15")
+patch_margin_left = 40
+patch_margin_top = 64
+patch_margin_right = 30
+patch_margin_bottom = 56
+
+[node name="Content" type="VBoxContainer" parent="Screens/Overlay/Center/ResultStack/Panel" unique_id=1887149846]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = 41.0
-offset_right = -11.0
-offset_bottom = -34.0
+offset_left = 22.0
+offset_top = 50.0
+offset_right = -12.0
+offset_bottom = -45.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 4
 alignment = 1
 
-[node name="OverlayTitle" type="RichTextLabel" parent="Screens/Overlay/Center/Panel/Content" unique_id=128634448]
+[node name="OverlayTitle" type="RichTextLabel" parent="Screens/Overlay/Center/ResultStack/Panel/Content" unique_id=128634448]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
@@ -1074,7 +1153,7 @@ text = "[center]100 rounds left[/center]"
 fit_content = true
 scroll_active = false
 
-[node name="OverlayDetails" type="RichTextLabel" parent="Screens/Overlay/Center/Panel/Content" unique_id=648907875]
+[node name="OverlayDetails" type="RichTextLabel" parent="Screens/Overlay/Center/ResultStack/Panel/Content" unique_id=648907875]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
@@ -1088,15 +1167,15 @@ fit_content = true
 scroll_active = false
 horizontal_alignment = 1
 
-[node name="OverlayButtons" type="HBoxContainer" parent="Screens/Overlay/Center/Panel/Content" unique_id=993013322]
+[node name="OverlayButtons" type="VBoxContainer" parent="Screens/Overlay/Center/ResultStack/Panel/Content" unique_id=993013322]
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 alignment = 1
 
-[node name="OverlayButton" type="Button" parent="Screens/Overlay/Center/Panel/Content/OverlayButtons" unique_id=1335381635]
+[node name="OverlayButton" parent="Screens/Overlay/Center/ResultStack/Panel/Content/OverlayButtons" unique_id=1335381635 instance=ExtResource("22_region_button")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(86, 31)
+custom_minimum_size = Vector2(110, 31)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 1, 1, 1)
@@ -1108,10 +1187,10 @@ text = "REPLAY"
 script = ExtResource("22_highlight")
 highlight_material = SubResource("OverlayButtonHighlightMaterial")
 
-[node name="OverlayEndlessButton" type="Button" parent="Screens/Overlay/Center/Panel/Content/OverlayButtons" unique_id=1277210770]
+[node name="OverlayEndlessButton" parent="Screens/Overlay/Center/ResultStack/Panel/Content/OverlayButtons" unique_id=1277210770 instance=ExtResource("22_region_button")]
 unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(86, 31)
+custom_minimum_size = Vector2(110, 31)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 20
@@ -1122,41 +1201,31 @@ text = "INFINITE"
 script = ExtResource("22_highlight")
 highlight_material = SubResource("OverlayButtonHighlightMaterial")
 
-[node name="OverlayBackButton" type="TextureButton" parent="Screens/Overlay/Center/Panel" unique_id=152869561]
+[node name="OverlayQuitButton" parent="Screens/Overlay/Center/ResultStack/Panel/Content/OverlayButtons" unique_id=1724562451 instance=ExtResource("22_region_button")]
 unique_name_in_owner = true
-z_index = 10
-texture_filter = 1
-layout_mode = 1
-offset_left = 180.0
-offset_top = 127.0
-offset_right = 211.0
-offset_bottom = 148.0
-mouse_default_cursor_shape = 2
-texture_normal = ExtResource("31_escape")
-script = ExtResource("34_texture_highlight")
-highlight_material = SubResource("EscapeButtonHighlightMaterial")
+custom_minimum_size = Vector2(110, 31)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("SpriteButton")
+theme_override_styles/pressed = SubResource("SpriteButtonPressed")
+theme_override_styles/hover = SubResource("SpriteButton")
+text = "QUIT"
+script = ExtResource("22_highlight")
+highlight_material = SubResource("OverlayButtonHighlightMaterial")
 
-[node name="OverlayUnlocks" type="RichTextLabel" parent="Screens/Overlay" unique_id=1677630550]
+[node name="OverlayUnlocks" type="RichTextLabel" parent="Screens/Overlay/Center/ResultStack" unique_id=1677630550]
 unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -118.0
-offset_top = 62.0
-offset_right = 118.0
-offset_bottom = 88.0
-grow_horizontal = 2
-grow_vertical = 2
+custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
 mouse_filter = 2
 theme_override_colors/default_color = Color(0.302, 0.51, 0.761, 1)
 theme_override_fonts/normal_font = ExtResource("6_1vynq")
 theme_override_font_sizes/normal_font_size = 16
 bbcode_enabled = true
-text = "[center]+ [color=#4D82C2]NEW[/color] CHECKPOINT: 1
-+ [color=#4D82C2]NEW[/color] [img=16x16]res://resources/materials/icons/trophies.tres[/img] FIRST STEP[/center]"
+text = "[center]+ [img=16x16]res://resources/materials/icons/saves.tres[/img] CHECKPOINT: 1
++ [img=16x16]res://resources/materials/icons/trophies.tres[/img] FIRST STEP[/center]"
 fit_content = true
 scroll_active = false
 
@@ -1259,7 +1328,7 @@ size_flags_horizontal = 4
 theme_override_constants/separation = 7
 alignment = 1
 
-[node name="SplashButton" type="Button" parent="Screens/Splash/Center/Content/RunButtons" unique_id=522904768]
+[node name="SplashButton" parent="Screens/Splash/Center/Content/RunButtons" unique_id=522904768 instance=ExtResource("22_region_button")]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(86, 31)
 layout_mode = 2
@@ -1278,7 +1347,7 @@ highlight_material = SubResource("PlayButtonHighlightMaterial")
 layout_mode = 2
 theme_override_constants/separation = 2
 
-[node name="CheckpointButton" type="Button" parent="Screens/Splash/Center/Content/RunButtons/CheckpointSelector" unique_id=870869912]
+[node name="CheckpointButton" parent="Screens/Splash/Center/Content/RunButtons/CheckpointSelector" unique_id=870869912 instance=ExtResource("22_region_button")]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(86, 31)
 layout_mode = 2
@@ -1319,7 +1388,7 @@ stretch_mode = 3
 script = ExtResource("34_texture_highlight")
 highlight_material = SubResource("EscapeButtonHighlightMaterial")
 
-[node name="EndlessButton" type="Button" parent="Screens/Splash/Center/Content" unique_id=298842998]
+[node name="EndlessButton" parent="Screens/Splash/Center/Content" unique_id=298842998 instance=ExtResource("22_region_button")]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(86, 31)
 layout_mode = 2
@@ -1362,6 +1431,23 @@ offset_right = 7.0
 offset_bottom = 27.0
 mouse_filter = 2
 texture = ExtResource("45_notification")
+
+[node name="ChallengeButton" type="TextureButton" parent="Screens/Splash" unique_id=1295218214]
+unique_name_in_owner = true
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -89.0
+offset_top = 8.0
+offset_right = -66.0
+offset_bottom = 33.0
+grow_horizontal = 0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("17_challenge_icon")
+script = ExtResource("34_texture_highlight")
+highlight_material = SubResource("EscapeButtonHighlightMaterial")
 
 [node name="OptionsButton" type="TextureButton" parent="Screens/Splash" unique_id=1231859299]
 unique_name_in_owner = true
@@ -1940,8 +2026,11 @@ text = "BACK"
 script = ExtResource("22_highlight")
 
 [node name="ProgressionMenu" parent="Screens" unique_id=1548032098 instance=ExtResource("36_progression_menu")]
-font_button_highlight_material = SubResource("ShaderMaterial_wcc1r")
-font_preview_tile_material = SubResource("ShaderMaterial_x8mwv")
+font_button_highlight_material = SubResource("ShaderMaterial_t5h48")
+font_preview_tile_material = SubResource("ShaderMaterial_f4jyj")
+
+[node name="ChallengeSelection" parent="Screens" unique_id=504750781 instance=ExtResource("17_challenges")]
+unique_name_in_owner = true
 
 [node name="SaveDataManager" type="Node" parent="." unique_id=217628651]
 unique_name_in_owner = true

@@ -65,7 +65,20 @@ func transition_to_game_music() -> void:
 	get_tree().create_timer(remaining_time).timeout.connect(_play_game_music)
 
 
+func transition_to_menu_music() -> void:
+	game_music_requested = false
+	section_change_requested = false
+	set_low_pass_enabled(true)
+	if stream == menu_music:
+		return
+	stream = menu_music
+	play()
+
+
 func _play_game_music() -> void:
+	# A pending beat-aligned transition may outlive a return to the main menu.
+	if not game_music_requested:
+		return
 	game_music_requested = false
 	stream = game_music
 	play()

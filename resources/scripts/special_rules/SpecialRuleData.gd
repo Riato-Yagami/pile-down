@@ -5,9 +5,9 @@ const Difficulty := preload("res://resources/scripts/settings/difficulty.gd")
 
 
 func _init(
-	rule_id: StringName,
-	rule_title: String,
-	rule_subtitle: String,
+	rule_id: StringName = &"",
+	rule_title: String = "",
+	rule_subtitle: String = "",
 	incompatible: Array[StringName] = [],
 	required: Array[StringName] = [],
 	rule_weight := 1.0,

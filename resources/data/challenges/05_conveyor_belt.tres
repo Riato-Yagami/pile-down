@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ChallengeData" format=3 uid="uid://bmvmcvf67vfqn"]
+
+[ext_resource type="Script" uid="uid://ch3uaffg7ob3m" path="res://resources/scripts/challenges/ChallengeData.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/data/achievements/53_free_range_hot_potatoes.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"conveyor_belt"
+title = "CONVEYOR BELT"
+description = "Keep it moving."
+required_achievement = ExtResource("2")
+conveyor_hand = true
+conveyor_guaranteed_interval = 3
+conveyor_speed = 100.0
+disabled_bonuses = Array[StringName]([&"redraw"])
+disabled_rules = Array[StringName]([&"free_range_cards"])

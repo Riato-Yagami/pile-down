@@ -4,7 +4,7 @@ extends SkippableSequence
 signal rule_delete_requested(index: int)
 
 const RULE_DELETE_BUTTON_SCENE := preload(
-	"res://resources/scenes/RuleDeleteButton.tscn"
+	"res://resources/scenes/special_rules/RuleDeleteButton.tscn"
 )
 
 @export_category("Timing")
@@ -22,14 +22,22 @@ const RULE_DELETE_BUTTON_SCENE := preload(
 @onready var delete_label: Label = %DeleteLabel
 @onready var rule_delete_choices: VBoxContainer = %RuleDeleteChoices
 
+var _presentation_generation := 0
+var _current_tween: Tween
+
 
 func show_rules(
 	rules: Array[SpecialRuleData],
-	is_rule_count_milestone := false
+	is_rule_count_milestone := false,
+	boss_round := false
 ) -> void:
+	_presentation_generation += 1
+	var generation := _presentation_generation
 	if rules.is_empty():
 		return
 	combo_label.text = _combination_title(rules)
+	if boss_round and combo_label.text.is_empty():
+		combo_label.text = "BOSS ROUND"
 	combo_label.visible = not combo_label.text.is_empty()
 	var titles: PackedStringArray = []
 	for rule in rules:
@@ -39,6 +47,7 @@ func show_rules(
 	visible = true
 	modulate.a = 0.0
 	var tween := create_tween()
+	_current_tween = tween
 	tween.tween_property(self, "modulate:a", 1.0, fade_duration)
 	tween.tween_interval(
 		milestone_display_duration
@@ -48,6 +57,8 @@ func show_rules(
 	tween.tween_property(self, "modulate:a", 0.0, fade_duration)
 	begin(tween)
 	await tween.finished
+	if generation != _presentation_generation:
+		return
 	finish()
 	visible = false
 
@@ -57,6 +68,8 @@ func choose_rules_to_delete(
 	requested_count: int,
 	can_delete_last_rule := false
 ) -> Array[int]:
+	_presentation_generation += 1
+	var generation := _presentation_generation
 	var maximum_deletions := (
 		rules.size()
 		if can_delete_last_rule
@@ -94,10 +107,15 @@ func choose_rules_to_delete(
 	visible = true
 	modulate.a = 0.0
 	var entrance := create_tween()
+	_current_tween = entrance
 	entrance.tween_property(self, "modulate:a", 1.0, fade_duration)
 	await entrance.finished
+	if generation != _presentation_generation:
+		return removed_indices
 	while remaining > 0:
 		var selected_index: int = await rule_delete_requested
+		if generation != _presentation_generation or selected_index < 0:
+			return removed_indices
 		if removed_indices.has(selected_index):
 			continue
 		var selected_button := _find_delete_button(selected_index)
@@ -111,7 +129,10 @@ func choose_rules_to_delete(
 		await get_tree().create_timer(
 			rule_delete_confirmation_delay
 		).timeout
+		if generation != _presentation_generation:
+			return removed_indices
 		var removal := create_tween().set_parallel()
+		_current_tween = removal
 		removal.tween_property(
 			selected_button,
 			"modulate:a",
@@ -125,6 +146,8 @@ func choose_rules_to_delete(
 			rule_delete_fade_duration
 		)
 		await removal.finished
+		if generation != _presentation_generation:
+			return removed_indices
 		selected_button.visible = false
 		selected_button.struck_through = false
 		selected_button.queue_redraw()
@@ -152,7 +175,10 @@ func choose_rules_to_delete(
 				rule_button.queue_redraw()
 		await _hide_delete_counter()
 	await get_tree().create_timer(rule_breaker_final_delay).timeout
+	if generation != _presentation_generation:
+		return removed_indices
 	var exit := create_tween()
+	_current_tween = exit
 	exit.tween_property(self, "modulate:a", 0.0, fade_duration)
 	await exit.finished
 	visible = false
@@ -161,6 +187,22 @@ func choose_rules_to_delete(
 	delete_label.visible = false
 	rule_delete_choices.visible = false
 	return removed_indices
+
+
+func cancel() -> void:
+	_presentation_generation += 1
+	if active_tween != null and active_tween.is_valid():
+		active_tween.custom_step(1000000.0)
+	if _current_tween != null and _current_tween.is_valid():
+		_current_tween.custom_step(1000000.0)
+	_current_tween = null
+	finish()
+	visible = false
+	rules_label.visible = true
+	subtitle_label.visible = true
+	delete_label.visible = false
+	rule_delete_choices.visible = false
+	rule_delete_requested.emit(-1)
 
 
 func _find_delete_button(rule_index: int) -> RuleDeleteButton:

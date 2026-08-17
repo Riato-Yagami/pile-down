@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="BonusData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/bonuses/BonusData.gd" id="1_j3f8q"]
+
+[resource]
+script = ExtResource("1_j3f8q")
+title = "PILE MOVER"
+description = "Lets you drag unfinished piles to rearrange the board."
+rarity = 1
+max_level = 1
+weight = 0.65
+minimum_round = 1
+id = &"pile_mover"

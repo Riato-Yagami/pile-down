@@ -118,6 +118,14 @@ func _on_round_completed(
 		unlock(&"first_round")
 	if summary.completed_rounds >= _required_count(&"complete_10_rounds", 10):
 		unlock(&"complete_10_rounds")
+	if (
+		summary.mode == RunSummary.Mode.NORMAL
+		and not summary.started_from_checkpoint
+		and summary.active_bonus_levels.is_empty()
+		and summary.completed_rounds
+		>= _required_count(&"round_20_without_bonuses", 20)
+	):
+		unlock(&"round_20_without_bonuses")
 	if normal_progression and summary.completed_rounds >= half_rounds:
 		unlock(&"complete_half_game")
 		if (
@@ -136,7 +144,30 @@ func _on_round_completed(
 		unlock(&"beat_two_special_rules")
 	if rule_ids.size() >= Difficulty.MAX_COMBINED_RULES:
 		unlock(&"beat_max_special_rules")
+	if rule_ids.has(&"free_range_cards") and rule_ids.has(&"hot_potatoes"):
+		unlock(&"free_range_hot_potatoes")
+	if rule_ids.has(&"blind_delivery") and rule_ids.has(&"sticky_fingers"):
+		unlock(&"blind_delivery_sticky_fingers")
 	_evaluate_speedrun_milestones(summary)
+
+
+func record_challenge_completion(
+	challenge_id: StringName,
+	completed_ids: Array[StringName],
+	challenge_definitions: Array[ChallengeData]
+) -> void:
+	var completion_ids := {
+		&"shared_clock": &"complete_shared_clock",
+		&"conveyor_belt": &"complete_conveyor_belt",
+		&"boss_rush": &"complete_boss_rush",
+		&"no_looking_back": &"complete_no_looking_back",
+	}
+	if completion_ids.has(challenge_id):
+		unlock(completion_ids[challenge_id])
+	if challenge_definitions.all(
+		func(data: ChallengeData) -> bool: return completed_ids.has(data.id)
+	):
+		unlock(&"challenge_accepted")
 
 
 func _on_checkpoint_unlocked(_checkpoint_id: int, unlocked_ids: Array[int]) -> void:
@@ -159,6 +190,13 @@ func _on_bonus_acquired(
 	var data := _find_bonus(bonus_id)
 	if data != null and data.max_level > 1 and level >= data.max_level:
 		unlock(&"one_bonus_max_level")
+	if bonus_id == &"redraw" and level >= 3:
+		unlock(&"full_magazine")
+	if (
+		int(bonus_highest_levels.get(&"safety_net", 0)) >= 3
+		and int(bonus_highest_levels.get(&"spare_life", 0)) >= 3
+	):
+		unlock(&"overprotected")
 	if active_levels.size() >= _required_count(&"five_different_bonuses", 5):
 		unlock(&"five_different_bonuses")
 	if _contains_all_enabled(discovered_ids, Difficulty.ENABLED_BONUSES):
@@ -190,10 +228,12 @@ func check_maximum_build_achievement() -> void:
 
 
 func _on_special_rule_round_completed(
-	_rule_ids: Array[StringName], beaten_ids: Array[StringName]
+	rule_ids: Array[StringName], beaten_ids: Array[StringName]
 ) -> void:
 	if _contains_all_enabled(beaten_ids, Difficulty.ENABLED_SPECIAL_RULES):
 		unlock(&"beat_all_special_rules")
+	if rule_ids.has(&"colorblind") and rule_ids.size() >= 3:
+		unlock(&"colorblind_expert")
 
 
 func _on_hand_combo_resolved(summary: HandComboSummary) -> void:
@@ -234,6 +274,12 @@ func _on_run_completed(summary: RunSummary) -> void:
 	if not summary.normal_game_completed:
 		return
 	unlock(&"complete_normal_game")
+	if (
+		summary.mode == RunSummary.Mode.NORMAL
+		and not summary.started_from_checkpoint
+		and summary.active_bonus_levels.is_empty()
+	):
+		unlock(&"game_without_bonuses")
 	if not summary.started_from_checkpoint:
 		unlock(&"complete_without_checkpoint")
 		if summary.lives_lost == 0:

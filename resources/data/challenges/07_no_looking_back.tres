@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ChallengeData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/challenges/ChallengeData.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/data/achievements/54_blind_delivery_sticky_fingers.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"no_looking_back"
+title = "NO LOOKING BACK"
+description = "Once you grab it, commit."
+required_achievement = ExtResource("2")
+start_round = 5
+target_round = 20
+allow_endless = true
+commit_selected_cards = true
+hide_selected_card_value = true
+disabled_rules = Array[StringName]([&"blind_delivery", &"sticky_fingers"])
+

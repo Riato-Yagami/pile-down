@@ -47,14 +47,72 @@ func _run() -> void:
 	assert(game._handle_global_shortcut(escape))
 	assert(not game.quit_popup.visible)
 	game.pile_count = DifficultySettings.START_PILES + 1
+	game.special_rule_manager.pixelation_overlay.show_pixelation(4.0)
+	assert(game.special_rule_manager.pixelation_overlay.visible)
+	game.bonus_manager.offer_bonus_choice(10)
+	await process_frame
+	assert(game.bonus_selection.visible)
+	game.special_rule_manager.announcement.show_rules([
+		SpecialRuleRegistry.create_all_rules()[0]
+	])
+	await process_frame
+	assert(game.special_rule_manager.announcement.visible)
 	game._open_quit_popup()
 	var restart := InputEventKey.new()
 	restart.keycode = KEY_R
 	restart.pressed = true
 	assert(game._handle_global_shortcut(restart))
 	await process_frame
-	assert(not game.quit_popup.visible)
+	assert(game.quit_popup.visible)
+	assert(game._screen_transition_active)
+	assert(game.replay_transition_mask.visible)
+	assert(game.bonus_selection.visible)
+	assert(game.special_rule_manager.announcement.visible)
+	deadline = Time.get_ticks_msec() + 3000
+	while game._screen_transition_active and Time.get_ticks_msec() < deadline:
+		await process_frame
+	assert(not game._screen_transition_active)
+	assert(not game.replay_transition_mask.visible)
+	assert(not game.bonus_selection.visible)
+	assert(not game.special_rule_manager.announcement.visible)
+	assert(not game.special_rule_manager.pixelation_overlay.visible)
 	assert(game.pile_count == DifficultySettings.START_PILES)
+	assert(not game.quit_popup.visible)
+	deadline = Time.get_ticks_msec() + 5000
+	while game.input_locked and Time.get_ticks_msec() < deadline:
+		await process_frame
+	assert(not game.input_locked)
+	assert(not game.piles.is_empty())
+	assert(game.timer_manager.running)
+	game.bonus_manager.offer_bonus_choice(10)
+	await process_frame
+	assert(game.bonus_selection.visible)
+	game.special_rule_manager.announcement.show_rules([
+		SpecialRuleRegistry.create_all_rules()[0]
+	])
+	await process_frame
+	assert(game.special_rule_manager.announcement.visible)
+	game._open_quit_popup()
+	game._return_to_menu()
+	await process_frame
+	assert(game.quit_popup.visible)
+	assert(game.bonus_selection.visible)
+	assert(game.special_rule_manager.announcement.visible)
+	assert(game.menu_transition_layer.layer > quit_layer.layer)
+	deadline = Time.get_ticks_msec() + 3000
+	while game._screen_transition_active and Time.get_ticks_msec() < deadline:
+		await process_frame
+	assert(is_instance_valid(game))
+	assert(game.splash.visible)
+	assert(game.splash.get_parent() == game.screens)
+	assert(not game.quit_popup.visible)
+	assert(not game.bonus_selection.visible)
+	assert(not game.special_rule_manager.announcement.visible)
+	assert(not game.overlay.visible)
+	assert(not game.active_bonus_bar.visible)
+	assert(game.bonus_manager.active.is_empty())
+	assert(not game.back_button.visible)
+	assert(game.music_manager.is_playing_menu_music())
 	game.queue_free()
 	await process_frame
 	print("Quit popup test passed.")

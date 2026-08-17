@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="SpecialRuleData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/special_rules/SpecialRuleData.gd" id="1_cbkfu"]
+
+[resource]
+script = ExtResource("1_cbkfu")
+title = "SHELL GAME"
+subtitle = "Now you see it..."
+description = "Piles swap positions after each correct card."
+id = &"shell_game"

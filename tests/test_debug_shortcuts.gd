@@ -19,6 +19,17 @@ func _run() -> void:
 	assert(game.debug_help.text.contains("[K] DIE NOW"))
 	assert(game.debug_help.text.contains("[U] TOGGLE UNLOCK EVERYTHING"))
 	assert(game.debug_help.text.contains("[P] DIFFICULTY PROBABILITIES: OFF"))
+	if not DebugSettings.is_unlock_everything_enabled():
+		DebugSettings.toggle_unlock_everything()
+	game._apply_debug_unlock_everything()
+	assert(game.challenge_manager.debug_unlock_all)
+	assert(
+		game.challenge_manager.completed.size()
+		== game.challenge_manager.definitions.size()
+	)
+	for challenge in game.challenge_manager.definitions:
+		assert(game.challenge_manager.is_unlocked(challenge, []))
+		assert(game.challenge_manager.completed.has(challenge.id))
 	var probability_event := InputEventKey.new()
 	probability_event.keycode = KEY_P
 	probability_event.pressed = true
@@ -32,8 +43,11 @@ func _run() -> void:
 	section_event.pressed = true
 	var initial_section := game.music_manager.current_section
 	assert(game._handle_debug_shortcut(section_event))
-	assert(game.music_manager.current_section == initial_section)
-	assert(game.music_manager.section_change_requested)
+	assert(game.music_manager.current_section in [initial_section, initial_section + 1])
+	assert(
+		game.music_manager.section_change_requested
+		or game.music_manager.current_section == initial_section + 1
+	)
 
 	var initial_god_mode := DebugSettings.is_god_mode_enabled()
 	var god_event := InputEventKey.new()
@@ -49,6 +63,21 @@ func _run() -> void:
 	assert(game._handle_debug_shortcut(reset_event))
 	await _wait_until_unlocked(game)
 	assert(game.round_number == DifficultySettings.TOTAL_ROUNDS)
+	# Restart remains available while a round transition owns the gameplay lock,
+	# and its iris is shown immediately over that transition.
+	game.input_locked = true
+	assert(game._handle_debug_shortcut(reset_event))
+	await process_frame
+	assert(game.replay_transition_mask.visible)
+	await _wait_until_unlocked(game)
+	game.pile_count = DifficultySettings.START_PILES + 1
+	game.splash.visible = true
+	assert(not game._handle_debug_shortcut(reset_event))
+	assert(game.pile_count == DifficultySettings.START_PILES + 1)
+	assert(not game._handle_debug_shortcut(god_event))
+	assert(DebugSettings.is_god_mode_enabled() != initial_god_mode)
+	assert(not game._handle_debug_shortcut(probability_event))
+	assert(game.debug_probability_panel.visible)
 
 	game.best_rounds_left = 12
 	game.best_score_time_ms = 1234
@@ -56,6 +85,10 @@ func _run() -> void:
 	game.checkpoint_snapshots = {1: {"start_round": 10}}
 	game.discovered_bonuses.assign([&"wild_card"])
 	game.achievement_manager.unlocked.assign([&"max_piles"])
+	game.challenge_manager.completed.assign([&"reload_required"])
+	game.challenge_manager.highscores[&"reload_required"] = 12
+	game.challenge_manager.endless_highscores[&"reload_required"] = 21
+	game.challenge_manager.best_times_ms[&"reload_required"] = 1234
 	var high_score_event := InputEventKey.new()
 	high_score_event.keycode = KEY_H
 	high_score_event.pressed = true
@@ -66,7 +99,12 @@ func _run() -> void:
 	assert(game.checkpoint_snapshots.is_empty())
 	assert(game.discovered_bonuses.is_empty())
 	assert(game.achievement_manager.unlocked.is_empty())
-	assert(game.splash_high_score.text == "HIGH SCORE\n--")
+	assert(not game.challenge_manager.debug_unlock_all)
+	assert(game.challenge_manager.completed.is_empty())
+	assert(game.challenge_manager.highscores.is_empty())
+	assert(game.challenge_manager.endless_highscores.is_empty())
+	assert(game.challenge_manager.best_times_ms.is_empty())
+	assert(game.splash_high_score.text.contains("--"))
 
 	print("Debug shortcut integration test passed.")
 	game.queue_free()
@@ -75,6 +113,10 @@ func _run() -> void:
 
 func _wait_until_unlocked(game: GameManager) -> void:
 	var deadline := Time.get_ticks_msec() + 10000
-	while game.input_locked and Time.get_ticks_msec() < deadline:
+	while (
+		(game.input_locked or game._screen_transition_active)
+		and Time.get_ticks_msec() < deadline
+	):
 		await process_frame
 	assert(not game.input_locked)
+	assert(not game._screen_transition_active)

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ColorPaletteData" format=3]
+
+[ext_resource type="Resource" path="res://resources/data/achievements/21_five_different_bonuses.tres" id="1_6qqu3"]
+[ext_resource type="Script" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_h7am2"]
+
+[resource]
+script = ExtResource("2_h7am2")
+id = &"fairy_garden"
+display_name = "FAIRY GARDEN"
+colors = Array[Color]([Color(0.5882353, 0.8235294, 0.5372549, 1), Color(0.6627451, 0.9137255, 0.60784316, 1), Color(0.73333335, 0.9372549, 0.6627451, 1), Color(0.8039216, 0.9607843, 0.7176471, 1), Color(0.85882354, 0.99215686, 0.84705883, 1), Color(1, 0.7921569, 0.9137255, 1), Color(1, 0.65882355, 0.8509804, 1), Color(1, 0.52156866, 0.78431374, 1), Color(1, 0.48235294, 0.76862746, 1), Color(1, 0.4392157, 0.7490196, 1)])
+required_achievement = ExtResource("1_6qqu3")

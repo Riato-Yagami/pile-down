@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ColorPaletteData" format=3]
+
+[ext_resource type="Resource" path="res://resources/data/achievements/22_double_down_deja_vu_combo.tres" id="1_onwe5"]
+[ext_resource type="Script" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_um6md"]
+
+[resource]
+script = ExtResource("2_um6md")
+id = &"firecracker"
+display_name = "FIRECRACKER"
+colors = Array[Color]([Color(0.6666667, 0, 0, 1), Color(0.73333335, 0, 0, 1), Color(0.8039216, 0, 0, 1), Color(0.87058824, 0.08627451, 0.08627451, 1), Color(0.9372549, 0.16862746, 0.16862746, 1), Color(0.9254902, 0.2509804, 0.2509804, 1), Color(0.9137255, 0.33333334, 0.33333334, 1), Color(0.8980392, 0.41960785, 0.41960785, 1), Color(0.8862745, 0.5019608, 0.5019608, 1), Color(0.91764706, 0.65882355, 0.65882355, 1)])
+required_achievement = ExtResource("1_onwe5")

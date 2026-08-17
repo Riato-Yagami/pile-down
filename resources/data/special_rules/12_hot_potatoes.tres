@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="SpecialRuleData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/special_rules/SpecialRuleData.gd" id="1_i7f5o"]
+
+[resource]
+script = ExtResource("1_i7f5o")
+title = "HOT POTATOES"
+subtitle = "Keep it moving."
+description = "Held cards return to the hand when drag time runs out."
+id = &"hot_potatoes"

@@ -1,0 +1,8 @@
+[gd_resource type="CanvasTexture" format=3 uid="uid://ttjqywqs10sf"]
+
+[ext_resource type="Texture2D" uid="uid://7c20ggy052o0" path="res://resources/sprites/hand/conveyer.png" id="1_diffuse"]
+[ext_resource type="Texture2D" uid="uid://d2bu0xbpj5mdq" path="res://resources/normals/hand/hand-background.png" id="2_normal"]
+
+[resource]
+diffuse_texture = ExtResource("1_diffuse")
+normal_texture = ExtResource("2_normal")

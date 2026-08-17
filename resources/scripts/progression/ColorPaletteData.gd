@@ -1,7 +1,6 @@
 class_name ColorPaletteData
-extends Resource
+extends Data
 
-@export var id: StringName
 @export var display_name: String
 @export var colors: Array[Color] = []
 @export var default_unlocked := false

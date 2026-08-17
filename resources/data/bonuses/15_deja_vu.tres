@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BonusData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/bonuses/BonusData.gd" id="1_fudpr"]
+
+[resource]
+script = ExtResource("1_fudpr")
+title = "DEJA VU"
+description = "After a valid play, automatically plays up to one matching card per level on other compatible piles."
+category = 1
+rarity = 1
+max_level = 3
+weight = 0.55
+minimum_round = 1
+id = &"deja_vu"

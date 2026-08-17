@@ -40,6 +40,18 @@ func stop_countdown() -> void:
 	running = false
 
 
+func resume_countdown() -> void:
+	if time_left > 0.0:
+		running = true
+		time_updated.emit(time_left)
+
+
+func add_time(seconds: float) -> void:
+	time_left = maxf(time_left + seconds, 0.0)
+	duration = maxf(duration, time_left)
+	time_updated.emit(time_left)
+
+
 func ratio() -> float:
 	return time_left / duration if duration > 0.0 else 0.0
 

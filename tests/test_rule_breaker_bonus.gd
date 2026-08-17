@@ -7,7 +7,7 @@ func _init() -> void:
 
 func _run() -> void:
 	var announcement := (
-		load("res://resources/scenes/SpecialRuleAnnouncement.tscn").instantiate()
+		load("res://resources/scenes/special_rules/SpecialRuleAnnouncement.tscn").instantiate()
 		as SpecialRuleAnnouncement
 	)
 	root.add_child(announcement)
