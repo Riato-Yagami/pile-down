@@ -34,6 +34,48 @@ au round atteint, pas celui de la défaite sur ce round. Le score est sauvegard�
 dans `user://pile_down.cfg` et affiché sur l'écran d'accueil. Le timer de chaque
 tour n'affiche que des secondes entières.
 
+Chaque nouvelle run reçoit un seed 64 bits. Pour une run lancée depuis un seed
+saisi, le menu Pause affiche sa forme partageable et permet de la copier. Le
+seed d'une run aléatoire reste masqué pendant la partie et apparaît seulement
+sur l'écran de victoire ou de défaite. La page `CHALLENGES` accepte aussi un
+entier ou un texte dans
+`PLAY A SEED`, dans une page séparée accessible avec l'icône `seeds.png` ; seuls
+les challenges, bonus et règles spéciales déjà déverrouillés y sont proposés.
+Chaque bonus sélectionné peut démarrer à un niveau déjà atteint dans la
+progression, sans pouvoir dépasser le meilleur niveau enregistré. Bonus et
+règles utilisent chacun un menu multi-sélection unique ; un seul niveau peut
+être coché à la fois pour un même bonus. Les niveaux disponibles restent sur
+la ligne du bonus et les entrées se répartissent en plusieurs colonnes lorsque
+la largeur le permet. Pour une run lancée depuis
+cette page, `REPLAY`, `RESTART` et le passage en Endless réutilisent le seed
+saisi. Les runs aléatoires continuent de recevoir un nouveau seed lors d'un
+replay ordinaire. Les records conservent le seed qui les a produits dans
+`user://pile_down.cfg`.
+L'affichage partageable utilise la scène commune
+`resources/scenes/ui/SeedCopyDisplay.tscn` : l'icône Seeds remplace le libellé,
+la valeur et l'icône Copy se surlignent ensemble, et un clic sur l'ensemble la
+copie lorsque le presse-papier est disponible.
+Au repos, le nombre de caractères du seed affichés est configurable sur
+`SeedCopyDisplay` avec `collapsed_character_count` (cinq par défaut) ; le survol
+ou le focus révèle sa valeur complète avec une courte animation et maintient
+l'icône Copy juste à sa suite, sans modifier la valeur copiée.
+La page Seeds permet également de présélectionner les bonus découverts et les
+règles spéciales déjà battues. Ces choix utilisent les contrôles pixel-art
+bleus, sont conservés par `REPLAY`/`RESTART` et ne permettent jamais de
+contourner un verrou de progression ou une restriction de challenge.
+La scène `ChallengeSelection.tscn` expose dans l'inspecteur `Show Editor
+Preview`, `Editor Preview Page` et `Preview All Unlocked`. Ces propriétés
+permettent de modifier directement les pages Challenges et Seeds dans
+l'éditeur avec des données de démonstration, sans lire ni modifier la sauvegarde.
+
+Les tirages de difficulté, mains, bonus, règles spéciales, mouvements et effets
+cosmétiques utilisent des streams indépendants dérivés du seed de la run. Une
+variation visuelle ne peut donc pas déplacer les prochains tirages de gameplay.
+Tous les quatre rounds, une section sans véritable erreur depuis le précédent
+choix affiche brièvement `FLAWLESS!` et propose trois bonus au lieu de deux ; le
+joueur n'en choisit toujours qu'un. Une erreur absorbée par `SAFETY NET` casse
+également cette série, contrairement aux retours de cartes non punitifs.
+
 Après chaque victoire, la difficulté augmente aléatoirement : nouvelle pile
 (55 %), main agrandie (20 %), valeur de départ augmentée (20 %) ou temps réduit
 (5 %). Une option arrivée à sa limite est retirée du tirage.
@@ -484,6 +526,27 @@ icônes sans panneau du dossier `resources/sprites/ui/icons/` (`stats.png`,
 `trophies.png`, `bonuses.png`, `rules.png` et `fonts.png`) dans la
 navigation. Tous les boutons fonctionnent à la souris, au clavier et au
 tactile ; la touche `Escape` ou le bouton illustré `escape.png` ferme le menu.
+Sur toutes les pages sauf `HIGHSCORES`, le filtre de verrouillage est visible à
+côté du titre. Chaque clic sur son unique cadenas parcourt `BOTH`, `LOCKED`,
+puis `UNLOCKED` : `BOTH` montre le cadenas fermé normal, `LOCKED` l'assombrit
+et enfonce son anse, et `UNLOCKED` retourne l'anse autour de son montant gauche.
+Le cadenas conserve sa couleur claire dans les trois modes et son survol
+l'éclaircit davantage, sans afficher de texte ou de tooltip. Le même filtre est
+disponible dans la sélection des challenges.
+Les deux menus instancient la scène partagée
+`resources/scenes/ui/ProgressionLockFilter.tscn`. Son sélecteur
+`Editor Preview Mode` prévisualise les trois états dans l'éditeur ; le nœud
+`HandleFlipAnchor` définit visuellement le pivot du retournement de l'anse et
+peut être déplacé pour ajuster l'ouverture aux deux instances simultanément.
+Le nœud `HoverRegion` de cette scène définit la zone interactive commune aux
+différentes poses du cadenas sans élargir son espace dans les conteneurs.
+La propriété `Text Offset` du cadenas déplace tout le visuel et sa zone
+interactive par rapport au titre voisin. La sélection des challenges garde un
+spacer après le cadenas afin que le bouton retour reste aligné à droite.
+Dans Progression, un emplacement de hauteur fixe reste réservé au cadenas sur
+toutes les pages : le titre et le contenu ne bougent donc pas quand il est
+absent. Son passage entre `HIGHSCORES` et les autres pages utilise un court
+fondu avec réduction/agrandissement, sans modifier la taille du menu.
 Les pastilles de ces boutons reprennent le même placement visuel que celle du
 bouton de progression principal, après compensation du centrage de l'icône
 23×25 dans les boutons 30×34 du panneau. L'aperçu éditeur simule uniquement
@@ -516,11 +579,11 @@ dans deux rangées verticales possédant chacune son propre défilement. Elle
 permet de sélectionner séparément la police et la palette ; la palette choisie
 est sauvegardée dans `settings/selected_palette`, prévisualisée sur neuf tuiles
 et appliquée aux cartes, aux piles et aux jokers.
-Le sélecteur `LOCKED / BOTH / UNLOCKED` des pages de progression est
-temporairement masqué et les listes restent sur `BOTH`. Son script, ses sprites,
-son positionnement et sa logique de filtrage sont conservés pour permettre sa
-réactivation ultérieure en passant `SHOW_LOCK_FILTER` à `true` dans
-`ProgressionMenu.gd`.
+Le sélecteur `LOCKED / BOTH / UNLOCKED` filtre immédiatement la liste de la page
+courante et revient sur `BOTH` à l'ouverture du menu.
+Les changements de page des menus Progression et Options utilisent un court
+glissement directionnel avec fondu ; les pages suivantes arrivent de la droite
+et les pages précédentes de la gauche.
 La mise en page reste contenue dans la fenêtre logique minimale de 256×320 et
 les listes longues défilent dans leur zone dédiée.
 Les boutons illustrés utilisent tous `TextureHighlightButton.gd` et le shader
@@ -608,11 +671,20 @@ règles rencontrées et achievements obtenus pendant la partie sans titre
 supplémentaire. Les checkpoints, bonus, règles et achievements sont précédés
 de leurs icônes respectives (sauvegarde, bonus, règle et trophée) ;
 plusieurs éléments d'une même catégorie sont séparés par `+`. Le récapitulatif
-préfixe chaque ligne par `+`, sans libellé `NEW`. Il est placé 6 pixels sous la
-popup dans le même conteneur vertical : l'ensemble se recentre vers le haut
-lorsque des lignes sont ajoutées afin de rester dans l'écran. Le titre
-`HIGHSCORE` appartient également à ce conteneur et conserve un écart de 6 pixels
-au-dessus de la popup.
+préfixe chaque ligne par `+`, sans libellé `NEW`. Il est placé sous la popup et
+le titre `HIGHSCORE` au-dessus. La position du
+panneau tient compte de la hauteur réelle de ces deux blocs pour centrer leur
+ensemble, et sa hauteur minimale de 230 pixels laisse les marges nécessaires :
+le titre et le récapitulatif restent attachés à la popup sans rejoindre les
+bords supérieur et inférieur.
+L'écran est défini par la scène partagée `resources/scenes/ui/EndScreen.tscn`.
+Sa propriété `Layout > Result Gap` règle l'espace commun au-dessus et sous la
+popup. À zéro, les trois éléments du même conteneur se touchent. Les options
+`Editor Preview` permettent d'afficher ou masquer le highscore et les nouvelles
+progressions directement dans l'éditeur.
+La compensation des marges visuelles internes de la police et de la texture est
+appliquée par la scène elle-même : aucune valeur négative n'est nécessaire et
+la prévisualisation utilise exactement le même calcul que l'instance du jeu.
 Les catégories sans nouveauté sont omises.
 Quand tous les rounds d'un mode fini sont terminés, l'écran affiche `YOU WIN !`
 pour les runs Classic, Checkpoint et Challenge non-Endless ; il n'affiche jamais

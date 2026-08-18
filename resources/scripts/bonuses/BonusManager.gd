@@ -33,8 +33,11 @@ var disabled_bonus_ids: Array[StringName] = []
 
 
 func _ready() -> void:
-	rng.randomize()
 	active_description.visible = false
+
+
+func set_run_rng(stream: RandomNumberGenerator) -> void:
+	rng = stream
 
 
 func begin_run() -> void:
@@ -89,11 +92,15 @@ func begin_round() -> void:
 	clean_slate_uses_left = Difficulty.CLEAN_SLATE_USES[clean_level]
 
 
-func offer_if_due(completed_round_number: int) -> bool:
+func offer_if_due(
+	completed_round_number: int,
+	choice_count := Difficulty.BONUS_CHOICE_COUNT,
+	flawless := false
+) -> bool:
 	completed_rounds = completed_round_number
 	if completed_round_number % Difficulty.BONUS_INTERVAL != 0:
 		return false
-	var choices := generate_choices(completed_round_number + 1)
+	var choices := generate_choices(completed_round_number + 1, choice_count)
 	if choices.size() < Difficulty.MIN_BONUS_CHOICES_TO_OFFER:
 		return false
 	var levels: Array[int] = []
@@ -101,7 +108,7 @@ func offer_if_due(completed_round_number: int) -> bool:
 		levels.append(level(choice.id) + 1)
 	_emit_bonuses_seen(choices)
 	active_bar.visible = false
-	var chosen_index := await selection.present(choices, levels)
+	var chosen_index := await selection.present(choices, levels, flawless)
 	if chosen_index == BonusSelection.SKIPPED_INDEX:
 		active_bar.visible = not active.is_empty()
 		return true
@@ -113,8 +120,12 @@ func offer_if_due(completed_round_number: int) -> bool:
 	return true
 
 
-func offer_bonus_choice(round_number: int, _choice_index := 0) -> bool:
-	var choices := generate_choices(round_number)
+func offer_bonus_choice(
+	round_number: int,
+	_choice_index := 0,
+	choice_count := Difficulty.BONUS_CHOICE_COUNT
+) -> bool:
+	var choices := generate_choices(round_number, choice_count)
 	if choices.size() < Difficulty.MIN_BONUS_CHOICES_TO_OFFER:
 		return false
 	var levels: Array[int] = []
@@ -141,7 +152,10 @@ func _emit_bonuses_seen(choices: Array[BonusData]) -> void:
 	bonuses_seen.emit(ids)
 
 
-func generate_choices(round_number: int) -> Array[BonusData]:
+func generate_choices(
+	round_number: int,
+	choice_count := Difficulty.BONUS_CHOICE_COUNT
+) -> Array[BonusData]:
 	var pool: Array[BonusData] = []
 	for data in definitions:
 		if disabled_bonus_ids.has(data.id):
@@ -159,7 +173,7 @@ func generate_choices(round_number: int) -> Array[BonusData]:
 		return pool
 	var target_count := mini(
 		maxi(
-			Difficulty.BONUS_CHOICE_COUNT,
+			choice_count,
 			Difficulty.MIN_BONUS_CHOICES_TO_OFFER
 		),
 		pool.size()

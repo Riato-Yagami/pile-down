@@ -18,6 +18,7 @@ func _run() -> void:
 	assert(not game.quit_popup.visible)
 	game._open_quit_popup()
 	assert(game.quit_popup.visible)
+	assert(not game.pause_seed_display.visible)
 	var quit_layer := game.quit_popup.get_parent() as CanvasLayer
 	var pixelation_layer := game.get_node("PresentationLayers/PixelationLayer") as CanvasLayer
 	assert(quit_layer != null)

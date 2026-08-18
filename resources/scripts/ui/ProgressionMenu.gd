@@ -43,6 +43,9 @@ const ProgressionScrollVisualScript := preload(
 const ProgressionPreviewBuilderScript := preload(
 	"res://resources/scripts/ui/progression/ProgressionPreviewBuilder.gd"
 )
+const SubmenuPageAnimatorScript := preload(
+	"res://resources/scripts/ui/SubmenuPageAnimator.gd"
+)
 const PROGRESS_BAR_SHADER := """
 shader_type canvas_item;
 uniform float progress : hint_range(0.0, 1.0) = 1.0;
@@ -67,7 +70,7 @@ const LOCKED_ENTRY_OPACITY := 0.55
 # so its notification needs the rounded (3.5, 4.5) centering compensation.
 const PANEL_NOTIFICATION_RECT := Rect2(0.0, 21.0, 10.0, 11.0)
 # Kept for a possible later reactivation of the LOCKED/BOTH/UNLOCKED control.
-const SHOW_LOCK_FILTER := false
+const SHOW_LOCK_FILTER := true
 const GOLD_STATUS_SHADER := """
 shader_type canvas_item;
 uniform vec4 gold_color : source_color = vec4(0.851, 0.647, 0.078, 1.0);
@@ -143,6 +146,10 @@ var copy_notification_placement_action: Callable = _copy_notification_placement
 		_refresh_editor_preview()
 @export_category("Font Preview")
 @export var font_preview_tile_material: ShaderMaterial
+@export_category("Page Transition")
+@export_range(0.05, 0.5, 0.01, "suffix:s") var page_transition_duration := 0.18
+@export_range(4.0, 64.0, 1.0, "suffix:px") var page_transition_distance := 18.0
+@export_range(0.05, 0.5, 0.01, "suffix:s") var lock_transition_duration := 0.16
 
 @onready var title_label: Label = %PageTitle
 @onready var lock_filter: ProgressionLockFilter = %LockFilter
@@ -155,6 +162,7 @@ var copy_notification_placement_action: Callable = _copy_notification_placement
 @onready var cosmetic_lists: VBoxContainer = %CosmeticLists
 @onready var fonts_content: VBoxContainer = %FontsContent
 @onready var palettes_content: VBoxContainer = %PalettesContent
+@onready var page_panel: VBoxContainer = $Margin/Layout/Body/Page
 @onready var font_catalog: ProgressionFontCatalog = %FontCatalog
 @onready var achievement_catalog: ProgressionAchievementCatalog = %AchievementCatalog
 @onready var page_buttons: Array[TextureButton] = [
@@ -168,6 +176,9 @@ var copy_notification_placement_action: Callable = _copy_notification_placement
 var _snapshot: Dictionary = {}
 var _page := Page.HIGHSCORES
 var _page_badges: Array[TextureRect] = []
+var _page_animator := SubmenuPageAnimatorScript.new()
+var _lock_visibility_tween: Tween
+var _lock_visibility_generation := 0
 
 
 func get_available_fonts() -> Array[FontData]:
@@ -191,6 +202,8 @@ func get_default_palette() -> ColorPaletteData:
 
 
 func _ready() -> void:
+	_page_animator.duration = page_transition_duration
+	_page_animator.travel_distance = page_transition_distance
 	if not font_catalog.editor_preview_changed.is_connected(_refresh_editor_preview):
 		font_catalog.editor_preview_changed.connect(_refresh_editor_preview)
 	_style_vertical_scrollbars()
@@ -281,7 +294,7 @@ func _refresh_page_badges(unread_pages: Array) -> void:
 
 
 func _on_page_button_pressed(page: int) -> void:
-	_show_page(page)
+	_show_page(page, true)
 	if page < _page_badges.size():
 		_page_badges[page].visible = false
 	page_viewed.emit(page)
@@ -294,9 +307,13 @@ func close() -> void:
 	closed.emit()
 
 
-func _show_page(page: int) -> void:
+func _show_page(page: int, animate := false) -> void:
+	var previous_page := _page
 	_page = clampi(page, Page.HIGHSCORES, Page.FONTS)
-	lock_filter.visible = SHOW_LOCK_FILTER and _page != Page.HIGHSCORES
+	_set_lock_filter_visible(
+		SHOW_LOCK_FILTER and _page != Page.HIGHSCORES,
+		animate
+	)
 	font_preview_scroll.visible = _page == Page.FONTS
 	main_scroll.visible = _page != Page.FONTS
 	cosmetic_lists.visible = _page == Page.FONTS
@@ -321,6 +338,57 @@ func _show_page(page: int) -> void:
 		Page.FONTS:
 			title_label.text = "FONTS"
 			_populate_fonts()
+	if animate and previous_page != _page:
+		_page_animator.play(page_panel, signi(_page - previous_page))
+
+
+func _set_lock_filter_visible(should_show: bool, animate: bool) -> void:
+	_lock_visibility_generation += 1
+	var generation := _lock_visibility_generation
+	if _lock_visibility_tween != null and _lock_visibility_tween.is_valid():
+		_lock_visibility_tween.kill()
+	_lock_visibility_tween = null
+	lock_filter.pivot_offset = lock_filter.size * 0.5
+	if not animate or lock_transition_duration <= 0.0:
+		lock_filter.visible = should_show
+		lock_filter.modulate.a = 1.0
+		lock_filter.scale = Vector2.ONE
+		return
+	if should_show:
+		if lock_filter.visible and is_equal_approx(lock_filter.modulate.a, 1.0):
+			return
+		lock_filter.visible = true
+		lock_filter.modulate.a = 0.0
+		lock_filter.scale = Vector2(0.8, 0.8)
+	else:
+		if not lock_filter.visible:
+			return
+		lock_filter.modulate.a = 1.0
+		lock_filter.scale = Vector2.ONE
+	_lock_visibility_tween = create_tween().set_parallel(true)
+	_lock_visibility_tween.set_trans(Tween.TRANS_QUAD).set_ease(
+		Tween.EASE_OUT if should_show else Tween.EASE_IN
+	)
+	_lock_visibility_tween.tween_property(
+		lock_filter, "modulate:a", 1.0 if should_show else 0.0,
+		lock_transition_duration
+	)
+	_lock_visibility_tween.tween_property(
+		lock_filter, "scale", Vector2.ONE if should_show else Vector2(0.8, 0.8),
+		lock_transition_duration
+	)
+	_lock_visibility_tween.finished.connect(
+		_finish_lock_visibility.bind(should_show, generation)
+	)
+
+
+func _finish_lock_visibility(should_show: bool, generation: int) -> void:
+	if generation != _lock_visibility_generation:
+		return
+	lock_filter.visible = should_show
+	lock_filter.modulate.a = 1.0
+	lock_filter.scale = Vector2.ONE
+	_lock_visibility_tween = null
 
 
 func _clear_content() -> void:

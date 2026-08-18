@@ -172,31 +172,35 @@ func _run() -> void:
 	assert(highscores_button.material == null)
 	assert(menu.get_node("%BackButton") is TextureHighlightButton)
 	assert(not menu.lock_filter.visible)
-	assert(menu.lock_filter.size == Vector2(36.0, 24.0))
-	assert(menu.lock_filter.bar.size == Vector2(36.0, 24.0))
-	assert(menu.lock_filter.bar.stretch_mode == TextureRect.STRETCH_KEEP_CENTERED)
+	var lock_main := menu.lock_filter.get_node("IconOffset/LockMain") as TextureRect
+	var lock_handle := menu.lock_filter.get_node(
+		"IconOffset/HandleFlipAnchor/LockHandle"
+	) as TextureRect
+	var flip_anchor := menu.lock_filter.get_node(
+		"IconOffset/HandleFlipAnchor"
+	) as Node2D
+	assert(menu.lock_filter.size == Vector2(21.0, 28.0))
+	assert(lock_main.texture.resource_path.ends_with("main.png"))
+	assert(lock_handle.texture.resource_path.ends_with("handle.png"))
 	assert(menu.lock_filter.mode == ProgressionMenu.ProgressFilter.BOTH)
-	assert(
-		(menu.lock_filter.bar.material.get_shader_parameter("highlight_color") as Color)
-		.is_equal_approx(menu.SELECTED_COLOR)
-	)
-	assert(
-		(menu.lock_filter.selector.material.get_shader_parameter("highlight_color") as Color)
-		.is_equal_approx(menu.SELECTED_COLOR)
-	)
-	assert(is_equal_approx(menu.lock_filter.selector.position.x, 15.0))
-	assert(is_equal_approx(menu.lock_filter.selector.position.y, 16.0))
-	menu.lock_filter.selector_right_x = 28.0
+	assert(lock_main.modulate == Color.WHITE)
+	assert(lock_handle.modulate == Color.WHITE)
+	assert(menu.lock_filter.tooltip_text.is_empty())
+	menu.lock_filter.animation_duration = 0.0
 	menu.lock_filter.set_mode(ProgressionLockFilter.UNLOCKED)
-	assert(is_equal_approx(menu.lock_filter.selector.position.x, 28.0))
+	assert(lock_main.modulate == Color.WHITE)
+	assert(lock_handle.modulate == Color.WHITE)
+	assert(flip_anchor.scale.x < 0.0)
 	menu.lock_filter.set_mode(ProgressionLockFilter.LOCKED)
-	assert(is_equal_approx(menu.lock_filter.selector.position.x, 2.0))
-	menu.lock_filter.selector_right_x = 30.0
+	assert(lock_main.modulate == Color.WHITE)
+	assert(lock_handle.modulate == Color.WHITE)
+	assert(flip_anchor.scale == Vector2.ONE)
+	assert(lock_handle.position.y > 0.0)
 	menu.lock_filter.set_mode(ProgressionLockFilter.BOTH)
 
 	menu._show_page(ProgressionMenu.Page.BONUSES)
-	assert(not menu.lock_filter.visible)
-	assert(not menu.SHOW_LOCK_FILTER)
+	assert(menu.lock_filter.visible)
+	assert(menu.SHOW_LOCK_FILTER)
 	assert(menu.title_label.text == "BONUSES")
 	var global_title := menu.get_node("Margin/Layout/Header/Title") as Label
 	assert(menu.lock_filter.get_parent() == global_title.get_parent())
@@ -238,21 +242,19 @@ func _run() -> void:
 	assert((unknown_entry.get_child(1) as Label).text == "???")
 	menu.lock_filter.set_mode(ProgressionMenu.ProgressFilter.UNLOCKED)
 	menu._on_filter_selected(ProgressionMenu.ProgressFilter.UNLOCKED)
-	assert(is_equal_approx(menu.lock_filter.selector.position.x, 30.0))
+	assert(flip_anchor.scale.x < 0.0)
 	assert(menu.content.get_child_count() == 1)
 	assert((menu.content.get_child(0).get_child(0).get_child(1) as Label).text == "OPEN BOOK")
 	menu.lock_filter.set_mode(ProgressionMenu.ProgressFilter.LOCKED)
 	menu._on_filter_selected(ProgressionMenu.ProgressFilter.LOCKED)
-	assert(is_zero_approx(menu.lock_filter.selector.position.x))
+	assert(flip_anchor.scale == Vector2.ONE)
 	assert(menu.content.get_child_count() == 1)
 	assert((menu.content.get_child(0).get_child(0).get_child(1) as Label).text == "REDRAW")
 	menu.lock_filter.set_mode(ProgressionMenu.ProgressFilter.BOTH)
 	menu._on_filter_selected(ProgressionMenu.ProgressFilter.BOTH)
 	menu.lock_filter._set_selector_highlight(true)
-	assert(is_equal_approx(
-		float(menu.lock_filter.selector.material.get_shader_parameter("highlighted")),
-		1.0
-	))
+	assert(lock_main.modulate.r > 1.0)
+	assert(lock_handle.modulate.r > 1.0)
 	menu._show_page(ProgressionMenu.Page.SPECIAL_RULES)
 	var unbeaten_rule := menu.content.get_child(0) as VBoxContainer
 	var unbeaten_heading := unbeaten_rule.get_child(0) as HBoxContainer

@@ -31,9 +31,21 @@ func _ready() -> void:
 	skip_button.pressed.connect(_skip)
 
 
-func present(offered_bonuses: Array[BonusData], levels: Array[int]) -> int:
+func present(
+	offered_bonuses: Array[BonusData],
+	levels: Array[int],
+	flawless := false
+) -> int:
 	_presentation_generation += 1
 	_presentation_mode = 1
+	if flawless:
+		self.choices.visible = false
+		rule_choices.visible = false
+		skip_button.visible = false
+		visible = true
+		modulate.a = 1.0
+		scale = Vector2.ONE
+		await _show_flawless_feedback()
 	self.choices.visible = true
 	rule_choices.visible = false
 	skip_button.visible = true
@@ -52,6 +64,21 @@ func present(offered_bonuses: Array[BonusData], levels: Array[int]) -> int:
 	_animation_tween.tween_property(self, "modulate:a", 1.0, entrance_duration)
 	_animation_tween.tween_property(self, "scale", Vector2.ONE, entrance_duration)
 	return await bonus_chosen
+
+
+func _show_flawless_feedback() -> void:
+	var feedback := Label.new()
+	feedback.text = "FLAWLESS!\n+1 BONUS CHOICE"
+	feedback.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	feedback.add_theme_font_size_override("font_size", 18)
+	add_child(feedback)
+	feedback.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	feedback.position -= feedback.size * 0.5
+	var tween := create_tween()
+	tween.tween_interval(0.28)
+	tween.tween_property(feedback, "modulate:a", 0.0, 0.12)
+	await tween.finished
+	feedback.queue_free()
 
 
 func _ensure_bonus_button_count(count: int) -> void:

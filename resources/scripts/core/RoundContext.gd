@@ -16,4 +16,4 @@ func _init(current_round: int, round_modifiers: RoundModifiers) -> void:
 	round_number = current_round
 	modifiers = round_modifiers
 	rng = RandomNumberGenerator.new()
-	rng.randomize()
+	rng.seed = 0

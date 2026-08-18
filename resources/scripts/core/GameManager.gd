@@ -13,6 +13,17 @@ enum GameMode {
 	CHALLENGE,
 }
 
+enum DamageType {
+	WRONG_PLACEMENT,
+	TIMER_TIMEOUT,
+	SUDDEN_DEATH,
+	HOT_POTATO_RETURN,
+	LAVA_RETURN,
+	EMPTY_DROP,
+	CONVEYOR_MISSED_CARD,
+	RELOAD,
+}
+
 const PILE_SCENE := preload("res://resources/scenes/gameplay/Pile.tscn")
 # A replay has no menu transition to let the player settle before memorizing.
 # Keep the opening pile values visible long enough to establish a fresh run.
@@ -34,8 +45,12 @@ const DifficultyProgressionScript := preload(
 const ProgressionSnapshotBuilderScript := preload(
 	"res://resources/scripts/progression/ProgressionSnapshotBuilder.gd"
 )
+const RunRNGScript := preload("res://resources/scripts/core/RunRNG.gd")
 const SubmenuSwipeControllerScript := preload(
 	"res://resources/scripts/ui/SubmenuSwipeController.gd"
+)
+const SubmenuPageAnimatorScript := preload(
+	"res://resources/scripts/ui/SubmenuPageAnimator.gd"
 )
 const GameOptionsControllerScript := preload(
 	"res://resources/scripts/settings/GameOptionsController.gd"
@@ -107,16 +122,21 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var quit_continue_button: Button = %QuitContinueButton
 @onready var quit_restart_button: Button = %QuitRestartButton
 @onready var quit_run_button: Button = %QuitRunButton
+@onready var pause_seed_margin: MarginContainer = $PresentationLayers/QuitPopupLayer/QuitPopup/Center/Panel/Content/PauseSeedMargin
+@onready var pause_seed_display: SeedCopyDisplay = $PresentationLayers/QuitPopupLayer/QuitPopup/Center/Panel/Content/PauseSeedMargin/PauseSeedDisplay
+@onready var quit_panel: NinePatchRect = $PresentationLayers/QuitPopupLayer/QuitPopup/Center/Panel
+@onready var quit_content: VBoxContainer = $PresentationLayers/QuitPopupLayer/QuitPopup/Center/Panel/Content
 @onready var overlay: Control = %Overlay
-@onready var overlay_title: RichTextLabel = %OverlayTitle
-@onready var overlay_details: RichTextLabel = %OverlayDetails
-@onready var overlay_button: Button = %OverlayButton
-@onready var overlay_endless_button: Button = %OverlayEndlessButton
-@onready var overlay_high_score: RichTextLabel = %OverlayHighScore
-@onready var overlay_unlocks: RichTextLabel = %OverlayUnlocks
-@onready var overlay_quit_button: Button = %OverlayQuitButton
+@onready var overlay_title: RichTextLabel = $Screens/Overlay/OverlayCenter/ResultStack/OverlayPanel/Content/OverlayTitle
+@onready var overlay_details: RichTextLabel = $Screens/Overlay/OverlayCenter/ResultStack/OverlayPanel/Content/OverlayDetails
+@onready var overlay_button: Button = $Screens/Overlay/OverlayCenter/ResultStack/OverlayPanel/Content/OverlayButtons/OverlayButton
+@onready var end_seed_display: SeedCopyDisplay = $Screens/Overlay/OverlayCenter/ResultStack/OverlayPanel/Content/EndSeedDisplay
+@onready var overlay_endless_button: Button = $Screens/Overlay/OverlayCenter/ResultStack/OverlayPanel/Content/OverlayButtons/OverlayEndlessButton
+@onready var overlay_high_score: RichTextLabel = $Screens/Overlay/OverlayCenter/ResultStack/OverlayHighScore
+@onready var overlay_unlocks: RichTextLabel = $Screens/Overlay/OverlayCenter/ResultStack/OverlayUnlocks
+@onready var overlay_quit_button: Button = $Screens/Overlay/OverlayCenter/ResultStack/OverlayPanel/Content/OverlayButtons/OverlayQuitButton
 @onready var overlay_scrim: ColorRect = $Screens/Overlay/Scrim
-@onready var overlay_panel: NinePatchRect = $Screens/Overlay/Center/ResultStack/Panel
+@onready var overlay_panel: NinePatchRect = $Screens/Overlay/OverlayCenter/ResultStack/OverlayPanel
 @onready var replay_transition_mask: ColorRect = %ReplayTransitionMask
 @onready var menu_transition_layer: CanvasLayer = %MenuTransitionLayer
 @onready var screens: Node = $Screens
@@ -221,6 +241,7 @@ var difficulty_droughts: Dictionary:
 var run_mistake_count := 0
 var run_lives_lost := 0
 var run_completed_rounds := 0
+var flawless_since_last_bonus := true
 var run_start_round := 1
 var started_from_checkpoint := false
 var unlocked_checkpoints: Array[int] = []
@@ -264,7 +285,22 @@ var maximum_mistakes := 3
 var selected_card: PlayingCard
 var piles: Array[MemoryPile] = []
 var input_locked := true
+var run_rng := RunRNGScript.new()
 var rng := RandomNumberGenerator.new()
+var hands_rng := RandomNumberGenerator.new()
+var cosmetic_rng := RandomNumberGenerator.new()
+var run_seed_value := 0
+var run_seed_label := ""
+var run_uses_requested_seed := false
+var run_seed_bonus_ids: Array[StringName] = []
+var run_seed_bonus_levels: Dictionary = {}
+var run_seed_rule_ids: Array[StringName] = []
+var classic_record_seed: Dictionary = {}
+var classic_no_mistake_record_seed: Dictionary = {}
+var endless_record_seed: Dictionary = {}
+var endless_no_mistake_record_seed: Dictionary = {}
+var checkpoint_record_seed: Dictionary = {}
+var checkpoint_no_mistake_record_seed: Dictionary = {}
 var hovered_pile: MemoryPile
 var drag_placeholder: Control
 var _hand_slot_placeholders: Dictionary = {}
@@ -276,6 +312,7 @@ var _clock_flash_tween: Tween
 var _menu_exit_tween: Tween
 var _screen_transition_active := false
 var _submenu_swipe_controller := SubmenuSwipeControllerScript.new()
+var _submenu_page_animator := SubmenuPageAnimatorScript.new()
 var _run_transition_generation := 0
 var _gameplay_generation := 0
 var _replay_iris_radius := 0.0
@@ -377,8 +414,11 @@ var achievement_popup_after_announcements_delay := 0.25
 
 
 func _ready() -> void:
-	rng.randomize()
+	_initialize_run_rng(RunRNGScript.generate_run_seed())
+	quit_content.move_child(pause_seed_margin, quit_content.get_child_count() - 1)
 	_submenu_swipe_controller.duration = submenu_swipe_duration
+	_submenu_page_animator.duration = 0.18
+	_submenu_page_animator.travel_distance = 18.0
 	add_child(achievement_manager)
 	add_child(challenge_manager)
 	add_child(font_manager)
@@ -428,14 +468,15 @@ func _ready() -> void:
 	progression_button.pressed.connect(_open_progression_menu)
 	challenge_button.pressed.connect(_open_challenge_selection)
 	challenge_selection.challenge_selected.connect(_start_challenge)
+	challenge_selection.seeded_run_requested.connect(_start_seeded_run)
 	challenge_selection.closed.connect(_on_challenge_selection_closed)
 	options_button.pressed.connect(_open_options_menu)
 	options_back_button.pressed.connect(_close_options_menu)
-	gameplay_options_button.pressed.connect(_show_options_page.bind(OPTION_GAMEPLAY))
-	sound_options_button.pressed.connect(_show_options_page.bind(OPTION_SOUND))
-	graphics_options_button.pressed.connect(_show_options_page.bind(OPTION_GRAPHICS))
-	save_options_button.pressed.connect(_show_options_page.bind(OPTION_SAVE))
-	links_options_button.pressed.connect(_show_options_page.bind(OPTION_LINKS))
+	gameplay_options_button.pressed.connect(_show_options_page.bind(OPTION_GAMEPLAY, true))
+	sound_options_button.pressed.connect(_show_options_page.bind(OPTION_SOUND, true))
+	graphics_options_button.pressed.connect(_show_options_page.bind(OPTION_GRAPHICS, true))
+	save_options_button.pressed.connect(_show_options_page.bind(OPTION_SAVE, true))
+	links_options_button.pressed.connect(_show_options_page.bind(OPTION_LINKS, true))
 	adaptive_resolution_button.pressed.connect(_toggle_adaptive_resolution)
 	dust_effects_button.pressed.connect(_toggle_dust_effects)
 	background_enabled_button.pressed.connect(_toggle_background)
@@ -1053,6 +1094,15 @@ func _reset_to_menu_state() -> void:
 func _open_quit_popup() -> void:
 	if splash.visible or overlay.visible or quit_popup.visible:
 		return
+	pause_seed_margin.visible = run_uses_requested_seed
+	quit_panel.custom_minimum_size = (
+		Vector2(252, 252) if run_uses_requested_seed else Vector2(180, 220)
+	)
+	if run_uses_requested_seed:
+		pause_seed_display.set_seed(run_seed_label)
+		pause_seed_display.set_copy_enabled(DisplayServer.has_feature(
+			DisplayServer.FEATURE_CLIPBOARD
+		))
 	quit_popup.visible = true
 	quit_continue_button.release_focus()
 	quit_restart_button.release_focus()
@@ -1092,14 +1142,31 @@ func _restart_current_mode() -> void:
 	_restart_pile_reveal_pending = true
 	_restart_hand_immediate_pending = true
 	special_rule_manager.suppress_next_announcement = true
+	var preserve_run_seed := run_uses_requested_seed
+	var replay_bonus_levels: Dictionary = {}
+	var replay_rule_ids: Array[StringName] = []
+	if preserve_run_seed:
+		replay_bonus_levels = run_seed_bonus_levels.duplicate()
+		replay_rule_ids.assign(run_seed_rule_ids)
 	if game_mode == GameMode.CHECKPOINT:
 		# A checkpoint replay is a fresh attempt: discard the old loadout and let
 		# the player make the checkpoint's bonus choices again.
-		start_from_checkpoint(current_checkpoint_id)
+		start_from_checkpoint(
+			current_checkpoint_id, {}, false,
+			run_seed_label if preserve_run_seed else ""
+		)
 	elif game_mode == GameMode.CHALLENGE:
-		start_game(false, current_challenge, challenge_endless)
+		start_game(
+			false, current_challenge, challenge_endless,
+			run_seed_label if preserve_run_seed else "",
+			replay_bonus_levels, replay_rule_ids
+		)
 	else:
-		start_game(game_mode == GameMode.ENDLESS)
+		start_game(
+			game_mode == GameMode.ENDLESS, null, false,
+			run_seed_label if preserve_run_seed else "",
+			replay_bonus_levels, replay_rule_ids
+		)
 	# Special-rule cleanup (notably pixelation) is asynchronous. Keep the iris
 	# shut until the replacement board exists instead of exposing stale effects.
 	var ready_deadline := Time.get_ticks_msec() + 3000
@@ -1210,7 +1277,8 @@ func _open_options_menu() -> void:
 			itch_link_button.grab_focus()
 
 
-func _show_options_page(page: int) -> void:
+func _show_options_page(page: int, animate := false) -> void:
+	var previous_page := _options_page
 	_options_page = clampi(page, OPTION_GAMEPLAY, OPTION_LINKS)
 	gameplay_options.visible = _options_page == OPTION_GAMEPLAY
 	sound_options.visible = _options_page == OPTION_SOUND
@@ -1243,6 +1311,11 @@ func _show_options_page(page: int) -> void:
 	links_options_button.modulate = (
 		OPTIONS_SELECTED_COLOR if _options_page == OPTION_LINKS else Color.WHITE
 	)
+	if animate and previous_page != _options_page:
+		_submenu_page_animator.play(
+			options_page_title.get_parent() as Control,
+			signi(_options_page - previous_page)
+		)
 
 
 func _open_external_link(url: String) -> void:
@@ -1628,12 +1701,75 @@ func _difficulty_probability_debug_text() -> String:
 	return difficulty_progression.probability_debug_text(_progression_round())
 
 
+func _initialize_run_rng(seed_value: int, seed_label := "") -> void:
+	run_rng.initialize(seed_value, seed_label)
+	run_seed_value = run_rng.seed_value
+	run_seed_label = run_rng.seed_label
+	rng = run_rng.get_stream(&"difficulty")
+	hands_rng = run_rng.get_stream(&"hands")
+	cosmetic_rng = run_rng.get_stream(&"cosmetic")
+	hand_manager.set_run_rng(hands_rng)
+	bonus_manager.set_run_rng(run_rng.get_stream(&"bonuses"))
+	special_rule_manager.set_run_rng(
+		run_rng.get_stream(&"special_rules"),
+		run_rng.get_stream(&"movement")
+	)
+
+
+func _current_seed_record() -> Dictionary:
+	return {"seed": run_seed_value, "seed_label": run_seed_label}
+
+
+func _shuffle_with_rng(values: Array, stream: RandomNumberGenerator) -> void:
+	for index in range(values.size() - 1, 0, -1):
+		var swap_index := stream.randi_range(0, index)
+		var temporary: Variant = values[index]
+		values[index] = values[swap_index]
+		values[swap_index] = temporary
+
+
+func _normalise_seed_bonus_levels(seed_bonuses: Variant) -> Dictionary:
+	var result := {}
+	if seed_bonuses is Dictionary:
+		for id_value in seed_bonuses:
+			var id := StringName(id_value)
+			var data := BonusRegistry.get_bonus(id)
+			if data != null:
+				result[id] = clampi(int(seed_bonuses[id_value]), 1, data.max_level)
+	elif seed_bonuses is Array:
+		# Compatibility with seed replays saved before selectable levels existed.
+		for id_value in seed_bonuses:
+			var id := StringName(id_value)
+			if BonusRegistry.get_bonus(id) != null:
+				result[id] = 1
+	return result
+
+
 func start_game(
 	endless_mode := false,
 	challenge_data: ChallengeData = null,
-	challenge_is_endless := false
+	challenge_is_endless := false,
+	requested_seed := "",
+	seed_bonuses: Variant = [],
+	seed_rule_ids: Array[StringName] = []
 ) -> void:
 	_gameplay_generation += 1
+	var effective_seed := requested_seed.strip_edges()
+	if effective_seed.is_empty() and Debug.ENABLED:
+		effective_seed = Debug.FORCE_RUN_SEED.strip_edges()
+	run_uses_requested_seed = not effective_seed.is_empty()
+	var seed_bonus_levels := _normalise_seed_bonus_levels(seed_bonuses)
+	run_seed_bonus_levels = seed_bonus_levels.duplicate()
+	run_seed_bonus_ids.clear()
+	for bonus_id in seed_bonus_levels:
+		run_seed_bonus_ids.append(StringName(bonus_id))
+	run_seed_rule_ids.assign(seed_rule_ids)
+	if effective_seed.is_empty():
+		_initialize_run_rng(RunRNGScript.generate_run_seed())
+	else:
+		_initialize_run_rng(
+			RunRNGScript.seed_string_to_int(effective_seed), effective_seed
+		)
 	var animate_menu_exit := splash.visible
 	back_button.visible = not animate_menu_exit
 	current_challenge = challenge_data
@@ -1652,6 +1788,12 @@ func start_game(
 	special_rule_manager.forced_rule_ids.assign(
 		current_challenge.forced_rules if current_challenge != null else []
 	)
+	for rule_id in seed_rule_ids:
+		if (
+			not special_rule_manager.disabled_rule_ids.has(rule_id)
+			and not special_rule_manager.forced_rule_ids.has(rule_id)
+		):
+			special_rule_manager.forced_rule_ids.append(rule_id)
 	special_rule_manager.force_rules_every_round = (
 		challenge_modifiers.force_special_rules_every_round
 	)
@@ -1685,6 +1827,7 @@ func start_game(
 	run_mistake_count = 0
 	run_lives_lost = 0
 	run_completed_rounds = 0
+	flawless_since_last_bonus = true
 	started_from_checkpoint = false
 	checkpoint_segment_damage_count = 0
 	newly_discovered_bonuses.clear()
@@ -1725,6 +1868,8 @@ func start_game(
 	quit_popup.visible = false
 	overlay_mode = ""
 	bonus_manager.begin_run()
+	if not seed_bonus_levels.is_empty():
+		bonus_manager.grant_starting_bonuses(seed_bonus_levels)
 	if current_challenge != null:
 		bonus_manager.grant_starting_bonuses(current_challenge.forced_bonuses)
 	if animate_menu_exit:
@@ -1904,7 +2049,7 @@ func start_round() -> void:
 	var open_book_count := bonus_manager.level(&"open_book")
 	if open_book_count > 0:
 		var open_book_candidates := piles.duplicate()
-		open_book_candidates.shuffle()
+		_shuffle_with_rng(open_book_candidates, run_rng.get_stream(&"bonuses"))
 		for index in mini(open_book_count, open_book_candidates.size()):
 			open_book_candidates[index].keep_face_up = true
 	_update_hud()
@@ -1936,7 +2081,7 @@ func start_round() -> void:
 			hand_container,
 			timer_ring,
 			lava_layer,
-			rng
+			run_rng.get_stream(&"movement")
 		)
 	for pile in piles:
 		if is_instance_valid(pile):
@@ -2099,8 +2244,8 @@ func _draw_wandering_hand() -> void:
 		var position_candidate := Vector2.ZERO
 		for attempt in 24:
 			position_candidate = Vector2(
-				rng.randi_range(38, 184),
-				rng.randi_range(58, 190)
+				run_rng.get_stream(&"movement").randi_range(38, 184),
+				run_rng.get_stream(&"movement").randi_range(58, 190)
 			)
 			var card_rect := Rect2(position_candidate, Vector2(34.0, 37.0))
 			if not occupied.any(func(rect: Rect2) -> bool: return rect.intersects(card_rect)):
@@ -2219,9 +2364,9 @@ func _spawn_conveyor_card() -> PlayingCard:
 	force_playable = force_playable or not useful_card_visible
 	var lucky := (
 		bonus_manager.lucky_hand_chance() > 0.0
-		and rng.randf() < bonus_manager.lucky_hand_chance()
+		and hands_rng.randf() < bonus_manager.lucky_hand_chance()
 	)
-	var value := rng.randi_range(
+	var value := hands_rng.randi_range(
 		1 if round_modifiers.stack_direction == RoundModifiers.StackDirection.UP else 0,
 		start_value if round_modifiers.stack_direction == RoundModifiers.StackDirection.UP else start_value - 1
 	)
@@ -2230,10 +2375,10 @@ func _spawn_conveyor_card() -> PlayingCard:
 		and not lucky
 		and round_modifiers.stack_direction == RoundModifiers.StackDirection.DOWN
 		and start_value < Difficulty.MAX_CARD_VALUE
-		and rng.randf() < Difficulty.CONVEYOR_HIGH_TILE_CHANCE
+		and hands_rng.randf() < Difficulty.CONVEYOR_HIGH_TILE_CHANCE
 	)
 	if spawn_high_tile:
-		value = rng.randi_range(start_value + 1, Difficulty.MAX_CARD_VALUE)
+		value = hands_rng.randi_range(start_value + 1, Difficulty.MAX_CARD_VALUE)
 	if lucky and _lucky_conveyor_queue.is_empty():
 		var lucky_value := hand_manager.get_most_advanced_value(
 			playable_values,
@@ -3180,7 +3325,8 @@ func _handle_mistake(
 	pile: MemoryPile = null,
 	caused_by_timeout := false,
 	force_damage := false,
-	instant_death := false
+	instant_death := false,
+	damage_type := DamageType.WRONG_PLACEMENT
 ) -> void:
 	if input_locked:
 		return
@@ -3189,6 +3335,12 @@ func _handle_mistake(
 	timer_manager.stop_countdown()
 	hand_manager.lock_hand()
 	run_mistake_count += 1
+	if caused_by_timeout:
+		damage_type = (
+			DamageType.SUDDEN_DEATH if instant_death else DamageType.TIMER_TIMEOUT
+		)
+	if breaks_flawless(damage_type):
+		flawless_since_last_bonus = false
 	var protected_by_safety_net := (
 		false if force_damage else bonus_manager.consume_safety_net()
 	)
@@ -3648,7 +3800,23 @@ func _finish_round() -> void:
 	):
 		await _finish_game(true)
 		return
-	await bonus_manager.offer_if_due(completed_round_number)
+	var flawless_bonus := (
+		(
+			Difficulty.ENABLE_FLAWLESS_BONUS_CHOICE
+			and flawless_since_last_bonus
+			and checkpoint_bonus_backlog <= 0
+			and not Debug.DISABLE_FLAWLESS
+		)
+		or Debug.FORCE_FLAWLESS
+	)
+	var bonus_choice_count := (
+		Difficulty.FLAWLESS_BONUS_CHOICE_COUNT
+		if flawless_bonus else Difficulty.BONUS_CHOICE_COUNT
+	)
+	if await bonus_manager.offer_if_due(
+		completed_round_number, bonus_choice_count, flawless_bonus
+	):
+		flawless_since_last_bonus = true
 	if transition_generation != _run_transition_generation:
 		return
 	await _offer_checkpoint_backlog_bonus(completed_round_number)
@@ -3748,7 +3916,9 @@ func _finish_game(completed_all_rounds := false) -> void:
 				current_challenge,
 				_progression_round(),
 				challenge_endless,
-				score_time_ms
+				score_time_ms,
+				run_seed_value,
+				run_seed_label
 			)
 			if challenge_high_score:
 				high_score_kind = challenge_manager.last_record_kind
@@ -3820,6 +3990,11 @@ func _finish_game(completed_all_rounds := false) -> void:
 		overlay_title.text = "[center]%d ROUNDS LEFT[/center]" % round_number
 		overlay_details.text = "[center]in %s[/center]" % formatted_time
 	_append_new_progression_summary()
+	end_seed_display.set_seed(run_seed_label)
+	end_seed_display.set_copy_enabled(DisplayServer.has_feature(
+		DisplayServer.FEATURE_CLIPBOARD
+	))
+	end_seed_display.visible = true
 	overlay_button.text = "REPLAY"
 	overlay_endless_button.visible = (
 		completed_all_rounds
@@ -3985,10 +4160,17 @@ func _on_overlay_pressed() -> void:
 
 
 func _on_overlay_endless_pressed() -> void:
+	var replay_seed := run_seed_label if run_uses_requested_seed else ""
 	if game_mode == GameMode.CHALLENGE:
-		start_game(false, current_challenge, true)
+		start_game(
+			false, current_challenge, true, replay_seed,
+			run_seed_bonus_levels, run_seed_rule_ids
+		)
 	else:
-		start_game(true)
+		start_game(
+			true, null, false, replay_seed,
+			run_seed_bonus_levels, run_seed_rule_ids
+		)
 
 
 func _on_splash_pressed() -> void:
@@ -4000,7 +4182,13 @@ func _on_endless_pressed() -> void:
 
 
 func _open_challenge_selection() -> void:
-	challenge_selection.open(challenge_manager, achievement_manager.unlocked)
+	challenge_selection.open(
+		challenge_manager,
+		achievement_manager.unlocked,
+		discovered_bonuses,
+		beaten_special_rules,
+		achievement_manager.bonus_highest_levels
+	)
 	_submenu_swipe_controller.open(
 		challenge_selection, get_viewport_rect().size.x
 	)
@@ -4019,6 +4207,42 @@ func _start_challenge(id: StringName, endless: bool) -> void:
 		return
 	challenge_selection.visible = false
 	start_game(false, data, endless)
+
+
+func _start_seeded_run(
+	seed_text: String, challenge_id: StringName,
+	bonus_levels: Dictionary, rule_ids: Array[StringName]
+) -> void:
+	var data: ChallengeData = null
+	if not challenge_id.is_empty():
+		data = challenge_manager.find(challenge_id)
+		if data == null or not challenge_manager.is_unlocked(
+			data, achievement_manager.unlocked
+		):
+			return
+	var allowed_bonus_levels := {}
+	for id_value in bonus_levels:
+		var bonus_id := StringName(id_value)
+		if not discovered_bonuses.has(bonus_id):
+			continue
+		var bonus_data := BonusRegistry.get_bonus(bonus_id)
+		if bonus_data == null:
+			continue
+		var unlocked_level := clampi(
+			int(achievement_manager.bonus_highest_levels.get(bonus_id, 1)),
+			1, bonus_data.max_level
+		)
+		allowed_bonus_levels[bonus_id] = clampi(
+			int(bonus_levels[id_value]), 1, unlocked_level
+		)
+	var allowed_rule_ids: Array[StringName] = []
+	for rule_id in rule_ids:
+		if beaten_special_rules.has(rule_id):
+			allowed_rule_ids.append(rule_id)
+	challenge_selection.visible = false
+	start_game(
+		false, data, false, seed_text, allowed_bonus_levels, allowed_rule_ids
+	)
 
 
 func _open_checkpoint_menu() -> void:
@@ -4391,6 +4615,7 @@ func _update_high_score(rounds_left: int, elapsed_time_ms: int) -> String:
 		return ""
 	best_rounds_left = rounds_left
 	best_score_time_ms = elapsed_time_ms
+	classic_record_seed = _current_seed_record()
 	_save_high_score()
 	_refresh_high_score()
 	return "ROUND" if is_better_progress else "TIME"
@@ -4403,11 +4628,15 @@ func _save_high_score() -> void:
 	config.set_value("progress", "best_rounds_left", best_rounds_left)
 	config.set_value("progress", "best_score_time_ms", best_score_time_ms)
 	config.set_value("highscores", "classic", {
-		"rounds_left": best_rounds_left, "time_ms": best_score_time_ms
+		"rounds_left": best_rounds_left, "time_ms": best_score_time_ms,
+		"seed": classic_record_seed.get("seed", 0),
+		"seed_label": classic_record_seed.get("seed_label", ""),
 	})
 	config.set_value("highscores", "classic_no_mistake", {
 		"rounds_left": classic_no_mistake_rounds_left,
 		"time_ms": classic_no_mistake_time_ms,
+		"seed": classic_no_mistake_record_seed.get("seed", 0),
+		"seed_label": classic_no_mistake_record_seed.get("seed_label", ""),
 	})
 	if best_rounds_left == 0:
 		config.set_value("progress", "best_time_ms", best_score_time_ms)
@@ -4429,6 +4658,7 @@ func _update_endless_high_score(reached_round: int, elapsed_time_ms: int) -> Str
 		return ""
 	endless_best_round = reached_round
 	endless_best_time_ms = elapsed_time_ms
+	endless_record_seed = _current_seed_record()
 	_save_endless_progress()
 	return "ROUND" if is_better_progress else "TIME"
 
@@ -4450,6 +4680,10 @@ func _save_endless_progress() -> void:
 	config.set_value("progress", "endless_best_time_ms", endless_best_time_ms)
 	config.set_value("highscores", "endless", endless_best_round)
 	config.set_value("highscores", "endless_no_mistake", endless_no_mistake_round)
+	config.set_value("highscores", "endless_seed", endless_record_seed)
+	config.set_value(
+		"highscores", "endless_no_mistake_seed", endless_no_mistake_record_seed
+	)
 	config.save("user://pile_down.cfg")
 
 
@@ -4478,6 +4712,19 @@ func _load_high_score() -> void:
 		)
 		classic_no_mistake_rounds_left = int(classic_clean.get("rounds_left", -1))
 		classic_no_mistake_time_ms = int(classic_clean.get("time_ms", -1))
+		classic_no_mistake_record_seed = {
+			"seed": int(classic_clean.get("seed", 0)),
+			"seed_label": str(classic_clean.get("seed_label", "")),
+		}
+		var classic_record: Dictionary = config.get_value("highscores", "classic", {})
+		classic_record_seed = {
+			"seed": int(classic_record.get("seed", 0)),
+			"seed_label": str(classic_record.get("seed_label", "")),
+		}
+		endless_record_seed = config.get_value("highscores", "endless_seed", {})
+		endless_no_mistake_record_seed = config.get_value(
+			"highscores", "endless_no_mistake_seed", {}
+		)
 		endless_no_mistake_round = int(
 			config.get_value("highscores", "endless_no_mistake", -1)
 		)
@@ -4558,6 +4805,9 @@ func _offer_checkpoint_backlog_bonus(completed_round_number: int) -> void:
 		return
 	if await bonus_manager.offer_bonus_choice(completed_round_number):
 		checkpoint_bonus_backlog -= 1
+		if checkpoint_bonus_backlog <= 0:
+			flawless_since_last_bonus = true
+			_update_hud()
 
 
 func _update_checkpoint_high_score(reached_round: int) -> String:
@@ -4572,6 +4822,7 @@ func _update_checkpoint_high_score(reached_round: int) -> String:
 		if checkpoint_best_rounds_left >= 0 and rounds_left >= checkpoint_best_rounds_left:
 			return ""
 		checkpoint_best_rounds_left = rounds_left
+	checkpoint_record_seed = _current_seed_record()
 	_save_checkpoint_progress()
 	return "ROUND"
 
@@ -4584,6 +4835,7 @@ func _update_no_mistake_high_score(reached_round: int, elapsed_time_ms: int) -> 
 			if checkpoint_uses_endless_progression:
 				if reached_round > checkpoint_endless_no_mistake_round:
 					checkpoint_endless_no_mistake_round = reached_round
+					checkpoint_no_mistake_record_seed = _current_seed_record()
 					_save_checkpoint_progress()
 			else:
 				var rounds_left := _checkpoint_rounds_left(reached_round)
@@ -4592,10 +4844,12 @@ func _update_no_mistake_high_score(reached_round: int, elapsed_time_ms: int) -> 
 					or rounds_left < checkpoint_no_mistake_rounds_left
 				):
 					checkpoint_no_mistake_rounds_left = rounds_left
+					checkpoint_no_mistake_record_seed = _current_seed_record()
 				_save_checkpoint_progress()
 		GameMode.ENDLESS:
 			if reached_round > endless_no_mistake_round:
 				endless_no_mistake_round = reached_round
+				endless_no_mistake_record_seed = _current_seed_record()
 				_save_endless_progress()
 		_:
 			var better := (
@@ -4612,6 +4866,7 @@ func _update_no_mistake_high_score(reached_round: int, elapsed_time_ms: int) -> 
 			if better:
 				classic_no_mistake_rounds_left = reached_round
 				classic_no_mistake_time_ms = elapsed_time_ms
+				classic_no_mistake_record_seed = _current_seed_record()
 				_save_high_score()
 
 
@@ -4680,11 +4935,22 @@ func _unlock_completed_checkpoint(completed_round: int) -> bool:
 func start_from_checkpoint(
 	checkpoint_id: int,
 	restored_bonuses: Dictionary = {},
-	skip_bonus_choices := false
+	skip_bonus_choices := false,
+	requested_seed := ""
 ) -> bool:
 	var snapshot_value: Variant = _checkpoint_value(checkpoint_snapshots, checkpoint_id, null)
 	if not snapshot_value is Dictionary:
 		return false
+	var effective_seed := requested_seed.strip_edges()
+	if effective_seed.is_empty() and Debug.ENABLED:
+		effective_seed = Debug.FORCE_RUN_SEED.strip_edges()
+	run_uses_requested_seed = not effective_seed.is_empty()
+	if effective_seed.is_empty():
+		_initialize_run_rng(RunRNGScript.generate_run_seed())
+	else:
+		_initialize_run_rng(
+			RunRNGScript.seed_string_to_int(effective_seed), effective_seed
+		)
 	_gameplay_generation += 1
 	var snapshot := CheckpointSnapshot.from_dictionary(snapshot_value)
 	soft_audio.play_start()
@@ -4719,6 +4985,7 @@ func start_from_checkpoint(
 	run_mistake_count = 0
 	run_lives_lost = 0
 	run_completed_rounds = 0
+	flawless_since_last_bonus = true
 	run_start_round = snapshot.start_round
 	started_from_checkpoint = true
 	checkpoint_segment_damage_count = 0
@@ -4745,6 +5012,14 @@ func start_from_checkpoint(
 		bonus_manager.grant_starting_bonuses(restored_bonuses)
 	start_round()
 	return true
+
+
+static func breaks_flawless(damage_type: DamageType) -> bool:
+	return damage_type in [
+		DamageType.WRONG_PLACEMENT,
+		DamageType.TIMER_TIMEOUT,
+		DamageType.SUDDEN_DEATH,
+	]
 
 
 func _normalise_droughts(value: Dictionary) -> Dictionary:
@@ -4789,6 +5064,10 @@ func _save_checkpoint_progress() -> void:
 		"checkpoints", "endless_no_mistake_round",
 		checkpoint_endless_no_mistake_round
 	)
+	config.set_value("checkpoints", "record_seed", checkpoint_record_seed)
+	config.set_value(
+		"checkpoints", "no_mistake_record_seed", checkpoint_no_mistake_record_seed
+	)
 	config.save(AUDIO_CONFIG_PATH)
 
 
@@ -4819,6 +5098,10 @@ func _load_checkpoint_progress(config: ConfigFile) -> void:
 	)
 	checkpoint_endless_no_mistake_round = int(
 		config.get_value("checkpoints", "endless_no_mistake_round", -1)
+	)
+	checkpoint_record_seed = config.get_value("checkpoints", "record_seed", {})
+	checkpoint_no_mistake_record_seed = config.get_value(
+		"checkpoints", "no_mistake_record_seed", {}
 	)
 	# Migrate the former per-checkpoint leaderboards into one shared score.
 	if checkpoint_best_round < 0:

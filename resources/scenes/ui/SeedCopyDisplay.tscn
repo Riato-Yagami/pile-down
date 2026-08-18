@@ -1,0 +1,45 @@
+[gd_scene format=3 uid="uid://btkfwvuebrq3c"]
+
+[ext_resource type="Script" uid="uid://06qycqwhism" path="res://resources/scripts/ui/SeedCopyDisplay.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://dtbjd4oh456wf" path="res://resources/sprites/ui/icons/seeds.png" id="2_seed"]
+[ext_resource type="FontFile" uid="uid://camkk5gui0ppq" path="res://resources/fonts/Tiny5-Regular.ttf" id="3_font"]
+[ext_resource type="Texture2D" uid="uid://dmg2lukdc1fje" path="res://resources/sprites/ui/copy.png" id="4_copy"]
+
+[node name="SeedCopyDisplay" type="HBoxContainer" unique_id=1872424655]
+custom_minimum_size = Vector2(0, 25)
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+theme_override_constants/separation = 4
+script = ExtResource("1_script")
+
+[node name="SeedIcon" type="TextureRect" parent="." unique_id=1202629737]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(24, 0)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("2_seed")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ValueLabel" type="Label" parent="." unique_id=1485420749]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 16
+text = "SEED"
+vertical_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="CopyButton" type="TextureButton" parent="." unique_id=673274774]
+unique_name_in_owner = true
+texture_filter = 1
+custom_minimum_size = Vector2(13, 17)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("4_copy")
+ignore_texture_size = true
+stretch_mode = 3

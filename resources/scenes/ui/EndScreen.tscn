@@ -1,0 +1,238 @@
+[gd_scene format=3 uid="uid://d3jhottreyk4y"]
+
+[ext_resource type="Script" uid="uid://cbduy0gripri1" path="res://resources/scripts/ui/EndScreen.gd" id="1_script"]
+[ext_resource type="FontFile" uid="uid://camkk5gui0ppq" path="res://resources/fonts/Tiny5-Regular.ttf" id="2_font"]
+[ext_resource type="Texture2D" path="res://resources/materials/textures/ui/panels/pop-up.tres" id="3_popup"]
+[ext_resource type="PackedScene" path="res://resources/scenes/ui/RegionButton.tscn" id="4_button"]
+[ext_resource type="Texture2D" uid="uid://ckdjfkkb8bsph" path="res://resources/materials/textures/ui/buttons/button.tres" id="5_gk13o"]
+[ext_resource type="PackedScene" path="res://resources/scenes/ui/SeedCopyDisplay.tscn" id="6_seed_copy"]
+
+[sub_resource type="Shader" id="ButtonHighlightShader"]
+code = "shader_type canvas_item;
+
+uniform vec4 base_color : source_color = vec4(0.302, 0.51, 0.761, 1.0);
+uniform vec4 highlight_color : source_color = vec4(0.427, 0.655, 0.898, 1.0);
+
+void fragment() {
+	vec4 texture_color = texture(TEXTURE, UV);
+	vec4 source = texture_color * COLOR;
+	bool base_fill_pixel = texture_color.a > 0.0 && distance(texture_color.rgb, base_color.rgb) < 0.01;
+	if (base_fill_pixel) {
+		source.rgb = highlight_color.rgb;
+	}
+	COLOR = source;
+}"
+
+[sub_resource type="ShaderMaterial" id="ButtonHighlightMaterial"]
+resource_local_to_scene = true
+shader = SubResource("ButtonHighlightShader")
+shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
+shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gk13o"]
+atlas = ExtResource("5_gk13o")
+region = Rect2(0, 0, 86, 31)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_67rst"]
+content_margin_left = 9.0
+content_margin_top = 4.0
+content_margin_right = 9.0
+content_margin_bottom = 4.0
+texture = SubResource("AtlasTexture_gk13o")
+texture_margin_left = 8.0
+texture_margin_top = 6.0
+texture_margin_right = 8.0
+texture_margin_bottom = 6.0
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_auuht"]
+atlas = ExtResource("5_gk13o")
+region = Rect2(0, 0, 86, 31)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_fsyr8"]
+content_margin_left = 9.0
+content_margin_top = 4.0
+content_margin_right = 9.0
+content_margin_bottom = 4.0
+texture = SubResource("AtlasTexture_auuht")
+texture_margin_left = 8.0
+texture_margin_top = 6.0
+texture_margin_right = 8.0
+texture_margin_bottom = 6.0
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_orfsp"]
+atlas = ExtResource("5_gk13o")
+region = Rect2(0, 0, 86, 31)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_dsqwc"]
+content_margin_left = 9.0
+content_margin_top = 4.0
+content_margin_right = 9.0
+content_margin_bottom = 4.0
+texture = SubResource("AtlasTexture_orfsp")
+texture_margin_left = 8.0
+texture_margin_top = 6.0
+texture_margin_right = 8.0
+texture_margin_bottom = 6.0
+
+[node name="EndScreen" type="Control" unique_id=1403354288]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+result_gap = 12
+
+[node name="Scrim" type="ColorRect" parent="." unique_id=269028562]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.969, 0.965, 0.949, 0.9)
+
+[node name="OverlayCenter" type="CenterContainer" parent="." unique_id=508459476]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ResultStack" type="VBoxContainer" parent="OverlayCenter" unique_id=132104811]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/separation = -32
+
+[node name="OverlayHighScore" type="RichTextLabel" parent="OverlayCenter/ResultStack" unique_id=1833044537]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(236, 20)
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/default_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_font_sizes/normal_font_size = 20
+bbcode_enabled = true
+text = "[center][wave amp=25.0 freq=3.0 connected=1]HIGHSCORE[/wave][/center]"
+fit_content = true
+scroll_active = false
+
+[node name="OverlayPanel" type="NinePatchRect" parent="OverlayCenter/ResultStack" unique_id=1651946499]
+unique_name_in_owner = true
+texture_filter = 1
+custom_minimum_size = Vector2(180, 230)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("3_popup")
+patch_margin_left = 40
+patch_margin_top = 64
+patch_margin_right = 30
+patch_margin_bottom = 56
+
+[node name="Content" type="VBoxContainer" parent="OverlayCenter/ResultStack/OverlayPanel" unique_id=180346530]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 22.0
+offset_top = 50.0
+offset_right = -12.0
+offset_bottom = -45.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="OverlayTitle" type="RichTextLabel" parent="OverlayCenter/ResultStack/OverlayPanel/Content" unique_id=1670950349]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/default_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_font_sizes/normal_font_size = 20
+bbcode_enabled = true
+text = "[center]100 ROUNDS
+LEFT[/center]"
+fit_content = true
+scroll_active = false
+
+[node name="OverlayDetails" type="RichTextLabel" parent="OverlayCenter/ResultStack/OverlayPanel/Content" unique_id=1429491885]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/default_color = Color(0.541, 0.533, 0.51, 1)
+theme_override_fonts/normal_font = ExtResource("2_font")
+theme_override_font_sizes/normal_font_size = 16
+bbcode_enabled = true
+text = "in 01 h 23 min 45 s 678 ms"
+fit_content = true
+scroll_active = false
+horizontal_alignment = 1
+
+[node name="EndSeedDisplay" parent="OverlayCenter/ResultStack/OverlayPanel/Content" instance=ExtResource("6_seed_copy")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="OverlayButtons" type="VBoxContainer" parent="OverlayCenter/ResultStack/OverlayPanel/Content" unique_id=641676646]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 6
+
+[node name="OverlayButton" parent="OverlayCenter/ResultStack/OverlayPanel/Content/OverlayButtons" unique_id=1981282281 instance=ExtResource("4_button")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 31)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxTexture_67rst")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_67rst")
+theme_override_styles/hover = SubResource("StyleBoxTexture_67rst")
+theme_override_styles/disabled = SubResource("StyleBoxTexture_67rst")
+theme_override_styles/focus = SubResource("StyleBoxTexture_67rst")
+text = "REPLAY"
+highlight_material = SubResource("ButtonHighlightMaterial")
+
+[node name="OverlayEndlessButton" parent="OverlayCenter/ResultStack/OverlayPanel/Content/OverlayButtons" unique_id=1000261176 instance=ExtResource("4_button")]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(110, 31)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxTexture_fsyr8")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_fsyr8")
+theme_override_styles/hover = SubResource("StyleBoxTexture_fsyr8")
+theme_override_styles/disabled = SubResource("StyleBoxTexture_fsyr8")
+theme_override_styles/focus = SubResource("StyleBoxTexture_fsyr8")
+text = "INFINITE"
+highlight_material = SubResource("ButtonHighlightMaterial")
+
+[node name="OverlayQuitButton" parent="OverlayCenter/ResultStack/OverlayPanel/Content/OverlayButtons" unique_id=1689466545 instance=ExtResource("4_button")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 31)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxTexture_dsqwc")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_dsqwc")
+theme_override_styles/hover = SubResource("StyleBoxTexture_dsqwc")
+theme_override_styles/disabled = SubResource("StyleBoxTexture_dsqwc")
+theme_override_styles/focus = SubResource("StyleBoxTexture_dsqwc")
+text = "QUIT"
+highlight_material = SubResource("ButtonHighlightMaterial")
+
+[node name="OverlayUnlocks" type="RichTextLabel" parent="OverlayCenter/ResultStack" unique_id=12267111]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(236, 0)
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/default_color = Color(0.302, 0.51, 0.761, 1)
+theme_override_fonts/normal_font = ExtResource("2_font")
+theme_override_font_sizes/normal_font_size = 16
+bbcode_enabled = true
+text = "[center]+ CHECKPOINT: 1
++ FIRST STEP[/center]"
+fit_content = true
+scroll_active = false

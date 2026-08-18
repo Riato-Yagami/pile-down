@@ -8,6 +8,8 @@ var completed: Array[StringName] = []
 var highscores: Dictionary = {}
 var endless_highscores: Dictionary = {}
 var best_times_ms: Dictionary = {}
+var record_seeds: Dictionary = {}
+var endless_record_seeds: Dictionary = {}
 var last_record_kind := ""
 var debug_unlock_all := false
 
@@ -21,6 +23,8 @@ func load_progress() -> void:
 	highscores = config.get_value("challenges", "highscores", {})
 	endless_highscores = config.get_value("challenges", "endless_highscores", {})
 	best_times_ms = config.get_value("challenges", "best_times_ms", {})
+	record_seeds = config.get_value("challenges", "record_seeds", {})
+	endless_record_seeds = config.get_value("challenges", "endless_record_seeds", {})
 
 
 func find(id: StringName) -> ChallengeData:
@@ -63,7 +67,8 @@ func is_unlocked(data: ChallengeData, achievements: Array[StringName]) -> bool:
 
 
 func record_result(
-	data: ChallengeData, reached_round: int, endless: bool, elapsed_time_ms := -1
+	data: ChallengeData, reached_round: int, endless: bool, elapsed_time_ms := -1,
+	seed_value := 0, seed_label := ""
 ) -> bool:
 	last_record_kind = ""
 	var scores := endless_highscores if endless else highscores
@@ -72,6 +77,8 @@ func record_result(
 	var new_record := reached_round > previous
 	if new_record:
 		scores[data.id] = reached_round
+		var seeds := endless_record_seeds if endless else record_seeds
+		seeds[data.id] = {"seed": seed_value, "seed_label": seed_label}
 		last_record_kind = "ROUND"
 		if not endless and elapsed_time_ms >= 0:
 			best_times_ms[data.id] = elapsed_time_ms
@@ -81,6 +88,9 @@ func record_result(
 			best_times_ms[data.id] = elapsed_time_ms
 			new_record = true
 			last_record_kind = "TIME"
+			record_seeds[data.id] = {
+				"seed": seed_value, "seed_label": seed_label
+			}
 	var newly_completed := false
 	if not endless and completed_run and not completed.has(data.id):
 		completed.append(data.id)
@@ -98,4 +108,6 @@ func _save() -> void:
 	config.set_value("challenges", "highscores", highscores)
 	config.set_value("challenges", "endless_highscores", endless_highscores)
 	config.set_value("challenges", "best_times_ms", best_times_ms)
+	config.set_value("challenges", "record_seeds", record_seeds)
+	config.set_value("challenges", "endless_record_seeds", endless_record_seeds)
 	config.save(SAVE_PATH)

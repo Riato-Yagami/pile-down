@@ -17,6 +17,15 @@ func _init() -> void:
 	assert(choices.size() == DifficultySettings.BONUS_CHOICE_COUNT)
 	assert(choices[0].id != choices[1].id)
 	assert(choices[0].category != choices[1].category)
+	manager.rng.seed = 42
+	var flawless_choices := manager.generate_choices(
+		20, DifficultySettings.FLAWLESS_BONUS_CHOICE_COUNT
+	)
+	assert(flawless_choices.size() == DifficultySettings.FLAWLESS_BONUS_CHOICE_COUNT)
+	var flawless_ids: Array[StringName] = []
+	for choice in flawless_choices:
+		assert(not flawless_ids.has(choice.id))
+		flawless_ids.append(choice.id)
 	assert(_find(manager, &"rule_breaker").max_level == 3)
 	assert(_find(manager, &"bring_a_friend").max_level == 3)
 	assert(_find(manager, &"pile_mover").max_level == 1)

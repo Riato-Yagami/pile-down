@@ -1,0 +1,54 @@
+[gd_scene format=3 uid="uid://dexph4blm5gd5"]
+
+[ext_resource type="Script" uid="uid://bvml2852cobfw" path="res://resources/scripts/ui/ProgressionLockFilter.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://bodrq1fpy7jxm" path="res://resources/sprites/ui/buttons/progression-lock-mode/main.png" id="2_main"]
+[ext_resource type="Texture2D" uid="uid://d1h5c6bvthm3c" path="res://resources/sprites/ui/buttons/progression-lock-mode/handle.png" id="3_handle"]
+
+[node name="ProgressionLockFilter" type="Control" unique_id=1474449524]
+texture_filter = 1
+custom_minimum_size = Vector2(21, 28)
+layout_mode = 3
+anchors_preset = 0
+size_flags_vertical = 4
+focus_mode = 2
+mouse_filter = 2
+mouse_default_cursor_shape = 2
+script = ExtResource("1_script")
+locked_handle_offset = Vector2(0, 3)
+unlocked_handle_offset = Vector2(-22, 0)
+
+[node name="IconOffset" type="Node2D" parent="."]
+unique_name_in_owner = true
+position = Vector2(7, 0)
+
+[node name="LockMain" type="TextureRect" parent="IconOffset" unique_id=1263355350]
+unique_name_in_owner = true
+z_index = 1
+layout_mode = 0
+offset_left = -5.0
+offset_right = 23.0
+offset_bottom = 25.0
+mouse_filter = 2
+texture = ExtResource("2_main")
+
+[node name="HandleFlipAnchor" type="Node2D" parent="IconOffset" unique_id=1604495395]
+unique_name_in_owner = true
+position = Vector2(-3, 10)
+
+[node name="LockHandle" type="TextureRect" parent="IconOffset/HandleFlipAnchor" unique_id=1349640139]
+unique_name_in_owner = true
+offset_left = -2.0
+offset_top = -10.0
+offset_right = 26.0
+offset_bottom = 15.0
+mouse_filter = 2
+texture = ExtResource("3_handle")
+
+[node name="HoverRegion" type="Control" parent="IconOffset"]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_left = -7.0
+offset_right = 23.0
+offset_bottom = 28.0
+mouse_default_cursor_shape = 2

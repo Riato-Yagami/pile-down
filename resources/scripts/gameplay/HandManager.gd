@@ -17,8 +17,8 @@ var override_hidden_tile_with_font := true
 var tile_colors: Array[Color] = GameSettings.TILE_COLORS.slice(0, 10)
 
 
-func _ready() -> void:
-	rng.randomize()
+func set_run_rng(stream: RandomNumberGenerator) -> void:
+	rng = stream
 
 
 func generate_hand(

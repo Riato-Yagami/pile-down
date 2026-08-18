@@ -21,6 +21,7 @@ var active_rules: Array[SpecialRuleData] = []
 var modifiers := RoundModifiers.new()
 var context := RoundContext.new(1, modifiers)
 var rng := RandomNumberGenerator.new()
+var movement_rng := RandomNumberGenerator.new()
 var _last_special_rule_round := -1000
 var _previous_drawn_rule_ids: Array[StringName] = []
 var disabled_rule_ids: Array[StringName] = []
@@ -37,8 +38,20 @@ var _rules: Array[SpecialRuleData] = Registry.create_all_rules()
 var _begin_round_generation := 0
 
 
-func _ready() -> void:
-	rng.randomize()
+func set_run_rng(
+	rule_stream: RandomNumberGenerator,
+	movement_stream: RandomNumberGenerator
+) -> void:
+	rng = rule_stream
+	movement_rng = movement_stream
+
+
+func _shuffle_with_rng(values: Array, stream: RandomNumberGenerator) -> void:
+	for index in range(values.size() - 1, 0, -1):
+		var swap_index := stream.randi_range(0, index)
+		var temporary: Variant = values[index]
+		values[index] = values[swap_index]
+		values[swap_index] = temporary
 
 
 func get_special_rule_capacity(round_number: int) -> int:
@@ -160,7 +173,7 @@ func begin_round(round_number: int) -> RoundModifiers:
 	context.pile_manager = get_node_or_null("../PileManager") as PileManager
 	context.timer_manager = get_node_or_null("../TimerManager") as CountdownManager
 	context.interface = get_parent().get_parent() as Control
-	context.rng = rng
+	context.rng = movement_rng
 	for rule in active_rules:
 		rule.activate(context)
 	var adaptation_intensity := (
@@ -252,7 +265,7 @@ func activate_board_effects(piles: Array[MemoryPile], round_number: int) -> void
 		for pile in piles:
 			if not pile.completed:
 				candidates.append(pile)
-		candidates.shuffle()
+		_shuffle_with_rng(candidates, movement_rng)
 		var count := maxi(1, ceili(candidates.size() * Difficulty.REGENERATING_PILE_RATIO))
 		for index in mini(count, candidates.size()):
 			candidates[index].enable_regeneration(
@@ -269,7 +282,7 @@ func after_card_played(piles: Array[MemoryPile], round_number: int) -> void:
 			active.append(pile)
 	if active.size() < 2:
 		return
-	active.shuffle()
+	_shuffle_with_rng(active, movement_rng)
 	var swap_count := 3 if round_number >= Difficulty.THREE_PILE_SHELL_GAME_ROUND and active.size() >= 3 else 2
 	var moving: Array[MemoryPile] = []
 	for index in swap_count:

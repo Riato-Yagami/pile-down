@@ -1,9 +1,12 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene format=3 uid="uid://dtcpxtjukp727"]
 
-[ext_resource type="Script" path="res://resources/scripts/challenges/ChallengeSelection.gd" id="1"]
-[ext_resource type="FontFile" path="res://resources/fonts/Tiny5-Regular.ttf" id="3"]
+[ext_resource type="Script" uid="uid://s5wfmqy1c31c" path="res://resources/scripts/challenges/ChallengeSelection.gd" id="1"]
 [ext_resource type="Texture2D" path="res://resources/materials/textures/ui/buttons/escape.tres" id="4_escape"]
-[ext_resource type="Script" path="res://resources/scripts/ui/TextureHighlightButton.gd" id="5_highlight"]
+[ext_resource type="Script" uid="uid://dnwlhbj4lgun" path="res://resources/scripts/ui/TextureHighlightButton.gd" id="5_highlight"]
+[ext_resource type="PackedScene" uid="uid://dexph4blm5gd5" path="res://resources/scenes/ui/ProgressionLockFilter.tscn" id="6_lock_filter_scene"]
+[ext_resource type="Texture2D" uid="uid://crbhkrx184vti" path="res://resources/sprites/ui/icons/challenges.png" id="7_challenges_icon"]
+[ext_resource type="Texture2D" uid="uid://dtbjd4oh456wf" path="res://resources/sprites/ui/icons/seeds.png" id="8_seeds_icon"]
+[ext_resource type="FontFile" uid="uid://camkk5gui0ppq" path="res://resources/fonts/Tiny5-Regular.ttf" id="9_entry_font"]
 
 [sub_resource type="Shader" id="ButtonHighlightShader"]
 code = "shader_type canvas_item;
@@ -27,8 +30,7 @@ shader = SubResource("ButtonHighlightShader")
 shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
 shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
 
-[node name="ChallengeSelection" type="Control"]
-visible = false
+[node name="ChallengeSelection" type="Control" unique_id=474225119]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -36,8 +38,15 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
+show_editor_preview = true
+editor_preview_page = 1
+entry_heading_font = ExtResource("9_entry_font")
+entry_heading_font_size = 16
+entry_heading_text_offset = Vector2(1, 0)
+entry_details_font = ExtResource("9_entry_font")
+entry_details_font_size = 16
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=1747748443]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -47,7 +56,7 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.969, 0.965, 0.949, 1)
 
-[node name="Margin" type="MarginContainer" parent="."]
+[node name="Margin" type="MarginContainer" parent="." unique_id=1229213440]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -59,21 +68,29 @@ offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Layout" type="VBoxContainer" parent="Margin"]
+[node name="Layout" type="VBoxContainer" parent="Margin" unique_id=810527183]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Header" type="HBoxContainer" parent="Margin/Layout"]
+[node name="Header" type="HBoxContainer" parent="Margin/Layout" unique_id=69541785]
 layout_mode = 2
 
-[node name="Title" type="Label" parent="Margin/Layout/Header"]
+[node name="Title" type="Label" parent="Margin/Layout/Header" unique_id=1090209381]
 layout_mode = 2
-size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
 theme_override_font_sizes/font_size = 20
 text = "CHALLENGES"
 
-[node name="Back" type="TextureButton" parent="Margin/Layout/Header"]
+[node name="LockFilter" parent="Margin/Layout/Header" unique_id=595351813 instance=ExtResource("6_lock_filter_scene")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="HeaderSpacer" type="Control" parent="Margin/Layout/Header" unique_id=2056292637]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Back" type="TextureButton" parent="Margin/Layout/Header" unique_id=457326550]
 texture_filter = 1
 custom_minimum_size = Vector2(23, 13)
 layout_mode = 2
@@ -83,27 +100,89 @@ texture_normal = ExtResource("4_escape")
 script = ExtResource("5_highlight")
 highlight_material = SubResource("ButtonHighlightMaterial")
 
-[node name="PageTitle" type="Label" parent="Margin/Layout"]
+[node name="Body" type="HBoxContainer" parent="Margin/Layout" unique_id=880174010]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 5
+
+[node name="Navigation" type="VBoxContainer" parent="Margin/Layout/Body" unique_id=1807175214]
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ChallengesTabButton" type="TextureButton" parent="Margin/Layout/Body/Navigation" unique_id=753824663]
+unique_name_in_owner = true
+texture_filter = 1
+custom_minimum_size = Vector2(30, 34)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("7_challenges_icon")
+ignore_texture_size = true
+stretch_mode = 3
+script = ExtResource("5_highlight")
+highlight_material = SubResource("ButtonHighlightMaterial")
+
+[node name="SeedsTabButton" type="TextureButton" parent="Margin/Layout/Body/Navigation" unique_id=32860538]
+unique_name_in_owner = true
+modulate = Color(0.3019608, 0.50980395, 0.7607843, 1)
+texture_filter = 1
+custom_minimum_size = Vector2(30, 34)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("8_seeds_icon")
+ignore_texture_size = true
+stretch_mode = 3
+script = ExtResource("5_highlight")
+highlight_material = SubResource("ButtonHighlightMaterial")
+
+[node name="Page" type="VBoxContainer" parent="Margin/Layout/Body" unique_id=1792286220]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="PageTitle" type="Label" parent="Margin/Layout/Body/Page" unique_id=483449833]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
 theme_override_font_sizes/font_size = 20
-text = "SELECT A CHALLENGE"
+text = "PLAY A SEED"
 
-[node name="Scroll" type="ScrollContainer" parent="Margin/Layout"]
+[node name="Scroll" type="ScrollContainer" parent="Margin/Layout/Body/Page" unique_id=2032848246]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="ContentMargin" type="MarginContainer" parent="Margin/Layout/Scroll"]
+[node name="ContentMargin" type="MarginContainer" parent="Margin/Layout/Body/Page/Scroll" unique_id=26303651]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/margin_right = 10
 
-[node name="ChallengeList" type="VBoxContainer" parent="Margin/Layout/Scroll/ContentMargin"]
+[node name="ChallengeList" type="VBoxContainer" parent="Margin/Layout/Body/Page/Scroll/ContentMargin" unique_id=812613963]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 10
+
+[node name="SeedPage" type="ScrollContainer" parent="Margin/Layout/Body/Page" unique_id=987162310]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="SeedMargin" type="MarginContainer" parent="Margin/Layout/Body/Page/SeedPage" unique_id=82833003]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_right = 10
+
+[node name="SeedContent" type="VBoxContainer" parent="Margin/Layout/Body/Page/SeedPage/SeedMargin" unique_id=551572033]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
 
 [connection signal="pressed" from="Margin/Layout/Header/Back" to="." method="close"]

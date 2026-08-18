@@ -64,6 +64,13 @@ func _run() -> void:
 		game.challenge_selection.list.get_child_count()
 		== game.challenge_manager.definitions.size()
 	)
+	game.challenge_selection._show_page(1)
+	assert(game.challenge_selection.seed_page.visible)
+	assert(not game.challenge_selection.scroll.visible)
+	assert(not game.challenge_selection.lock_filter.visible)
+	assert(game.challenge_selection._seed_mode.item_count > 0)
+	game.challenge_selection._show_page(0)
+	assert(game.challenge_selection.scroll.visible)
 	game.challenge_selection.close()
 	await create_timer(game.submenu_swipe_duration + 0.05).timeout
 	assert(not game.challenge_selection.visible)

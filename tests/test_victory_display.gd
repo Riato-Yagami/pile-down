@@ -24,6 +24,15 @@ func _run() -> void:
 	assert(game.overlay_title.text.contains("YOU WIN"))
 	assert(not game.overlay_title.text.contains("0 ROUNDS"))
 	assert(game.overlay.visible)
+	assert(game.end_seed_display.visible)
+	assert(game.end_seed_display.value_label.text == game.run_seed_label.left(5))
+	assert(game.end_seed_display.copy_button.texture_normal != null)
+	await process_frame
+	assert(
+		game.overlay_panel.get_global_rect().encloses(
+			game.end_seed_display.get_global_rect()
+		)
+	)
 	assert(game.input_locked)
 	assert(not game.timer_manager.running)
 	assert(game._debug_round_wins_queued == 0)
@@ -31,6 +40,27 @@ func _run() -> void:
 	assert(not game._conveyor_active)
 	assert(game._gameplay_generation > gameplay_generation)
 	assert(game._hand_cycle_generation > hand_generation)
+	game.overlay_high_score.visible = true
+	game.overlay_unlocks.visible = true
+	game.overlay_unlocks.text = "[center]+ FIRST\n+ SECOND[/center]"
+	game._position_overlay_result_extras()
+	await process_frame
+	game._position_overlay_result_extras()
+	await process_frame
+	var result_stack := game.get_node(
+		"Screens/Overlay/OverlayCenter/ResultStack"
+	) as VBoxContainer
+	var high_score_gap := game.overlay_panel.global_position.y - (
+		game.overlay_high_score.global_position.y + game.overlay_high_score.size.y
+	)
+	var progression_gap := game.overlay_unlocks.global_position.y - (
+		game.overlay_panel.global_position.y + game.overlay_panel.size.y
+	)
+	assert(is_equal_approx(high_score_gap, 6.0))
+	assert(is_equal_approx(progression_gap, 6.0))
+	assert(result_stack.size.y < game.size.y)
+	assert(game.overlay_high_score.global_position.y > 0.0)
+	assert(game.overlay_unlocks.get_global_rect().end.y < game.size.y)
 	game.checkpoint_uses_endless_progression = true
 	assert(not game._is_finite_mode_victory(true))
 	game._debug_round_wins_queued = 2

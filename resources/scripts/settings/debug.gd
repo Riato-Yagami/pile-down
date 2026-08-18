@@ -21,6 +21,9 @@ const DISCOVER_ALL_SPECIAL_RULES := false
 const FORCE_WAVY_BABY := false
 const FORCE_SHAKING_PILES := false
 const SHOW_DUST_DEBUG := false
+const FORCE_RUN_SEED := ""
+const FORCE_FLAWLESS := false
+const DISABLE_FLAWLESS := false
 
 # Keep empty for normal rule selection. Debug locks bypass incompatibilities,
 # required-rule constraints and minimum rounds so any combination can be tested.
