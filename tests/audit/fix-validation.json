@@ -1,0 +1,568 @@
+[
+  {
+    "case": "race:damage_restart",
+    "seconds": 12.19,
+    "completed": true,
+    "observations": [
+      {
+        "expected": true,
+        "matches": true,
+        "name": "menu_visible",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "run_ready",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "after_race_playable",
+        "observed": true
+      },
+      {
+        "name": "after_race_state",
+        "observed": {
+          "cards": 1,
+          "lives": 3,
+          "locked": false,
+          "menu": false,
+          "nodes": 1,
+          "overlay": false,
+          "piles": 1,
+          "seed": "AUDIT-RACE",
+          "title": "[center]100 ROUNDS\nLEFT[/center]"
+        }
+      }
+    ],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"menu_visible\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"run_ready\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"after_race_playable\",\"observed\":true}\nAUDIT {\"name\":\"after_race_state\",\"observed\":{\"cards\":1,\"lives\":3,\"locked\":false,\"menu\":false,\"nodes\":1,\"overlay\":false,\"piles\":1,\"seed\":\"AUDIT-RACE\",\"title\":\"[center]100 ROUNDS\\nLEFT[/center]\"}}\nAUDIT_DONE {\"detail\":\"damage_restart\",\"observations\":4,\"scenario\":\"race\"}\n",
+    "exit_code": 0
+  },
+  {
+    "case": "seed_rule_restart:AUDIT-SEED-A",
+    "seconds": 62.47,
+    "completed": true,
+    "observations": [
+      {
+        "expected": true,
+        "matches": true,
+        "name": "menu_visible",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "run_ready",
+        "observed": true
+      },
+      {
+        "name": "first_round_four",
+        "observed": {
+          "cards": [
+            2
+          ],
+          "hand_size": 1,
+          "piles": 2,
+          "rules": [
+            "sticky_fingers"
+          ],
+          "seed": "AUDIT-SEED-A",
+          "timer": 4.0,
+          "value": 3
+        }
+      },
+      {
+        "expected": {
+          "cards": [
+            2
+          ],
+          "hand_size": 1,
+          "piles": 2,
+          "rules": [
+            "sticky_fingers"
+          ],
+          "seed": "AUDIT-SEED-A",
+          "timer": 4.0,
+          "value": 3
+        },
+        "matches": true,
+        "name": "replayed_round_four",
+        "observed": {
+          "cards": [
+            2
+          ],
+          "hand_size": 1,
+          "piles": 2,
+          "rules": [
+            "sticky_fingers"
+          ],
+          "seed": "AUDIT-SEED-A",
+          "timer": 4.0,
+          "value": 3
+        }
+      }
+    ],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"menu_visible\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"run_ready\",\"observed\":true}\nAUDIT {\"name\":\"first_round_four\",\"observed\":{\"cards\":[2],\"hand_size\":1,\"piles\":2,\"rules\":[\"sticky_fingers\"],\"seed\":\"AUDIT-SEED-A\",\"timer\":4.0,\"value\":3}}\nAUDIT {\"expected\":{\"cards\":[2],\"hand_size\":1,\"piles\":2,\"rules\":[\"sticky_fingers\"],\"seed\":\"AUDIT-SEED-A\",\"timer\":4.0,\"value\":3},\"matches\":true,\"name\":\"replayed_round_four\",\"observed\":{\"cards\":[2],\"hand_size\":1,\"piles\":2,\"rules\":[\"sticky_fingers\"],\"seed\":\"AUDIT-SEED-A\",\"timer\":4.0,\"value\":3}}\nAUDIT_DONE {\"detail\":\"AUDIT-SEED-A\",\"observations\":4,\"scenario\":\"seed_rule_restart\"}\n",
+    "exit_code": 0
+  },
+  {
+    "case": "seed_rule_restart:AUDIT-SEED-B",
+    "seconds": 53.84,
+    "completed": true,
+    "observations": [
+      {
+        "expected": true,
+        "matches": true,
+        "name": "menu_visible",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "run_ready",
+        "observed": true
+      },
+      {
+        "name": "first_round_four",
+        "observed": {
+          "cards": [
+            2,
+            1
+          ],
+          "hand_size": 2,
+          "piles": 1,
+          "rules": [
+            "pile_up"
+          ],
+          "seed": "AUDIT-SEED-B",
+          "timer": 5.0,
+          "value": 3
+        }
+      },
+      {
+        "expected": {
+          "cards": [
+            2,
+            1
+          ],
+          "hand_size": 2,
+          "piles": 1,
+          "rules": [
+            "pile_up"
+          ],
+          "seed": "AUDIT-SEED-B",
+          "timer": 5.0,
+          "value": 3
+        },
+        "matches": true,
+        "name": "replayed_round_four",
+        "observed": {
+          "cards": [
+            2,
+            1
+          ],
+          "hand_size": 2,
+          "piles": 1,
+          "rules": [
+            "pile_up"
+          ],
+          "seed": "AUDIT-SEED-B",
+          "timer": 5.0,
+          "value": 3
+        }
+      }
+    ],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"menu_visible\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"run_ready\",\"observed\":true}\nAUDIT {\"name\":\"first_round_four\",\"observed\":{\"cards\":[2,1],\"hand_size\":2,\"piles\":1,\"rules\":[\"pile_up\"],\"seed\":\"AUDIT-SEED-B\",\"timer\":5.0,\"value\":3}}\nAUDIT {\"expected\":{\"cards\":[2,1],\"hand_size\":2,\"piles\":1,\"rules\":[\"pile_up\"],\"seed\":\"AUDIT-SEED-B\",\"timer\":5.0,\"value\":3},\"matches\":true,\"name\":\"replayed_round_four\",\"observed\":{\"cards\":[2,1],\"hand_size\":2,\"piles\":1,\"rules\":[\"pile_up\"],\"seed\":\"AUDIT-SEED-B\",\"timer\":5.0,\"value\":3}}\nAUDIT_DONE {\"detail\":\"AUDIT-SEED-B\",\"observations\":4,\"scenario\":\"seed_rule_restart\"}\n",
+    "exit_code": 0
+  },
+  {
+    "case": "save:import_wrong_types",
+    "seconds": 6.81,
+    "completed": true,
+    "observations": [
+      {
+        "expected": 30,
+        "matches": true,
+        "name": "malformed_import_result",
+        "observed": 30
+      },
+      {
+        "expected": 42,
+        "matches": true,
+        "name": "rejected_import_preserves_save",
+        "observed": 42
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "menu_visible",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "save_boot_menu",
+        "observed": true
+      },
+      {
+        "name": "save_loaded_best_time",
+        "observed": -1
+      },
+      {
+        "name": "save_loaded_font",
+        "observed": "vcr"
+      }
+    ],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nAUDIT {\"expected\":30,\"matches\":true,\"name\":\"malformed_import_result\",\"observed\":30}\nAUDIT {\"expected\":42,\"matches\":true,\"name\":\"rejected_import_preserves_save\",\"observed\":42}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"menu_visible\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"save_boot_menu\",\"observed\":true}\nAUDIT {\"name\":\"save_loaded_best_time\",\"observed\":-1}\nAUDIT {\"name\":\"save_loaded_font\",\"observed\":\"vcr\"}\nAUDIT_DONE {\"detail\":\"import_wrong_types\",\"observations\":6,\"scenario\":\"save\"}\n",
+    "exit_code": 0
+  },
+  {
+    "case": "save:wrong_types",
+    "seconds": 6.48,
+    "completed": true,
+    "observations": [
+      {
+        "expected": true,
+        "matches": true,
+        "name": "menu_visible",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "save_boot_menu",
+        "observed": true
+      },
+      {
+        "name": "save_loaded_best_time",
+        "observed": -1
+      },
+      {
+        "name": "save_loaded_font",
+        "observed": "vcr"
+      }
+    ],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"menu_visible\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"save_boot_menu\",\"observed\":true}\nAUDIT {\"name\":\"save_loaded_best_time\",\"observed\":-1}\nAUDIT {\"name\":\"save_loaded_font\",\"observed\":\"vcr\"}\nAUDIT_DONE {\"detail\":\"wrong_types\",\"observations\":4,\"scenario\":\"save\"}\n",
+    "exit_code": 0
+  },
+  {
+    "case": "touch_mirror",
+    "seconds": 8.2,
+    "completed": true,
+    "observations": [
+      {
+        "expected": true,
+        "matches": true,
+        "name": "menu_visible",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "run_ready",
+        "observed": true
+      },
+      {
+        "name": "mirrored_back_rect",
+        "observed": "[P: (221.0, 279.0), S: (23.0, -13.0)]"
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "mirrored_back_detected",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "mirrored_back_opens_popup_via_input",
+        "observed": true
+      }
+    ],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"menu_visible\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"run_ready\",\"observed\":true}\nAUDIT {\"name\":\"mirrored_back_rect\",\"observed\":\"[P: (221.0, 279.0), S: (23.0, -13.0)]\"}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"mirrored_back_detected\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"mirrored_back_opens_popup_via_input\",\"observed\":true}\nAUDIT_DONE {\"detail\":\"standard\",\"observations\":5,\"scenario\":\"touch_mirror\"}\n",
+    "exit_code": 0
+  },
+  {
+    "case": "seed_input",
+    "seconds": 26.98,
+    "completed": true,
+    "observations": [
+      {
+        "expected": true,
+        "matches": true,
+        "name": "menu_visible",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "run_ready",
+        "observed": true
+      },
+      {
+        "name": "seed_parse",
+        "observed": {
+          "input": "0",
+          "label": "0",
+          "requested": true,
+          "value": "0"
+        }
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "run_ready",
+        "observed": true
+      },
+      {
+        "name": "seed_parse",
+        "observed": {
+          "input": "-9223372036854775808",
+          "label": "-9223372036854775808",
+          "requested": true,
+          "value": "-9223372036854775808"
+        }
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "run_ready",
+        "observed": true
+      },
+      {
+        "name": "seed_parse",
+        "observed": {
+          "input": "9223372036854775807",
+          "label": "9223372036854775807",
+          "requested": true,
+          "value": "9223372036854775807"
+        }
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "run_ready",
+        "observed": true
+      },
+      {
+        "name": "seed_parse",
+        "observed": {
+          "input": "9223372036854775808",
+          "label": "9223372036854775808",
+          "requested": true,
+          "value": "-9223372036854775808"
+        }
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "run_ready",
+        "observed": true
+      },
+      {
+        "name": "seed_parse",
+        "observed": {
+          "input": "  AUDIT TEXT  ",
+          "label": "AUDIT TEXT",
+          "requested": true,
+          "value": "8233353948240249117"
+        }
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "run_ready",
+        "observed": true
+      },
+      {
+        "name": "seed_parse",
+        "observed": {
+          "input": "",
+          "label": "139550338747702578",
+          "requested": false,
+          "value": "139550338747702578"
+        }
+      },
+      {
+        "expected": {
+          "hand_size": 2,
+          "pile_count": 2,
+          "start_value": 2,
+          "turn_time": 4.0
+        },
+        "matches": true,
+        "name": "custom_difficulty_survives_endless",
+        "observed": {
+          "hand_size": 2,
+          "pile_count": 2,
+          "start_value": 2,
+          "turn_time": 4.0
+        }
+      },
+      {
+        "expected": {
+          "hand_size": 2,
+          "pile_count": 2,
+          "start_value": 2,
+          "turn_time": 4.0
+        },
+        "matches": true,
+        "name": "challenge_custom_difficulty_survives_endless",
+        "observed": {
+          "hand_size": 2,
+          "pile_count": 2,
+          "start_value": 2,
+          "turn_time": 4.0
+        }
+      }
+    ],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"menu_visible\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"run_ready\",\"observed\":true}\nAUDIT {\"name\":\"seed_parse\",\"observed\":{\"input\":\"0\",\"label\":\"0\",\"requested\":true,\"value\":\"0\"}}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"run_ready\",\"observed\":true}\nAUDIT {\"name\":\"seed_parse\",\"observed\":{\"input\":\"-9223372036854775808\",\"label\":\"-9223372036854775808\",\"requested\":true,\"value\":\"-9223372036854775808\"}}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"run_ready\",\"observed\":true}\nAUDIT {\"name\":\"seed_parse\",\"observed\":{\"input\":\"9223372036854775807\",\"label\":\"9223372036854775807\",\"requested\":true,\"value\":\"9223372036854775807\"}}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"run_ready\",\"observed\":true}\nAUDIT {\"name\":\"seed_parse\",\"observed\":{\"input\":\"9223372036854775808\",\"label\":\"9223372036854775808\",\"requested\":true,\"value\":\"-9223372036854775808\"}}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"run_ready\",\"observed\":true}\nAUDIT {\"name\":\"seed_parse\",\"observed\":{\"input\":\"  AUDIT TEXT  \",\"label\":\"AUDIT TEXT\",\"requested\":true,\"value\":\"8233353948240249117\"}}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"run_ready\",\"observed\":true}\nAUDIT {\"name\":\"seed_parse\",\"observed\":{\"input\":\"\",\"label\":\"139550338747702578\",\"requested\":false,\"value\":\"139550338747702578\"}}\nAUDIT {\"expected\":{\"hand_size\":2,\"pile_count\":2,\"start_value\":2,\"turn_time\":4.0},\"matches\":true,\"name\":\"custom_difficulty_survives_endless\",\"observed\":{\"hand_size\":2,\"pile_count\":2,\"start_value\":2,\"turn_time\":4.0}}\nAUDIT {\"expected\":{\"hand_size\":2,\"pile_count\":2,\"start_value\":2,\"turn_time\":4.0},\"matches\":true,\"name\":\"challenge_custom_difficulty_survives_endless\",\"observed\":{\"hand_size\":2,\"pile_count\":2,\"start_value\":2,\"turn_time\":4.0}}\nAUDIT_DONE {\"detail\":\"standard\",\"observations\":15,\"scenario\":\"seed_input\"}\n",
+    "exit_code": 0
+  },
+  {
+    "case": "bonus_cancel",
+    "seconds": 7.43,
+    "completed": true,
+    "observations": [
+      {
+        "expected": true,
+        "matches": true,
+        "name": "menu_visible",
+        "observed": true
+      },
+      {
+        "expected": false,
+        "matches": true,
+        "name": "cancelled_flawless_stays_hidden",
+        "observed": false
+      },
+      {
+        "expected": 0,
+        "matches": true,
+        "name": "cancelled_flawless_mode",
+        "observed": 0
+      }
+    ],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"menu_visible\",\"observed\":true}\nAUDIT {\"expected\":false,\"matches\":true,\"name\":\"cancelled_flawless_stays_hidden\",\"observed\":false}\nAUDIT {\"expected\":0,\"matches\":true,\"name\":\"cancelled_flawless_mode\",\"observed\":0}\nAUDIT_DONE {\"detail\":\"standard\",\"observations\":3,\"scenario\":\"bonus_cancel\"}\n",
+    "exit_code": 0
+  },
+  {
+    "case": "bonus_integration",
+    "seconds": 11.87,
+    "completed": true,
+    "observations": [
+      {
+        "expected": true,
+        "matches": true,
+        "name": "menu_visible",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "run_ready",
+        "observed": true
+      },
+      {
+        "expected": false,
+        "matches": true,
+        "name": "restart_flawless_visibility",
+        "observed": false
+      },
+      {
+        "expected": 0,
+        "matches": true,
+        "name": "restart_flawless_mode",
+        "observed": 0
+      }
+    ],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"menu_visible\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"run_ready\",\"observed\":true}\nAUDIT {\"expected\":false,\"matches\":true,\"name\":\"restart_flawless_visibility\",\"observed\":false}\nAUDIT {\"expected\":0,\"matches\":true,\"name\":\"restart_flawless_mode\",\"observed\":0}\nAUDIT_DONE {\"detail\":\"standard\",\"observations\":4,\"scenario\":\"bonus_integration\"}\n",
+    "exit_code": 0
+  },
+  {
+    "case": "persistence",
+    "seconds": 13.14,
+    "completed": true,
+    "observations": [
+      {
+        "expected": true,
+        "matches": true,
+        "name": "menu_visible",
+        "observed": true
+      },
+      {
+        "name": "persist_written_challenge",
+        "observed": "shared_clock"
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "save_boot_menu",
+        "observed": true
+      },
+      {
+        "name": "save_loaded_best_time",
+        "observed": 12345
+      },
+      {
+        "name": "save_loaded_font",
+        "observed": "vcr"
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "menu_visible",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "persist_completed_challenge",
+        "observed": true
+      },
+      {
+        "expected": 12345,
+        "matches": true,
+        "name": "persist_challenge_time",
+        "observed": 12345
+      },
+      {
+        "name": "persist_challenge_seed",
+        "observed": {
+          "seed": 42,
+          "seed_label": "AUDIT-PERSIST"
+        }
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "persist_achievement",
+        "observed": true
+      },
+      {
+        "expected": false,
+        "matches": true,
+        "name": "persist_option",
+        "observed": false
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "save_boot_menu",
+        "observed": true
+      },
+      {
+        "name": "save_loaded_best_time",
+        "observed": 12345
+      },
+      {
+        "name": "save_loaded_font",
+        "observed": "vcr"
+      }
+    ],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"menu_visible\",\"observed\":true}\nAUDIT {\"name\":\"persist_written_challenge\",\"observed\":\"shared_clock\"}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"save_boot_menu\",\"observed\":true}\nAUDIT {\"name\":\"save_loaded_best_time\",\"observed\":12345}\nAUDIT {\"name\":\"save_loaded_font\",\"observed\":\"vcr\"}\nAUDIT_DONE {\"detail\":\"persist_write\",\"observations\":5,\"scenario\":\"save\"}\nWARNING: 2 ObjectDB instances were leaked at exit (run with `--verbose` for details).\n   at: cleanup (core/object/object.cpp:2536)\nGodot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"menu_visible\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"persist_completed_challenge\",\"observed\":true}\nAUDIT {\"expected\":12345,\"matches\":true,\"name\":\"persist_challenge_time\",\"observed\":12345}\nAUDIT {\"name\":\"persist_challenge_seed\",\"observed\":{\"seed\":42,\"seed_label\":\"AUDIT-PERSIST\"}}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"persist_achievement\",\"observed\":true}\nAUDIT {\"expected\":false,\"matches\":true,\"name\":\"persist_option\",\"observed\":false}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"save_boot_menu\",\"observed\":true}\nAUDIT {\"name\":\"save_loaded_best_time\",\"observed\":12345}\nAUDIT {\"name\":\"save_loaded_font\",\"observed\":\"vcr\"}\nAUDIT_DONE {\"detail\":\"persist_read\",\"observations\":9,\"scenario\":\"save\"}\n",
+    "exit_code": 0
+  }
+]

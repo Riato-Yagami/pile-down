@@ -1,0 +1,29 @@
+[
+  {
+    "name": "resize-trace-0",
+    "scenario": "resize",
+    "cap": 60,
+    "pixel": false,
+    "screen_mode": "semi_adaptive",
+    "seed": "PERF-A",
+    "trace_resize": true
+  },
+  {
+    "name": "resize-trace-1",
+    "scenario": "resize",
+    "cap": 60,
+    "pixel": false,
+    "screen_mode": "semi_adaptive",
+    "seed": "PERF-A",
+    "trace_resize": true
+  },
+  {
+    "name": "resize-trace-2",
+    "scenario": "resize",
+    "cap": 60,
+    "pixel": false,
+    "screen_mode": "semi_adaptive",
+    "seed": "PERF-A",
+    "trace_resize": true
+  }
+]

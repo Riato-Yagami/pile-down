@@ -1,0 +1,1291 @@
+{
+  "before": [
+    {
+      "file": "before/resize-0-50f069a2.json",
+      "config": {
+        "name": "resize-0",
+        "scenario": "resize",
+        "cap": 60,
+        "seed": "PERF-A",
+        "pixel": false,
+        "screen_mode": "semi_adaptive"
+      },
+      "errors": [],
+      "phases": {
+        "boot": {
+          "fps": 12.8788639811659,
+          "p95_ms": 169.235,
+          "max_ms": 185.676,
+          "over_33ms": 2,
+          "seconds": 0.388233
+        },
+        "start": {
+          "fps": 58.4395608711141,
+          "p95_ms": 16.691,
+          "max_ms": 80.653,
+          "over_33ms": 2,
+          "seconds": 2.138962
+        },
+        "resize_stable_before": {
+          "fps": 60.0908288154875,
+          "p95_ms": 16.721,
+          "max_ms": 31.887,
+          "over_33ms": 0,
+          "seconds": 0.981847
+        },
+        "resize_continuous": {
+          "fps": 57.3379517991694,
+          "p95_ms": 23.119,
+          "max_ms": 26.197,
+          "over_33ms": 0,
+          "seconds": 3.139282
+        },
+        "resize_stable_after": {
+          "fps": 60.7022644979771,
+          "p95_ms": 16.693,
+          "max_ms": 16.713,
+          "over_33ms": 0,
+          "seconds": 0.988431
+        }
+      }
+    },
+    {
+      "file": "before/resize-1-9b5f5a95.json",
+      "config": {
+        "name": "resize-1",
+        "scenario": "resize",
+        "cap": 60,
+        "seed": "PERF-A",
+        "pixel": false,
+        "screen_mode": "semi_adaptive"
+      },
+      "errors": [],
+      "phases": {
+        "boot": {
+          "fps": 12.5813383524486,
+          "p95_ms": 173.443,
+          "max_ms": 190.676,
+          "over_33ms": 2,
+          "seconds": 0.397414
+        },
+        "start": {
+          "fps": 58.3572208890839,
+          "p95_ms": 16.692,
+          "max_ms": 80.033,
+          "over_33ms": 2,
+          "seconds": 2.14198
+        },
+        "resize_stable_before": {
+          "fps": 59.7332806032649,
+          "p95_ms": 16.706,
+          "max_ms": 37.682,
+          "over_33ms": 1,
+          "seconds": 0.970983
+        },
+        "resize_continuous": {
+          "fps": 56.5409029456554,
+          "p95_ms": 23.869,
+          "max_ms": 27.2,
+          "over_33ms": 0,
+          "seconds": 3.183536
+        },
+        "resize_stable_after": {
+          "fps": 61.3246742893237,
+          "p95_ms": 16.691,
+          "max_ms": 16.701,
+          "over_33ms": 0,
+          "seconds": 0.978399
+        }
+      }
+    },
+    {
+      "file": "before/start-A-921c43ef.json",
+      "config": {
+        "name": "start-A",
+        "scenario": "baseline",
+        "cap": 60,
+        "seed": "PERF-A",
+        "pixel": false,
+        "screen_mode": "semi_adaptive",
+        "duration": 1
+      },
+      "errors": [],
+      "phases": {
+        "boot": {
+          "fps": 12.70089642927,
+          "p95_ms": 167.282,
+          "max_ms": 193.072,
+          "over_33ms": 2,
+          "seconds": 0.393673
+        },
+        "menu": {
+          "fps": 60.7331093631222,
+          "p95_ms": 16.694,
+          "max_ms": 16.73,
+          "over_33ms": 0,
+          "seconds": 0.987929
+        },
+        "start": {
+          "fps": 58.5148189949401,
+          "p95_ms": 16.696,
+          "max_ms": 78.078,
+          "over_33ms": 2,
+          "seconds": 2.136211
+        },
+        "gameplay_idle": {
+          "fps": 59.9238459327451,
+          "p95_ms": 16.697,
+          "max_ms": 34.597,
+          "over_33ms": 1,
+          "seconds": 0.984583
+        }
+      }
+    },
+    {
+      "file": "before/start-B-296e472c.json",
+      "config": {
+        "name": "start-B",
+        "scenario": "baseline",
+        "cap": 60,
+        "seed": "PERF-B",
+        "pixel": false,
+        "screen_mode": "semi_adaptive",
+        "duration": 1
+      },
+      "errors": [],
+      "phases": {
+        "boot": {
+          "fps": 11.8479762471772,
+          "p95_ms": 193.798,
+          "max_ms": 194.905,
+          "over_33ms": 2,
+          "seconds": 0.422013
+        },
+        "menu": {
+          "fps": 60.3005140371689,
+          "p95_ms": 16.696,
+          "max_ms": 16.746,
+          "over_33ms": 0,
+          "seconds": 1.0116
+        },
+        "start": {
+          "fps": 58.3950880854867,
+          "p95_ms": 16.693,
+          "max_ms": 84.187,
+          "over_33ms": 2,
+          "seconds": 2.140591
+        },
+        "gameplay_idle": {
+          "fps": 59.9047514452021,
+          "p95_ms": 16.702,
+          "max_ms": 34.965,
+          "over_33ms": 1,
+          "seconds": 1.00159
+        }
+      }
+    },
+    {
+      "file": "before-retry/resize-2-3b0d19e1.json",
+      "config": {
+        "name": "resize-2",
+        "scenario": "resize",
+        "cap": 60,
+        "seed": "PERF-A",
+        "pixel": false,
+        "screen_mode": "semi_adaptive"
+      },
+      "errors": [],
+      "phases": {
+        "boot": {
+          "fps": 12.3375149283931,
+          "p95_ms": 174.953,
+          "max_ms": 196.992,
+          "over_33ms": 2,
+          "seconds": 0.405268
+        },
+        "start": {
+          "fps": 58.5514646463004,
+          "p95_ms": 16.689,
+          "max_ms": 77.888,
+          "over_33ms": 2,
+          "seconds": 2.151953
+        },
+        "resize_stable_before": {
+          "fps": 60.0695004119767,
+          "p95_ms": 16.768,
+          "max_ms": 32.221,
+          "over_33ms": 0,
+          "seconds": 0.998843
+        },
+        "resize_continuous": {
+          "fps": 55.9793050729068,
+          "p95_ms": 25.074,
+          "max_ms": 35.482,
+          "over_33ms": 1,
+          "seconds": 3.215474
+        },
+        "resize_stable_after": {
+          "fps": 60.3065381333317,
+          "p95_ms": 16.697,
+          "max_ms": 16.744,
+          "over_33ms": 0,
+          "seconds": 0.994917
+        }
+      }
+    },
+    {
+      "file": "before-retry/start-C-0b9a41b5.json",
+      "config": {
+        "name": "start-C",
+        "scenario": "baseline",
+        "cap": 60,
+        "seed": "PERF-C",
+        "pixel": false,
+        "screen_mode": "semi_adaptive",
+        "duration": 1
+      },
+      "errors": [],
+      "phases": {
+        "boot": {
+          "fps": 12.3566016379911,
+          "p95_ms": 176.099,
+          "max_ms": 195.212,
+          "over_33ms": 2,
+          "seconds": 0.404642
+        },
+        "menu": {
+          "fps": 60.2950841417899,
+          "p95_ms": 16.686,
+          "max_ms": 16.697,
+          "over_33ms": 0,
+          "seconds": 0.995106
+        },
+        "start": {
+          "fps": 58.5697638513977,
+          "p95_ms": 16.696,
+          "max_ms": 79.054,
+          "over_33ms": 2,
+          "seconds": 2.134207
+        },
+        "gameplay_idle": {
+          "fps": 60.0393410326156,
+          "p95_ms": 16.696,
+          "max_ms": 32.741,
+          "over_33ms": 0,
+          "seconds": 0.982689
+        }
+      }
+    }
+  ],
+  "after": [
+    {
+      "file": "after-coalesced/resize-0-1d57887d.json",
+      "config": {
+        "name": "resize-0",
+        "scenario": "resize",
+        "cap": 60,
+        "seed": "PERF-A",
+        "pixel": false,
+        "screen_mode": "semi_adaptive"
+      },
+      "errors": [],
+      "phases": {
+        "boot": {
+          "fps": 3.49021378955547,
+          "p95_ms": 180.527,
+          "max_ms": 1219.98,
+          "over_33ms": 2,
+          "seconds": 1.432577
+        },
+        "start": {
+          "fps": 60.1707730498372,
+          "p95_ms": 16.707,
+          "max_ms": 17.389,
+          "over_33ms": 0,
+          "seconds": 2.143898
+        },
+        "resize_stable_before": {
+          "fps": 60.3289872603584,
+          "p95_ms": 16.764,
+          "max_ms": 17.544,
+          "over_33ms": 0,
+          "seconds": 0.977971
+        },
+        "resize_continuous": {
+          "fps": 58.0234692038825,
+          "p95_ms": 22.502,
+          "max_ms": 31.12,
+          "over_33ms": 0,
+          "seconds": 3.102193
+        },
+        "resize_stable_after": {
+          "fps": 60.2106771593807,
+          "p95_ms": 16.688,
+          "max_ms": 16.703,
+          "over_33ms": 0,
+          "seconds": 0.996501
+        }
+      }
+    },
+    {
+      "file": "after-coalesced/resize-1-b9b91d4a.json",
+      "config": {
+        "name": "resize-1",
+        "scenario": "resize",
+        "cap": 60,
+        "seed": "PERF-A",
+        "pixel": false,
+        "screen_mode": "semi_adaptive"
+      },
+      "errors": [],
+      "phases": {
+        "boot": {
+          "fps": 3.44387245549484,
+          "p95_ms": 206.085,
+          "max_ms": 1213.587,
+          "over_33ms": 2,
+          "seconds": 1.451854
+        },
+        "start": {
+          "fps": 60.1381326647207,
+          "p95_ms": 16.692,
+          "max_ms": 16.706,
+          "over_33ms": 0,
+          "seconds": 2.16169
+        },
+        "resize_stable_before": {
+          "fps": 60.3355258593036,
+          "p95_ms": 16.682,
+          "max_ms": 16.7,
+          "over_33ms": 0,
+          "seconds": 0.994439
+        },
+        "resize_continuous": {
+          "fps": 58.4029518149691,
+          "p95_ms": 22.314,
+          "max_ms": 27.126,
+          "over_33ms": 0,
+          "seconds": 3.082036
+        },
+        "resize_stable_after": {
+          "fps": 60.1952734671274,
+          "p95_ms": 16.686,
+          "max_ms": 16.697,
+          "over_33ms": 0,
+          "seconds": 0.996756
+        }
+      }
+    },
+    {
+      "file": "after-coalesced/resize-2-caab9e6b.json",
+      "config": {
+        "name": "resize-2",
+        "scenario": "resize",
+        "cap": 60,
+        "seed": "PERF-A",
+        "pixel": false,
+        "screen_mode": "semi_adaptive"
+      },
+      "errors": [],
+      "phases": {
+        "boot": {
+          "fps": 3.30092049468915,
+          "p95_ms": 185.132,
+          "max_ms": 1297.1,
+          "over_33ms": 2,
+          "seconds": 1.514729
+        },
+        "start": {
+          "fps": 60.1767158696184,
+          "p95_ms": 16.685,
+          "max_ms": 16.714,
+          "over_33ms": 0,
+          "seconds": 2.160304
+        },
+        "resize_stable_before": {
+          "fps": 60.3275180957418,
+          "p95_ms": 16.691,
+          "max_ms": 16.7,
+          "over_33ms": 0,
+          "seconds": 0.994571
+        },
+        "resize_continuous": {
+          "fps": 57.3727122630985,
+          "p95_ms": 22.525,
+          "max_ms": 42.286,
+          "over_33ms": 1,
+          "seconds": 3.13738
+        },
+        "resize_stable_after": {
+          "fps": 61.1400719047337,
+          "p95_ms": 16.711,
+          "max_ms": 16.727,
+          "over_33ms": 0,
+          "seconds": 0.997709
+        }
+      }
+    },
+    {
+      "file": "after-coalesced/start-A-d5b86b92.json",
+      "config": {
+        "name": "start-A",
+        "scenario": "baseline",
+        "cap": 60,
+        "seed": "PERF-A",
+        "pixel": false,
+        "screen_mode": "semi_adaptive",
+        "duration": 1
+      },
+      "errors": [],
+      "phases": {
+        "boot": {
+          "fps": 3.60315434544017,
+          "p95_ms": 180.968,
+          "max_ms": 1174.19,
+          "over_33ms": 2,
+          "seconds": 1.387673
+        },
+        "menu": {
+          "fps": 60.4478691630646,
+          "p95_ms": 16.687,
+          "max_ms": 16.701,
+          "over_33ms": 0,
+          "seconds": 1.009134
+        },
+        "start": {
+          "fps": 60.0895982132127,
+          "p95_ms": 16.694,
+          "max_ms": 16.722,
+          "over_33ms": 0,
+          "seconds": 2.163436
+        },
+        "gameplay_idle": {
+          "fps": 60.3562224247509,
+          "p95_ms": 16.698,
+          "max_ms": 16.716,
+          "over_33ms": 0,
+          "seconds": 0.994098
+        }
+      }
+    },
+    {
+      "file": "after-coalesced/start-B-bdc43a87.json",
+      "config": {
+        "name": "start-B",
+        "scenario": "baseline",
+        "cap": 60,
+        "seed": "PERF-B",
+        "pixel": false,
+        "screen_mode": "semi_adaptive",
+        "duration": 1
+      },
+      "errors": [],
+      "phases": {
+        "boot": {
+          "fps": 3.50586636619055,
+          "p95_ms": 189.877,
+          "max_ms": 1203.878,
+          "over_33ms": 2,
+          "seconds": 1.426181
+        },
+        "menu": {
+          "fps": 60.6124892034003,
+          "p95_ms": 16.681,
+          "max_ms": 16.687,
+          "over_33ms": 0,
+          "seconds": 0.989895
+        },
+        "start": {
+          "fps": 60.0974137147888,
+          "p95_ms": 16.688,
+          "max_ms": 16.712,
+          "over_33ms": 0,
+          "seconds": 2.146515
+        },
+        "gameplay_idle": {
+          "fps": 60.3118428948049,
+          "p95_ms": 16.706,
+          "max_ms": 16.716,
+          "over_33ms": 0,
+          "seconds": 0.978249
+        }
+      }
+    },
+    {
+      "file": "after-coalesced/start-C-ec0ecbe0.json",
+      "config": {
+        "name": "start-C",
+        "scenario": "baseline",
+        "cap": 60,
+        "seed": "PERF-C",
+        "pixel": false,
+        "screen_mode": "semi_adaptive",
+        "duration": 1
+      },
+      "errors": [],
+      "phases": {
+        "boot": {
+          "fps": 3.49972177211912,
+          "p95_ms": 182.129,
+          "max_ms": 1214.233,
+          "over_33ms": 2,
+          "seconds": 1.428685
+        },
+        "menu": {
+          "fps": 60.2821808887402,
+          "p95_ms": 16.698,
+          "max_ms": 16.728,
+          "over_33ms": 0,
+          "seconds": 0.995319
+        },
+        "start": {
+          "fps": 60.0927944546928,
+          "p95_ms": 16.69,
+          "max_ms": 16.716,
+          "over_33ms": 0,
+          "seconds": 2.14668
+        },
+        "gameplay_idle": {
+          "fps": 60.3413273660192,
+          "p95_ms": 16.692,
+          "max_ms": 16.719,
+          "over_33ms": 0,
+          "seconds": 0.977771
+        }
+      }
+    },
+    {
+      "file": "after-coalesced/states-final-b28fe5f3.json",
+      "config": {
+        "name": "states-final",
+        "scenario": "states",
+        "cap": 60,
+        "seed": "PERF-A",
+        "pixel": false,
+        "screen_mode": "semi_adaptive",
+        "duration": 1
+      },
+      "errors": [],
+      "phases": {
+        "boot": {
+          "fps": 3.73223456347785,
+          "p95_ms": 184.866,
+          "max_ms": 1122.624,
+          "over_33ms": 2,
+          "seconds": 1.33968
+        },
+        "menu": {
+          "fps": 60.5076492579878,
+          "p95_ms": 16.693,
+          "max_ms": 16.706,
+          "over_33ms": 0,
+          "seconds": 1.008137
+        },
+        "start": {
+          "fps": 60.0865986547998,
+          "p95_ms": 16.689,
+          "max_ms": 16.714,
+          "over_33ms": 0,
+          "seconds": 2.163544
+        },
+        "gameplay_idle": {
+          "fps": 60.3244247563396,
+          "p95_ms": 16.684,
+          "max_ms": 16.704,
+          "over_33ms": 0,
+          "seconds": 0.994622000000001
+        },
+        "round_played": {
+          "fps": 60.0465651427753,
+          "p95_ms": 16.691,
+          "max_ms": 32.366,
+          "over_33ms": 0,
+          "seconds": 4.130128
+        },
+        "pause_popup": {
+          "fps": 60.1537529926492,
+          "p95_ms": 16.692,
+          "max_ms": 16.72,
+          "over_33ms": 0,
+          "seconds": 0.997444
+        },
+        "resume": {
+          "fps": 60.1859845588416,
+          "p95_ms": 16.687,
+          "max_ms": 16.718,
+          "over_33ms": 0,
+          "seconds": 1.013525
+        },
+        "damage": {
+          "fps": 60.5798593996536,
+          "p95_ms": 16.674,
+          "max_ms": 16.695,
+          "over_33ms": 0,
+          "seconds": 0.363157
+        },
+        "reload": {
+          "fps": 60.1435174685594,
+          "p95_ms": 16.687,
+          "max_ms": 16.725,
+          "over_33ms": 0,
+          "seconds": 0.798091
+        },
+        "flawless": {
+          "fps": 60.4510775053106,
+          "p95_ms": 16.685,
+          "max_ms": 16.691,
+          "over_33ms": 0,
+          "seconds": 0.711319
+        },
+        "bonus": {
+          "fps": 60.1792750469102,
+          "p95_ms": 16.691,
+          "max_ms": 16.713,
+          "over_33ms": 0,
+          "seconds": 1.013638
+        },
+        "tier_boundary_injected": {
+          "fps": 60.1673807078651,
+          "p95_ms": 16.688,
+          "max_ms": 16.99,
+          "over_33ms": 0,
+          "seconds": 1.213282
+        },
+        "game_over_injected": {
+          "fps": 60.2880929614353,
+          "p95_ms": 16.694,
+          "max_ms": 16.709,
+          "over_33ms": 0,
+          "seconds": 0.713242
+        },
+        "restart": {
+          "fps": 60.0465975243743,
+          "p95_ms": 16.697,
+          "max_ms": 31.128,
+          "over_33ms": 0,
+          "seconds": 2.931057
+        },
+        "return_menu": {
+          "fps": 59.5502078772388,
+          "p95_ms": 16.704,
+          "max_ms": 38.15,
+          "over_33ms": 1,
+          "seconds": 0.638117
+        },
+        "menu_after": {
+          "fps": 61.8309938860675,
+          "p95_ms": 16.693,
+          "max_ms": 16.967,
+          "over_33ms": 0,
+          "seconds": 0.954214
+        }
+      }
+    }
+  ],
+  "excluded": [
+    {
+      "file": "before/resize-2-4a1d1747.json",
+      "config": {
+        "name": "resize-2",
+        "scenario": "resize",
+        "cap": 60,
+        "seed": "PERF-A",
+        "pixel": false,
+        "screen_mode": "semi_adaptive"
+      },
+      "errors": [
+        "SCRIPT ERROR: Parse Error: Cannot infer the type of \"template\" variable because the value doesn't have a set type.",
+        "SCRIPT ERROR: Compile Error: Failed to compile depended scripts.",
+        "ERROR: Failed to load script \"res://tests/performance/performance_probe.gd\" with error \"Compilation failed\"."
+      ],
+      "phases": {
+        "boot": {
+          "fps": 11.8425322176089,
+          "p95_ms": 187.183,
+          "max_ms": 201.693,
+          "over_33ms": 2,
+          "seconds": 0.422207
+        },
+        "start": {
+          "fps": 58.3437379666041,
+          "p95_ms": 16.709,
+          "max_ms": 86.847,
+          "over_33ms": 2,
+          "seconds": 2.142475
+        },
+        "resize_stable_before": {
+          "fps": 59.7395154619029,
+          "p95_ms": 16.702,
+          "max_ms": 37.662,
+          "over_33ms": 1,
+          "seconds": 0.987621
+        },
+        "resize_continuous": {
+          "fps": 56.2621315221095,
+          "p95_ms": 24.137,
+          "max_ms": 35.038,
+          "over_33ms": 3,
+          "seconds": 3.19931
+        },
+        "resize_stable_after": {
+          "fps": 60.5047304615099,
+          "p95_ms": 16.681,
+          "max_ms": 16.693,
+          "over_33ms": 0,
+          "seconds": 0.991658
+        }
+      }
+    },
+    {
+      "file": "before/start-C-464962d1.json",
+      "config": {
+        "name": "start-C",
+        "scenario": "baseline",
+        "cap": 60,
+        "seed": "PERF-C",
+        "pixel": false,
+        "screen_mode": "semi_adaptive",
+        "duration": 1
+      },
+      "errors": [
+        "SCRIPT ERROR: Parse Error: Cannot infer the type of \"template\" variable because the value doesn't have a set type.",
+        "SCRIPT ERROR: Compile Error: Failed to compile depended scripts.",
+        "ERROR: Failed to load script \"res://tests/performance/performance_probe.gd\" with error \"Compilation failed\"."
+      ],
+      "phases": {
+        "boot": {
+          "fps": 12.6838202651933,
+          "p95_ms": 165.345,
+          "max_ms": 195.534,
+          "over_33ms": 2,
+          "seconds": 0.394203
+        },
+        "menu": {
+          "fps": 60.2961628905783,
+          "p95_ms": 16.694,
+          "max_ms": 16.782,
+          "over_33ms": 0,
+          "seconds": 1.011673
+        },
+        "start": {
+          "fps": 58.3990712211713,
+          "p95_ms": 16.7,
+          "max_ms": 85.262,
+          "over_33ms": 2,
+          "seconds": 2.140445
+        },
+        "gameplay_idle": {
+          "fps": 60.0376914591805,
+          "p95_ms": 16.724,
+          "max_ms": 32.71,
+          "over_33ms": 0,
+          "seconds": 0.982716
+        }
+      }
+    }
+  ],
+  "comparison": {
+    "start": {
+      "before": {
+        "fps": {
+          "min": 58.3950880854867,
+          "median": 58.5148189949401,
+          "max": 58.5697638513977
+        },
+        "p95_ms": {
+          "min": 16.693,
+          "median": 16.696,
+          "max": 16.696
+        },
+        "max_ms": {
+          "min": 78.078,
+          "median": 79.054,
+          "max": 84.187
+        },
+        "over_33ms": {
+          "min": 2,
+          "median": 2,
+          "max": 2
+        },
+        "boot_seconds": {
+          "min": 0.393673,
+          "median": 0.404642,
+          "max": 0.422013
+        }
+      },
+      "after": {
+        "fps": {
+          "min": 60.0895982132127,
+          "median": 60.0927944546928,
+          "max": 60.0974137147888
+        },
+        "p95_ms": {
+          "min": 16.688,
+          "median": 16.69,
+          "max": 16.694
+        },
+        "max_ms": {
+          "min": 16.712,
+          "median": 16.716,
+          "max": 16.722
+        },
+        "over_33ms": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "boot_seconds": {
+          "min": 1.387673,
+          "median": 1.426181,
+          "max": 1.428685
+        }
+      }
+    },
+    "resize_continuous": {
+      "before": {
+        "fps": {
+          "min": 55.9793050729068,
+          "median": 56.5409029456554,
+          "max": 57.3379517991694
+        },
+        "p95_ms": {
+          "min": 23.119,
+          "median": 23.869,
+          "max": 25.074
+        },
+        "max_ms": {
+          "min": 26.197,
+          "median": 27.2,
+          "max": 35.482
+        },
+        "over_33ms": {
+          "min": 0,
+          "median": 0,
+          "max": 1
+        },
+        "boot_seconds": {
+          "min": 0.388233,
+          "median": 0.397414,
+          "max": 0.405268
+        }
+      },
+      "after": {
+        "fps": {
+          "min": 57.3727122630985,
+          "median": 58.0234692038825,
+          "max": 58.4029518149691
+        },
+        "p95_ms": {
+          "min": 22.314,
+          "median": 22.502,
+          "max": 22.525
+        },
+        "max_ms": {
+          "min": 27.126,
+          "median": 31.12,
+          "max": 42.286
+        },
+        "over_33ms": {
+          "min": 0,
+          "median": 0,
+          "max": 1
+        },
+        "boot_seconds": {
+          "min": 1.432577,
+          "median": 1.451854,
+          "max": 1.514729
+        }
+      }
+    }
+  },
+  "validated_states": [
+    {
+      "file": "validated-states/states-A-fa71bdd6.json",
+      "config": {
+        "name": "states-A",
+        "scenario": "states",
+        "cap": 60,
+        "seed": "PERF-A",
+        "pixel": false,
+        "screen_mode": "semi_adaptive",
+        "duration": 1
+      },
+      "errors": [],
+      "phases": {
+        "boot": {
+          "fps": 3.64412363199599,
+          "p95_ms": 172.158,
+          "max_ms": 1168.009,
+          "over_33ms": 2,
+          "seconds": 1.372072
+        },
+        "menu": {
+          "fps": 60.4674031133774,
+          "p95_ms": 16.694,
+          "max_ms": 17.011,
+          "over_33ms": 0,
+          "seconds": 1.008808
+        },
+        "start": {
+          "fps": 60.091709193107,
+          "p95_ms": 16.704,
+          "max_ms": 17.056,
+          "over_33ms": 0,
+          "seconds": 2.16336
+        },
+        "gameplay_idle": {
+          "fps": 60.3228478818637,
+          "p95_ms": 16.704,
+          "max_ms": 16.855,
+          "over_33ms": 0,
+          "seconds": 0.994648
+        },
+        "round_played": {
+          "fps": 59.9934152388597,
+          "p95_ms": 16.707,
+          "max_ms": 37.569,
+          "over_33ms": 1,
+          "seconds": 4.133787
+        },
+        "pause_popup": {
+          "fps": 60.1518232017612,
+          "p95_ms": 16.706,
+          "max_ms": 16.84,
+          "over_33ms": 0,
+          "seconds": 0.997476
+        },
+        "resume": {
+          "fps": 60.1897853000757,
+          "p95_ms": 16.701,
+          "max_ms": 16.712,
+          "over_33ms": 0,
+          "seconds": 1.013461
+        },
+        "damage": {
+          "fps": 60.56284909665,
+          "p95_ms": 16.697,
+          "max_ms": 16.716,
+          "over_33ms": 0,
+          "seconds": 0.363259
+        },
+        "reload": {
+          "fps": 60.1560297020397,
+          "p95_ms": 16.689,
+          "max_ms": 16.712,
+          "over_33ms": 0,
+          "seconds": 0.797925
+        },
+        "flawless": {
+          "fps": 60.3866430362966,
+          "p95_ms": 16.69,
+          "max_ms": 16.721,
+          "over_33ms": 0,
+          "seconds": 0.712078
+        },
+        "bonus": {
+          "fps": 60.1744664941665,
+          "p95_ms": 16.691,
+          "max_ms": 16.761,
+          "over_33ms": 0,
+          "seconds": 1.013719
+        },
+        "tier_boundary_injected": {
+          "fps": 60.1809716011766,
+          "p95_ms": 16.692,
+          "max_ms": 16.719,
+          "over_33ms": 0,
+          "seconds": 1.213008
+        },
+        "game_over_injected": {
+          "fps": 60.290544339489,
+          "p95_ms": 16.686,
+          "max_ms": 16.699,
+          "over_33ms": 0,
+          "seconds": 0.713213
+        },
+        "restart": {
+          "fps": 60.0887888238926,
+          "p95_ms": 16.698,
+          "max_ms": 16.881,
+          "over_33ms": 0,
+          "seconds": 2.945641
+        },
+        "return_menu": {
+          "fps": 59.7263589711349,
+          "p95_ms": 16.71,
+          "max_ms": 36.251,
+          "over_33ms": 1,
+          "seconds": 0.636235
+        },
+        "menu_after": {
+          "fps": 61.8308642906847,
+          "p95_ms": 16.707,
+          "max_ms": 16.741,
+          "over_33ms": 0,
+          "seconds": 0.954216
+        }
+      }
+    },
+    {
+      "file": "validated-states/states-B-6fb1cd3e.json",
+      "config": {
+        "name": "states-B",
+        "scenario": "states",
+        "cap": 60,
+        "seed": "PERF-B",
+        "pixel": false,
+        "screen_mode": "semi_adaptive",
+        "duration": 1
+      },
+      "errors": [],
+      "phases": {
+        "boot": {
+          "fps": 3.68653265383163,
+          "p95_ms": 188.296,
+          "max_ms": 1135.865,
+          "over_33ms": 2,
+          "seconds": 1.356288
+        },
+        "menu": {
+          "fps": 60.3423886485086,
+          "p95_ms": 16.694,
+          "max_ms": 16.72,
+          "over_33ms": 0,
+          "seconds": 1.010898
+        },
+        "start": {
+          "fps": 60.1085189954479,
+          "p95_ms": 16.694,
+          "max_ms": 16.799,
+          "over_33ms": 0,
+          "seconds": 2.162755
+        },
+        "gameplay_idle": {
+          "fps": 60.3133883659495,
+          "p95_ms": 16.699,
+          "max_ms": 16.937,
+          "over_33ms": 0,
+          "seconds": 0.994804
+        },
+        "round_played": {
+          "fps": 60.0247069438905,
+          "p95_ms": 16.701,
+          "max_ms": 34.863,
+          "over_33ms": 1,
+          "seconds": 4.131632
+        },
+        "pause_popup": {
+          "fps": 60.1510392595808,
+          "p95_ms": 16.694,
+          "max_ms": 16.732,
+          "over_33ms": 0,
+          "seconds": 0.997489
+        },
+        "resume": {
+          "fps": 60.3951426463963,
+          "p95_ms": 16.693,
+          "max_ms": 16.716,
+          "over_33ms": 0,
+          "seconds": 1.010015
+        },
+        "damage": {
+          "fps": 60.4964004641724,
+          "p95_ms": 16.683,
+          "max_ms": 16.694,
+          "over_33ms": 0,
+          "seconds": 0.363658
+        },
+        "reload": {
+          "fps": 60.143216033179,
+          "p95_ms": 16.695,
+          "max_ms": 16.707,
+          "over_33ms": 0,
+          "seconds": 0.798095
+        },
+        "flawless": {
+          "fps": 60.2513461972293,
+          "p95_ms": 16.704,
+          "max_ms": 16.722,
+          "over_33ms": 0,
+          "seconds": 0.713677
+        },
+        "bonus": {
+          "fps": 60.2038641011267,
+          "p95_ms": 16.709,
+          "max_ms": 16.724,
+          "over_33ms": 0,
+          "seconds": 1.013224
+        },
+        "tier_boundary_injected": {
+          "fps": 60.1589514871623,
+          "p95_ms": 16.697,
+          "max_ms": 16.76,
+          "over_33ms": 0,
+          "seconds": 1.213452
+        },
+        "game_over_injected": {
+          "fps": 60.2751631284212,
+          "p95_ms": 16.686,
+          "max_ms": 16.71,
+          "over_33ms": 0,
+          "seconds": 0.713395
+        },
+        "restart": {
+          "fps": 60.0701904903798,
+          "p95_ms": 16.703,
+          "max_ms": 16.716,
+          "over_33ms": 0,
+          "seconds": 2.946553
+        },
+        "return_menu": {
+          "fps": 59.9038385749192,
+          "p95_ms": 16.695,
+          "max_ms": 34.418,
+          "over_33ms": 1,
+          "seconds": 0.63435
+        },
+        "menu_after": {
+          "fps": 61.8300867297962,
+          "p95_ms": 16.689,
+          "max_ms": 16.726,
+          "over_33ms": 0,
+          "seconds": 0.954228
+        }
+      }
+    },
+    {
+      "file": "validated-states/states-C-a313fb09.json",
+      "config": {
+        "name": "states-C",
+        "scenario": "states",
+        "cap": 60,
+        "seed": "PERF-C",
+        "pixel": false,
+        "screen_mode": "semi_adaptive",
+        "duration": 1
+      },
+      "errors": [],
+      "phases": {
+        "boot": {
+          "fps": 3.20556383303372,
+          "p95_ms": 245.441,
+          "max_ms": 1282.102,
+          "over_33ms": 2,
+          "seconds": 1.559788
+        },
+        "menu": {
+          "fps": 60.2962354045425,
+          "p95_ms": 16.699,
+          "max_ms": 16.714,
+          "over_33ms": 0,
+          "seconds": 0.995087
+        },
+        "start": {
+          "fps": 60.0866925210234,
+          "p95_ms": 16.687,
+          "max_ms": 16.848,
+          "over_33ms": 0,
+          "seconds": 2.146898
+        },
+        "gameplay_idle": {
+          "fps": 60.3259647041983,
+          "p95_ms": 16.711,
+          "max_ms": 16.805,
+          "over_33ms": 0,
+          "seconds": 0.97802
+        },
+        "round_played": {
+          "fps": 60.0185838918869,
+          "p95_ms": 16.708,
+          "max_ms": 35.445,
+          "over_33ms": 1,
+          "seconds": 4.115392
+        },
+        "pause_popup": {
+          "fps": 60.1511598647401,
+          "p95_ms": 16.69,
+          "max_ms": 16.916,
+          "over_33ms": 0,
+          "seconds": 0.997487
+        },
+        "resume": {
+          "fps": 60.1845000246658,
+          "p95_ms": 16.693,
+          "max_ms": 16.704,
+          "over_33ms": 0,
+          "seconds": 1.01355
+        },
+        "damage": {
+          "fps": 61.2189244391512,
+          "p95_ms": 16.68,
+          "max_ms": 16.687,
+          "over_33ms": 0,
+          "seconds": 0.359366
+        },
+        "reload": {
+          "fps": 60.1812961546659,
+          "p95_ms": 16.694,
+          "max_ms": 16.707,
+          "over_33ms": 0,
+          "seconds": 0.79759
+        },
+        "flawless": {
+          "fps": 60.4326414967057,
+          "p95_ms": 16.679,
+          "max_ms": 16.72,
+          "over_33ms": 0,
+          "seconds": 0.711536
+        },
+        "bonus": {
+          "fps": 60.3000967767127,
+          "p95_ms": 16.69,
+          "max_ms": 16.707,
+          "over_33ms": 0,
+          "seconds": 1.011607
+        },
+        "tier_boundary_injected": {
+          "fps": 60.1911439862863,
+          "p95_ms": 16.706,
+          "max_ms": 16.812,
+          "over_33ms": 0,
+          "seconds": 1.212803
+        },
+        "game_over_injected": {
+          "fps": 60.2789654447326,
+          "p95_ms": 16.699,
+          "max_ms": 16.709,
+          "over_33ms": 0,
+          "seconds": 0.71335
+        },
+        "restart": {
+          "fps": 60.0646050820086,
+          "p95_ms": 16.699,
+          "max_ms": 16.72,
+          "over_33ms": 0,
+          "seconds": 2.946827
+        },
+        "return_menu": {
+          "fps": 59.6656885573449,
+          "p95_ms": 16.705,
+          "max_ms": 36.981,
+          "over_33ms": 1,
+          "seconds": 0.653642
+        },
+        "menu_after": {
+          "fps": 61.8564397352971,
+          "p95_ms": 16.7,
+          "max_ms": 16.708,
+          "over_33ms": 0,
+          "seconds": 0.937655
+        }
+      }
+    }
+  ],
+  "source_sha256": {
+    "resources/scripts/core/GameManager.gd": "adc2f46bef16441002ea3bb8aa230512574a7923205761b4c4a02c8fa075e01a",
+    "resources/scripts/settings/GameOptionsController.gd": "50ed7a7112d7479ced38ecec2d3bd614885855a3984381f5ab161f1170332f80",
+    "resources/scripts/effects/DustPool.gd": "f2b0aec64aeee611e7e7c2550f2246b2f1fccec8cce00d92602bf46c115be6f6",
+    "resources/scripts/effects/RenderWarmup.gd": "ab8fcecb918541c9b46727760ceaaca7709ab61f3a02245472455e9fda6026b1",
+    "tests/performance/performance_probe.gd": "22a45c76e51b216fc252b99ddb49cb0e74a20de39490a316404b5354e2ebad67"
+  }
+}

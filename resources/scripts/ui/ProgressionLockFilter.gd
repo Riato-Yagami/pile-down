@@ -12,8 +12,9 @@ const HANDLE_BASE_POSITION := Vector2(-2.0, -10.0)
 
 @export_enum("Both", "Unlocked", "Locked") var mode := BOTH:
 	set(value):
+		var previous_mode := mode
 		mode = clampi(value, BOTH, LOCKED)
-		_refresh()
+		_refresh(true, previous_mode)
 @export_category("Editor Preview")
 @export_enum("Both", "Unlocked", "Locked") var editor_preview_mode := BOTH:
 	set(value):
@@ -56,6 +57,7 @@ func _ready() -> void:
 	hover_region.mouse_exited.connect(_set_icon_highlight.bind(false))
 	hover_region.gui_input.connect(_on_hover_region_gui_input)
 	_apply_text_offset()
+	_apply_native_texture_sizes()
 	if Engine.is_editor_hint():
 		mode = editor_preview_mode
 	_refresh(false)
@@ -79,6 +81,13 @@ func _apply_text_offset() -> void:
 		14.0 + maxf(text_offset.x, 0.0),
 		maxf(24.0, 28.0 + text_offset.y)
 	)
+
+
+func _apply_native_texture_sizes() -> void:
+	for texture_rect in [lock_main, lock_handle]:
+		if texture_rect.texture == null:
+			continue
+		texture_rect.size = texture_rect.texture.get_size()
 
 
 func set_mode(value: int, emit_change := false) -> void:
@@ -123,7 +132,7 @@ func _cycle_mode() -> void:
 	set_mode(MODE_ORDER[(index + 1) % MODE_ORDER.size()], true)
 
 
-func _refresh(animate := true) -> void:
+func _refresh(animate := true, previous_mode := -1) -> void:
 	if not is_node_ready():
 		return
 	if not (
@@ -147,14 +156,46 @@ func _refresh(animate := true) -> void:
 	if _pose_tween and _pose_tween.is_valid():
 		_pose_tween.kill()
 	if animate and animation_duration > 0.0:
-		_pose_tween = create_tween().set_parallel(true)
-		_pose_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		_pose_tween.tween_property(lock_handle, "position", target_position, animation_duration)
-		_pose_tween.tween_property(handle_flip_anchor, "scale", target_scale, animation_duration)
+		if previous_mode == LOCKED and mode == UNLOCKED:
+			_animate_pose_through_both(target_position, target_scale)
+		else:
+			_animate_pose(target_position, target_scale, animation_duration)
 	else:
 		lock_handle.position = target_position
 		handle_flip_anchor.scale = target_scale
 	tooltip_text = ""
+
+
+func _animate_pose(
+	target_position: Vector2,
+	target_scale: Vector2,
+	duration: float
+) -> void:
+	_pose_tween = create_tween().set_parallel(true)
+	_pose_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_pose_tween.tween_property(lock_handle, "position", target_position, duration)
+	_pose_tween.tween_property(handle_flip_anchor, "scale", target_scale, duration)
+
+
+func _animate_pose_through_both(
+	target_position: Vector2,
+	target_scale: Vector2
+) -> void:
+	var midpoint_duration := animation_duration * 0.5
+	_pose_tween = create_tween()
+	_pose_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_pose_tween.tween_property(
+		lock_handle, "position", HANDLE_BASE_POSITION, midpoint_duration
+	)
+	_pose_tween.parallel().tween_property(
+		handle_flip_anchor, "scale", Vector2.ONE, midpoint_duration
+	)
+	_pose_tween.chain().tween_property(
+		lock_handle, "position", target_position, midpoint_duration
+	)
+	_pose_tween.parallel().tween_property(
+		handle_flip_anchor, "scale", target_scale, midpoint_duration
+	)
 
 
 func _brightened(color: Color) -> Color:

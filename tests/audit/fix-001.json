@@ -1,0 +1,222 @@
+[
+  {
+    "case": "race:damage_restart",
+    "seconds": 11.61,
+    "completed": true,
+    "observations": [
+      {
+        "expected": true,
+        "matches": true,
+        "name": "menu_visible",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "run_ready",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "after_race_playable",
+        "observed": true
+      },
+      {
+        "name": "after_race_state",
+        "observed": {
+          "cards": 1,
+          "lives": 3,
+          "locked": false,
+          "menu": false,
+          "nodes": 1,
+          "overlay": false,
+          "piles": 1,
+          "seed": "AUDIT-RACE",
+          "title": "[center]100 ROUNDS\nLEFT[/center]"
+        }
+      }
+    ],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"menu_visible\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"run_ready\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"after_race_playable\",\"observed\":true}\nAUDIT {\"name\":\"after_race_state\",\"observed\":{\"cards\":1,\"lives\":3,\"locked\":false,\"menu\":false,\"nodes\":1,\"overlay\":false,\"piles\":1,\"seed\":\"AUDIT-RACE\",\"title\":\"[center]100 ROUNDS\\nLEFT[/center]\"}}\nAUDIT_DONE {\"detail\":\"damage_restart\",\"observations\":4,\"scenario\":\"race\"}\n",
+    "exit_code": 0
+  },
+  {
+    "case": "race:damage_menu",
+    "seconds": 12.08,
+    "completed": true,
+    "observations": [
+      {
+        "expected": true,
+        "matches": true,
+        "name": "menu_visible",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "run_ready",
+        "observed": true
+      },
+      {
+        "name": "after_race_menu",
+        "observed": {
+          "cards": 0,
+          "menu": true,
+          "overlay": false,
+          "popup": false,
+          "timer": false
+        }
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "run_ready",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "after_race_playable",
+        "observed": true
+      },
+      {
+        "name": "after_race_state",
+        "observed": {
+          "cards": 1,
+          "lives": 3,
+          "locked": false,
+          "menu": false,
+          "nodes": 1,
+          "overlay": false,
+          "piles": 1,
+          "seed": "AUDIT-AFTER-RACE",
+          "title": "[center]100 ROUNDS\nLEFT[/center]"
+        }
+      }
+    ],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"menu_visible\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"run_ready\",\"observed\":true}\nAUDIT {\"name\":\"after_race_menu\",\"observed\":{\"cards\":0,\"menu\":true,\"overlay\":false,\"popup\":false,\"timer\":false}}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"run_ready\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"after_race_playable\",\"observed\":true}\nAUDIT {\"name\":\"after_race_state\",\"observed\":{\"cards\":1,\"lives\":3,\"locked\":false,\"menu\":false,\"nodes\":1,\"overlay\":false,\"piles\":1,\"seed\":\"AUDIT-AFTER-RACE\",\"title\":\"[center]100 ROUNDS\\nLEFT[/center]\"}}\nAUDIT_DONE {\"detail\":\"damage_menu\",\"observations\":6,\"scenario\":\"race\"}\n",
+    "exit_code": 0
+  },
+  {
+    "case": "damage:standard",
+    "seconds": 10.16,
+    "completed": true,
+    "observations": [
+      {
+        "expected": true,
+        "matches": true,
+        "name": "menu_visible",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "run_ready",
+        "observed": true
+      },
+      {
+        "expected": 3,
+        "matches": true,
+        "name": "safety_net_life_preserved",
+        "observed": 3
+      },
+      {
+        "expected": false,
+        "matches": true,
+        "name": "damage_breaks_flawless",
+        "observed": false
+      },
+      {
+        "expected": 3,
+        "matches": true,
+        "name": "reload_keeps_lives",
+        "observed": 3
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "reload_keeps_flawless",
+        "observed": true
+      },
+      {
+        "name": "reload_remaining",
+        "observed": 1
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "last_life_timeout_game_over",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "zero_life_terminal",
+        "observed": true
+      }
+    ],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"menu_visible\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"run_ready\",\"observed\":true}\nAUDIT {\"expected\":3,\"matches\":true,\"name\":\"safety_net_life_preserved\",\"observed\":3}\nAUDIT {\"expected\":false,\"matches\":true,\"name\":\"damage_breaks_flawless\",\"observed\":false}\nAUDIT {\"expected\":3,\"matches\":true,\"name\":\"reload_keeps_lives\",\"observed\":3}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"reload_keeps_flawless\",\"observed\":true}\nAUDIT {\"name\":\"reload_remaining\",\"observed\":1}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"last_life_timeout_game_over\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"zero_life_terminal\",\"observed\":true}\nAUDIT_DONE {\"detail\":\"standard\",\"observations\":9,\"scenario\":\"damage\"}\n",
+    "exit_code": 0
+  },
+  {
+    "case": "damage:shared_clock",
+    "seconds": 10.47,
+    "completed": true,
+    "observations": [
+      {
+        "expected": true,
+        "matches": true,
+        "name": "menu_visible",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "run_ready",
+        "observed": true
+      },
+      {
+        "expected": 3,
+        "matches": true,
+        "name": "safety_net_life_preserved",
+        "observed": 3
+      },
+      {
+        "expected": false,
+        "matches": true,
+        "name": "damage_breaks_flawless",
+        "observed": false
+      },
+      {
+        "expected": 3,
+        "matches": true,
+        "name": "reload_keeps_lives",
+        "observed": 3
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "reload_keeps_flawless",
+        "observed": true
+      },
+      {
+        "name": "reload_remaining",
+        "observed": 1
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "last_life_timeout_game_over",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "zero_life_terminal",
+        "observed": true
+      }
+    ],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"menu_visible\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"run_ready\",\"observed\":true}\nAUDIT {\"expected\":3,\"matches\":true,\"name\":\"safety_net_life_preserved\",\"observed\":3}\nAUDIT {\"expected\":false,\"matches\":true,\"name\":\"damage_breaks_flawless\",\"observed\":false}\nAUDIT {\"expected\":3,\"matches\":true,\"name\":\"reload_keeps_lives\",\"observed\":3}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"reload_keeps_flawless\",\"observed\":true}\nAUDIT {\"name\":\"reload_remaining\",\"observed\":1}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"last_life_timeout_game_over\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"zero_life_terminal\",\"observed\":true}\nAUDIT_DONE {\"detail\":\"shared_clock\",\"observations\":9,\"scenario\":\"damage\"}\n",
+    "exit_code": 0
+  }
+]

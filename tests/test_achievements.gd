@@ -102,25 +102,27 @@ func _test_rounds_lives_checkpoints_and_speedruns() -> void:
 	summary.started_from_checkpoint = false
 	summary.mode = RunSummary.Mode.NORMAL
 	summary.completed_rounds = 10
-	summary.run_time_seconds = 300.0
+	var speedrun_data := manager.find(&"speedrun_10_rounds")
+	var ten_limit := speedrun_data.time_limit_seconds
+	summary.run_time_seconds = ten_limit
 	manager.round_completed.emit(summary, 10, no_rules)
 	assert(not manager.unlocked.has(&"speedrun_10_rounds"))
-	summary.run_time_seconds = 299.999
+	summary.run_time_seconds = ten_limit - 0.001
 	manager.round_completed.emit(summary, 10, no_rules)
 	assert(manager.unlocked.has(&"speedrun_10_rounds"))
-	var speedrun_data := manager.find(&"speedrun_10_rounds")
-	speedrun_data.time_limit_seconds = 250.0
+	speedrun_data.time_limit_seconds = ten_limit - 50.0
 	manager.unlocked.clear()
-	summary.run_time_seconds = 275.0
+	summary.run_time_seconds = ten_limit - 25.0
 	manager.round_completed.emit(summary, 10, no_rules)
 	assert(not manager.unlocked.has(&"speedrun_10_rounds"))
-	speedrun_data.time_limit_seconds = 300.0
+	speedrun_data.time_limit_seconds = ten_limit
 	manager.unlocked.clear()
 	summary.completed_rounds = 20
-	summary.run_time_seconds = 600.0
+	var twenty_limit := manager.find(&"speedrun_20_rounds").time_limit_seconds
+	summary.run_time_seconds = twenty_limit
 	manager.round_completed.emit(summary, 20, no_rules)
 	assert(not manager.unlocked.has(&"speedrun_20_rounds"))
-	summary.run_time_seconds = 599.999
+	summary.run_time_seconds = twenty_limit - 0.001
 	manager.round_completed.emit(summary, 20, no_rules)
 	assert(manager.unlocked.has(&"speedrun_20_rounds"))
 	assert(manager.unlocked.has(&"round_20_without_bonuses"))
@@ -133,7 +135,8 @@ func _test_rounds_lives_checkpoints_and_speedruns() -> void:
 	manager.unlocked.clear()
 	summary.completed_rounds = Difficulty.MAX_ROUNDS
 	summary.normal_game_completed = true
-	summary.run_time_seconds = 1800.0
+	var full_limit := manager.find(&"speedrun_full_game").time_limit_seconds
+	summary.run_time_seconds = full_limit
 	manager.run_completed.emit(summary)
 	assert(not manager.unlocked.has(&"speedrun_full_game"))
 	assert(manager.unlocked.has(&"game_without_bonuses"))
@@ -142,7 +145,7 @@ func _test_rounds_lives_checkpoints_and_speedruns() -> void:
 	manager.run_completed.emit(summary)
 	assert(not manager.unlocked.has(&"game_without_bonuses"))
 	summary.active_bonus_levels.clear()
-	summary.run_time_seconds = 1799.999
+	summary.run_time_seconds = full_limit - 0.001
 	manager.run_completed.emit(summary)
 	assert(manager.unlocked.has(&"speedrun_full_game"))
 

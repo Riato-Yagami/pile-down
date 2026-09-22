@@ -1,10 +1,12 @@
 [gd_resource type="Resource" script_class="ColorPaletteData" format=3 uid="uid://c3kpene7np70y"]
 
 [ext_resource type="Script" uid="uid://bdlkhp3dt6mr" path="res://resources/scripts/progression/ColorPaletteData.gd" id="1_683r8"]
+[ext_resource type="Resource" path="res://resources/data/achievements/54_blind_delivery_sticky_fingers.tres" id="progression_reward"]
 
 [resource]
 script = ExtResource("1_683r8")
-id = &"olivia"
 display_name = "OLIVIA"
 colors = Array[Color]([Color(0.3548479, 0.75535727, 0.7742911, 1), Color(0.50687426, 0.58079565, 0.9353011, 1), Color(0, 0.7764706, 0.6156863, 1), Color(0.40392157, 0, 0.8627451, 1), Color(0.56078434, 0.67058825, 0.40392157, 1), Color(0.21568628, 0.35686275, 0.57254905, 1), Color(0.5372549, 0.74509805, 0.59607846, 1), Color(0.46666667, 0.73333335, 0.81960785, 1), Color(0.59607846, 0.83137256, 0.1882353, 1), Color(0.56078434, 0.4392157, 0.8666667, 1)])
+required_achievement = ExtResource("progression_reward")
+id = &"olivia"
 metadata/_custom_type_script = "uid://bdlkhp3dt6mr"

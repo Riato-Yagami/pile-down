@@ -1,0 +1,139 @@
+[
+  {
+    "case": "seed_rule_restart:AUDIT-SEED-B",
+    "seconds": 53.02,
+    "completed": true,
+    "observations": [
+      {
+        "expected": true,
+        "matches": true,
+        "name": "menu_visible",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "run_ready",
+        "observed": true
+      },
+      {
+        "name": "first_round_four",
+        "observed": {
+          "cards": [
+            2,
+            1
+          ],
+          "hand_size": 2,
+          "piles": 1,
+          "rules": [
+            "pile_up"
+          ],
+          "seed": "AUDIT-SEED-B",
+          "timer": 5.0,
+          "value": 3
+        }
+      },
+      {
+        "expected": {
+          "cards": [
+            2,
+            1
+          ],
+          "hand_size": 2,
+          "piles": 1,
+          "rules": [
+            "pile_up"
+          ],
+          "seed": "AUDIT-SEED-B",
+          "timer": 5.0,
+          "value": 3
+        },
+        "matches": true,
+        "name": "replayed_round_four",
+        "observed": {
+          "cards": [
+            2,
+            1
+          ],
+          "hand_size": 2,
+          "piles": 1,
+          "rules": [
+            "pile_up"
+          ],
+          "seed": "AUDIT-SEED-B",
+          "timer": 5.0,
+          "value": 3
+        }
+      }
+    ],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"menu_visible\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"run_ready\",\"observed\":true}\nAUDIT {\"name\":\"first_round_four\",\"observed\":{\"cards\":[2,1],\"hand_size\":2,\"piles\":1,\"rules\":[\"pile_up\"],\"seed\":\"AUDIT-SEED-B\",\"timer\":5.0,\"value\":3}}\nAUDIT {\"expected\":{\"cards\":[2,1],\"hand_size\":2,\"piles\":1,\"rules\":[\"pile_up\"],\"seed\":\"AUDIT-SEED-B\",\"timer\":5.0,\"value\":3},\"matches\":true,\"name\":\"replayed_round_four\",\"observed\":{\"cards\":[2,1],\"hand_size\":2,\"piles\":1,\"rules\":[\"pile_up\"],\"seed\":\"AUDIT-SEED-B\",\"timer\":5.0,\"value\":3}}\nAUDIT_DONE {\"detail\":\"AUDIT-SEED-B\",\"observations\":4,\"scenario\":\"seed_rule_restart\"}\n",
+    "exit_code": 0
+  },
+  {
+    "case": "seed_rule_restart:AUDIT-SEED-A",
+    "seconds": 61.38,
+    "completed": true,
+    "observations": [
+      {
+        "expected": true,
+        "matches": true,
+        "name": "menu_visible",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "run_ready",
+        "observed": true
+      },
+      {
+        "name": "first_round_four",
+        "observed": {
+          "cards": [
+            2
+          ],
+          "hand_size": 1,
+          "piles": 2,
+          "rules": [
+            "sticky_fingers"
+          ],
+          "seed": "AUDIT-SEED-A",
+          "timer": 4.0,
+          "value": 3
+        }
+      },
+      {
+        "expected": {
+          "cards": [
+            2
+          ],
+          "hand_size": 1,
+          "piles": 2,
+          "rules": [
+            "sticky_fingers"
+          ],
+          "seed": "AUDIT-SEED-A",
+          "timer": 4.0,
+          "value": 3
+        },
+        "matches": true,
+        "name": "replayed_round_four",
+        "observed": {
+          "cards": [
+            2
+          ],
+          "hand_size": 1,
+          "piles": 2,
+          "rules": [
+            "sticky_fingers"
+          ],
+          "seed": "AUDIT-SEED-A",
+          "timer": 4.0,
+          "value": 3
+        }
+      }
+    ],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"menu_visible\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"run_ready\",\"observed\":true}\nAUDIT {\"name\":\"first_round_four\",\"observed\":{\"cards\":[2],\"hand_size\":1,\"piles\":2,\"rules\":[\"sticky_fingers\"],\"seed\":\"AUDIT-SEED-A\",\"timer\":4.0,\"value\":3}}\nAUDIT {\"expected\":{\"cards\":[2],\"hand_size\":1,\"piles\":2,\"rules\":[\"sticky_fingers\"],\"seed\":\"AUDIT-SEED-A\",\"timer\":4.0,\"value\":3},\"matches\":true,\"name\":\"replayed_round_four\",\"observed\":{\"cards\":[2],\"hand_size\":1,\"piles\":2,\"rules\":[\"sticky_fingers\"],\"seed\":\"AUDIT-SEED-A\",\"timer\":4.0,\"value\":3}}\nAUDIT_DONE {\"detail\":\"AUDIT-SEED-A\",\"observations\":4,\"scenario\":\"seed_rule_restart\"}\n",
+    "exit_code": 0
+  }
+]

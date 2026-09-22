@@ -4,9 +4,10 @@
 
 [resource]
 script = ExtResource("1_gv1ed")
-id = &"start_value_nine"
 title = "CLOUD NINE"
 description = "Reach a starting tile value of 9."
 category = &"STATS"
-reward_font = &"digitalix"
+difficulty = 5
+reward_rationale = "Le bleu du ciel pour Cloud Nine."
 required_count = 9
+id = &"start_value_nine"

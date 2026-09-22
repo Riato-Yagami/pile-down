@@ -4,6 +4,10 @@ extends Data
 @export var title: String
 @export var description: String
 @export var category: StringName
+## Internal progression rank, from introductory (1) to completionist (10).
+@export_range(1, 10, 1) var difficulty := 1
+## Editorial explanation for the unlockables export, never shown in game.
+@export_multiline var reward_rationale := ""
 @export var hidden := false
 @export var reward_font: StringName
 ## Seuil principal du succes lorsqu'il peut etre pilote par les donnees.

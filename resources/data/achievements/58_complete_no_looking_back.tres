@@ -1,11 +1,11 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://bs8cpbmyrrh1a"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
-id = &"complete_no_looking_back"
 title = "COMMITTED"
 description = "Complete No Looking Back."
 category = &"CHALLENGES"
-
+difficulty = 7
+id = &"complete_no_looking_back"

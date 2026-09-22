@@ -30,6 +30,7 @@ var force_next_joker := false
 var _debug_locked_bonus_ids: Array[StringName] = []
 var _debug_forced_activation_bonus_ids: Array[StringName] = []
 var disabled_bonus_ids: Array[StringName] = []
+var _descriptions_enabled := true
 
 
 func _ready() -> void:
@@ -428,14 +429,25 @@ func _refresh_bar() -> void:
 		active_bar.add_child(badge)
 
 
+func set_descriptions_enabled(enabled: bool) -> void:
+	_descriptions_enabled = enabled
+	if not enabled:
+		active_description.visible = false
+		active_description.remove_meta(&"source_badge")
+
+
 func _show_active_description(description: String, badge: ActiveBonusBadge) -> void:
+	if not _descriptions_enabled:
+		return
 	active_description.set_meta(&"source_badge", badge)
 	active_description_text.text = description
 	active_description.modulate.a = 0.0
 	active_description.visible = true
 	var desired_size := _size_active_description()
 	await get_tree().process_frame
-	if active_description.get_meta(&"source_badge", null) != badge:
+	if not active_description.has_meta(&"source_badge"):
+		return
+	if active_description.get_meta(&"source_badge") != badge:
 		return
 	# The old editor-layout minimum is now invalidated, so the panel can shrink.
 	active_description.size = desired_size
@@ -488,7 +500,9 @@ func _position_active_description(badge: ActiveBonusBadge) -> void:
 
 
 func _hide_active_description(badge: ActiveBonusBadge) -> void:
-	if active_description.get_meta(&"source_badge", null) != badge:
+	if not active_description.has_meta(&"source_badge"):
+		return
+	if active_description.get_meta(&"source_badge") != badge:
 		return
 	active_description.visible = false
 	active_description.modulate.a = 1.0

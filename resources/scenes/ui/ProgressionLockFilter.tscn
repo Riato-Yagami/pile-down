@@ -14,40 +14,42 @@ focus_mode = 2
 mouse_filter = 2
 mouse_default_cursor_shape = 2
 script = ExtResource("1_script")
-locked_handle_offset = Vector2(0, 3)
-unlocked_handle_offset = Vector2(-22, 0)
+mode = 1
+editor_preview_mode = 1
+unlocked_handle_offset = Vector2(-16, 0)
 
-[node name="IconOffset" type="Node2D" parent="."]
+[node name="IconOffset" type="Node2D" parent="." unique_id=164749342]
 unique_name_in_owner = true
 position = Vector2(7, 0)
 
 [node name="LockMain" type="TextureRect" parent="IconOffset" unique_id=1263355350]
 unique_name_in_owner = true
 z_index = 1
-layout_mode = 0
 offset_left = -5.0
-offset_right = 23.0
-offset_bottom = 25.0
+offset_right = 16.0
+offset_bottom = 18.0
 mouse_filter = 2
 texture = ExtResource("2_main")
 
 [node name="HandleFlipAnchor" type="Node2D" parent="IconOffset" unique_id=1604495395]
 unique_name_in_owner = true
 position = Vector2(-3, 10)
+scale = Vector2(-1, 1)
 
 [node name="LockHandle" type="TextureRect" parent="IconOffset/HandleFlipAnchor" unique_id=1349640139]
 unique_name_in_owner = true
-offset_left = -2.0
+offset_left = -18.0
 offset_top = -10.0
-offset_right = 26.0
-offset_bottom = 15.0
+offset_right = 3.0
+offset_bottom = 8.0
 mouse_filter = 2
 texture = ExtResource("3_handle")
 
-[node name="HoverRegion" type="Control" parent="IconOffset"]
+[node name="HoverRegion" type="Control" parent="IconOffset" unique_id=212365424]
 unique_name_in_owner = true
 z_index = 2
-layout_mode = 0
+layout_mode = 3
+anchors_preset = 0
 offset_left = -7.0
 offset_right = 23.0
 offset_bottom = 28.0

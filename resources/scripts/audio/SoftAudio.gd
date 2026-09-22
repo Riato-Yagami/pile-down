@@ -161,6 +161,14 @@ func play_achievement() -> void:
 	_play_sequence([659.25, 783.99, 1046.5], 0.055, 0.1, 0.05)
 
 
+func play_seed_copy() -> void:
+	_play_sequence([880.0, 1174.66], 0.035, 0.045, 0.035)
+
+
+func play_ui_click() -> void:
+	play_tone(620.0, 0.035, 0.028)
+
+
 func play_game_over() -> void:
 	# A loud three-stage fall accompanies the death popup. Rich harmonics keep
 	# the cue audible while the music bus is filtered.

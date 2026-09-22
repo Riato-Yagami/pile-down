@@ -1,11 +1,13 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://ccb32mqkabm7l"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_bnimv"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1_bnimv"]
 
 [resource]
 script = ExtResource("1_bnimv")
-id = &"half_without_checkpoint"
 title = "NO SHORTCUTS"
 description = "Complete half the game from the beginning."
 category = &"ROUNDS"
+difficulty = 4
+reward_rationale = "Une récompense d'assiduité pour un parcours sans raccourci."
 reward_font = &"employee_of_the_month"
+id = &"half_without_checkpoint"

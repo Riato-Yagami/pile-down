@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BackgroundThemeCatalog" format=3 uid="uid://r1clnvpcxqf1"]
+
+[ext_resource type="Script" uid="uid://cnsfsmdok5tr7" path="res://resources/scripts/backgrounds/BackgroundThemeCatalog.gd" id="1_catalog"]
+[ext_resource type="Script" uid="uid://cy6e6jkbx5406" path="res://resources/scripts/data/Data.gd" id="1_data"]
+[ext_resource type="Resource" uid="uid://cbacmcpspye8q" path="res://resources/data/backgrounds/00_stripes.tres" id="2_stripes"]
+[ext_resource type="Resource" uid="uid://jogjlewnkp7b" path="res://resources/data/backgrounds/01_grid.tres" id="3_grid"]
+[ext_resource type="Resource" uid="uid://iutofrsiy4ne" path="res://resources/data/backgrounds/02_dots.tres" id="4_dots"]
+[ext_resource type="Resource" uid="uid://cqovrx45cq2o" path="res://resources/data/backgrounds/03_waves.tres" id="5_waves"]
+[ext_resource type="Resource" uid="uid://gt8x7dm581n8" path="res://resources/data/backgrounds/04_diamonds.tres" id="6_diamonds"]
+[ext_resource type="Resource" uid="uid://bgdatabrick01" path="res://resources/data/backgrounds/05_brick.tres" id="7_brick"]
+[ext_resource type="Resource" uid="uid://bgdatacheckr1" path="res://resources/data/backgrounds/06_checkered.tres" id="8_checkered"]
+[ext_resource type="Resource" uid="uid://bgdatcircle1" path="res://resources/data/backgrounds/07_circles.tres" id="9_circles"]
+
+[resource]
+script = ExtResource("1_catalog")
+selected_data = ExtResource("2_stripes")
+enabled_data = Array[ExtResource("1_data")]([ExtResource("2_stripes"), ExtResource("3_grid"), ExtResource("4_dots"), ExtResource("5_waves"), ExtResource("6_diamonds"), ExtResource("7_brick"), ExtResource("8_checkered"), ExtResource("9_circles")])

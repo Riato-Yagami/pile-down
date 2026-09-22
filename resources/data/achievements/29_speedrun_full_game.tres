@@ -4,10 +4,11 @@
 
 [resource]
 script = ExtResource("1_qvnl2")
-id = &"speedrun_full_game"
-title = "THIRTY-MINUTE COUNTDOWN"
-description = "Complete the game in under 30 minutes."
+title = "FINAL SPRINT"
+description = "Complete the game in under 45 minutes."
 category = &"SPEEDRUN"
+difficulty = 8
+reward_rationale = "Une explosion de couleurs pour le sprint intégral."
 hidden = true
-reward_font = &"digital_disco_thin"
-time_limit_seconds = 1800.0
+time_limit_seconds = 2700.0
+id = &"speedrun_full_game"

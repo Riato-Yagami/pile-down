@@ -1,17 +1,24 @@
 @tool
 class_name ProgressionMenu
-extends Control
+extends "res://resources/scripts/ui/MenuPanelLayout.gd"
 
 signal closed()
 signal font_selected(font_id: StringName)
 signal palette_selected(palette_id: StringName)
 signal page_viewed(page: int)
 
+const ProgressionCosmeticsViewScript := preload(
+	"res://resources/scripts/ui/progression/ProgressionCosmeticsView.gd"
+)
+const ProgressionEntryBuilderScript := preload(
+	"res://resources/scripts/ui/progression/ProgressionEntryBuilder.gd"
+)
+
 const CHECKED_TEXTURE := preload(
 	"res://resources/materials/textures/ui/check/checked.tres"
 )
 const UNCHECKED_TEXTURE := preload(
-	"res://resources/materials/textures/ui/check/unchecked.tres"
+	"res://resources/sprites/ui/check/unchecked.png"
 )
 const SELECTED_TEXTURE := preload(
 	"res://resources/materials/textures/ui/check/selected.tres"
@@ -19,6 +26,7 @@ const SELECTED_TEXTURE := preload(
 const HighlightButtonScript := preload(
 	"res://resources/scripts/ui/HighlightButton.gd"
 )
+const SELECTABLE_TEXT_SCENE := preload("res://resources/scenes/ui/SelectableText.tscn")
 const TILE_FACE_TEXTURE := preload(
 	"res://resources/sprites/tiles/tile-face.png"
 )
@@ -37,49 +45,24 @@ const VERTICAL_SCROLL_SELECTOR_TEXTURE := preload(
 const ProgressionCompletionBarScript := preload(
 	"res://resources/scripts/ui/ProgressionCompletionBar.gd"
 )
-const ProgressionScrollVisualScript := preload(
-	"res://resources/scripts/ui/ProgressionScrollVisual.gd"
-)
 const ProgressionPreviewBuilderScript := preload(
 	"res://resources/scripts/ui/progression/ProgressionPreviewBuilder.gd"
 )
+const PixelUiScript := preload("res://resources/scripts/ui/PixelUi.gd")
 const SubmenuPageAnimatorScript := preload(
 	"res://resources/scripts/ui/SubmenuPageAnimator.gd"
 )
-const PROGRESS_BAR_SHADER := """
-shader_type canvas_item;
-uniform float progress : hint_range(0.0, 1.0) = 1.0;
-uniform vec4 fill_color : source_color = vec4(0.302, 0.51, 0.761, 1.0);
-uniform vec4 empty_color : source_color = vec4(0.725, 0.765, 0.812, 1.0);
-uniform vec4 highlight_color : source_color = vec4(0.427, 0.655, 0.898, 1.0);
-uniform float highlighted : hint_range(0.0, 1.0) = 0.0;
-void fragment() {
-	vec4 source = texture(TEXTURE, UV);
-	vec4 highlighted_fill = mix(fill_color, highlight_color, highlighted);
-	vec4 level_color = UV.x <= progress ? highlighted_fill : empty_color;
-	bool green_mask = source.g > 0.9 && source.r < 0.1 && source.b < 0.1;
-	COLOR = green_mask
-		? vec4(level_color.rgb, source.a * level_color.a)
-		: source;
-}
-"""
+const PROGRESS_BAR_SHADER := preload("res://resources/shaders/ui/ProgressionFill.gdshader")
 const Settings := preload("res://resources/scripts/settings/settings.gd")
 const SELECTED_COLOR := Color("4d82c2")
+const SELECTION_TEXT_COLOR := SELECTED_COLOR
 const LOCKED_ENTRY_OPACITY := 0.55
 # The main icon is 23x25. Panel buttons are 30x34 and center that same texture,
 # so its notification needs the rounded (3.5, 4.5) centering compensation.
 const PANEL_NOTIFICATION_RECT := Rect2(0.0, 21.0, 10.0, 11.0)
 # Kept for a possible later reactivation of the LOCKED/BOTH/UNLOCKED control.
 const SHOW_LOCK_FILTER := true
-const GOLD_STATUS_SHADER := """
-shader_type canvas_item;
-uniform vec4 gold_color : source_color = vec4(0.851, 0.647, 0.078, 1.0);
-void fragment() {
-	vec4 source = texture(TEXTURE, UV) * COLOR;
-	float vertical_shine = mix(1.12, 0.82, UV.y);
-	COLOR = vec4(gold_color.rgb * vertical_shine, source.a * gold_color.a);
-}
-"""
+const GOLD_STATUS_SHADER := preload("res://resources/shaders/ui/GoldStatus.gdshader")
 
 enum Page {
 	HIGHSCORES,
@@ -182,15 +165,15 @@ var _lock_visibility_generation := 0
 
 
 func get_available_fonts() -> Array[FontData]:
-	return font_catalog.available_fonts
+	return font_catalog.get_available_fonts()
 
 
 func get_achievements() -> Array[AchievementData]:
-	return achievement_catalog.achievements
+	return achievement_catalog.get_achievements()
 
 
 func get_available_palettes() -> Array[ColorPaletteData]:
-	return font_catalog.available_palettes
+	return font_catalog.get_available_palettes()
 
 
 func get_default_font() -> FontData:
@@ -202,6 +185,7 @@ func get_default_palette() -> ColorPaletteData:
 
 
 func _ready() -> void:
+	apply_panel_layout()
 	_page_animator.duration = page_transition_duration
 	_page_animator.travel_distance = page_transition_distance
 	if not font_catalog.editor_preview_changed.is_connected(_refresh_editor_preview):
@@ -216,6 +200,8 @@ func _ready() -> void:
 	_setup_page_badges()
 	if not %BackButton.pressed.is_connected(close):
 		%BackButton.pressed.connect(close)
+	resized.connect(_constrain_list_widths)
+	visibility_changed.connect(preserve_panel_rect)
 	if Engine.is_editor_hint() and show_editor_preview:
 		_show_editor_preview()
 	else:
@@ -227,19 +213,8 @@ func _style_vertical_scrollbars() -> void:
 		main_scroll, fonts_scroll, palettes_scroll,
 	]
 	for scroll in scrolls:
-		var scrollbar: VScrollBar = scroll.get_v_scroll_bar()
-		scrollbar.custom_minimum_size.x = 8.0
-		var empty_style := StyleBoxEmpty.new()
-		for style_name in [
-			&"scroll", &"scroll_focus", &"grabber",
-			&"grabber_highlight", &"grabber_pressed",
-		]:
-			scrollbar.add_theme_stylebox_override(style_name, empty_style)
-		var visual := Control.new()
-		visual.set_script(ProgressionScrollVisualScript)
-		scrollbar.add_child(visual)
-		visual.call(
-			"setup", scrollbar, VERTICAL_SCROLL_TRACK_TEXTURE,
+		PixelUiScript.style_scroll_container(
+			scroll, VERTICAL_SCROLL_TRACK_TEXTURE,
 			VERTICAL_SCROLL_SELECTOR_TEXTURE
 		)
 
@@ -308,6 +283,7 @@ func close() -> void:
 
 
 func _show_page(page: int, animate := false) -> void:
+	preserve_panel_rect()
 	var previous_page := _page
 	_page = clampi(page, Page.HIGHSCORES, Page.FONTS)
 	_set_lock_filter_visible(
@@ -315,6 +291,12 @@ func _show_page(page: int, animate := false) -> void:
 		animate
 	)
 	font_preview_scroll.visible = _page == Page.FONTS
+	font_preview_scroll.modulate.a = 1.0
+	font_preview_scroll.mouse_filter = (
+		Control.MOUSE_FILTER_STOP
+		if _page == Page.FONTS
+		else Control.MOUSE_FILTER_IGNORE
+	)
 	main_scroll.visible = _page != Page.FONTS
 	cosmetic_lists.visible = _page == Page.FONTS
 	for index in page_buttons.size():
@@ -340,6 +322,7 @@ func _show_page(page: int, animate := false) -> void:
 			_populate_fonts()
 	if animate and previous_page != _page:
 		_page_animator.play(page_panel, signi(_page - previous_page))
+	_constrain_list_widths()
 
 
 func _set_lock_filter_visible(should_show: bool, animate: bool) -> void:
@@ -391,11 +374,38 @@ func _finish_lock_visibility(should_show: bool, generation: int) -> void:
 	_lock_visibility_tween = null
 
 
+func _constrain_list_widths() -> void:
+	if not is_node_ready():
+		return
+	var list_width := _progression_list_width()
+	for target in [content, fonts_content, palettes_content]:
+		target.custom_minimum_size.x = 0.0
+		target.size.x = list_width
+		_constrain_wrap_labels(target, list_width)
+
+
+func _progression_list_width() -> float:
+	return panel_body_width(30.0, 5.0, 10.0)
+
+
+func _constrain_wrap_labels(root: Node, list_width: float) -> void:
+	if root is SelectableText:
+		return
+	for child in root.get_children():
+		if child is Control:
+			var control := child as Control
+			if child.has_meta("progression_wrap_width"):
+				var width := list_width - float(child.get_meta("progression_wrap_width"))
+				control.custom_minimum_size.x = maxf(width, 24.0)
+				control.size.x = control.custom_minimum_size.x
+			elif child is Container:
+				control.custom_minimum_size.x = 0.0
+		_constrain_wrap_labels(child, list_width)
+
+
 func _clear_content() -> void:
 	for target in [content, fonts_content, palettes_content]:
-		for child in target.get_children():
-			target.remove_child(child)
-			child.queue_free()
+		PixelUiScript.queue_free_children(target, true)
 
 
 func _populate_highscores() -> void:
@@ -455,7 +465,7 @@ func _populate_achievements() -> void:
 
 
 func _font_display_name(font_id: StringName) -> String:
-	for font_data in font_catalog.available_fonts:
+	for font_data in font_catalog.get_available_fonts():
 		if font_data != null and font_data.id == font_id:
 			return font_data.display_name
 	return String(font_id)
@@ -504,74 +514,15 @@ func _populate_discoveries(entries_value: Variant) -> void:
 
 
 func _populate_fonts() -> void:
-	var fonts: Array = _snapshot.get("fonts", [])
-	var palettes: Array = _snapshot.get("palettes", [])
-	var preview_data: Dictionary = {}
-	var ordered_fonts := fonts
-	if Engine.is_editor_hint():
-		ordered_fonts = _selected_first(fonts)
-	for font_value in ordered_fonts:
-		var font_data := font_value as Dictionary
-		var unlocked := bool(font_data.get("unlocked", false))
-		if unlocked and (preview_data.is_empty() or bool(font_data.get("selected", false))):
-			preview_data = font_data
-		if not _matches_progress_filter(unlocked):
-			continue
-		var selected := bool(font_data.get("selected", false))
-		_add_cosmetic_choice(
-			fonts_content,
-			str(font_data.get("title", "FONT")),
-			unlocked,
-			selected,
-			_select_font.bind(StringName(font_data.get("id", &""))),
-			font_data.get("font") as Font,
-			[],
-			int(font_data.get(
-				"title_font_size",
-				font_data.get("font_size", entry_heading_font_size)
-			)),
-			_vector2_or_zero(font_data.get("title_font_offset"))
-		)
-	var ordered_palettes := palettes
-	if Engine.is_editor_hint():
-		ordered_palettes = _selected_first(palettes)
-	for palette_value in ordered_palettes:
-		var palette_data := palette_value as Dictionary
-		var palette_unlocked := bool(palette_data.get("unlocked", false))
-		var palette_selected_now := bool(palette_data.get("selected", false))
-		if palette_selected_now:
-			preview_data["colors"] = palette_data.get("colors", [])
-		if not _matches_progress_filter(palette_unlocked):
-			continue
-		_add_cosmetic_choice(
-			palettes_content,
-			str(palette_data.get("title", "PALETTE")),
-			palette_unlocked,
-			palette_selected_now,
-			_select_palette.bind(StringName(palette_data.get("id", &""))),
-			null,
-			palette_data.get("colors", []) as Array
-		)
-	_update_font_preview(preview_data)
+	ProgressionCosmeticsViewScript.populate_fonts(self)
 
 
 func _selected_first(entries: Array) -> Array:
-	var ordered: Array = []
-	for entry_value in entries:
-		if bool((entry_value as Dictionary).get("selected", false)):
-			ordered.append(entry_value)
-	for entry_value in entries:
-		if not bool((entry_value as Dictionary).get("selected", false)):
-			ordered.append(entry_value)
-	return ordered
+	return ProgressionCosmeticsViewScript.selected_first(self, entries)
 
 
 func _vector2_or_zero(value: Variant) -> Vector2:
-	if value is Vector2:
-		return value
-	if value is Vector2i:
-		return Vector2(value)
-	return Vector2.ZERO
+	return ProgressionCosmeticsViewScript.vector2_or_zero(self, value)
 
 
 func _add_cosmetic_choice(
@@ -585,180 +536,49 @@ func _add_cosmetic_choice(
 	choice_font_size := -1,
 	choice_font_offset := Vector2.ZERO
 ) -> void:
-	var button := Button.new()
-	button.set_script(HighlightButtonScript)
-	button.set("highlight_material", font_button_highlight_material)
-	button.custom_minimum_size.y = 24.0
-	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	button.flat = true
-	button.icon = SELECTED_TEXTURE if selected else UNCHECKED_TEXTURE
-	var displayed_title := title if unlocked else "???"
-	button.text = displayed_title
-	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	var displayed_font := choice_font if choice_font != null else entry_heading_font
-	if displayed_font != null:
-		button.add_theme_font_override("font", displayed_font)
-	button.add_theme_font_size_override(
-		"font_size",
-		choice_font_size if choice_font_size > 0 else entry_heading_font_size
+	ProgressionCosmeticsViewScript.add_cosmetic_choice(
+		self, target, title, unlocked, selected, selection, choice_font, palette_colors, choice_font_size, choice_font_offset
 	)
-	for color_name in [
-		&"font_color", &"font_hover_color", &"font_pressed_color",
-		&"font_disabled_color"
-	]:
-		button.add_theme_color_override(color_name, Color("3c3c3c"))
-	button.modulate = Color.WHITE
-	button.disabled = not unlocked
-	if unlocked and not selected:
-		button.pressed.connect(selection)
-	target.add_child(button)
-	if not palette_colors.is_empty():
-		_add_palette_title(button, displayed_title, palette_colors, displayed_font)
-	elif unlocked and choice_font != null:
-		_add_font_title(
-			button,
-			displayed_title,
-			displayed_font,
-			choice_font_size if choice_font_size > 0 else entry_heading_font_size,
-			choice_font_offset
-		)
 
 
 func _add_font_title(
 	button: Button, title: String, font: Font, font_size: int, font_offset: Vector2
 ) -> void:
-	button.text = ""
-	var label := Label.new()
-	label.name = "FontTitle"
-	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	label.offset_left = 18.0 + font_offset.x
-	label.offset_right += font_offset.x
-	label.offset_top += font_offset.y
-	label.offset_bottom += font_offset.y
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.text = title
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_font_override("font", font)
-	label.add_theme_font_size_override("font_size", font_size)
-	label.add_theme_color_override("font_color", Color("3c3c3c"))
-	button.add_child(label)
+	ProgressionCosmeticsViewScript.add_font_title(self, button, title, font, font_size, font_offset)
 
 
 func _add_palette_title(
 	button: Button, title: String, colors: Array, font: Font
 ) -> void:
-	button.text = ""
-	var label := RichTextLabel.new()
-	label.name = "PaletteTitle"
-	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	label.offset_left = 18.0
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.fit_content = false
-	label.scroll_active = false
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.use_parent_material = true
-	if font != null:
-		label.add_theme_font_override("normal_font", font)
-	label.add_theme_font_size_override("normal_font_size", entry_heading_font_size)
-	label.set_meta("palette_colors", colors.duplicate())
-	for index in title.length():
-		label.push_color(colors[index % colors.size()] as Color)
-		label.add_text(title.substr(index, 1))
-		label.pop()
-	button.add_child(label)
-	button.resized.connect(_resize_palette_choice.bind(button, label))
-	call_deferred("_resize_palette_choice", button, label)
+	ProgressionCosmeticsViewScript.add_palette_title(self, button, title, colors, font)
+
+
+func _connect_choice_title_highlight(button: Button, label: Control) -> void:
+	ProgressionCosmeticsViewScript.connect_choice_title_highlight(self, button, label)
+
+
+func _set_choice_title_highlight(label: Control, highlighted: bool) -> void:
+	ProgressionCosmeticsViewScript.set_choice_title_highlight(self, label, highlighted)
 
 
 func _resize_palette_choice(button: Button, label: RichTextLabel) -> void:
-	if not is_instance_valid(button) or not is_instance_valid(label):
-		return
-	# The full-rect anchors already give the label its final wrapped width.
-	var required_height := maxf(24.0, ceilf(label.get_content_height()) + 4.0)
-	if not is_equal_approx(button.custom_minimum_size.y, required_height):
-		button.custom_minimum_size.y = required_height
+	ProgressionCosmeticsViewScript.resize_palette_choice(self, button, label)
+
+
+func _resize_font_choice(button: Button, label: Label, font_offset: Vector2) -> void:
+	ProgressionCosmeticsViewScript.resize_font_choice(self, button, label, font_offset)
 
 
 func _update_font_preview(font_data: Dictionary) -> void:
-	for child in font_preview.get_children():
-		font_preview.remove_child(child)
-		child.queue_free()
-	if font_data.is_empty():
-		return
-	var font := font_data.get("font") as Font
-	var font_size := int(font_data.get("font_size", 20))
-	var font_offset := _vector2_or_zero(font_data.get("font_offset"))
-	var override_hidden_tile := true
-	var override_hidden_value: Variant = font_data.get(
-		"override_hidden_tile_with_font", true
-	)
-	if override_hidden_value is bool:
-		override_hidden_tile = override_hidden_value
-	var colors: Array = font_data.get("colors", [])
-	var maximum_value := clampi(
-		int(_snapshot.get("max_discovered_tile_value", 3)), 0, 9
-	)
-	var preview_values: Array[Variant] = ["?"]
-	for value in range(maximum_value + 1):
-		preview_values.append(value)
-	for preview_index in preview_values.size():
-		var value: Variant = preview_values[preview_index]
-		var is_hidden_tile := preview_index == 0
-		var tile := TextureRect.new()
-		tile.custom_minimum_size = Vector2(34.0, 37.0)
-		tile.texture = (
-			TILE_FACE_TEXTURE if is_hidden_tile and override_hidden_tile
-			else TILE_BACK_TEXTURE if is_hidden_tile
-			else TILE_FACE_TEXTURE
-		)
-		tile.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		tile.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		tile.stretch_mode = TextureRect.STRETCH_SCALE
-		if is_hidden_tile and not override_hidden_tile:
-			font_preview.add_child(tile)
-			continue
-		var tile_material := font_preview_tile_material.duplicate() as ShaderMaterial
-		var color_index := int(value) if not is_hidden_tile else 0
-		var tile_color: Color = (
-			Color("b8b8b8")
-			if is_hidden_tile
-			else colors[color_index % colors.size()]
-			if not colors.is_empty()
-			else Settings.TILE_COLORS[color_index % Settings.TILE_COLORS.size()]
-		)
-		tile_material.set_shader_parameter("tile_color", tile_color)
-		tile.material = tile_material
-		var label := Label.new()
-		label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		# Match the two-pixel optical lift used by Card and Pile value labels.
-		label.offset_left = font_offset.x
-		label.offset_right = font_offset.x
-		label.offset_top = font_offset.y
-		label.offset_bottom = font_offset.y - 2.0
-		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		label.text = "?" if is_hidden_tile else str(value)
-		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		label.add_theme_color_override(
-			"font_color", tile_color if is_hidden_tile else tile_color.darkened(0.35)
-		)
-		label.add_theme_font_size_override("font_size", font_size)
-		if font != null:
-			label.add_theme_font_override("font", font)
-		tile.add_child(label)
-		font_preview.add_child(tile)
+	ProgressionCosmeticsViewScript.update_font_preview(self, font_data)
 
 
 func _select_font(font_id: StringName) -> void:
-	font_selected.emit(font_id)
+	ProgressionCosmeticsViewScript.select_font(self, font_id)
 
 
 func _select_palette(palette_id: StringName) -> void:
-	palette_selected.emit(palette_id)
+	ProgressionCosmeticsViewScript.select_palette(self, palette_id)
 
 
 func _on_filter_selected(_index: int) -> void:
@@ -787,128 +607,21 @@ func _add_entry(
 	progress_tooltip := "",
 	is_new := false
 ) -> void:
-	var entry := VBoxContainer.new()
-	entry.add_theme_constant_override("separation", 1)
-	var heading_row := HBoxContainer.new()
-	heading_row.add_theme_constant_override("separation", 3)
-	if is_new:
-		var new_label := Label.new()
-		new_label.name = "NewLabel"
-		new_label.text = "NEW"
-		new_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		if entry_details_font != null:
-			new_label.add_theme_font_override("font", entry_details_font)
-		new_label.add_theme_font_size_override("font_size", entry_details_font_size)
-		new_label.add_theme_color_override("font_color", SELECTED_COLOR)
-		heading_row.add_child(new_label)
-	if status_texture != null:
-		var status_icon := TextureRect.new()
-		status_icon.custom_minimum_size = Vector2(12.0, 13.0)
-		status_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		status_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		status_icon.texture = status_texture
-		status_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		status_icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
-		status_icon.modulate.a = LOCKED_ENTRY_OPACITY if muted else 1.0
-		if gold_status:
-			var shader := Shader.new()
-			shader.code = GOLD_STATUS_SHADER
-			var material := ShaderMaterial.new()
-			material.shader = shader
-			status_icon.material = material
-		heading_row.add_child(status_icon)
-		if not status_text.is_empty():
-			var level_label := Label.new()
-			level_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-			level_label.offset_left += bonus_level_text_offset.x
-			level_label.offset_right += bonus_level_text_offset.x
-			level_label.offset_top += bonus_level_text_offset.y
-			level_label.offset_bottom += bonus_level_text_offset.y
-			level_label.text = status_text
-			level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			level_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			if bonus_level_font != null:
-				level_label.add_theme_font_override("font", bonus_level_font)
-			elif entry_details_font != null:
-				level_label.add_theme_font_override("font", entry_details_font)
-			level_label.add_theme_font_size_override("font_size", bonus_level_font_size)
-			level_label.add_theme_color_override("font_color", Color.WHITE)
-			status_icon.add_child(level_label)
-	elif not status_text.is_empty():
-		var status_label := Label.new()
-		status_label.text = status_text
-		status_label.custom_minimum_size.x = 31.0
-		status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		if entry_details_font != null:
-			status_label.add_theme_font_override("font", entry_details_font)
-		status_label.add_theme_font_size_override(
-			"font_size", entry_details_font_size
-		)
-		status_label.add_theme_color_override("font_color", SELECTED_COLOR)
-		status_label.modulate.a = LOCKED_ENTRY_OPACITY if muted else 1.0
-		heading_row.add_child(status_label)
-	var heading_label := Label.new()
-	heading_label.text = heading
-	heading_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	if entry_heading_font != null:
-		heading_label.add_theme_font_override("font", entry_heading_font)
-	heading_label.add_theme_font_size_override("font_size", entry_heading_font_size)
-	var heading_offset_style := StyleBoxEmpty.new()
-	heading_offset_style.content_margin_left = entry_heading_text_offset.x
-	heading_offset_style.content_margin_top = entry_heading_text_offset.y
-	heading_label.add_theme_stylebox_override("normal", heading_offset_style)
-	heading_label.add_theme_color_override(
-		"font_color",
-		Color("4d82c2") if accent else Color("3c3c3c")
+	ProgressionEntryBuilderScript.add_entry(
+		self, heading, details, accent, status_texture, muted, status_text, gold_status, progress_ratio, progress_tooltip, is_new
 	)
-	heading_label.modulate.a = LOCKED_ENTRY_OPACITY if muted else 1.0
-	var details_label := Label.new()
-	details_label.text = details
-	details_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	if entry_details_font != null:
-		details_label.add_theme_font_override("font", entry_details_font)
-	details_label.add_theme_font_size_override("font_size", entry_details_font_size)
-	details_label.add_theme_color_override("font_color", Color("8a8882"))
-	details_label.modulate.a = LOCKED_ENTRY_OPACITY if muted else 1.0
-	heading_row.add_child(heading_label)
-	entry.add_child(heading_row)
-	entry.add_child(details_label)
-	if progress_ratio >= 0.0:
-		_add_progress_bar(entry, progress_ratio, progress_tooltip)
-	content.add_child(entry)
 
 
 func _add_progress_bar(
 	entry: VBoxContainer, progress_ratio: float, progress_tooltip: String
 ) -> void:
-	var bar := NinePatchRect.new()
-	bar.set_script(ProgressionCompletionBarScript)
-	bar.custom_minimum_size.y = 6.0
-	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	bar.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	bar.texture = PROGRESS_BAR_TEXTURE
-	bar.patch_margin_left = 2
-	bar.patch_margin_top = 2
-	bar.patch_margin_right = 2
-	bar.patch_margin_bottom = 2
-	bar.mouse_default_cursor_shape = Control.CURSOR_HELP
-	bar.tooltip_text = progress_tooltip
-	bar.set("progress_hint", progress_tooltip)
-	var shader := Shader.new()
-	shader.code = PROGRESS_BAR_SHADER
-	var material := ShaderMaterial.new()
-	material.shader = shader
-	material.set_shader_parameter("progress", clampf(progress_ratio, 0.0, 1.0))
-	bar.material = material
-	bar.mouse_entered.connect(_set_progress_bar_highlight.bind(material, true))
-	bar.mouse_exited.connect(_set_progress_bar_highlight.bind(material, false))
-	entry.add_child(bar)
+	ProgressionEntryBuilderScript.add_progress_bar(self, entry, progress_ratio, progress_tooltip)
 
 
 func _set_progress_bar_highlight(
 	material: ShaderMaterial, highlighted: bool
 ) -> void:
-	material.set_shader_parameter("highlighted", 1.0 if highlighted else 0.0)
+	ProgressionEntryBuilderScript.set_progress_bar_highlight(self, material, highlighted)
 
 
 func refresh(snapshot: Dictionary) -> void:

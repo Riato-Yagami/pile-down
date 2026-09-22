@@ -52,9 +52,15 @@ func _run() -> void:
 	assert(menu.font_catalog.editor_preview_tile_count == 10)
 	menu.font_catalog.editor_preview_tile_count = 9
 	assert(menu.font_catalog.editor_preview_font != null)
-	assert(menu.font_catalog.editor_preview_font.id == &"press_start_2p")
+	assert(
+		menu.font_catalog.editor_preview_font.id
+		== menu.font_catalog.font_data_catalog.get_selected_data().id
+	)
 	assert(menu.font_catalog.editor_preview_palette != null)
-	assert(menu.font_catalog.editor_preview_palette.id == &"arcade")
+	assert(
+		menu.font_catalog.editor_preview_palette.id
+		== menu.font_catalog.palette_data_catalog.get_selected_data().id
+	)
 	assert(menu.get_default_font().id == &"vcr")
 	assert(menu.get_default_palette().id == &"arcade")
 	menu._copy_notification_placement()
@@ -130,7 +136,15 @@ func _run() -> void:
 				"id": &"default", "title": "DEFAULT", "unlocked": true,
 				"selected": true, "font": menu.entry_heading_font,
 			},
-			{"id": &"other", "title": "OTHER", "unlocked": true, "selected": false},
+			{
+				"id": &"other", "title": "PIXELATED PUSAB", "unlocked": true,
+				"selected": false, "font": menu.entry_heading_font,
+			},
+			{
+				"id": &"locked", "title": "LOCKED FONT", "unlocked": false,
+				"selected": false, "font": menu.entry_details_font,
+				"title_font_size": 8,
+			},
 		],
 		"palettes": [
 			{
@@ -161,9 +175,11 @@ func _run() -> void:
 	var score_details := menu.content.get_child(0).get_child(1) as Label
 	assert(score_details.get_theme_font_size("font_size") == menu.entry_details_font_size)
 	var layout := menu.get_node("Margin/Layout") as Control
-	assert(layout.get_combined_minimum_size().x <= 232.0)
+	assert(layout.get_combined_minimum_size().x <= 296.0)
 	assert(layout.get_combined_minimum_size().y <= 296.0)
 	assert(menu.get_global_rect().encloses(layout.get_global_rect()))
+	var body := menu.get_node("Margin/Layout/Body") as HBoxContainer
+	var body_minimum_y := body.get_combined_minimum_size().y
 	var highscores_button := menu.page_buttons[ProgressionMenu.Page.HIGHSCORES]
 	assert(highscores_button is TextureHighlightButton)
 	highscores_button.set_pointer_hovered(true)
@@ -195,18 +211,24 @@ func _run() -> void:
 	assert(lock_main.modulate == Color.WHITE)
 	assert(lock_handle.modulate == Color.WHITE)
 	assert(flip_anchor.scale == Vector2.ONE)
-	assert(lock_handle.position.y > 0.0)
+	assert(
+		lock_handle.position
+		== ProgressionLockFilter.HANDLE_BASE_POSITION
+			+ menu.lock_filter.locked_handle_offset
+	)
 	menu.lock_filter.set_mode(ProgressionLockFilter.BOTH)
 
 	menu._show_page(ProgressionMenu.Page.BONUSES)
 	assert(menu.lock_filter.visible)
+	assert(not menu.font_preview_scroll.visible)
+	assert(is_equal_approx(menu.font_preview_scroll.modulate.a, 1.0))
 	assert(menu.SHOW_LOCK_FILTER)
 	assert(menu.title_label.text == "BONUSES")
-	var global_title := menu.get_node("Margin/Layout/Header/Title") as Label
-	assert(menu.lock_filter.get_parent() == global_title.get_parent())
-	assert(
-		menu.lock_filter.get_index() == global_title.get_index() + 1
-	)
+	var back_button := menu.get_node("%BackButton") as TextureHighlightButton
+	var lock_slot := menu.lock_filter.get_parent() as Control
+	assert(lock_slot.get_parent() == back_button.get_parent())
+	assert(lock_slot.get_index() == back_button.get_index() - 1)
+	assert(lock_slot.size_flags_vertical == Control.SIZE_SHRINK_CENTER)
 	assert(menu.content.get_child_count() == 2)
 	var known_entry := menu.content.get_child(0) as VBoxContainer
 	var known_heading := known_entry.get_child(0) as HBoxContainer
@@ -226,6 +248,10 @@ func _run() -> void:
 	var unknown_heading := unknown_entry.get_child(0) as HBoxContainer
 	assert((unknown_heading.get_child(0) as TextureRect).texture == menu.UNCHECKED_TEXTURE)
 	assert((unknown_heading.get_child(1) as Label).text == "REDRAW")
+	assert((known_heading.get_child(1) as Label).size.y > 1.0)
+	assert((known_entry.get_child(1) as Label).size.y > 1.0)
+	assert((unknown_heading.get_child(1) as Label).size.y > 1.0)
+	assert((unknown_entry.get_child(1) as Label).size.y > 1.0)
 	assert((unknown_heading.get_child(0) as TextureRect).get_child_count() == 0)
 	assert(is_equal_approx(
 		(unknown_heading.get_child(0) as TextureRect).modulate.a,
@@ -259,13 +285,16 @@ func _run() -> void:
 	var unbeaten_rule := menu.content.get_child(0) as VBoxContainer
 	var unbeaten_heading := unbeaten_rule.get_child(0) as HBoxContainer
 	assert((unbeaten_heading.get_child(1) as Label).text == "SHELL GAME")
+	assert((unbeaten_heading.get_child(1) as Label).size.y > 1.0)
 	assert(is_equal_approx(
 		(unbeaten_heading.get_child(1) as Label).modulate.a,
 		menu.LOCKED_ENTRY_OPACITY
 	))
 	assert((unbeaten_rule.get_child(1) as Label).text == "???")
+	assert((unbeaten_rule.get_child(1) as Label).size.y > 1.0)
 	var beaten_rule := menu.content.get_child(1) as VBoxContainer
 	assert((beaten_rule.get_child(1) as Label).text == "Dark.")
+	assert((beaten_rule.get_child(1) as Label).size.y > 1.0)
 
 	menu._show_page(ProgressionMenu.Page.ACHIEVEMENTS)
 	assert((menu.content.get_child(0) as Label).text == "ROUNDS")
@@ -314,29 +343,55 @@ func _run() -> void:
 	menu._show_page(ProgressionMenu.Page.FONTS)
 	assert(not menu.main_scroll.visible)
 	assert(menu.cosmetic_lists.visible)
+	assert(menu.font_preview_scroll.visible)
+	assert(is_equal_approx(menu.font_preview_scroll.modulate.a, 1.0))
+	assert(body.get_combined_minimum_size().y >= body_minimum_y)
 	assert(menu.font_preview_scroll.get_parent() == layout)
 	assert(menu.font_preview_scroll.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED)
 	assert(menu.font_preview_scroll.custom_minimum_size.y >= 37.0)
 	var selected_button := menu.fonts_content.get_child(0) as Button
 	var other_button := menu.fonts_content.get_child(1) as Button
-	assert(selected_button.text == "DEFAULT")
+	var locked_button := menu.fonts_content.get_child(2) as SelectableText
+	var selected_font_title := selected_button.get_node("FontTitle") as Label
+	var other_font_title := other_button.get_node("FontTitle") as Label
+	assert(selected_font_title.text == "DEFAULT")
+	assert(selected_font_title.autowrap_mode == TextServer.AUTOWRAP_OFF)
+	assert(selected_font_title.clip_text)
+	assert((selected_button as SelectableText).fit_select_zone_to_content == false)
+	assert(selected_font_title.size.x > selected_font_title.position.x)
+	assert(other_font_title.text == "PIXELATED PUSAB")
+	assert(other_font_title.autowrap_mode == TextServer.AUTOWRAP_OFF)
+	assert(other_font_title.clip_text)
+	assert(other_font_title.size.x > other_font_title.position.x)
+	assert(not (selected_button as SelectableText).text_label.visible)
+	assert(locked_button.disabled)
+	assert(locked_button.text == "???")
+	assert(locked_button.get_node_or_null("FontTitle") == null)
+	assert(locked_button.text_label.visible)
+	assert(locked_button.text_label.text == "???")
+	assert(locked_button.text_label.get_theme_font("font") == menu.entry_heading_font)
+	var font_title_y := selected_font_title.position.y
+	for index in 4:
+		await process_frame
+		assert(selected_font_title.position.y == font_title_y)
+		assert(other_font_title.get_line_count() == 1)
 	assert(not selected_button.disabled)
-	assert(selected_button is HighlightButton)
+	assert(selected_button is SelectableText)
 	assert(
 		selected_button.autowrap_mode == TextServer.AUTOWRAP_WORD_SMART
 	)
 	assert(selected_button.modulate == Color.WHITE)
-	assert(selected_button.icon == menu.SELECTED_TEXTURE)
+	assert((selected_button as SelectableText).checkbox_sprite.texture == menu.SELECTED_TEXTURE)
 	assert(
-		selected_button.get_theme_font("font") == menu.entry_heading_font
+		selected_font_title.get_theme_font("font") == menu.entry_heading_font
 	)
-	assert(other_button.icon == menu.UNCHECKED_TEXTURE)
+	assert((other_button as SelectableText).checkbox_sprite.texture == menu.UNCHECKED_TEXTURE)
 	assert(other_button.modulate == Color.WHITE)
 	var preview := menu.font_preview
 	assert(preview is HFlowContainer)
 	assert(preview.get_child_count() == 10)
-	assert((preview.get_child(0) as TextureRect).texture == menu.TILE_BACK_TEXTURE)
-	assert(preview.get_child(0).get_child_count() == 0)
+	assert((preview.get_child(0) as TextureRect).texture == menu.TILE_FACE_TEXTURE)
+	assert((preview.get_child(0).get_child(0) as Label).text == "?")
 	assert((preview.get_child(1).get_child(0) as Label).text == "0")
 	var last_preview_index := 9
 	assert(

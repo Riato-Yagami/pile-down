@@ -22,6 +22,36 @@ func _init() -> void:
 	var restored_typed: Dictionary = restored.get_value("progression", "typed", {})
 	assert(int(restored_typed[&"round"]) == 4)
 	assert(StringName(restored_typed[2]) == &"bonus")
+	for invalid_values in [
+		{"highscores": "not a dictionary"},
+		{"completed": [123]},
+		{"highscores": {&"test": -1}},
+		{"best_times_ms": {&"test": "invalid"}},
+		{"record_seeds": {&"test": {"seed": []}}},
+	]:
+		var malformed := FileAccess.open(export_path, FileAccess.WRITE)
+		malformed.store_string(JSON.stringify({
+			"format": SaveDataManager.EXPORT_FORMAT,
+			"version": SaveDataManager.EXPORT_VERSION,
+			"sections": JSON.from_native({"challenges": invalid_values}),
+		}))
+		malformed.close()
+		assert(manager.import_json(export_path) == ERR_INVALID_DATA)
+		assert(restored.load(SaveDataManager.SAVE_PATH) == OK)
+		assert(restored.get_value("progression", "sample") == restored_sample)
+	config.set_value("challenges", "completed", [&"test"])
+	config.set_value("challenges", "highscores", {&"test": 4})
+	config.set_value("challenges", "record_seeds", {&"test": {"seed": -42, "seed_label": "TEST"}})
+	assert(config.save(SaveDataManager.SAVE_PATH) == OK)
+	assert(manager.export_json(export_path) == OK)
+	assert(manager.import_json(export_path) == OK)
+	var challenges := ChallengeManager.new()
+	challenges.load_progress()
+	challenges.load_progress()
+	assert(challenges.completed == [&"test"])
+	assert(challenges.highscores[&"test"] == 4)
+	assert(challenges.record_seeds[&"test"]["seed"] == -42)
+	challenges.free()
 	assert(manager.delete_save() == OK)
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(export_path))
 	manager.free()

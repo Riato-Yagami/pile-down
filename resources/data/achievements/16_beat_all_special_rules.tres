@@ -1,11 +1,12 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://101j4dd18dic"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_ywv5c"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1_ywv5c"]
 
 [resource]
 script = ExtResource("1_ywv5c")
-id = &"beat_all_special_rules"
 title = "RULEBOOK COMPLETE"
 description = "Beat every enabled Special Rule at least once."
 category = &"BONUSES & RULES"
-reward_font = &"monster_friend"
+difficulty = 7
+reward_rationale = "Une collection de types pour toutes les règles maîtrisées."
+id = &"beat_all_special_rules"

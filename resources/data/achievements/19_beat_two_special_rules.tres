@@ -4,9 +4,10 @@
 
 [resource]
 script = ExtResource("1_e7lgq")
-id = &"beat_two_special_rules"
 title = "DOUBLE TROUBLE"
 description = "Beat a round with at least two Special Rules."
 category = &"BONUSES & RULES"
-reward_font = &"pixel_western"
+difficulty = 4
+reward_rationale = "Un mélange toxique pour deux règles combinées."
 required_count = 2
+id = &"beat_two_special_rules"

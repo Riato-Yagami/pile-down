@@ -1,13 +1,13 @@
 [gd_resource type="Resource" script_class="ChallengeData" format=3 uid="uid://c8ixku6kjlrji"]
 
 [ext_resource type="Script" uid="uid://ch3uaffg7ob3m" path="res://resources/scripts/challenges/ChallengeData.gd" id="1_data"]
-[ext_resource type="Resource" path="res://resources/data/achievements/50_full_magazine.tres" id="2_achievement"]
+[ext_resource type="Resource" uid="uid://bjidtn6tdaq31" path="res://resources/data/achievements/50_full_magazine.tres" id="progression_reward"]
 
 [resource]
 script = ExtResource("1_data")
 title = "RELOAD REQUIRED"
 description = "Bad hand? Reload."
-required_achievement = ExtResource("2_achievement")
+required_achievement = ExtResource("progression_reward")
 start_round = 1
 target_round = 15
 starting_pile_count = 2

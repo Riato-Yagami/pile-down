@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="BackgroundThemeData" format=3 uid="uid://iutofrsiy4ne"]
+
+[ext_resource type="Script" uid="uid://1awrm7q3b3y0" path="res://resources/scripts/backgrounds/BackgroundThemeData.gd" id="1_data"]
+[ext_resource type="Material" uid="uid://dxlghxto4fbba" path="res://resources/materials/backgrounds/02_dots.tres" id="2_material"]
+
+[resource]
+script = ExtResource("1_data")
+display_name = "DOTS"
+material = ExtResource("2_material")
+id = &"dots"

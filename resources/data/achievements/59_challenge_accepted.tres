@@ -1,11 +1,12 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://db1mdpippc32f"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
-id = &"challenge_accepted"
 title = "CHALLENGE ACCEPTED"
 description = "Complete every standard Challenge Run."
 category = &"CHALLENGES"
-
+difficulty = 9
+reward_rationale = "Toutes les couleurs pour tous les challenges terminés."
+id = &"challenge_accepted"

@@ -1,11 +1,12 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://cercxrlp73lqq"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_ntelj"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1_ntelj"]
 
 [resource]
 script = ExtResource("1_ntelj")
-id = &"first_checkpoint"
 title = "CHECKED IN"
 description = "Unlock your first checkpoint."
 category = &"CHECKPOINTS"
-reward_font = &"birch_leaf"
+difficulty = 2
+reward_rationale = "Les couleurs du printemps célèbrent le premier point de passage et offrent une palette tôt dans la progression."
+id = &"first_checkpoint"

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://1mr2cddtbkjn"]
+
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+title = "CHACUN SON TOUR"
+description = "With at least 4 piles, complete one pile before placing a card on any other. Mistakes are allowed."
+category = &"ROUNDS"
+difficulty = 3
+reward_rationale = "Une feuille après l'autre, comme les piles terminées chacune à leur tour."
+reward_font = &"birch_leaf"
+id = &"one_at_a_time"

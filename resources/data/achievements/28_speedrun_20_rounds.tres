@@ -4,10 +4,11 @@
 
 [resource]
 script = ExtResource("1_paviu")
-id = &"speedrun_20_rounds"
-title = "TEN-MINUTE TWENTY"
-description = "Complete 20 rounds in under 10 minutes."
+title = "TWENTY IN TWENTY"
+description = "Complete 20 rounds in under 20 minutes."
 category = &"SPEEDRUN"
-reward_font = &"vhs_gothic"
+difficulty = 5
+reward_rationale = "Des couleurs électriques pour une cadence soutenue."
 required_count = 20
-time_limit_seconds = 600.0
+time_limit_seconds = 1200.0
+id = &"speedrun_20_rounds"

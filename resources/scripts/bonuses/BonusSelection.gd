@@ -37,6 +37,7 @@ func present(
 	flawless := false
 ) -> int:
 	_presentation_generation += 1
+	var generation := _presentation_generation
 	_presentation_mode = 1
 	if flawless:
 		self.choices.visible = false
@@ -46,6 +47,8 @@ func present(
 		modulate.a = 1.0
 		scale = Vector2.ONE
 		await _show_flawless_feedback()
+		if generation != _presentation_generation:
+			return -1
 	self.choices.visible = true
 	rule_choices.visible = false
 	skip_button.visible = true

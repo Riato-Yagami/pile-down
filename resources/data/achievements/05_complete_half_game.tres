@@ -1,11 +1,12 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://ddbhmj1ptfusl"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_myr77"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1_myr77"]
 
 [resource]
 script = ExtResource("1_myr77")
-id = &"complete_half_game"
 title = "HALFWAY DOWN"
 description = "Complete half of the normal game."
 category = &"ROUNDS"
-reward_font = &"arcade_in"
+difficulty = 4
+reward_rationale = "Le soleil à mi-course avant la fin du voyage."
+id = &"complete_half_game"

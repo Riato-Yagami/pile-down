@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Copy to build/export.local.sh and adjust paths for your machine.
+# Explicit environment variables take priority over these defaults.
+export PILE_DOWN_GODOT_BIN="${PILE_DOWN_GODOT_BIN:-C:/tools/Godot/Godot.exe}"
+export JAVA_HOME="${JAVA_HOME:-C:/tools/jdk-17}"
+export ANDROID_HOME="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-${LOCALAPPDATA}/Android/Sdk}}"

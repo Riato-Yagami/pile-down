@@ -1,0 +1,13 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://bdmatcheckr1"]
+
+[ext_resource type="Shader" uid="uid://b6qjc3checkr" path="res://resources/shaders/backgrounds/BackgroundCheckered.gdshader" id="1_shader"]
+
+[resource]
+resource_local_to_scene = true
+shader = ExtResource("1_shader")
+shader_parameter/speed = Vector2(0.02, 0.06)
+shader_parameter/time = 0.0
+shader_parameter/rotation = 0.0
+shader_parameter/checker_width = 25.0
+shader_parameter/checker_length = 25.0
+shader_parameter/checker_shape = 0

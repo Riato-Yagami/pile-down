@@ -170,10 +170,18 @@ static func fonts(game: GameManager) -> Array[Dictionary]:
 static func palettes(game: GameManager) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for data in game.palette_manager.definitions:
+		var theme := game.theme_manager.find(data.id)
+		if theme == null:
+			theme = ThemePaletteRegistry.from_color_palette(data)
 		result.append({
 			"id": data.id,
 			"title": data.display_name,
 			"colors": data.normalized_colors(),
+			"ui_button_color": theme.ui_button_color,
+			"ui_button_hover_color": theme.ui_button_hover_color,
+			"ui_button_text_color": theme.ui_button_text_color,
+			"bg_base_color": theme.bg_base_color,
+			"bg_secondary_color": theme.bg_secondary_color,
 			"unlocked": game.palette_manager.unlocked.has(data.id),
 			"selected": game.palette_manager.selected_palette == data.id,
 		})

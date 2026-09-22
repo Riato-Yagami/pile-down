@@ -1,11 +1,13 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://cg4vqwbas1lrw"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_rg41j"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1_rg41j"]
 
 [resource]
 script = ExtResource("1_rg41j")
-id = &"complete_normal_game"
 title = "COUNTED DOWN"
 description = "Complete every round."
 category = &"ROUNDS"
+difficulty = 6
+reward_rationale = "Arcade Out marque la sortie victorieuse du parcours classique."
 reward_font = &"arcade_out"
+id = &"complete_normal_game"

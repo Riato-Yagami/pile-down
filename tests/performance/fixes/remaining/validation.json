@@ -1,0 +1,112 @@
+[
+  {
+    "name": "editor",
+    "command": [
+      "H:/Programmes/Dev/Godot/4.7.2/Godot_v4.7.2.exe",
+      "--path",
+      ".",
+      "--headless",
+      "--editor",
+      "--quit"
+    ],
+    "exit_code": 0,
+    "errors": []
+  },
+  {
+    "name": "startup",
+    "command": [
+      "H:/Programmes/Dev/Godot/4.7.2/Godot_v4.7.2.exe",
+      "--path",
+      ".",
+      "--headless",
+      "--quit-after",
+      "240"
+    ],
+    "exit_code": 0,
+    "errors": []
+  },
+  {
+    "name": "warmup-gl_compatibility",
+    "command": [
+      "H:/Programmes/Dev/Godot/4.7.2/Godot_v4.7.2.exe",
+      "--path",
+      ".",
+      "--rendering-method",
+      "gl_compatibility",
+      "--script",
+      "tests/test_render_warmup.gd"
+    ],
+    "exit_code": 0,
+    "errors": []
+  },
+  {
+    "name": "startup-gl_compatibility",
+    "command": [
+      "H:/Programmes/Dev/Godot/4.7.2/Godot_v4.7.2.exe",
+      "--path",
+      ".",
+      "--rendering-method",
+      "gl_compatibility",
+      "--quit-after",
+      "120"
+    ],
+    "exit_code": 0,
+    "errors": []
+  },
+  {
+    "name": "warmup-mobile",
+    "command": [
+      "H:/Programmes/Dev/Godot/4.7.2/Godot_v4.7.2.exe",
+      "--path",
+      ".",
+      "--rendering-method",
+      "mobile",
+      "--script",
+      "tests/test_render_warmup.gd"
+    ],
+    "exit_code": 0,
+    "errors": []
+  },
+  {
+    "name": "startup-mobile",
+    "command": [
+      "H:/Programmes/Dev/Godot/4.7.2/Godot_v4.7.2.exe",
+      "--path",
+      ".",
+      "--rendering-method",
+      "mobile",
+      "--quit-after",
+      "120"
+    ],
+    "exit_code": 0,
+    "errors": []
+  },
+  {
+    "name": "warmup-forward_plus",
+    "command": [
+      "H:/Programmes/Dev/Godot/4.7.2/Godot_v4.7.2.exe",
+      "--path",
+      ".",
+      "--rendering-method",
+      "forward_plus",
+      "--script",
+      "tests/test_render_warmup.gd"
+    ],
+    "exit_code": 0,
+    "errors": []
+  },
+  {
+    "name": "startup-forward_plus",
+    "command": [
+      "H:/Programmes/Dev/Godot/4.7.2/Godot_v4.7.2.exe",
+      "--path",
+      ".",
+      "--rendering-method",
+      "forward_plus",
+      "--quit-after",
+      "120"
+    ],
+    "exit_code": 0,
+    "errors": []
+  }
+]

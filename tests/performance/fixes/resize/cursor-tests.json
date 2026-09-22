@@ -1,0 +1,8 @@
+[
+  {
+    "test": "test_cursor_lifecycle.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nCursor lifecycle tests passed.\n"
+  }
+]

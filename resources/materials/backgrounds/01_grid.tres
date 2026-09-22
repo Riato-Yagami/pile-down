@@ -1,0 +1,14 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://d0agimb4ut1te"]
+
+[ext_resource type="Shader" uid="uid://caftywok70oo" path="res://resources/shaders/backgrounds/BackgroundGrid.gdshader" id="1_shader"]
+
+[resource]
+resource_local_to_scene = true
+shader = ExtResource("1_shader")
+shader_parameter/speed = Vector2(0.075, 0.036)
+shader_parameter/time = 0.0
+shader_parameter/rotation = 0.0
+shader_parameter/line_width = Vector2(0.1, 0.1)
+shader_parameter/line_spacing = Vector2(13, 16)
+shader_parameter/row_offset = 0.0
+shader_parameter/column_offset = 0.0

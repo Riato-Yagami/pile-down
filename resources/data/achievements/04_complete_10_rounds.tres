@@ -4,9 +4,11 @@
 
 [resource]
 script = ExtResource("1_qjs37")
-id = &"complete_10_rounds"
 title = "GETTING STARTED"
 description = "Complete 10 rounds."
 category = &"ROUNDS"
+difficulty = 2
+reward_rationale = "Une petite police pour les premiers progrès."
 reward_font = &"tiny5"
 required_count = 10
+id = &"complete_10_rounds"

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://fs2la2c7ic3a"]
+
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+title = "PHOTO DE FAMILLE"
+description = "With at least 4 piles, bring every pile to 1 before completing any. Mistakes are allowed."
+category = &"ROUNDS"
+difficulty = 4
+reward_rationale = "Des fleurs réunies au même stade, comme les piles à 1."
+id = &"family_photo"

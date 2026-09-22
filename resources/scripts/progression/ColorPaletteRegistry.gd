@@ -1,7 +1,7 @@
 class_name ColorPaletteRegistry
 extends RefCounted
 
-const CATALOG: DataCatalog = preload("res://resources/data/palettes.tres")
+const CATALOG := preload("res://resources/data/palettes.tres")
 
 
 static func create_all() -> Array[ColorPaletteData]:
@@ -12,4 +12,5 @@ static func create_all() -> Array[ColorPaletteData]:
 			push_warning("Ignoring non-ColorPaletteData entry in palette catalog.")
 			continue
 		result.append(data)
+	ProgressionOrdering.sort_unlockables(result)
 	return result

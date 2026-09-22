@@ -1,0 +1,14 @@
+[
+  {
+    "test": "test_render_warmup.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nRender warmup lifecycle tests passed.\n"
+  },
+  {
+    "test": "test_resize_coalescing.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nResize coalescing tests passed.\n"
+  }
+]

@@ -1,11 +1,13 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://d3kkewbd2iju0"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_g5xei"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1_g5xei"]
 
 [resource]
 script = ExtResource("1_g5xei")
-id = &"all_bonuses_discovered"
 title = "BONUS COLLECTOR"
 description = "Obtain every enabled bonus at least once."
 category = &"BONUSES & RULES"
+difficulty = 6
+reward_rationale = "Une récompense fruitée pour avoir goûté à tous les bonus."
 reward_font = &"kiwi_soda"
+id = &"all_bonuses_discovered"

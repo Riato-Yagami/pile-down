@@ -1,13 +1,13 @@
 [gd_resource type="Resource" script_class="ChallengeData" format=3 uid="uid://demmgrjv0cysu"]
 
 [ext_resource type="Script" uid="uid://ch3uaffg7ob3m" path="res://resources/scripts/challenges/ChallengeData.gd" id="1"]
-[ext_resource type="Resource" path="res://resources/data/achievements/20_beat_max_special_rules.tres" id="2"]
+[ext_resource type="Resource" uid="uid://qvlity2e6sea" path="res://resources/data/achievements/20_beat_max_special_rules.tres" id="progression_reward"]
 
 [resource]
 script = ExtResource("1")
 title = "BOSS RUSH"
 description = "No easy rounds."
-required_achievement = ExtResource("2")
+required_achievement = ExtResource("progression_reward")
 force_special_rules_every_round = true
 forced_special_rule_count = 2
 id = &"boss_rush"

@@ -1,11 +1,11 @@
-[gd_resource type="Resource" script_class="ColorPaletteData" format=3]
+[gd_resource type="Resource" script_class="ColorPaletteData" format=3 uid="uid://dgaaxd6wba2k6"]
 
-[ext_resource type="Resource" path="res://resources/data/achievements/17_one_bonus_max_level.tres" id="1_sj001"]
-[ext_resource type="Script" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_yn6bd"]
+[ext_resource type="Script" uid="uid://bdlkhp3dt6mr" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_yn6bd"]
+[ext_resource type="Resource" path="res://resources/data/achievements/61_complete_one_shot.tres" id="progression_reward"]
 
 [resource]
 script = ExtResource("2_yn6bd")
-id = &"cozy"
 display_name = "COZY"
 colors = Array[Color]([Color(0.4745098, 0.49019608, 0.38431373, 1), Color(0.60784316, 0.60784316, 0.47843137, 1), Color(0.7294118, 0.64705884, 0.5294118, 1), Color(0.8509804, 0.68235296, 0.5803922, 1), Color(0.68235296, 0.6901961, 0.6431373, 1), Color(0.85882354, 0.85882354, 0.8352941, 1), Color(0.9098039, 0.6745098, 0.39607844, 1), Color(0.8156863, 0.54901963, 0.3764706, 1), Color(0.70980394, 0.5176471, 0.3882353, 1), Color(0.6, 0.48235294, 0.4, 1)])
-required_achievement = ExtResource("1_sj001")
+required_achievement = ExtResource("progression_reward")
+id = &"cozy"

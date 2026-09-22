@@ -1,11 +1,13 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://t6oshsghf81j"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
-id = &"complete_boss_rush"
 title = "BOSS SLAYER"
 description = "Complete Boss Rush."
 category = &"CHALLENGES"
-
+difficulty = 8
+reward_rationale = "Une écriture gothique pour le vainqueur des boss."
+reward_font = &"gothic_pixels"
+id = &"complete_boss_rush"

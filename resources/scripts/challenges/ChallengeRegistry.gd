@@ -1,7 +1,7 @@
 class_name ChallengeRegistry
 extends RefCounted
 
-const CATALOG: DataCatalog = preload("res://resources/data/challenges.tres")
+const CATALOG := preload("res://resources/data/challenges.tres")
 
 
 static func create_all() -> Array[ChallengeData]:
@@ -12,4 +12,5 @@ static func create_all() -> Array[ChallengeData]:
 			push_warning("Ignoring non-ChallengeData entry in challenge catalog.")
 			continue
 		result.append(data)
+	ProgressionOrdering.sort_unlockables(result)
 	return result

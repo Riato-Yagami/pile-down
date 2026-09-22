@@ -1,8 +1,12 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1"]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://bs7d8ehc05k8b"]
+
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1"]
+
 [resource]
 script = ExtResource("1")
-id = &"overprotected"
 title = "OVERPROTECTED"
 description = "Max out Safety Net and Spare Life across your runs."
 category = &"CHALLENGES"
+difficulty = 5
+reward_rationale = "Après les protections maximales, apprendre à gagner avec une seule vie."
+id = &"overprotected"

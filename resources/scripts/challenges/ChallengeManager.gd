@@ -1,7 +1,7 @@
 class_name ChallengeManager
 extends Node
 
-const SAVE_PATH := "user://pile_down.cfg"
+const SAVE_PATH := SaveConfig.PATH
 
 var definitions: Array[ChallengeData] = ChallengeRegistry.create_all()
 var completed: Array[StringName] = []
@@ -18,13 +18,40 @@ func load_progress() -> void:
 	var config := ConfigFile.new()
 	if config.load(SAVE_PATH) != OK:
 		return
-	for value in config.get_value("challenges", "completed", []):
-		completed.append(StringName(value))
-	highscores = config.get_value("challenges", "highscores", {})
-	endless_highscores = config.get_value("challenges", "endless_highscores", {})
-	best_times_ms = config.get_value("challenges", "best_times_ms", {})
-	record_seeds = config.get_value("challenges", "record_seeds", {})
-	endless_record_seeds = config.get_value("challenges", "endless_record_seeds", {})
+	completed.clear()
+	var saved_completed: Variant = config.get_value("challenges", "completed", [])
+	if is_valid_progress_value("completed", saved_completed):
+		for value in saved_completed:
+			completed.append(StringName(value))
+	for key in ["highscores", "endless_highscores", "best_times_ms", "record_seeds", "endless_record_seeds"]:
+		var value: Variant = config.get_value("challenges", key, {})
+		set(key, value if is_valid_progress_value(key, value) else {})
+
+
+static func is_valid_progress_value(key: String, value: Variant) -> bool:
+	if key == "completed":
+		if not value is Array:
+			return false
+		for id in value:
+			if not (id is String or id is StringName):
+				return false
+		return true
+	if key not in ["highscores", "endless_highscores", "best_times_ms", "record_seeds", "endless_record_seeds"]:
+		return true
+	if not value is Dictionary:
+		return false
+	for id in value:
+		if not (id is String or id is StringName):
+			return false
+		var entry: Variant = value[id]
+		if key in ["record_seeds", "endless_record_seeds"]:
+			if not entry is Dictionary:
+				return false
+			if not entry.get("seed", 0) is int or not entry.get("seed_label", "") is String:
+				return false
+		elif not entry is int or entry < 0:
+			return false
+	return true
 
 
 func find(id: StringName) -> ChallengeData:
@@ -102,8 +129,7 @@ func record_result(
 
 
 func _save() -> void:
-	var config := ConfigFile.new()
-	config.load(SAVE_PATH)
+	var config := SaveConfig.load_current()
 	config.set_value("challenges", "completed", completed)
 	config.set_value("challenges", "highscores", highscores)
 	config.set_value("challenges", "endless_highscores", endless_highscores)

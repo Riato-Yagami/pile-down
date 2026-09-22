@@ -1,0 +1,17 @@
+[
+  {
+    "name": "weights-0",
+    "scenario": "micro",
+    "cap": 60
+  },
+  {
+    "name": "weights-1",
+    "scenario": "micro",
+    "cap": 60
+  },
+  {
+    "name": "weights-2",
+    "scenario": "micro",
+    "cap": 60
+  }
+]

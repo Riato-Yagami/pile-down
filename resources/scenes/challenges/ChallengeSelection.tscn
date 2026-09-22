@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://crbhkrx184vti" path="res://resources/sprites/ui/icons/challenges.png" id="7_challenges_icon"]
 [ext_resource type="Texture2D" uid="uid://dtbjd4oh456wf" path="res://resources/sprites/ui/icons/seeds.png" id="8_seeds_icon"]
 [ext_resource type="FontFile" uid="uid://camkk5gui0ppq" path="res://resources/fonts/Tiny5-Regular.ttf" id="9_entry_font"]
+[ext_resource type="Script" path="res://resources/scripts/ui/PixelGridSnap.gd" id="10_pixel_snap"]
 
 [sub_resource type="Shader" id="ButtonHighlightShader"]
 code = "shader_type canvas_item;
@@ -62,7 +63,7 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 12.0
-offset_top = 12.0
+offset_top = 4.0
 offset_right = -12.0
 offset_bottom = -12.0
 grow_horizontal = 2
@@ -74,6 +75,8 @@ theme_override_constants/separation = 8
 
 [node name="Header" type="HBoxContainer" parent="Margin/Layout" unique_id=69541785]
 layout_mode = 2
+custom_minimum_size = Vector2(0, 29)
+theme_override_constants/separation = 4
 
 [node name="Title" type="Label" parent="Margin/Layout/Header" unique_id=1090209381]
 layout_mode = 2
@@ -81,14 +84,21 @@ theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
 theme_override_font_sizes/font_size = 20
 text = "CHALLENGES"
 
-[node name="LockFilter" parent="Margin/Layout/Header" unique_id=595351813 instance=ExtResource("6_lock_filter_scene")]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-
 [node name="HeaderSpacer" type="Control" parent="Margin/Layout/Header" unique_id=2056292637]
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="LockSlot" type="Control" parent="Margin/Layout/Header"]
+custom_minimum_size = Vector2(24, 29)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("10_pixel_snap")
+
+[node name="LockFilter" parent="Margin/Layout/Header/LockSlot" unique_id=595351813 instance=ExtResource("6_lock_filter_scene")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
 
 [node name="Back" type="TextureButton" parent="Margin/Layout/Header" unique_id=457326550]
 texture_filter = 1
@@ -141,13 +151,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 8
-
-[node name="PageTitle" type="Label" parent="Margin/Layout/Body/Page" unique_id=483449833]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
-theme_override_font_sizes/font_size = 20
-text = "PLAY A SEED"
 
 [node name="Scroll" type="ScrollContainer" parent="Margin/Layout/Body/Page" unique_id=2032848246]
 unique_name_in_owner = true

@@ -1,0 +1,49 @@
+[
+  {
+    "test": "test_background_transition_cleanup.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nBackground transition cleanup tests passed.\n"
+  },
+  {
+    "test": "test_dust_resize_cache.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nDust resize cache tests passed.\n"
+  },
+  {
+    "test": "test_render_warmup.gd",
+    "passed": false,
+    "errors": [
+      "SCRIPT ERROR: Parse Error: The variable type is being inferred from a Variant value, so it will be typed as Variant. (Warning treated as error.)",
+      "ERROR: Failed to load script \"res://tests/test_render_warmup.gd\" with error \"Parse error\"."
+    ],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nSCRIPT ERROR: Parse Error: The variable type is being inferred from a Variant value, so it will be typed as Variant. (Warning treated as error.)\n   at: GDScript::reload (res://tests/test_render_warmup.gd:21)\nERROR: Failed to load script \"res://tests/test_render_warmup.gd\" with error \"Parse error\".\n   at: load (modules/gdscript/gdscript_resource_format.cpp:46)\n"
+  },
+  {
+    "test": "test_retained_joker_layout.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nRetained joker layout, death and quit cleanup tests passed.\n"
+  },
+  {
+    "test": "test_screen_size_options.gd",
+    "passed": false,
+    "errors": [
+      "SCRIPT ERROR: Assertion failed."
+    ],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nSCRIPT ERROR: Assertion failed.\n   at: _run (res://tests/test_screen_size_options.gd:17)\n   GDScript backtrace (most recent call first):\n       [0] _run (res://tests/test_screen_size_options.gd:17)\n"
+  },
+  {
+    "test": "test_semi_adaptive_canvas.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nSemi adaptive canvas tests passed.\n"
+  },
+  {
+    "test": "test_true_pixel_grid.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\n"
+  }
+]

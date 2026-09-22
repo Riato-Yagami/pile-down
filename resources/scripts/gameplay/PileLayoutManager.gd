@@ -1,23 +1,6 @@
 class_name PileLayoutManager
 extends RefCounted
 
-const SPACING_X := 1.9
-const SPACING_Z := 1.75
-
-
-static func positions_for(count: int) -> Array[Vector3]:
-	var rows := _rows_for(count)
-	var result: Array[Vector3] = []
-	var row_count := rows.size()
-	for row_index in row_count:
-		var columns: int = rows[row_index]
-		var z := (row_index - (row_count - 1) * 0.5) * SPACING_Z
-		for column in columns:
-			var x := (column - (columns - 1) * 0.5) * SPACING_X
-			result.append(Vector3(x, 0.0, z - 0.55))
-	return result
-
-
 static func positions_for_2d(count: int, piece_size: float, gap: float = 22.0) -> Array[Vector2]:
 	var rows := _rows_for(count)
 	var result: Array[Vector2] = []

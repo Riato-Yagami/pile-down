@@ -57,6 +57,8 @@ func setup(
 
 
 func resize_to_viewport(pool_size: int) -> void:
+	if _bounds == get_viewport_rect().size and particles.size() == maxi(pool_size, 0):
+		return
 	setup(pool_size, debug_visible, viscosity, particle_color)
 
 

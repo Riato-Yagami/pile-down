@@ -1,11 +1,13 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://bo74qa0xuqgbp"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_vessw"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1_vessw"]
 
 [resource]
 script = ExtResource("1_vessw")
-id = &"three_bonus_combo"
 title = "EVERYONE'S HERE"
 description = "Trigger Bring a Friend, Double Down and Deja Vu from the same hand."
 category = &"COMBOS"
+difficulty = 7
+reward_rationale = "Un jardin foisonnant pour réunir les trois bonus."
 hidden = true
+id = &"three_bonus_combo"

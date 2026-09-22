@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ColorPaletteData" format=3 uid="uid://8ivyqe1w7ile"]
+
+[ext_resource type="Script" uid="uid://bdlkhp3dt6mr" path="res://resources/scripts/progression/ColorPaletteData.gd" id="1"]
+[ext_resource type="Resource" uid="uid://bfch0f2gouiid" path="res://resources/data/achievements/65_all_achievements.tres" id="progression_reward"]
+
+[resource]
+script = ExtResource("1")
+display_name = "OR MASSIF"
+colors = Array[Color]([Color(0.364706, 0.207843, 0.082353, 1), Color(0.501961, 0.313725, 0.121569, 1), Color(0.65098, 0.419608, 0.141176, 1), Color(0.74902, 0.545098, 0.188235, 1), Color(0.831373, 0.686275, 0.215686, 1), Color(0.909804, 0.768627, 0.352941, 1), Color(0.94902, 0.843137, 0.501961, 1), Color(1, 0.905882, 0.639216, 1), Color(0.788235, 0.592157, 0.32549, 1), Color(1, 0.952941, 0.792157, 1)])
+required_achievement = ExtResource("progression_reward")
+id = &"solid_gold"

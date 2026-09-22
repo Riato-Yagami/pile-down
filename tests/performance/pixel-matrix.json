@@ -1,0 +1,42 @@
+[
+  {
+    "name": "pixel-baseline-0",
+    "scenario": "baseline",
+    "width": 1920,
+    "height": 1080,
+    "pixel": true,
+    "screen_mode": "semi_adaptive",
+    "cap": 0,
+    "duration": 4
+  },
+  {
+    "name": "pixel-baseline-1",
+    "scenario": "baseline",
+    "width": 1920,
+    "height": 1080,
+    "pixel": true,
+    "screen_mode": "semi_adaptive",
+    "cap": 0,
+    "duration": 4
+  },
+  {
+    "name": "pixel-bg",
+    "scenario": "backgrounds",
+    "width": 1920,
+    "height": 1080,
+    "pixel": true,
+    "screen_mode": "semi_adaptive",
+    "cap": 0,
+    "duration": 2
+  },
+  {
+    "name": "pixel-4k",
+    "scenario": "baseline",
+    "width": 3840,
+    "height": 2160,
+    "pixel": true,
+    "screen_mode": "semi_adaptive",
+    "cap": 0,
+    "duration": 4
+  }
+]

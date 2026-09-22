@@ -1,0 +1,9 @@
+[
+  {
+    "name": "weights-states",
+    "scenario": "states",
+    "seed": "PERF-A",
+    "duration": 2,
+    "cap": 60
+  }
+]

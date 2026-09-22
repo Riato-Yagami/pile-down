@@ -1,11 +1,11 @@
 [gd_resource type="Resource" script_class="ColorPaletteData" format=3 uid="uid://eqb8salbne56"]
 
-[ext_resource type="Resource" path="res://resources/data/achievements/16_beat_all_special_rules.tres" id="1_engcm"]
 [ext_resource type="Script" uid="uid://bdlkhp3dt6mr" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_5fc28"]
+[ext_resource type="Resource" uid="uid://101j4dd18dic" path="res://resources/data/achievements/16_beat_all_special_rules.tres" id="progression_reward"]
 
 [resource]
 script = ExtResource("2_5fc28")
-id = &"monster_types"
 display_name = "MONSTER TYPES"
 colors = Array[Color]([Color(0.77254903, 0.7176471, 0.54901963, 1), Color(0.9137255, 0.36078432, 0.19607843, 1), Color(0.21176471, 0.53333336, 0.84705883, 1), Color(0.32941177, 0.65882355, 0.30980393, 1), Color(0.8862745, 0.7254902, 0.12156863, 1), Color(0.81960785, 0.32941177, 0.64705884, 1), Color(0.22352941, 0.6862745, 0.77254903, 1), Color(0.4, 0.34117648, 0.72156864, 1), Color(0.44313726, 0.3137255, 0.5921569, 1), Color(0.8784314, 0.41960785, 0.6039216, 1)])
-required_achievement = ExtResource("1_engcm")
+required_achievement = ExtResource("progression_reward")
+id = &"monster_types"

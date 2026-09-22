@@ -1,0 +1,18 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://ctk4lbjyu3d1x"]
+
+[ext_resource type="Shader" uid="uid://bn7wt18xsbhea" path="res://resources/shaders/backgrounds/StripeBackground.gdshader" id="1_shader"]
+
+[resource]
+resource_local_to_scene = true
+shader = ExtResource("1_shader")
+shader_parameter/effect_enabled = 1.0
+shader_parameter/viewport_size = Vector2(256, 320)
+shader_parameter/reference_size = Vector2(256, 320)
+shader_parameter/pixel_size = 1.0
+shader_parameter/background_color = Color(0.9686, 0.9647, 0.9529, 1)
+shader_parameter/stripe_color = Color(0.31, 0.49, 0.72, 0.13)
+shader_parameter/stripe_count = 5.5
+shader_parameter/stripe_slope = 1.0000000447036
+shader_parameter/stripe_core = 0.38999999128272
+shader_parameter/stripe_softness = 0.00999999977648
+shader_parameter/stripe_scroll_speed = 0.4099999684836799

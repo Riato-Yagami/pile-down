@@ -4,8 +4,11 @@
 
 [resource]
 script = ExtResource("1_6x175")
-id = &"bring_a_friend_full_activation"
 title = "THE WHOLE GANG"
 description = "Successfully play every companion with Bring a Friend III."
 category = &"COMBOS"
+difficulty = 6
+reward_rationale = "Monster Friend accompagne toute la bande."
+reward_font = &"monster_friend"
 required_count = 3
+id = &"bring_a_friend_full_activation"

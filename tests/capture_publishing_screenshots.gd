@@ -22,6 +22,7 @@ func _run() -> void:
 	game.round_number = DifficultySettings.TOTAL_ROUNDS
 	game.run_time_label.visible = false
 	game.bonus_manager.begin_run()
+	game.background_manager.start_run(game.cosmetic_rng)
 	game.start_round()
 	await _wait_until_unlocked(game)
 	await create_timer(0.25).timeout

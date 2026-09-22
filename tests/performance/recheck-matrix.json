@@ -1,0 +1,10 @@
+[
+  {
+    "name": "challenge-shared_clock-recheck",
+    "scenario": "challenge",
+    "challenge": "shared_clock",
+    "duration": 2,
+    "cap": 60,
+    "seed": "PERF-A"
+  }
+]

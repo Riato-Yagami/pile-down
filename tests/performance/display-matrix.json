@@ -1,0 +1,291 @@
+[
+  {
+    "name": "display-256x320",
+    "scenario": "baseline",
+    "width": 256,
+    "height": 320,
+    "duration": 3,
+    "cap": 0
+  },
+  {
+    "name": "display-1280x720",
+    "scenario": "baseline",
+    "width": 1280,
+    "height": 720,
+    "duration": 3,
+    "cap": 0
+  },
+  {
+    "name": "display-1920x1080",
+    "scenario": "baseline",
+    "width": 1920,
+    "height": 1080,
+    "duration": 3,
+    "cap": 0
+  },
+  {
+    "name": "display-2560x1440",
+    "scenario": "baseline",
+    "width": 2560,
+    "height": 1440,
+    "duration": 3,
+    "cap": 0
+  },
+  {
+    "name": "display-1024x768",
+    "scenario": "baseline",
+    "width": 1024,
+    "height": 768,
+    "duration": 3,
+    "cap": 0
+  },
+  {
+    "name": "display-1280x800",
+    "scenario": "baseline",
+    "width": 1280,
+    "height": 800,
+    "duration": 3,
+    "cap": 0
+  },
+  {
+    "name": "display-2560x1080",
+    "scenario": "baseline",
+    "width": 2560,
+    "height": 1080,
+    "duration": 3,
+    "cap": 0
+  },
+  {
+    "name": "display-300x1000",
+    "scenario": "baseline",
+    "width": 300,
+    "height": 1000,
+    "duration": 3,
+    "cap": 0
+  },
+  {
+    "name": "vsync",
+    "scenario": "baseline",
+    "width": 1920,
+    "height": 1080,
+    "vsync": true,
+    "duration": 3
+  },
+  {
+    "name": "fullscreen",
+    "scenario": "baseline",
+    "fullscreen": true,
+    "vsync": true,
+    "duration": 3
+  },
+  {
+    "name": "resize",
+    "scenario": "resize",
+    "cap": 60
+  },
+  {
+    "name": "ui",
+    "scenario": "ui",
+    "duration": 3,
+    "cap": 60
+  },
+  {
+    "name": "micro",
+    "scenario": "micro",
+    "cap": 60
+  },
+  {
+    "name": "bg-512-0",
+    "scenario": "backgrounds",
+    "width": 512,
+    "height": 640,
+    "duration": 2,
+    "cap": 0
+  },
+  {
+    "name": "bg-512-1",
+    "scenario": "backgrounds",
+    "width": 512,
+    "height": 640,
+    "duration": 2,
+    "cap": 0
+  },
+  {
+    "name": "bg-1920-0",
+    "scenario": "backgrounds",
+    "width": 1920,
+    "height": 1080,
+    "duration": 2,
+    "cap": 0
+  },
+  {
+    "name": "bg-1920-1",
+    "scenario": "backgrounds",
+    "width": 1920,
+    "height": 1080,
+    "duration": 2,
+    "cap": 0
+  },
+  {
+    "name": "isolated-bg",
+    "scenario": "background_only",
+    "width": 1920,
+    "height": 1080,
+    "duration": 2,
+    "cap": 0
+  },
+  {
+    "name": "hd-bg",
+    "scenario": "backgrounds",
+    "width": 1920,
+    "height": 1080,
+    "duration": 2,
+    "cap": 0,
+    "pixel": false,
+    "screen_mode": "adaptive"
+  },
+  {
+    "name": "challenge-shared_clock",
+    "scenario": "challenge",
+    "challenge": "shared_clock",
+    "seed": "PERF-A",
+    "cap": 60,
+    "duration": 2
+  },
+  {
+    "name": "challenge-conveyor_belt",
+    "scenario": "challenge",
+    "challenge": "conveyor_belt",
+    "seed": "PERF-A",
+    "cap": 60,
+    "duration": 2
+  },
+  {
+    "name": "challenge-boss_rush",
+    "scenario": "challenge",
+    "challenge": "boss_rush",
+    "seed": "PERF-A",
+    "cap": 60,
+    "duration": 2
+  },
+  {
+    "name": "challenge-no_looking_back",
+    "scenario": "challenge",
+    "challenge": "no_looking_back",
+    "seed": "PERF-A",
+    "cap": 60,
+    "duration": 2
+  },
+  {
+    "name": "challenge-reload_required",
+    "scenario": "challenge",
+    "challenge": "reload_required",
+    "seed": "PERF-A",
+    "cap": 60,
+    "duration": 2
+  },
+  {
+    "name": "challenge-true_colors",
+    "scenario": "challenge",
+    "challenge": "true_colors",
+    "seed": "PERF-A",
+    "cap": 60,
+    "duration": 2
+  },
+  {
+    "name": "challenge-one_shot",
+    "scenario": "challenge",
+    "challenge": "one_shot",
+    "seed": "PERF-A",
+    "cap": 60,
+    "duration": 2
+  },
+  {
+    "name": "challenge-pool_party",
+    "scenario": "challenge",
+    "challenge": "pool_party",
+    "seed": "PERF-A",
+    "cap": 60,
+    "duration": 2
+  },
+  {
+    "name": "hd-baseline-0",
+    "scenario": "baseline",
+    "width": 1920,
+    "height": 1080,
+    "duration": 4,
+    "cap": 0,
+    "pixel": false,
+    "screen_mode": "adaptive"
+  },
+  {
+    "name": "hd-baseline-1",
+    "scenario": "baseline",
+    "width": 1920,
+    "height": 1080,
+    "duration": 4,
+    "cap": 0,
+    "pixel": false,
+    "screen_mode": "adaptive"
+  },
+  {
+    "name": "4k-hd",
+    "scenario": "baseline",
+    "width": 3840,
+    "height": 2160,
+    "duration": 4,
+    "cap": 0,
+    "pixel": false,
+    "screen_mode": "adaptive"
+  },
+  {
+    "name": "pixel-baseline-0",
+    "scenario": "baseline",
+    "width": 1920,
+    "height": 1080,
+    "pixel": true,
+    "screen_mode": "semi_adaptive",
+    "cap": 0,
+    "duration": 4
+  },
+  {
+    "name": "pixel-baseline-1",
+    "scenario": "baseline",
+    "width": 1920,
+    "height": 1080,
+    "pixel": true,
+    "screen_mode": "semi_adaptive",
+    "cap": 0,
+    "duration": 4
+  },
+  {
+    "name": "pixel-bg",
+    "scenario": "backgrounds",
+    "width": 1920,
+    "height": 1080,
+    "pixel": true,
+    "screen_mode": "semi_adaptive",
+    "cap": 0,
+    "duration": 2
+  },
+  {
+    "name": "pixel-4k",
+    "scenario": "baseline",
+    "width": 3840,
+    "height": 2160,
+    "pixel": true,
+    "screen_mode": "semi_adaptive",
+    "cap": 0,
+    "duration": 4
+  },
+  {
+    "name": "resize-repeat-0",
+    "scenario": "resize",
+    "cap": 60
+  },
+  {
+    "name": "resize-repeat-1",
+    "scenario": "resize",
+    "cap": 60
+  }
+]

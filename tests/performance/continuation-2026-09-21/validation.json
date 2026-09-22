@@ -1,0 +1,28 @@
+[
+  {
+    "name": "editor",
+    "command": [
+      "H:/Programmes/Dev/Godot/4.7.2/Godot_v4.7.2.exe",
+      "--headless",
+      "--path",
+      ".",
+      "--editor",
+      "--quit"
+    ],
+    "exit_code": 0,
+    "errors": []
+  },
+  {
+    "name": "startup",
+    "command": [
+      "H:/Programmes/Dev/Godot/4.7.2/Godot_v4.7.2.exe",
+      "--headless",
+      "--path",
+      ".",
+      "--quit-after",
+      "240"
+    ],
+    "exit_code": 0,
+    "errors": []
+  }
+]

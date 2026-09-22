@@ -174,11 +174,7 @@ func apply_tier_relief(rng: RandomNumberGenerator) -> void:
 	if hand_size > Difficulty.START_HAND_SIZE: stats.append(&"hand")
 	if start_value > Difficulty.START_CARD_VALUE: stats.append(&"value")
 	if turn_time < Difficulty.START_TURN_TIME: stats.append(&"time")
-	for index in range(stats.size() - 1, 0, -1):
-		var swap_index := rng.randi_range(0, index)
-		var temporary := stats[index]
-		stats[index] = stats[swap_index]
-		stats[swap_index] = temporary
+	RunRNG.shuffle(stats, rng)
 	for index in mini(relief_count, stats.size()):
 		match stats[index]:
 			&"piles": pile_count = maxi(pile_count - 1, Difficulty.START_PILES)

@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="FontData" format=4 uid="uid://jgakrswvr4uj"]
 
-[ext_resource type="Resource" path="res://resources/data/achievements/11_first_checkpoint.tres" id="2_61y0j"]
 [ext_resource type="Script" uid="uid://dj883c8fbgkvi" path="res://resources/scripts/progression/FontData.gd" id="3_pvkyp"]
+[ext_resource type="Resource" uid="uid://1mr2cddtbkjn" path="res://resources/data/achievements/64_one_at_a_time.tres" id="progression_reward"]
 
 [sub_resource type="Image" id="Image_ty5vt"]
 data = {
@@ -341,5 +341,5 @@ font = SubResource("FontFile_lynu6")
 tile_font_size = 16
 tile_font_offset = Vector2(1, 2)
 title_font_offset = Vector2(1, 1)
-required_achievement = ExtResource("2_61y0j")
+required_achievement = ExtResource("progression_reward")
 id = &"birch_leaf"

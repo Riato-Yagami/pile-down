@@ -1,0 +1,1153 @@
+{
+  "config": {
+    "name": "start-C",
+    "scenario": "baseline",
+    "cap": 60,
+    "seed": "PERF-C",
+    "pixel": false,
+    "screen_mode": "semi_adaptive",
+    "duration": 1
+  },
+  "command": [
+    "H:\\Programmes\\Dev\\Godot\\4.7.2\\Godot_v4.7.2.exe",
+    "--path",
+    "H:\\Programmes\\Dev\\Godot\\Project\\pile-down",
+    "--rendering-method",
+    "gl_compatibility",
+    "--script",
+    "tests/performance/performance_probe.gd",
+    "--",
+    "{\"name\": \"start-C\", \"scenario\": \"baseline\", \"cap\": 60, \"seed\": \"PERF-C\", \"pixel\": false, \"screen_mode\": \"semi_adaptive\", \"duration\": 1}"
+  ],
+  "elapsed": 12.302642699999979,
+  "exit_code": 0,
+  "timed_out": false,
+  "completed": true,
+  "metadata": [
+    {
+      "adapter": "NVIDIA GeForce RTX 2070 SUPER",
+      "config": {
+        "cap": 60.0,
+        "duration": 1.0,
+        "name": "start-C",
+        "pixel": false,
+        "scenario": "baseline",
+        "screen_mode": "semi_adaptive",
+        "seed": "PERF-C"
+      },
+      "content_scale_factor": 1.0,
+      "content_scale_mode": 1,
+      "content_scale_size": "(256, 320)",
+      "cpu": "Intel(R) Core(TM) i7-4770K CPU @ 3.50GHz",
+      "debug_build": true,
+      "debug_settings_enabled": false,
+      "display": "Windows",
+      "engine": {
+        "build": "official",
+        "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+        "hex": 263938,
+        "major": 4,
+        "minor": 7,
+        "patch": 2,
+        "status": "stable",
+        "string": "4.7.2-stable (official)",
+        "timestamp": 0
+      },
+      "max_fps": 60,
+      "processors": 8,
+      "renderer": "gl_compatibility",
+      "screen_mode": "semi_adaptive",
+      "true_pixel_art": false,
+      "viewport": "(256.0, 320.0)",
+      "vsync": 0,
+      "window": "(512, 640)"
+    }
+  ],
+  "phases": [
+    {
+      "fps": 12.6838202651933,
+      "fps_min_interval": 5.11420008796424,
+      "frames": 5,
+      "intervals_ms": [
+        165.345,
+        195.534,
+        3.586,
+        13.056,
+        16.682
+      ],
+      "max_ms": 195.534,
+      "mean_ms": 78.8406,
+      "over_33ms": 2,
+      "p95_ms": 165.345,
+      "p99_ms": 165.345,
+      "phase": "boot",
+      "samples": [
+        {
+          "draw_calls": 0.0,
+          "nodes": 1.0,
+          "objects": 2147.0,
+          "orphans": 0.0,
+          "physics_ms": 0.0,
+          "process_ms": 0.0,
+          "render_cpu_ms": 0.0,
+          "render_gpu_ms": 0.0,
+          "resources": 548.0,
+          "static_bytes": 71530655.0,
+          "texture_bytes": 7976252.0,
+          "time_ms": 6282,
+          "tweens": 0,
+          "video_bytes": 14386884.0
+        },
+        {
+          "draw_calls": 11.0,
+          "nodes": 754.0,
+          "objects": 4255.0,
+          "orphans": 0.0,
+          "physics_ms": 169.428,
+          "process_ms": 195.456,
+          "render_cpu_ms": 0.0,
+          "render_gpu_ms": 0.0,
+          "resources": 550.0,
+          "static_bytes": 85263537.0,
+          "texture_bytes": 11705196.0,
+          "time_ms": 6643,
+          "tweens": 1,
+          "video_bytes": 30896980.0
+        },
+        {
+          "background_layers": 0,
+          "draw_calls": 11.0,
+          "nodes": 754.0,
+          "objects": 4253.0,
+          "orphans": 0.0,
+          "physics_ms": 169.428,
+          "process_ms": 195.456,
+          "render_cpu_ms": 0.0,
+          "render_gpu_ms": 0.0,
+          "resources": 550.0,
+          "static_bytes": 85264337.0,
+          "texture_bytes": 11705196.0,
+          "time_ms": 6677,
+          "tweens": 0,
+          "video_bytes": 30896980.0
+        }
+      ],
+      "seconds": 0.394203
+    },
+    {
+      "fps": 60.2961628905783,
+      "fps_min_interval": 59.5876534382076,
+      "frames": 61,
+      "intervals_ms": [
+        11.709,
+        16.669,
+        16.676,
+        16.659,
+        16.778,
+        16.551,
+        16.666,
+        16.666,
+        16.665,
+        16.668,
+        16.665,
+        16.667,
+        16.664,
+        16.667,
+        16.679,
+        16.662,
+        16.657,
+        16.667,
+        16.669,
+        16.669,
+        16.668,
+        16.662,
+        16.664,
+        16.674,
+        16.676,
+        16.648,
+        16.663,
+        16.668,
+        16.675,
+        16.661,
+        16.662,
+        16.665,
+        16.666,
+        16.677,
+        16.664,
+        16.69,
+        16.782,
+        16.514,
+        16.688,
+        16.646,
+        16.676,
+        16.679,
+        16.645,
+        16.663,
+        16.715,
+        16.617,
+        16.669,
+        16.69,
+        16.643,
+        16.661,
+        16.685,
+        16.65,
+        16.694,
+        16.636,
+        16.67,
+        16.663,
+        16.666,
+        16.667,
+        16.666,
+        16.664,
+        16.668
+      ],
+      "max_ms": 16.782,
+      "mean_ms": 16.5848032786885,
+      "over_33ms": 0,
+      "p95_ms": 16.694,
+      "p99_ms": 16.778,
+      "phase": "menu",
+      "samples": [
+        {
+          "background_layers": 0,
+          "draw_calls": 11.0,
+          "nodes": 754.0,
+          "objects": 4252.0,
+          "orphans": 0.0,
+          "physics_ms": 0.041,
+          "process_ms": 7.932,
+          "render_cpu_ms": 0.839999973773956,
+          "render_gpu_ms": 1.03199994564056,
+          "resources": 550.0,
+          "static_bytes": 85303465.0,
+          "texture_bytes": 11705196.0,
+          "time_ms": 7681,
+          "tweens": 0,
+          "video_bytes": 30896980.0
+        },
+        {
+          "background_layers": 0,
+          "draw_calls": 11.0,
+          "nodes": 754.0,
+          "objects": 4253.0,
+          "orphans": 0.0,
+          "physics_ms": 0.041,
+          "process_ms": 7.932,
+          "render_cpu_ms": 0.657000005245209,
+          "render_gpu_ms": 1.03799998760223,
+          "resources": 550.0,
+          "static_bytes": 85303549.0,
+          "texture_bytes": 11705196.0,
+          "time_ms": 7943,
+          "tweens": 0,
+          "video_bytes": 30896980.0
+        },
+        {
+          "background_layers": 0,
+          "draw_calls": 11.0,
+          "nodes": 754.0,
+          "objects": 4253.0,
+          "orphans": 0.0,
+          "physics_ms": 0.053,
+          "process_ms": 5.852,
+          "render_cpu_ms": 1.02799999713898,
+          "render_gpu_ms": 0.976000010967255,
+          "resources": 550.0,
+          "static_bytes": 85305097.0,
+          "texture_bytes": 11705196.0,
+          "time_ms": 8209,
+          "tweens": 0,
+          "video_bytes": 30896980.0
+        },
+        {
+          "background_layers": 0,
+          "draw_calls": 11.0,
+          "nodes": 754.0,
+          "objects": 4253.0,
+          "orphans": 0.0,
+          "physics_ms": 0.053,
+          "process_ms": 5.852,
+          "render_cpu_ms": 0.845000028610229,
+          "render_gpu_ms": 1.04200005531311,
+          "resources": 550.0,
+          "static_bytes": 85306653.0,
+          "texture_bytes": 11705196.0,
+          "time_ms": 8476,
+          "tweens": 0,
+          "video_bytes": 30896980.0
+        },
+        {
+          "background_layers": 0,
+          "draw_calls": 11.0,
+          "nodes": 754.0,
+          "objects": 4253.0,
+          "orphans": 0.0,
+          "physics_ms": 0.053,
+          "process_ms": 5.852,
+          "render_cpu_ms": 0.773999989032745,
+          "render_gpu_ms": 1.01900005340576,
+          "resources": 550.0,
+          "static_bytes": 85307981.0,
+          "texture_bytes": 11705196.0,
+          "time_ms": 8694,
+          "tweens": 0,
+          "video_bytes": 30896980.0
+        }
+      ],
+      "seconds": 1.011673
+    },
+    {
+      "fps": 58.3990712211713,
+      "fps_min_interval": 11.7285543383923,
+      "frames": 125,
+      "intervals_ms": [
+        85.262,
+        3.703,
+        12.955,
+        16.679,
+        16.776,
+        16.576,
+        16.633,
+        16.688,
+        16.674,
+        16.646,
+        16.676,
+        16.668,
+        16.642,
+        16.67,
+        16.664,
+        16.679,
+        16.651,
+        16.675,
+        16.663,
+        16.661,
+        16.675,
+        16.663,
+        16.66,
+        16.676,
+        16.66,
+        16.668,
+        16.659,
+        16.686,
+        16.646,
+        16.665,
+        16.691,
+        16.641,
+        16.666,
+        16.695,
+        38.678,
+        3.907,
+        12.592,
+        16.683,
+        16.662,
+        16.667,
+        16.664,
+        16.667,
+        16.658,
+        16.672,
+        16.691,
+        16.644,
+        16.668,
+        16.666,
+        16.655,
+        16.673,
+        16.667,
+        16.664,
+        16.676,
+        16.668,
+        16.647,
+        16.672,
+        16.663,
+        16.672,
+        16.657,
+        16.674,
+        16.657,
+        16.674,
+        16.659,
+        16.673,
+        16.658,
+        16.7,
+        16.631,
+        16.793,
+        16.541,
+        16.675,
+        16.67,
+        16.664,
+        16.678,
+        16.662,
+        16.67,
+        16.652,
+        16.663,
+        16.696,
+        16.639,
+        16.665,
+        16.669,
+        16.664,
+        16.66,
+        16.677,
+        16.651,
+        16.675,
+        16.665,
+        16.666,
+        16.658,
+        16.705,
+        16.627,
+        16.673,
+        16.681,
+        16.653,
+        16.659,
+        16.693,
+        16.642,
+        16.698,
+        16.642,
+        16.78,
+        16.574,
+        16.64,
+        16.676,
+        16.655,
+        16.661,
+        16.689,
+        16.645,
+        16.67,
+        16.658,
+        16.675,
+        16.658,
+        16.671,
+        16.684,
+        16.651,
+        16.671,
+        16.658,
+        16.662,
+        16.663,
+        16.676,
+        16.684,
+        16.64,
+        16.664,
+        16.687,
+        16.645,
+        16.731
+      ],
+      "max_ms": 85.262,
+      "mean_ms": 17.12356,
+      "over_33ms": 2,
+      "p95_ms": 16.7,
+      "p99_ms": 16.793,
+      "phase": "start",
+      "samples": [
+        {
+          "background_layers": 0,
+          "draw_calls": 11.0,
+          "nodes": 754.0,
+          "objects": 4253.0,
+          "orphans": 0.0,
+          "physics_ms": 0.053,
+          "process_ms": 5.852,
+          "render_cpu_ms": 0.773999989032745,
+          "render_gpu_ms": 1.01900005340576,
+          "resources": 550.0,
+          "static_bytes": 85307613.0,
+          "texture_bytes": 11705196.0,
+          "time_ms": 8696,
+          "tweens": 0,
+          "video_bytes": 30896980.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 18.0,
+          "nodes": 754.0,
+          "objects": 4279.0,
+          "orphans": 0.0,
+          "physics_ms": 0.053,
+          "process_ms": 5.852,
+          "render_cpu_ms": 0.759999990463257,
+          "render_gpu_ms": 4.06699991226196,
+          "resources": 550.0,
+          "static_bytes": 85461881.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 8948,
+          "tweens": 6,
+          "video_bytes": 30984362.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 17.0,
+          "nodes": 754.0,
+          "objects": 4271.0,
+          "orphans": 0.0,
+          "physics_ms": 0.053,
+          "process_ms": 88.401,
+          "render_cpu_ms": 0.774999976158142,
+          "render_gpu_ms": 2.47199988365173,
+          "resources": 550.0,
+          "static_bytes": 85458653.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 9214,
+          "tweens": 3,
+          "video_bytes": 30984362.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 14.0,
+          "nodes": 761.0,
+          "objects": 4284.0,
+          "orphans": 0.0,
+          "physics_ms": 0.053,
+          "process_ms": 88.401,
+          "render_cpu_ms": 1.07400000095367,
+          "render_gpu_ms": 0.912999987602234,
+          "resources": 550.0,
+          "static_bytes": 85519893.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 9470,
+          "tweens": 1,
+          "video_bytes": 56546666.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 14.0,
+          "nodes": 761.0,
+          "objects": 4278.0,
+          "orphans": 0.0,
+          "physics_ms": 0.053,
+          "process_ms": 88.401,
+          "render_cpu_ms": 0.943000018596649,
+          "render_gpu_ms": 1.03999996185303,
+          "resources": 550.0,
+          "static_bytes": 85517905.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 9736,
+          "tweens": 0,
+          "video_bytes": 56546666.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 14.0,
+          "nodes": 761.0,
+          "objects": 4278.0,
+          "orphans": 0.0,
+          "physics_ms": 0.053,
+          "process_ms": 88.401,
+          "render_cpu_ms": 0.712000012397766,
+          "render_gpu_ms": 2.06599998474121,
+          "resources": 550.0,
+          "static_bytes": 85519517.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 9986,
+          "tweens": 0,
+          "video_bytes": 56546666.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 14.0,
+          "nodes": 761.0,
+          "objects": 4278.0,
+          "orphans": 0.0,
+          "physics_ms": 0.047,
+          "process_ms": 38.446,
+          "render_cpu_ms": 0.703999996185303,
+          "render_gpu_ms": 1.04999995231628,
+          "resources": 550.0,
+          "static_bytes": 85520953.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 10253,
+          "tweens": 0,
+          "video_bytes": 56546666.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 14.0,
+          "nodes": 761.0,
+          "objects": 4278.0,
+          "orphans": 0.0,
+          "physics_ms": 0.047,
+          "process_ms": 38.446,
+          "render_cpu_ms": 0.755999982357025,
+          "render_gpu_ms": 2.32200002670288,
+          "resources": 550.0,
+          "static_bytes": 85522693.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 10520,
+          "tweens": 0,
+          "video_bytes": 56546666.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 14.0,
+          "nodes": 761.0,
+          "objects": 4284.0,
+          "orphans": 0.0,
+          "physics_ms": 0.047,
+          "process_ms": 38.446,
+          "render_cpu_ms": 0.677999973297119,
+          "render_gpu_ms": 2.08200001716614,
+          "resources": 550.0,
+          "static_bytes": 85529897.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 10786,
+          "tweens": 1,
+          "video_bytes": 56546666.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 14.0,
+          "nodes": 771.0,
+          "objects": 4300.0,
+          "orphans": 0.0,
+          "physics_ms": 0.047,
+          "process_ms": 38.446,
+          "render_cpu_ms": 0.772000014781952,
+          "render_gpu_ms": 0.857999980449677,
+          "resources": 550.0,
+          "static_bytes": 85995301.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 10840,
+          "tweens": 1,
+          "video_bytes": 56546666.0
+        }
+      ],
+      "seconds": 2.140445
+    },
+    {
+      "fps": 60.0376914591805,
+      "fps_min_interval": 30.571690614491,
+      "frames": 59,
+      "intervals_ms": [
+        32.71,
+        2.588,
+        14.103,
+        16.65,
+        16.688,
+        16.669,
+        16.761,
+        16.548,
+        16.669,
+        16.724,
+        16.603,
+        16.68,
+        16.656,
+        16.667,
+        16.662,
+        16.686,
+        16.646,
+        16.666,
+        16.668,
+        16.667,
+        16.662,
+        16.666,
+        16.69,
+        16.647,
+        16.663,
+        16.664,
+        16.687,
+        16.644,
+        16.664,
+        16.691,
+        16.645,
+        16.666,
+        16.662,
+        16.67,
+        16.663,
+        16.668,
+        16.665,
+        16.787,
+        16.544,
+        16.668,
+        16.665,
+        16.667,
+        16.704,
+        16.628,
+        16.665,
+        16.687,
+        16.644,
+        16.667,
+        16.704,
+        16.63,
+        16.685,
+        16.645,
+        16.668,
+        16.702,
+        16.63,
+        16.664,
+        16.693,
+        16.64,
+        16.701
+      ],
+      "max_ms": 32.71,
+      "mean_ms": 16.6562033898305,
+      "over_33ms": 0,
+      "p95_ms": 16.724,
+      "p99_ms": 16.787,
+      "phase": "gameplay_idle",
+      "samples": [
+        {
+          "background_layers": 1,
+          "draw_calls": 14.0,
+          "nodes": 771.0,
+          "objects": 4300.0,
+          "orphans": 0.0,
+          "physics_ms": 0.047,
+          "process_ms": 38.446,
+          "render_cpu_ms": 0.772000014781952,
+          "render_gpu_ms": 0.857999980449677,
+          "resources": 550.0,
+          "static_bytes": 85994173.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 10843,
+          "tweens": 1,
+          "video_bytes": 56546666.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4295.0,
+          "orphans": 0.0,
+          "physics_ms": 0.069,
+          "process_ms": 39.012,
+          "render_cpu_ms": 0.899999976158142,
+          "render_gpu_ms": 0.885999977588654,
+          "resources": 550.0,
+          "static_bytes": 85979509.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 11109,
+          "tweens": 0,
+          "video_bytes": 56546666.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4295.0,
+          "orphans": 0.0,
+          "physics_ms": 0.069,
+          "process_ms": 39.012,
+          "render_cpu_ms": 0.709999978542328,
+          "render_gpu_ms": 1.11600005626678,
+          "resources": 550.0,
+          "static_bytes": 86002501.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 11375,
+          "tweens": 0,
+          "video_bytes": 56546666.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4294.0,
+          "orphans": 0.0,
+          "physics_ms": 0.069,
+          "process_ms": 39.012,
+          "render_cpu_ms": 0.994000017642975,
+          "render_gpu_ms": 0.954999983310699,
+          "resources": 550.0,
+          "static_bytes": 85981601.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 11642,
+          "tweens": 0,
+          "video_bytes": 56546666.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4294.0,
+          "orphans": 0.0,
+          "physics_ms": 0.069,
+          "process_ms": 39.012,
+          "render_cpu_ms": 1.11899995803833,
+          "render_gpu_ms": 1.01999998092651,
+          "resources": 550.0,
+          "static_bytes": 85982929.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 11827,
+          "tweens": 0,
+          "video_bytes": 56546666.0
+        }
+      ],
+      "seconds": 0.982716
+    }
+  ],
+  "process_samples": [
+    {
+      "wall": 2895.7163713,
+      "rss_bytes": 86016,
+      "private_bytes": 3850240,
+      "cpu_seconds": 0.0
+    },
+    {
+      "wall": 2895.967237,
+      "rss_bytes": 62181376,
+      "private_bytes": 67002368,
+      "cpu_seconds": 0.25
+    },
+    {
+      "wall": 2896.2183378,
+      "rss_bytes": 98471936,
+      "private_bytes": 117657600,
+      "cpu_seconds": 0.5
+    },
+    {
+      "wall": 2896.4685956,
+      "rss_bytes": 74190848,
+      "private_bytes": 94638080,
+      "cpu_seconds": 0.75
+    },
+    {
+      "wall": 2896.7190985,
+      "rss_bytes": 145891328,
+      "private_bytes": 158081024,
+      "cpu_seconds": 1.046875
+    },
+    {
+      "wall": 2896.969595,
+      "rss_bytes": 157626368,
+      "private_bytes": 178843648,
+      "cpu_seconds": 1.296875
+    },
+    {
+      "wall": 2897.2204266,
+      "rss_bytes": 173449216,
+      "private_bytes": 195416064,
+      "cpu_seconds": 1.546875
+    },
+    {
+      "wall": 2897.4709938,
+      "rss_bytes": 158863360,
+      "private_bytes": 180568064,
+      "cpu_seconds": 1.796875
+    },
+    {
+      "wall": 2897.7214288,
+      "rss_bytes": 170692608,
+      "private_bytes": 192815104,
+      "cpu_seconds": 2.046875
+    },
+    {
+      "wall": 2897.9717021,
+      "rss_bytes": 156110848,
+      "private_bytes": 177250304,
+      "cpu_seconds": 2.28125
+    },
+    {
+      "wall": 2898.2221349,
+      "rss_bytes": 206671872,
+      "private_bytes": 203812864,
+      "cpu_seconds": 2.484375
+    },
+    {
+      "wall": 2898.473199,
+      "rss_bytes": 223133696,
+      "private_bytes": 218972160,
+      "cpu_seconds": 2.734375
+    },
+    {
+      "wall": 2898.7237044,
+      "rss_bytes": 242176000,
+      "private_bytes": 238333952,
+      "cpu_seconds": 2.984375
+    },
+    {
+      "wall": 2898.9740138,
+      "rss_bytes": 251908096,
+      "private_bytes": 248127488,
+      "cpu_seconds": 3.234375
+    },
+    {
+      "wall": 2899.2245151,
+      "rss_bytes": 255049728,
+      "private_bytes": 251125760,
+      "cpu_seconds": 3.484375
+    },
+    {
+      "wall": 2899.4752104,
+      "rss_bytes": 256053248,
+      "private_bytes": 251953152,
+      "cpu_seconds": 3.734375
+    },
+    {
+      "wall": 2899.7257816,
+      "rss_bytes": 257282048,
+      "private_bytes": 253161472,
+      "cpu_seconds": 3.984375
+    },
+    {
+      "wall": 2899.9768165,
+      "rss_bytes": 260972544,
+      "private_bytes": 256856064,
+      "cpu_seconds": 4.25
+    },
+    {
+      "wall": 2900.2279188,
+      "rss_bytes": 263176192,
+      "private_bytes": 259604480,
+      "cpu_seconds": 4.5
+    },
+    {
+      "wall": 2900.4781181,
+      "rss_bytes": 264241152,
+      "private_bytes": 260485120,
+      "cpu_seconds": 4.75
+    },
+    {
+      "wall": 2900.7289169,
+      "rss_bytes": 270725120,
+      "private_bytes": 264617984,
+      "cpu_seconds": 5.0
+    },
+    {
+      "wall": 2900.9795212,
+      "rss_bytes": 270872576,
+      "private_bytes": 264617984,
+      "cpu_seconds": 5.25
+    },
+    {
+      "wall": 2901.229982,
+      "rss_bytes": 271360000,
+      "private_bytes": 265093120,
+      "cpu_seconds": 5.5
+    },
+    {
+      "wall": 2901.4807896,
+      "rss_bytes": 274706432,
+      "private_bytes": 268492800,
+      "cpu_seconds": 5.75
+    },
+    {
+      "wall": 2901.7313859,
+      "rss_bytes": 274931712,
+      "private_bytes": 268705792,
+      "cpu_seconds": 6.0
+    },
+    {
+      "wall": 2901.9816209,
+      "rss_bytes": 268902400,
+      "private_bytes": 265895936,
+      "cpu_seconds": 6.25
+    },
+    {
+      "wall": 2902.2324949,
+      "rss_bytes": 289001472,
+      "private_bytes": 286441472,
+      "cpu_seconds": 6.484375
+    },
+    {
+      "wall": 2902.4828191,
+      "rss_bytes": 291250176,
+      "private_bytes": 305131520,
+      "cpu_seconds": 6.640625
+    },
+    {
+      "wall": 2902.7333859,
+      "rss_bytes": 291254272,
+      "private_bytes": 305131520,
+      "cpu_seconds": 6.6875
+    },
+    {
+      "wall": 2902.9836988,
+      "rss_bytes": 291254272,
+      "private_bytes": 305131520,
+      "cpu_seconds": 6.75
+    },
+    {
+      "wall": 2903.2341437,
+      "rss_bytes": 291254272,
+      "private_bytes": 305131520,
+      "cpu_seconds": 6.796875
+    },
+    {
+      "wall": 2903.4851394,
+      "rss_bytes": 291274752,
+      "private_bytes": 305131520,
+      "cpu_seconds": 6.859375
+    },
+    {
+      "wall": 2903.7358946,
+      "rss_bytes": 291278848,
+      "private_bytes": 305131520,
+      "cpu_seconds": 6.921875
+    },
+    {
+      "wall": 2903.9860967,
+      "rss_bytes": 291278848,
+      "private_bytes": 305131520,
+      "cpu_seconds": 6.96875
+    },
+    {
+      "wall": 2904.2370234,
+      "rss_bytes": 291278848,
+      "private_bytes": 305131520,
+      "cpu_seconds": 7.015625
+    },
+    {
+      "wall": 2904.4880697,
+      "rss_bytes": 296378368,
+      "private_bytes": 309817344,
+      "cpu_seconds": 7.109375
+    },
+    {
+      "wall": 2904.738969,
+      "rss_bytes": 296321024,
+      "private_bytes": 309374976,
+      "cpu_seconds": 7.203125
+    },
+    {
+      "wall": 2904.9895198,
+      "rss_bytes": 296325120,
+      "private_bytes": 309374976,
+      "cpu_seconds": 7.265625
+    },
+    {
+      "wall": 2905.2399434,
+      "rss_bytes": 311496704,
+      "private_bytes": 350072832,
+      "cpu_seconds": 7.390625
+    },
+    {
+      "wall": 2905.4902759,
+      "rss_bytes": 311500800,
+      "private_bytes": 350072832,
+      "cpu_seconds": 7.453125
+    },
+    {
+      "wall": 2905.7408383,
+      "rss_bytes": 311500800,
+      "private_bytes": 350072832,
+      "cpu_seconds": 7.53125
+    },
+    {
+      "wall": 2905.99123,
+      "rss_bytes": 311500800,
+      "private_bytes": 350072832,
+      "cpu_seconds": 7.578125
+    },
+    {
+      "wall": 2906.2417029,
+      "rss_bytes": 311500800,
+      "private_bytes": 350072832,
+      "cpu_seconds": 7.65625
+    },
+    {
+      "wall": 2906.4922918,
+      "rss_bytes": 311504896,
+      "private_bytes": 350072832,
+      "cpu_seconds": 7.703125
+    },
+    {
+      "wall": 2906.7428498,
+      "rss_bytes": 312483840,
+      "private_bytes": 351326208,
+      "cpu_seconds": 7.8125
+    },
+    {
+      "wall": 2906.9930933,
+      "rss_bytes": 312483840,
+      "private_bytes": 351326208,
+      "cpu_seconds": 7.875
+    },
+    {
+      "wall": 2907.2432537,
+      "rss_bytes": 312483840,
+      "private_bytes": 351326208,
+      "cpu_seconds": 7.9375
+    },
+    {
+      "wall": 2907.4941213,
+      "rss_bytes": 312487936,
+      "private_bytes": 351326208,
+      "cpu_seconds": 7.984375
+    },
+    {
+      "wall": 2907.7443542,
+      "rss_bytes": 200613888,
+      "private_bytes": 156233728,
+      "cpu_seconds": 8.109375
+    }
+  ],
+  "observations": [
+    {
+      "expected": true,
+      "matches": true,
+      "name": "menu_visible",
+      "observed": true
+    },
+    {
+      "expected": true,
+      "matches": true,
+      "name": "ready",
+      "observed": true
+    },
+    {
+      "name": "initial_signature",
+      "observed": {
+        "cards": [
+          2
+        ],
+        "hand_size": 1,
+        "piles": 1,
+        "rules": [],
+        "seed": "PERF-C",
+        "timer": 5.0,
+        "value": 3
+      }
+    },
+    {
+      "name": "initial_background",
+      "observed": "grid"
+    }
+  ],
+  "diagnostics": [
+    {
+      "label": "menu_processing_scripts",
+      "scripts": {
+        "res://resources/scripts/core/GameManager.gd": {
+          "count": 1,
+          "hidden": 0
+        },
+        "res://resources/scripts/effects/BackgroundEffects.gd": {
+          "count": 1,
+          "hidden": 0
+        },
+        "res://resources/scripts/effects/DustPool.gd": {
+          "count": 1,
+          "hidden": 0
+        },
+        "res://resources/scripts/gameplay/TimerManager.gd": {
+          "count": 1,
+          "hidden": 0
+        },
+        "res://resources/scripts/special_rules/rules/FlashlightOverlay.gd": {
+          "count": 1,
+          "hidden": 1
+        },
+        "res://resources/scripts/special_rules/rules/MovingPilePattern.gd": {
+          "count": 1,
+          "hidden": 0
+        },
+        "res://resources/scripts/ui/PixelGridSnap.gd": {
+          "count": 2,
+          "hidden": 2
+        },
+        "res://resources/scripts/ui/ProgressionScrollVisual.gd": {
+          "count": 5,
+          "hidden": 5
+        },
+        "res://resources/scripts/ui/SelectableText.gd": {
+          "count": 1,
+          "hidden": 1
+        }
+      }
+    },
+    {
+      "label": "synchronous_start_game",
+      "ms": 1.417
+    }
+  ],
+  "errors": [
+    "SCRIPT ERROR: Parse Error: Cannot infer the type of \"template\" variable because the value doesn't have a set type.",
+    "SCRIPT ERROR: Compile Error: Failed to compile depended scripts.",
+    "ERROR: Failed to load script \"res://tests/performance/performance_probe.gd\" with error \"Compilation failed\".",
+    "ERROR: Failed to read the root certificate store."
+  ],
+  "log": "start-C-464962d1.log"
+}

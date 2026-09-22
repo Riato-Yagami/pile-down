@@ -53,6 +53,12 @@ func generate_hand(
 		if is_instance_valid(existing) and existing.visible:
 			existing_card_count += 1
 	var cards_to_create := maxi(hand_size - existing_card_count, 0)
+	for existing in current_cards:
+		if is_instance_valid(existing) and existing.visual_root.is_set_as_top_level():
+			existing.call_deferred(
+				"play_retained_hand_shift", animate_draw,
+				existing_card_count * 0.045 if enter_from_right else 0.0
+			)
 	if cards_to_create == 0:
 		return
 	var unplayable_values: Array[int] = []
@@ -324,6 +330,8 @@ func discard_hand(
 				and not card.placement_confirmed
 			):
 				card.finish_drag()
+				if container is Container:
+					card.hold_hand_position()
 				card.reset_hand_pose()
 				if card.get_parent() != container:
 					var joker_global_position := card.global_position
@@ -331,6 +339,7 @@ func discard_hand(
 					card.global_position = joker_global_position
 				retained_jokers.append(card)
 				continue
+			card.release_held_hand_position()
 			card.disable_wandering()
 			if exit_layer != null and card.get_parent() != exit_layer:
 				var previous_global_position := card.global_position
@@ -352,7 +361,7 @@ func discard_hand(
 		if card.free_range_card:
 			longest_duration = maxf(
 				longest_duration,
-				card.play_wandering_exit(card.get_viewport_rect().size.x, delay)
+				card.play_wandering_exit(card.get_viewport_rect().size, delay)
 			)
 			continue
 		longest_duration = delay + 0.26
@@ -382,6 +391,8 @@ func clear_hand(container: Control, preserve_unused_jokers := false) -> void:
 				and not card.placement_confirmed
 			):
 				card.finish_drag()
+				if container is Container:
+					card.hold_hand_position()
 				card.finish_entrance_immediately()
 				card.reset_hand_pose()
 				if card.get_parent() != container:

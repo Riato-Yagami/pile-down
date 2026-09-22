@@ -1,0 +1,13 @@
+[
+  {
+    "name": "warmup-start",
+    "scenario": "baseline",
+    "cap": 60,
+    "seed": "PERF-A",
+    "trace_render": true,
+    "warmup": true,
+    "pixel": false,
+    "screen_mode": "semi_adaptive",
+    "duration": 1
+  }
+]

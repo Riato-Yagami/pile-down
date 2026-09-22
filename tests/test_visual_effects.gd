@@ -1,14 +1,14 @@
 extends SceneTree
 
 const DustPoolScript := preload("res://resources/scripts/effects/DustPool.gd")
-const StripeBackgroundScript := preload(
-	"res://resources/scripts/effects/DeformableStripeBackground.gd"
+const BackgroundEffectsScript := preload(
+	"res://resources/scripts/effects/BackgroundEffects.gd"
 )
 const StripeMaterial := preload(
-	"res://resources/materials/StripeBackgroundMaterial.tres"
+	"res://resources/materials/backgrounds/StripeBackgroundMaterial.tres"
 )
 const DeformationMaterial := preload(
-	"res://resources/materials/DeformableBackgroundMaterial.tres"
+	"res://resources/materials/backgrounds/DeformableBackgroundMaterial.tres"
 )
 const LitButtonTexture := preload(
 	"res://resources/materials/textures/ui/buttons/button.tres"
@@ -86,8 +86,8 @@ func _run() -> void:
 	assert(pool.particles.is_empty())
 	pool.queue_free()
 	var stripe_control := Control.new()
-	stripe_control.set_script(StripeBackgroundScript)
-	var stripe_background := stripe_control as DeformableStripeBackground
+	stripe_control.set_script(BackgroundEffectsScript)
+	var stripe_background: Variant = stripe_control
 	var background_texture := ColorRect.new()
 	background_texture.name = "BackgroundArt"
 	background_texture.material = StripeMaterial.duplicate() as ShaderMaterial
@@ -101,22 +101,36 @@ func _run() -> void:
 		"stripe_scroll_speed", -0.125
 	)
 	stripe_background.setup()
+	stripe_background.set_pixelated_background(true)
+	var catalog_pixel_size := BackgroundThemeRegistry.catalog().pixel_size
 	assert(is_equal_approx(float(
 		(background_texture.material as ShaderMaterial).get_shader_parameter(
 			"pixel_size"
 		)
-	), stripe_background.background_pixel_size))
+	), catalog_pixel_size))
 	assert(is_equal_approx(float(
 		(deformation_overlay.material as ShaderMaterial).get_shader_parameter(
 			"pixel_size"
 		)
-	), stripe_background.background_pixel_size))
+	), catalog_pixel_size))
 	assert(is_equal_approx(
 		float((background_texture.material as ShaderMaterial).get_shader_parameter(
 			"stripe_scroll_speed"
 		)),
 		-0.125
 	))
+	stripe_background.set_pixelated_background(false)
+	assert(is_equal_approx(float(
+		(background_texture.material as ShaderMaterial).get_shader_parameter(
+			"pixel_size"
+		)
+	), 1.0))
+	assert(is_equal_approx(float(
+		(deformation_overlay.material as ShaderMaterial).get_shader_parameter(
+			"pixel_size"
+		)
+	), 1.0))
+	stripe_background.set_pixelated_background(true)
 	var resting_tile := Control.new()
 	resting_tile.position = Vector2(12, 18)
 	resting_tile.size = Vector2(34, 37)
@@ -125,8 +139,9 @@ func _run() -> void:
 	dragged_tile.position = Vector2(70, 24)
 	dragged_tile.size = Vector2(34, 37)
 	stripe_background.add_child(dragged_tile)
+	var weighted_tiles: Array[Control] = [resting_tile, dragged_tile]
 	stripe_background.set_tile_weights(
-		[resting_tile, dragged_tile],
+		weighted_tiles,
 		dragged_tile,
 		{
 			resting_tile.get_instance_id(): 1.4,
@@ -164,7 +179,7 @@ func _run() -> void:
 		float(stripe_background.impulses[1]["exit_radius"])
 		> Vector2(30, 20).distance_to(stripe_background.size)
 	)
-	var wave := stripe_background.impulses[1]
+	var wave: Dictionary = stripe_background.impulses[1]
 	stripe_background.emit_tile_impact_wave(Vector2(42, 28))
 	var impact_wave: Dictionary = stripe_background.impulses.back()
 	assert(bool(impact_wave["wave"]))

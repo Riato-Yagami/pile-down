@@ -1,0 +1,12 @@
+[
+  {
+    "name": "resize-repeat-0",
+    "scenario": "resize",
+    "cap": 60
+  },
+  {
+    "name": "resize-repeat-1",
+    "scenario": "resize",
+    "cap": 60
+  }
+]

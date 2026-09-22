@@ -1,12 +1,14 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://bwaefqp7guhgo"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_lo2cv"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1_lo2cv"]
 
 [resource]
 script = ExtResource("1_lo2cv")
-id = &"all_bonuses_maxed_once"
 title = "MAXIMUM BUILD"
 description = "Max out every available bonus across your runs."
 category = &"BONUSES & RULES"
+difficulty = 8
+reward_rationale = "L'alchimie d'une collection de bonus entièrement améliorée."
 hidden = true
 reward_font = &"alkhemikal"
+id = &"all_bonuses_maxed_once"

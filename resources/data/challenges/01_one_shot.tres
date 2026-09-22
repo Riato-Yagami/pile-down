@@ -1,15 +1,15 @@
 [gd_resource type="Resource" script_class="ChallengeData" format=3 uid="uid://djc7na1rwvu7d"]
 
 [ext_resource type="Script" uid="uid://ch3uaffg7ob3m" path="res://resources/scripts/challenges/ChallengeData.gd" id="1_data"]
-[ext_resource type="Resource" path="res://resources/data/achievements/51_overprotected.tres" id="2_achievement"]
+[ext_resource type="Resource" uid="uid://bs7d8ehc05k8b" path="res://resources/data/achievements/51_overprotected.tres" id="progression_reward"]
 
 [resource]
 script = ExtResource("1_data")
-id = &"one_shot"
 title = "ONE SHOT"
 description = "One life. Make it count."
-required_achievement = ExtResource("2_achievement")
+required_achievement = ExtResource("progression_reward")
 force_single_life = true
 disable_life_bonuses = true
 disabled_bonuses = Array[StringName]([&"safety_net", &"spare_life", &"clean_slate"])
 disabled_rules = Array[StringName]([&"sudden_death"])
+id = &"one_shot"

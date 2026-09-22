@@ -1,11 +1,12 @@
 @tool
 class_name ChallengeSelection
-extends Control
+extends "res://resources/scripts/ui/MenuPanelLayout.gd"
 
 signal challenge_selected(id: StringName, endless: bool)
 signal seeded_run_requested(
 	seed_text: String, challenge_id: StringName,
-	bonus_levels: Dictionary, rule_ids: Array[StringName]
+	bonus_levels: Dictionary, rule_ids: Array[StringName],
+	endless: bool, difficulty: Dictionary
 )
 signal closed()
 
@@ -13,13 +14,18 @@ signal closed()
 @onready var scroll: ScrollContainer = %Scroll
 @onready var lock_filter: ProgressionLockFilter = %LockFilter
 @onready var page: VBoxContainer = %Page
-@onready var page_title: Label = %PageTitle
 @onready var seed_page: ScrollContainer = %SeedPage
 @onready var seed_content: VBoxContainer = %SeedContent
 @onready var challenges_tab_button: TextureButton = %ChallengesTabButton
 @onready var seeds_tab_button: TextureButton = %SeedsTabButton
 
+const SeedSelectionBuilderScript := preload(
+	"res://resources/scripts/challenges/ui/SeedSelectionBuilder.gd"
+)
+const SeedControlStyleScript := preload("res://resources/scripts/challenges/ui/SeedControlStyle.gd")
+
 const SELECTED_COLOR := Color("4d82c2")
+const SELECTION_TEXT_COLOR := SELECTED_COLOR
 const TEXT_COLOR := Color("3c3c3c")
 const MUTED_COLOR := Color("8a8882")
 const ENTRY_FONT := preload("res://resources/fonts/Tiny5-Regular.ttf")
@@ -27,7 +33,10 @@ const CHECKED_TEXTURE := preload(
 	"res://resources/materials/textures/ui/check/checked.tres"
 )
 const UNCHECKED_TEXTURE := preload(
-	"res://resources/materials/textures/ui/check/unchecked.tres"
+	"res://resources/sprites/ui/check/unchecked.png"
+)
+const SELECTED_TEXTURE := preload(
+	"res://resources/materials/textures/ui/check/selected.tres"
 )
 const SCROLL_TRACK_TEXTURE := preload(
 	"res://resources/materials/textures/ui/buttons/slide-bar/vertical/bar.tres"
@@ -35,14 +44,23 @@ const SCROLL_TRACK_TEXTURE := preload(
 const SCROLL_SELECTOR_TEXTURE := preload(
 	"res://resources/materials/textures/ui/buttons/slide-bar/vertical/selector.tres"
 )
-const ScrollVisualScript := preload(
-	"res://resources/scripts/ui/ProgressionScrollVisual.gd"
-)
+const PixelUiScript := preload("res://resources/scripts/ui/PixelUi.gd")
+const DifficultySettings := preload("res://resources/scripts/settings/difficulty.gd")
 const REGION_BUTTON_SCENE := preload("res://resources/scenes/ui/RegionButton.tscn")
+const SELECTABLE_TEXT_SCENE := preload("res://resources/scenes/ui/SelectableText.tscn")
+const PROGRESSION_MENU_SCENE := preload(
+	"res://resources/scenes/progression/ProgressionMenu.tscn"
+)
 const BUTTON_TEXTURE := preload(
 	"res://resources/materials/textures/ui/buttons/button.tres"
 )
-const DOWN_ARROW_TEXTURE := preload(
+const MULTI_SELECTION_ARROW_TEXTURE := preload(
+	"res://resources/materials/textures/ui/buttons/multiselection-arrow.tres"
+)
+const ARROW_UP_TEXTURE := preload(
+	"res://resources/materials/textures/ui/icons/arrows/up.tres"
+)
+const ARROW_DOWN_TEXTURE := preload(
 	"res://resources/materials/textures/ui/icons/arrows/down.tres"
 )
 const SubmenuPageAnimatorScript := preload(
@@ -50,6 +68,10 @@ const SubmenuPageAnimatorScript := preload(
 )
 const PAGE_CHALLENGES := 0
 const PAGE_SEEDS := 1
+const SEEDED_MAX_PILES := 4
+const SEEDED_MIN_CARD_VALUE := 1
+const SEED_MENU_HEIGHT := 31.0
+const SEED_MENU_POPUP_MAX_HEIGHT := 290.0
 
 @export_category("Editor Preview")
 @export var show_editor_preview := false:
@@ -96,23 +118,37 @@ var _achievements: Array[StringName] = []
 var _unlocked_bonus_ids: Array[StringName] = []
 var _unlocked_bonus_levels: Dictionary = {}
 var _unlocked_rule_ids: Array[StringName] = []
+var _seed_difficulty_limits: Dictionary = {}
 var _seed_input: LineEdit
 var _seed_mode: OptionButton
+var _seed_endless: Button
+var _seed_piles: Label
+var _seed_hand: Label
+var _seed_value: Label
+var _seed_timer: Label
 var _seed_mode_ids: Array[StringName] = []
+var _seed_mode_endless: Array[bool] = []
 var _current_page := PAGE_CHALLENGES
 var _page_animator := SubmenuPageAnimatorScript.new()
 var _selected_bonus_ids: Array[StringName] = []
 var _selected_bonus_levels: Dictionary = {}
 var _selected_rule_ids: Array[StringName] = []
+var _centered_selected_texture: Texture2D
+var _centered_unchecked_texture: Texture2D
 
 
 func _ready() -> void:
+	apply_panel_layout()
+	_prepare_centered_check_textures()
+	_sync_lock_slot_with_progression_template()
 	_style_scrollbar(scroll)
 	_style_scrollbar(seed_page)
 	lock_filter.mode_changed.connect(_on_filter_changed)
 	challenges_tab_button.pressed.connect(_show_page.bind(PAGE_CHALLENGES, true))
 	seeds_tab_button.pressed.connect(_show_page.bind(PAGE_SEEDS, true))
 	_build_seed_controls()
+	resized.connect(_constrain_panel_content)
+	visibility_changed.connect(preserve_panel_rect)
 	if Engine.is_editor_hint() and show_editor_preview:
 		_show_editor_preview()
 	else:
@@ -142,15 +178,20 @@ func _build_editor_challenge_preview() -> void:
 		var unlocked := preview_all_unlocked or index < 3
 		var entry := VBoxContainer.new()
 		entry.add_theme_constant_override("separation", 1)
-		var button := Button.new()
+		var button := SELECTABLE_TEXT_SCENE.instantiate() as SelectableText
+		button.setup(
+			true, entry_heading_font, entry_heading_font_size,
+			CHECKED_TEXTURE if index < 2 else UNCHECKED_TEXTURE, UNCHECKED_TEXTURE
+		)
 		button.custom_minimum_size = Vector2(0, 24)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.flat = true
-		button.icon = CHECKED_TEXTURE if index < 2 else UNCHECKED_TEXTURE
+		button.set_pressed_no_signal(index < 2)
 		button.text = "CHALLENGE %d" % (index + 1) if unlocked else "???"
 		button.disabled = not unlocked
 		_style_card(button)
+		_style_selectable_availability(button, unlocked)
 		entry.add_child(button)
 		var details := Label.new()
 		details.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -199,407 +240,164 @@ func _build_editor_seed_preview() -> void:
 
 
 func _build_seed_controls() -> void:
-	if is_instance_valid(_seed_input):
-		return
-	var section := VBoxContainer.new()
-	section.name = "PlayASeed"
-	section.add_theme_constant_override("separation", 4)
-	var seed_caption := Label.new()
-	seed_caption.text = "SEED"
-	_style_entry_heading(seed_caption, true)
-	section.add_child(seed_caption)
-	_seed_input = LineEdit.new()
-	_seed_input.placeholder_text = "PILE-DOWN"
-	_seed_input.max_length = 80
-	_style_seed_input(_seed_input)
-	section.add_child(_seed_input)
-	var mode_caption := Label.new()
-	mode_caption.text = "MODE"
-	_style_entry_heading(mode_caption, true)
-	section.add_child(mode_caption)
-	_seed_mode = OptionButton.new()
-	_style_seed_selector(_seed_mode)
-	section.add_child(_seed_mode)
-	var actions := HBoxContainer.new()
-	actions.add_theme_constant_override("separation", 6)
-	var play := REGION_BUTTON_SCENE.instantiate() as RegionButton
-	play.text = "PLAY"
-	play.custom_minimum_size = Vector2(70, 31)
-	play.add_theme_font_size_override("font_size", 16)
-	if entry_heading_font != null:
-		play.add_theme_font_override("font", entry_heading_font)
-	play.highlight_material = challenges_tab_button.highlight_material
-	play.pressed.connect(_play_seed)
-	var random_seed := REGION_BUTTON_SCENE.instantiate() as RegionButton
-	random_seed.text = "RANDOM SEED"
-	random_seed.custom_minimum_size = Vector2(112, 31)
-	random_seed.add_theme_font_size_override("font_size", 16)
-	if entry_heading_font != null:
-		random_seed.add_theme_font_override("font", entry_heading_font)
-	random_seed.highlight_material = challenges_tab_button.highlight_material
-	random_seed.pressed.connect(_fill_random_seed)
-	actions.add_child(play)
-	actions.add_child(random_seed)
-	section.add_child(actions)
-	seed_content.add_child(section)
-	_build_unlock_selection(section)
+	SeedSelectionBuilderScript.build_seed_controls(self)
 
 
 func _build_unlock_selection(section: VBoxContainer) -> void:
-	var bonuses_title := Label.new()
-	bonuses_title.text = "BONUSES"
-	_style_entry_heading(bonuses_title, true)
-	section.add_child(bonuses_title)
-	var bonuses := VBoxContainer.new()
-	bonuses.name = "BonusChoices"
-	bonuses.add_theme_constant_override("separation", 3)
-	section.add_child(bonuses)
-	var rules_title := Label.new()
-	rules_title.text = "SPECIAL RULES"
-	_style_entry_heading(rules_title, true)
-	section.add_child(rules_title)
-	var rules := VBoxContainer.new()
-	rules.name = "RuleChoices"
-	rules.add_theme_constant_override("separation", 3)
-	section.add_child(rules)
+	SeedSelectionBuilderScript.build_unlock_selection(self, section)
 
 
 func _refresh_unlock_selection() -> void:
-	var bonuses := seed_content.get_node("PlayASeed/BonusChoices") as VBoxContainer
-	var rules := seed_content.get_node("PlayASeed/RuleChoices") as VBoxContainer
-	_clear_children(bonuses)
-	_clear_children(rules)
-	_selected_bonus_ids = _selected_bonus_ids.filter(
-		func(id: StringName) -> bool: return _unlocked_bonus_ids.has(id)
-	)
-	for id in _selected_bonus_levels.keys():
-		if not _unlocked_bonus_ids.has(StringName(id)):
-			_selected_bonus_levels.erase(id)
-	_selected_rule_ids = _selected_rule_ids.filter(
-		func(id: StringName) -> bool: return _unlocked_rule_ids.has(id)
-	)
-	var available_bonuses: Array[BonusData] = []
-	for data in BonusRegistry.create_all():
-		if _unlocked_bonus_ids.has(data.id):
-			available_bonuses.append(data)
-	var available_rules: Array[SpecialRuleData] = []
-	for data in SpecialRuleRegistry.create_all_rules():
-		if _unlocked_rule_ids.has(data.id):
-			available_rules.append(data)
-	if available_bonuses.is_empty():
-		_add_empty_selection_label(bonuses)
-	else:
-		_add_seed_bonus_menu(bonuses, available_bonuses)
-	if available_rules.is_empty():
-		_add_empty_selection_label(rules)
-	else:
-		_add_seed_rule_menu(rules, available_rules)
+	SeedSelectionBuilderScript.refresh_unlock_selection(self)
 
 
 func _clear_children(container: Control) -> void:
-	for child in container.get_children():
-		child.queue_free()
+	SeedSelectionBuilderScript.clear_children(self, container)
 
 
 func _add_seed_bonus_menu(
 	container: VBoxContainer, definitions: Array[BonusData]
 ) -> void:
-	var menu := _create_multi_select_button()
-	var popup_content := HFlowContainer.new()
-	popup_content.add_theme_constant_override("h_separation", 12)
-	popup_content.add_theme_constant_override("v_separation", 4)
-	for data in definitions:
-		var unlocked_level := clampi(
-			int(_unlocked_bonus_levels.get(data.id, 1)), 1, data.max_level
-		)
-		var row := HBoxContainer.new()
-		row.custom_minimum_size = Vector2(255, 27)
-		row.add_theme_constant_override("separation", 5)
-		var activation := CheckBox.new()
-		activation.text = data.title
-		activation.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_style_multi_check(activation)
-		var level_buttons: Array[CheckBox] = []
-		for level in range(1, unlocked_level + 1):
-			var level_button := CheckBox.new()
-			level_button.text = str(level)
-			level_button.tooltip_text = "%s · LVL %d" % [data.title, level]
-			_style_multi_check(level_button)
-			level_buttons.append(level_button)
-			row.add_child(level_button)
-		activation.toggled.connect(
-			_on_seed_bonus_check.bind(data.id, 0, activation, level_buttons, menu)
-		)
-		for level_index in level_buttons.size():
-			level_buttons[level_index].toggled.connect(
-				_on_seed_bonus_check.bind(
-					data.id, level_index + 1, activation, level_buttons, menu
-				)
-			)
-		row.add_child(activation)
-		row.move_child(activation, 0)
-		_refresh_seed_bonus_checks(data.id, activation, level_buttons)
-		popup_content.add_child(row)
-	var popup := _attach_multi_select_popup(menu, popup_content)
-	menu.pressed.connect(_show_multi_select_popup.bind(menu, popup))
-	_refresh_seed_menu_text(menu, "SELECT BONUSES", _selected_bonus_levels.size())
-	container.add_child(menu)
+	SeedSelectionBuilderScript.add_seed_bonus_menu(self, container, definitions)
 
 
 func _on_seed_bonus_check(
-	pressed: bool, id: StringName, level: int, activation: CheckBox,
-	level_buttons: Array[CheckBox], menu: Button
+	pressed: bool, id: StringName, level: int, activation: Button,
+	level_buttons: Array[Button], menu: Button
 ) -> void:
-	if level == 0:
-		if pressed:
-			_selected_bonus_levels[id] = maxi(
-				int(_selected_bonus_levels.get(id, 0)), 1
-			)
-			if not _selected_bonus_ids.has(id):
-				_selected_bonus_ids.append(id)
-		else:
-			_selected_bonus_levels.erase(id)
-			_selected_bonus_ids.erase(id)
-	elif pressed:
-		_selected_bonus_levels[id] = level
-		if not _selected_bonus_ids.has(id):
-			_selected_bonus_ids.append(id)
-	elif int(_selected_bonus_levels.get(id, 0)) == level:
-		_selected_bonus_levels.erase(id)
-		_selected_bonus_ids.erase(id)
-	_refresh_seed_bonus_checks(id, activation, level_buttons)
-	_refresh_seed_menu_text(menu, "SELECT BONUSES", _selected_bonus_levels.size())
+	SeedSelectionBuilderScript.on_seed_bonus_check(
+		self, pressed, id, level, activation, level_buttons, menu
+	)
 
 
 func _refresh_seed_bonus_checks(
-	id: StringName, activation: CheckBox, level_buttons: Array[CheckBox]
+	id: StringName, activation: Button, level_buttons: Array[Button]
 ) -> void:
-	var selected_level := int(_selected_bonus_levels.get(id, 0))
-	activation.set_pressed_no_signal(selected_level > 0)
-	for index in level_buttons.size():
-		level_buttons[index].set_pressed_no_signal(selected_level == index + 1)
+	SeedSelectionBuilderScript.refresh_seed_bonus_checks(self, id, activation, level_buttons)
 
 
 func _add_seed_rule_menu(
 	container: VBoxContainer, definitions: Array[SpecialRuleData]
 ) -> void:
-	var menu := _create_multi_select_button()
-	var popup_content := HFlowContainer.new()
-	popup_content.add_theme_constant_override("h_separation", 12)
-	popup_content.add_theme_constant_override("v_separation", 4)
-	for data in definitions:
-		var check := CheckBox.new()
-		check.custom_minimum_size = Vector2(255, 27)
-		check.text = data.title
-		check.button_pressed = _selected_rule_ids.has(data.id)
-		_style_multi_check(check)
-		check.toggled.connect(_on_seed_rule_check.bind(data.id, menu))
-		popup_content.add_child(check)
-	var popup := _attach_multi_select_popup(menu, popup_content)
-	menu.pressed.connect(_show_multi_select_popup.bind(menu, popup))
-	_refresh_seed_menu_text(menu, "SELECT RULES", _selected_rule_ids.size())
-	container.add_child(menu)
+	SeedSelectionBuilderScript.add_seed_rule_menu(self, container, definitions)
 
 
 func _on_seed_rule_check(checked: bool, id: StringName, menu: Button) -> void:
-	if checked:
-		_selected_rule_ids.append(id)
-	else:
-		_selected_rule_ids.erase(id)
-	_refresh_seed_menu_text(menu, "SELECT RULES", _selected_rule_ids.size())
+	SeedSelectionBuilderScript.on_seed_rule_check(self, checked, id, menu)
 
 
 func _refresh_seed_menu_text(menu: Button, title: String, count: int) -> void:
-	menu.text = title if count == 0 else "%s  ·  %d" % [title, count]
+	SeedSelectionBuilderScript.refresh_seed_menu_text(self, menu, title, count)
+
+
+func _roman_level(level: int) -> String:
+	return SeedSelectionBuilderScript.roman_level(self, level)
 
 
 func _add_empty_selection_label(container: VBoxContainer) -> void:
-	var label := Label.new()
-	label.text = "NONE UNLOCKED"
-	_style_entry_details(label)
-	container.add_child(label)
+	SeedSelectionBuilderScript.add_empty_selection_label(self, container)
 
 
-func _button_style() -> StyleBoxTexture:
-	var atlas := AtlasTexture.new()
-	atlas.atlas = BUTTON_TEXTURE
-	atlas.region = Rect2(0, 0, 86, 31)
-	var style := StyleBoxTexture.new()
-	style.texture = atlas
-	style.texture_margin_left = 8.0
-	style.texture_margin_top = 6.0
-	style.texture_margin_right = 8.0
-	style.texture_margin_bottom = 6.0
-	style.content_margin_left = 9.0
-	style.content_margin_top = 4.0
-	style.content_margin_right = 9.0
-	style.content_margin_bottom = 4.0
-	return style
+func _button_style(content_right := 9.0) -> StyleBoxTexture:
+	return SeedControlStyleScript.button_style(self, content_right)
 
 
 func _style_seed_input(input: LineEdit) -> void:
-	input.custom_minimum_size = Vector2(0, 31)
-	input.add_theme_font_override("font", ENTRY_FONT)
-	input.add_theme_font_size_override("font_size", 16)
-	input.add_theme_color_override("font_color", Color.WHITE)
-	input.add_theme_color_override("font_placeholder_color", Color(1, 1, 1, 0.62))
-	input.add_theme_color_override("caret_color", Color.WHITE)
-	input.add_theme_color_override("selection_color", Color("6da7e5"))
-	for state in [&"normal", &"focus", &"read_only"]:
-		input.add_theme_stylebox_override(state, _button_style())
-	_connect_seed_control_highlight(input)
+	SeedControlStyleScript.style_seed_input(self, input)
 
 
 func _style_seed_selector(selector: OptionButton) -> void:
-	selector.custom_minimum_size = Vector2(0, 31)
-	selector.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	selector.add_theme_font_override("font", ENTRY_FONT)
-	selector.add_theme_font_size_override("font_size", 16)
-	selector.add_theme_icon_override("arrow", DOWN_ARROW_TEXTURE)
-	for color_name in [
-		&"font_color", &"font_hover_color", &"font_pressed_color",
-		&"font_focus_color",
-	]:
-		selector.add_theme_color_override(color_name, Color.WHITE)
-	for state in [&"normal", &"hover", &"pressed", &"focus", &"disabled"]:
-		selector.add_theme_stylebox_override(state, _button_style())
-	var popup := selector.get_popup()
-	popup.add_theme_font_override("font", ENTRY_FONT)
-	popup.add_theme_font_size_override("font_size", 16)
-	popup.add_theme_color_override("font_color", TEXT_COLOR)
-	popup.add_theme_color_override("font_hover_color", Color.WHITE)
-	popup.add_theme_color_override("font_separator_color", SELECTED_COLOR)
-	popup.add_theme_icon_override("radio_checked", CHECKED_TEXTURE)
-	popup.add_theme_icon_override("radio_unchecked", UNCHECKED_TEXTURE)
-	popup.add_theme_icon_override("checked", CHECKED_TEXTURE)
-	popup.add_theme_icon_override("unchecked", UNCHECKED_TEXTURE)
-	popup.add_theme_stylebox_override("hover", _button_style())
-	var popup_panel := StyleBoxFlat.new()
-	popup_panel.bg_color = Color("f7f6f2")
-	popup_panel.border_color = SELECTED_COLOR
-	popup_panel.set_border_width_all(2)
-	popup_panel.content_margin_left = 4
-	popup_panel.content_margin_right = 4
-	popup_panel.content_margin_top = 4
-	popup_panel.content_margin_bottom = 4
-	popup.add_theme_stylebox_override("panel", popup_panel)
-	popup.about_to_popup.connect(_style_popup_scrollbar.bind(popup))
-	_connect_seed_control_highlight(selector)
+	SeedControlStyleScript.style_seed_selector(self, selector)
+
+
+func _style_seed_check(check: Button) -> void:
+	SeedControlStyleScript.style_seed_check(self, check)
+
+
+func _style_multi_check(check: Button) -> void:
+	SeedControlStyleScript.style_multi_check(self, check)
+
+
+func _style_selectable_check(
+	check: Button,
+	base_offset: Vector2,
+	autowrap: TextServer.AutowrapMode,
+	include_disabled_color: bool,
+	include_disabled_style: bool,
+	content_margin_top := 0.0
+) -> void:
+	SeedControlStyleScript.style_selectable_check(
+		self, check, base_offset, autowrap, include_disabled_color, include_disabled_style, content_margin_top
+	)
 
 
 func _create_multi_select_button() -> Button:
-	var menu := Button.new()
-	menu.custom_minimum_size = Vector2(0, 31)
-	menu.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	menu.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	menu.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	menu.add_theme_font_override("font", ENTRY_FONT)
-	menu.add_theme_font_size_override("font_size", 16)
-	for color_name in [
-		&"font_color", &"font_hover_color", &"font_pressed_color",
-		&"font_focus_color",
-	]:
-		menu.add_theme_color_override(color_name, Color.WHITE)
-	for state in [&"normal", &"hover", &"pressed", &"focus", &"disabled"]:
-		menu.add_theme_stylebox_override(state, _button_style())
-	var arrow := TextureRect.new()
-	arrow.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
-	arrow.position = Vector2(-18, -4)
-	arrow.size = Vector2(10, 8)
-	arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	arrow.texture = DOWN_ARROW_TEXTURE
-	arrow.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	arrow.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	menu.add_child(arrow)
-	_connect_seed_control_highlight(menu)
-	return menu
+	return SeedControlStyleScript.create_multi_select_button(self)
 
 
 func _attach_multi_select_popup(
-	menu: Button, popup_content: HFlowContainer
+	menu: Button, popup_content: VBoxContainer
 ) -> PopupPanel:
-	var popup := PopupPanel.new()
-	var popup_panel := StyleBoxFlat.new()
-	popup_panel.bg_color = Color("f7f6f2")
-	popup_panel.border_color = SELECTED_COLOR
-	popup_panel.set_border_width_all(2)
-	popup_panel.content_margin_left = 4
-	popup_panel.content_margin_right = 4
-	popup_panel.content_margin_top = 4
-	popup_panel.content_margin_bottom = 4
-	popup.add_theme_stylebox_override("panel", popup_panel)
-	var scroll_container := ScrollContainer.new()
-	scroll_container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	scroll_container.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll_container.add_child(popup_content)
-	popup.add_child(scroll_container)
-	menu.add_child(popup)
-	popup.about_to_popup.connect(_style_scrollbar.bind(scroll_container))
-	return popup
+	return SeedControlStyleScript.attach_multi_select_popup(self, menu, popup_content)
 
 
 func _show_multi_select_popup(menu: Button, popup: PopupPanel) -> void:
-	if popup.visible:
-		popup.hide()
-		return
-	var viewport_width := get_viewport_rect().size.x
-	var popup_width := clampf(menu.size.x, 280.0, viewport_width - 24.0)
-	var popup_position := menu.get_global_rect().position + Vector2(0, menu.size.y + 2)
-	popup_position.x = clampf(popup_position.x, 8.0, viewport_width - popup_width - 8.0)
-	popup.popup(Rect2i(
-		Vector2i(popup_position), Vector2i(popup_width, 290)
-	))
+	await SeedControlStyleScript.show_multi_select_popup(self, menu, popup)
 
 
-func _style_multi_check(check: CheckBox) -> void:
-	check.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	check.add_theme_font_override("font", ENTRY_FONT)
-	check.add_theme_font_size_override("font_size", 16)
-	check.add_theme_color_override("font_color", TEXT_COLOR)
-	check.add_theme_color_override("font_hover_color", SELECTED_COLOR)
-	check.add_theme_color_override("font_pressed_color", SELECTED_COLOR)
-	check.add_theme_color_override("font_focus_color", SELECTED_COLOR)
-	check.add_theme_icon_override("checked", CHECKED_TEXTURE)
-	check.add_theme_icon_override("unchecked", UNCHECKED_TEXTURE)
-	var empty_style := StyleBoxEmpty.new()
-	for state in [&"normal", &"hover", &"pressed", &"hover_pressed", &"focus"]:
-		check.add_theme_stylebox_override(state, empty_style)
+func _popup_has_more_room_above(menu_rect: Rect2, viewport_height: float) -> bool:
+	return SeedControlStyleScript.popup_has_more_room_above(self, menu_rect, viewport_height)
+
+
+func _popup_available_space(
+	menu_rect: Rect2, viewport_height: float, open_above: bool
+) -> float:
+	return SeedControlStyleScript.popup_available_space(self, menu_rect, viewport_height, open_above)
+
+
+func _scroll_seed_button_to_popup_anchor(menu: Button) -> void:
+	await SeedControlStyleScript.scroll_seed_button_to_popup_anchor(self, menu)
+
+
+func _prepare_centered_check_textures() -> void:
+	SeedControlStyleScript.prepare_centered_check_textures(self)
+
+
+func _centered_check_texture(source: Texture2D) -> Texture2D:
+	return SeedControlStyleScript.centered_check_texture(self, source)
 
 
 func _style_popup_scrollbar(popup: PopupMenu) -> void:
-	await get_tree().process_frame
-	for child in popup.find_children("*", "VScrollBar", true, false):
-		_style_v_scrollbar(child as VScrollBar)
+	await SeedControlStyleScript.style_popup_scrollbar(self, popup)
 
 
 func _connect_seed_control_highlight(control: Control) -> void:
-	control.mouse_entered.connect(_set_seed_control_highlight.bind(control, true))
-	control.mouse_exited.connect(_on_seed_control_mouse_exited.bind(control))
-	control.focus_entered.connect(_set_seed_control_highlight.bind(control, true))
-	control.focus_exited.connect(_set_seed_control_highlight.bind(control, false))
+	SeedControlStyleScript.connect_seed_control_highlight(self, control)
 
 
 func _on_seed_control_mouse_exited(control: Control) -> void:
-	if not control.has_focus():
-		_set_seed_control_highlight(control, false)
+	SeedControlStyleScript.on_seed_control_mouse_exited(self, control)
 
 
 func _set_seed_control_highlight(control: Control, highlighted: bool) -> void:
-	control.material = challenges_tab_button.highlight_material if highlighted else null
+	SeedControlStyleScript.set_seed_control_highlight(self, control, highlighted)
 
 
 func open(
 	manager: ChallengeManager, achievements: Array[StringName],
 	unlocked_bonus_ids: Array[StringName] = [],
 	unlocked_rule_ids: Array[StringName] = [],
-	unlocked_bonus_levels: Dictionary = {}
+	unlocked_bonus_levels: Dictionary = {},
+	seed_difficulty_limits: Dictionary = {}
 ) -> void:
 	_manager = manager
 	_achievements = achievements
 	_unlocked_bonus_ids.assign(unlocked_bonus_ids)
 	_unlocked_bonus_levels = unlocked_bonus_levels.duplicate()
 	_unlocked_rule_ids.assign(unlocked_rule_ids)
+	_seed_difficulty_limits = seed_difficulty_limits.duplicate()
 	lock_filter.set_mode(ProgressionLockFilter.BOTH)
+	_refresh_seed_difficulty_limits()
 	_refresh_list()
 	_refresh_unlock_selection()
 	_show_page(PAGE_CHALLENGES)
@@ -607,10 +405,10 @@ func open(
 
 
 func _show_page(target_page: int, animate := false) -> void:
+	preserve_panel_rect()
 	var previous_page := _current_page
 	_current_page = clampi(target_page, PAGE_CHALLENGES, PAGE_SEEDS)
 	var showing_challenges := _current_page == PAGE_CHALLENGES
-	page_title.text = "SELECT A CHALLENGE" if showing_challenges else "PLAY A SEED"
 	scroll.visible = showing_challenges
 	seed_page.visible = not showing_challenges
 	lock_filter.visible = showing_challenges
@@ -618,6 +416,31 @@ func _show_page(target_page: int, animate := false) -> void:
 	seeds_tab_button.modulate = Color.WHITE if showing_challenges else SELECTED_COLOR
 	if animate and previous_page != _current_page:
 		_page_animator.play(page, signi(_current_page - previous_page))
+	_constrain_panel_content()
+
+
+func _constrain_panel_content() -> void:
+	if not is_node_ready():
+		return
+	var list_width := panel_body_width(30.0, 5.0, 10.0)
+	for target in [list, seed_content]:
+		target.custom_minimum_size.x = 0.0
+		target.size.x = list_width
+		_constrain_wrap_labels(target, list_width)
+
+
+func _constrain_wrap_labels(root: Node, list_width: float) -> void:
+	if root is SelectableText:
+		return
+	for child in root.get_children():
+		if child is Control:
+			var control := child as Control
+			if child is Label:
+				control.custom_minimum_size.x = 0.0
+				control.size.x = list_width
+			elif child is Container:
+				control.custom_minimum_size.x = 0.0
+		_constrain_wrap_labels(child, list_width)
 
 
 func _refresh_list() -> void:
@@ -636,33 +459,75 @@ func _refresh_list() -> void:
 
 
 func _refresh_seed_modes() -> void:
-	_seed_mode.clear()
-	_seed_mode_ids.clear()
-	_seed_mode.add_item("CLASSIC")
-	_seed_mode_ids.append(&"")
-	for data in _manager.definitions:
-		if not _manager.is_unlocked(data, _achievements):
-			continue
-		_seed_mode.add_item(data.title)
-		_seed_mode_ids.append(data.id)
+	SeedSelectionBuilderScript.refresh_seed_modes(self)
 
 
 func _fill_random_seed() -> void:
-	_seed_input.text = str(RunRNG.generate_run_seed())
+	SeedSelectionBuilderScript.fill_random_seed(self)
 
 
 func _play_seed() -> void:
-	var seed_text := _seed_input.text.strip_edges()
-	if seed_text.is_empty():
-		_fill_random_seed()
-		seed_text = _seed_input.text
-	var selected := _seed_mode.selected
-	if selected < 0 or selected >= _seed_mode_ids.size():
-		return
-	seeded_run_requested.emit(
-		seed_text, _seed_mode_ids[selected],
-		_selected_bonus_levels.duplicate(), _selected_rule_ids
+	SeedSelectionBuilderScript.play_seed(self)
+
+
+func _create_value_selector(
+	container: VBoxContainer, label: String, first: int, last: int, default_value: int
+) -> Label:
+	return SeedSelectionBuilderScript.create_value_selector(
+		self, container, label, first, last, default_value
 	)
+
+
+func _configure_value_selector(
+	value_label: Label, label: String, first: int, last: int, default_value: int
+) -> void:
+	SeedSelectionBuilderScript.configure_value_selector(
+		self, value_label, label, first, last, default_value
+	)
+
+
+func _create_value_arrow(texture: Texture2D) -> TextureHighlightButton:
+	return SeedSelectionBuilderScript.create_value_arrow(self, texture)
+
+
+func _step_value_selector(value_label: Label, direction: int) -> void:
+	SeedSelectionBuilderScript.step_value_selector(self, value_label, direction)
+
+
+func _refresh_value_selector_text(value_label: Label) -> void:
+	SeedSelectionBuilderScript.refresh_value_selector_text(self, value_label)
+
+
+func _refresh_seed_endless_selection(_index := -1) -> void:
+	SeedSelectionBuilderScript.refresh_seed_endless_selection(self, _index)
+
+
+func _refresh_seed_difficulty_limits() -> void:
+	SeedSelectionBuilderScript.refresh_seed_difficulty_limits(self)
+
+
+func _seed_difficulty_overrides() -> Dictionary:
+	return SeedSelectionBuilderScript.seed_difficulty_overrides(self)
+
+
+func _selected_option_number(selector: Label) -> int:
+	return SeedSelectionBuilderScript.selected_option_number(self, selector)
+
+
+func _sync_lock_slot_with_progression_template() -> void:
+	var template := PROGRESSION_MENU_SCENE.instantiate()
+	var source_slot := template.get_node_or_null("Margin/Layout/Header/LockSlot") as Control
+	var target_slot := lock_filter.get_parent() as Control if lock_filter != null else null
+	if source_slot != null and target_slot != null:
+		target_slot.custom_minimum_size = source_slot.custom_minimum_size
+		target_slot.size_flags_vertical = source_slot.size_flags_vertical
+	var source_filter := template.get_node_or_null("Margin/Layout/Header/LockSlot/LockFilter") as Control
+	if source_filter != null and lock_filter != null:
+		lock_filter.offset_left = source_filter.offset_left
+		lock_filter.offset_top = source_filter.offset_top
+		lock_filter.offset_right = source_filter.offset_right
+		lock_filter.offset_bottom = source_filter.offset_bottom
+	template.free()
 
 
 func _on_filter_changed(_mode: int) -> void:
@@ -682,14 +547,19 @@ func _add_card(
 	var unlocked := manager.is_unlocked(data, achievements)
 	var complete := manager.completed.has(data.id)
 	var entry := VBoxContainer.new()
+	entry.custom_minimum_size.x = 0.0
+	entry.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	entry.add_theme_constant_override("separation", 1)
-	var card := Button.new()
+	var card := SELECTABLE_TEXT_SCENE.instantiate() as SelectableText
+	card.setup(
+		true, entry_heading_font, entry_heading_font_size,
+		CHECKED_TEXTURE, UNCHECKED_TEXTURE
+	)
 	card.custom_minimum_size = Vector2(0, 24)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	card.flat = true
-	card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	card.icon = CHECKED_TEXTURE if complete else UNCHECKED_TEXTURE
+	card.set_pressed_no_signal(complete)
 	_style_card(card)
 	if not unlocked:
 		card.text = "???"
@@ -697,6 +567,7 @@ func _add_card(
 	else:
 		card.text = data.title
 		card.pressed.connect(challenge_selected.emit.bind(data.id, false))
+	_style_selectable_availability(card, unlocked)
 	entry.add_child(card)
 	var details := Label.new()
 	details.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -716,7 +587,11 @@ func _add_card(
 	)
 	entry.add_child(details)
 	if complete and data.allow_endless:
-		var endless_button := Button.new()
+		var endless_button := SELECTABLE_TEXT_SCENE.instantiate() as SelectableText
+		endless_button.setup(
+			false, entry_heading_font, entry_heading_font_size,
+			null, null, entry_heading_text_offset
+		)
 		endless_button.custom_minimum_size = Vector2(0, 24)
 		endless_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		endless_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -758,6 +633,12 @@ func _format_standard_score(
 
 
 func _style_card(button: Button) -> void:
+	var selectable := button as SelectableText
+	if selectable != null:
+		selectable.normal_text_color = TEXT_COLOR
+		selectable.selected_text_color = SELECTION_TEXT_COLOR
+		selectable.disabled_text_color = MUTED_COLOR
+		selectable.checked_uses_selected_text_color = false
 	if entry_heading_font != null:
 		button.add_theme_font_override("font", entry_heading_font)
 	button.add_theme_font_size_override("font_size", entry_heading_font_size)
@@ -766,13 +647,25 @@ func _style_card(button: Button) -> void:
 	heading_offset_style.content_margin_top = entry_heading_text_offset.y
 	button.add_theme_stylebox_override("normal", heading_offset_style)
 	button.add_theme_color_override("font_color", TEXT_COLOR)
-	button.add_theme_color_override("font_hover_color", SELECTED_COLOR)
-	button.add_theme_color_override("font_pressed_color", SELECTED_COLOR)
+	button.add_theme_color_override("font_hover_color", SELECTION_TEXT_COLOR)
+	button.add_theme_color_override("font_pressed_color", SELECTION_TEXT_COLOR)
+	button.add_theme_color_override("font_focus_color", SELECTION_TEXT_COLOR)
 	button.add_theme_color_override("font_disabled_color", MUTED_COLOR)
 	button.add_theme_constant_override("outline_size", 0)
 
 
+func _style_selectable_availability(button: Button, available: bool) -> void:
+	button.mouse_default_cursor_shape = (
+		Control.CURSOR_POINTING_HAND if available else Control.CURSOR_ARROW
+	)
+	if not available:
+		button.focus_mode = Control.FOCUS_NONE
+
+
 func _style_entry_heading(label: Label, accent := false) -> void:
+	label.custom_minimum_size.x = 0.0
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.clip_text = true
 	if entry_heading_font != null:
 		label.add_theme_font_override("font", entry_heading_font)
 	label.add_theme_font_size_override("font_size", entry_heading_font_size)
@@ -786,6 +679,8 @@ func _style_entry_heading(label: Label, accent := false) -> void:
 
 
 func _style_entry_details(label: Label) -> void:
+	label.custom_minimum_size.x = 0.0
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	if entry_details_font != null:
 		label.add_theme_font_override("font", entry_details_font)
 	label.add_theme_font_size_override("font_size", entry_details_font_size)
@@ -797,14 +692,8 @@ func _style_scrollbar(target: ScrollContainer) -> void:
 
 
 func _style_v_scrollbar(scrollbar: VScrollBar) -> void:
-	if scrollbar.get_node_or_null("ScrollVisual") != null:
-		return
-	scrollbar.custom_minimum_size.x = 8.0
-	var empty_style := StyleBoxEmpty.new()
-	for style_name in [&"scroll", &"scroll_focus", &"grabber", &"grabber_highlight", &"grabber_pressed"]:
-		scrollbar.add_theme_stylebox_override(style_name, empty_style)
-	var visual := Control.new()
-	visual.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	visual.set_script(ScrollVisualScript)
-	scrollbar.add_child(visual)
-	visual.call("setup", scrollbar, SCROLL_TRACK_TEXTURE, SCROLL_SELECTOR_TEXTURE)
+	PixelUiScript.style_vertical_scrollbar(
+		scrollbar,
+		SCROLL_TRACK_TEXTURE,
+		SCROLL_SELECTOR_TEXTURE
+	)

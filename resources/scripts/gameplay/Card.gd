@@ -28,6 +28,8 @@ enum ForcedReturnReason {
 	MANUAL_CANCEL,
 }
 
+const CardAnimationsScript := preload("res://resources/scripts/gameplay/card/CardAnimations.gd")
+
 const Settings := preload("res://resources/scripts/settings/settings.gd")
 const CardMotionControllerScript := preload(
 	"res://resources/scripts/gameplay/card/CardMotionController.gd"
@@ -80,6 +82,7 @@ var _entrance_unlock_pending := false
 var _entrance_animation_running := false
 var _entrance_tween: Tween
 var _entrance_home_positions: Dictionary = {}
+var _held_hand_visual_position := Vector2.ZERO
 var drag_state := DragState.IDLE
 var drag_origin := Vector2.ZERO
 var placement_confirmed := false
@@ -129,7 +132,7 @@ func set_value_font(
 
 
 func set_tile_palette(colors: Array[Color]) -> void:
-	if colors.size() != 9:
+	if colors.size() != 10:
 		return
 	_tile_colors = colors.duplicate()
 	if is_node_ready():
@@ -430,116 +433,47 @@ func end_commit() -> void:
 
 
 func animate_return(destination: Vector2, duration := 0.26) -> void:
-	drag_state = DragState.RETURNING
-	dragging = false
-	drag_collision_area.monitorable = false
-	cancel_drag_timers()
-	z_index = 0
-	rotation = 0.0
-	var tween := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.tween_property(self, "global_position", destination, duration)
-	await tween.finished
-	drag_state = DragState.IDLE
-	end_commit()
-	if hover_reveal_enabled:
-		await flip_down(true)
-	elif (
-		round_modifiers != null
-		and round_modifiers.blind_delivery_enabled
-	):
-		pointer_inside = get_global_rect().abs().has_point(
-			get_global_mouse_position()
-		)
-		hidden_by_blind_delivery = pointer_inside
-		if pointer_inside:
-			await flip_down(true)
-		else:
-			await flip_up(true)
+	await CardAnimationsScript.animate_return(self, destination, duration)
 
 
 func reset_hand_pose() -> void:
-	if _visual_tween != null and _visual_tween.is_valid():
-		_visual_tween.kill()
-	scale = Vector2.ONE
-	rotation = 0.0
-	face_sprite.position.y = 0.0
-	back_sprite.position.y = 0.0
-	_apply_value_label_offset()
-	drag_timer_ring.visible = false
-	z_index = 0
+	CardAnimationsScript.reset_hand_pose(self)
 
 
 func record_hand_position() -> void:
-	stable_hand_global_position = global_position
-	home_global_position = stable_hand_global_position
-	has_stable_hand_position = true
+	CardAnimationsScript.record_hand_position(self)
 
 
 func hand_return_position() -> Vector2:
-	return stable_hand_global_position if has_stable_hand_position else home_global_position
+	return CardAnimationsScript.hand_return_position(self)
 
 
 func animate_valid_drop(destination: Vector2, duration := 0.14) -> void:
-	finish_drag()
-	var tween := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(self, "global_position", destination, duration)
-	tween.parallel().tween_property(self, "scale", Vector2(0.94, 0.94), 0.08)
-	tween.tween_property(self, "scale", Vector2.ONE, 0.08)
-	await tween.finished
+	await CardAnimationsScript.animate_valid_drop(self, destination, duration)
 
 
 func play_draw(delay: float) -> void:
-	# Capture the HBox slot before the entrance offset is applied. A press
-	# during the tween must still return to the stable layout position.
-	record_hand_position()
-	modulate.a = 0.0
-	position.y += 9.0
-	var destination_y := position.y - 9.0
-	var tween := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_interval(delay)
-	tween.tween_property(self, "position:y", destination_y, 0.18)
-	tween.parallel().tween_property(self, "modulate:a", 1.0, 0.14)
+	CardAnimationsScript.play_draw(self, delay)
+
+
+func hold_hand_position() -> void:
+	CardAnimationsScript.hold_hand_position(self)
+
+
+func play_retained_hand_shift(animate := true, delay := 0.0) -> void:
+	await CardAnimationsScript.play_retained_hand_shift(self, animate, delay)
+
+
+func release_held_hand_position() -> void:
+	CardAnimationsScript.release_held_hand_position(self)
 
 
 func play_draw_from_right(delay: float) -> void:
-	set_selectable(false)
-	_entrance_unlock_pending = true
-	_entrance_animation_running = true
-	# Wait until the hand container has assigned the final slot. Computing the
-	# entrance offset earlier can use the previous card's layout position.
-	await get_tree().process_frame
-	if not is_inside_tree():
-		return
-	record_hand_position()
-	_entrance_home_positions.clear()
-	var entrance_offset := get_viewport_rect().size.x + size.x + 12.0 - global_position.x
-	var visuals: Array[Control] = [visual_root]
-	for visual in visuals:
-		_entrance_home_positions[visual] = visual.position
-		visual.position.x += entrance_offset
-	modulate.a = 0.0
-	rotation = 0.1
-	_entrance_tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	_entrance_tween.tween_interval(delay)
-	_entrance_tween.set_parallel(true)
-	for visual in visuals:
-		_entrance_tween.tween_property(
-			visual,
-			"position",
-			_entrance_home_positions[visual],
-			0.28
-		)
-	_entrance_tween.tween_property(self, "modulate:a", 1.0, 0.18)
-	_entrance_tween.tween_property(self, "rotation", 0.0, 0.24)
-	_entrance_tween.set_parallel(false)
-	_entrance_tween.tween_callback(_finish_entrance_animation)
+	await CardAnimationsScript.play_draw_from_right(self, delay)
 
 
 func play_draw_in_place(delay: float) -> void:
-	modulate.a = 0.0
-	var tween := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_interval(delay)
-	tween.tween_property(self, "modulate:a", 1.0, 0.14)
+	CardAnimationsScript.play_draw_in_place(self, delay)
 
 
 func play_wandering_entrance(
@@ -548,163 +482,39 @@ func play_wandering_entrance(
 	screen_size: Vector2,
 	delay: float
 ) -> void:
-	free_range_card = true
-	wandering_enabled = false
-	set_selectable(false)
-	_entrance_unlock_pending = true
-	var destination_center := destination + size * 0.5
-	var edge_distances := [
-		destination_center.x,
-		screen_size.x - destination_center.x,
-		destination_center.y,
-		screen_size.y - destination_center.y,
-	]
-	var closest_edge := edge_distances.find(edge_distances.min())
-	match closest_edge:
-		0:
-			global_position = Vector2(-size.x - 12.0, destination.y)
-		1:
-			global_position = Vector2(screen_size.x + 12.0, destination.y)
-		2:
-			global_position = Vector2(destination.x, -size.y - 12.0)
-		_:
-			global_position = Vector2(destination.x, screen_size.y + 12.0)
-	modulate.a = 0.0
-	rotation = -0.12 if closest_edge == 0 or closest_edge == 3 else 0.12
-	_entrance_animation_running = true
-	_entrance_tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	_entrance_tween.tween_interval(delay)
-	_entrance_tween.tween_property(self, "global_position", destination, 0.28)
-	_entrance_tween.parallel().tween_property(self, "modulate:a", 1.0, 0.18)
-	_entrance_tween.parallel().tween_property(self, "rotation", 0.0, 0.24)
-	_entrance_tween.tween_callback(func() -> void:
-		_entrance_animation_running = false
-		enable_wandering(index, true)
-		_complete_entrance_interaction()
-	)
+	CardAnimationsScript.play_wandering_entrance(self, index, destination, screen_size, delay)
 
 
 func _materialize_entrance_for_drag() -> void:
-	if not _entrance_animation_running:
-		return
-	var visual_global_position := visual_root.global_position
-	if _entrance_tween != null and _entrance_tween.is_valid():
-		_entrance_tween.kill()
-	if not _entrance_home_positions.is_empty():
-		global_position = (
-			visual_global_position
-			- (_entrance_home_positions[visual_root] as Vector2)
-		)
-		for visual in _entrance_home_positions:
-			(visual as Control).position = _entrance_home_positions[visual]
-	_entrance_home_positions.clear()
-	_entrance_animation_running = false
-	_entrance_unlock_pending = false
-	rotation = 0.0
-	modulate.a = 1.0
+	CardAnimationsScript.materialize_entrance_for_drag(self)
 
 
 func _finish_entrance_animation() -> void:
-	for visual in _entrance_home_positions:
-		(visual as Control).position = _entrance_home_positions[visual]
-	_entrance_home_positions.clear()
-	_entrance_animation_running = false
-	_complete_entrance_interaction()
+	CardAnimationsScript.finish_entrance_animation(self)
 
 
 func finish_entrance_immediately() -> void:
-	if not _entrance_animation_running:
-		return
-	if _entrance_tween != null and _entrance_tween.is_valid():
-		_entrance_tween.kill()
-	for visual in _entrance_home_positions:
-		(visual as Control).position = _entrance_home_positions[visual]
-	_entrance_home_positions.clear()
-	_entrance_animation_running = false
-	modulate.a = 1.0
-	rotation = 0.0
-	_complete_entrance_interaction()
+	CardAnimationsScript.finish_entrance_immediately(self)
 
 
 func _complete_entrance_interaction() -> void:
-	if not _entrance_unlock_pending:
-		return
-	_entrance_unlock_pending = false
-	set_selectable(true)
-	entrance_became_interactive.emit(self)
+	CardAnimationsScript.complete_entrance_interaction(self)
 
 
-func play_wandering_exit(screen_width: float, delay: float) -> float:
-	wandering_enabled = false
-	set_selectable(false)
-	var exits_left := global_position.x + size.x * 0.5 < screen_width * 0.5
-	var destination_x := -size.x - 14.0 if exits_left else screen_width + 14.0
-	var tween := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tween.tween_interval(delay)
-	tween.tween_property(
-		self,
-		"global_position",
-		Vector2(destination_x, global_position.y + 8.0),
-		0.26
-	)
-	tween.parallel().tween_property(self, "modulate:a", 0.0, 0.18)
-	tween.parallel().tween_property(self, "rotation", -0.16 if exits_left else 0.16, 0.22)
-	return delay + 0.26
+func play_wandering_exit(screen_size: Vector2, delay: float) -> float:
+	return CardAnimationsScript.play_wandering_exit(self, screen_size, delay)
 
 
 func flip_down(animated: bool = true) -> void:
-	if not face_up or _flip_in_progress:
-		return
-	if animated:
-		_flip_in_progress = true
-		_flip_original_y = position.y
-		_flip_tween = create_tween().set_trans(Tween.TRANS_SINE)
-		_flip_tween.tween_property(self, "scale:x", 0.02, 0.07)
-		_flip_tween.parallel().tween_property(self, "position:y", _flip_original_y - 3.0, 0.07)
-		_flip_tween.tween_callback(func() -> void:
-			face_up = false
-			_update_appearance()
-		)
-		_flip_tween.tween_property(self, "scale:x", 1.0, 0.07)
-		_flip_tween.parallel().tween_property(self, "position:y", _flip_original_y, 0.07)
-		await _flip_tween.finished
-		position.y = _flip_original_y
-		_flip_in_progress = false
-	else:
-		face_up = false
-		_update_appearance()
+	await CardAnimationsScript.flip_down(self, animated)
 
 
 func flip_up(animated: bool = true) -> void:
-	if face_up or _flip_in_progress:
-		return
-	if animated:
-		_flip_in_progress = true
-		_flip_original_y = position.y
-		_flip_tween = create_tween().set_trans(Tween.TRANS_SINE)
-		_flip_tween.tween_property(self, "scale:x", 0.02, 0.07)
-		_flip_tween.tween_callback(func() -> void:
-			face_up = true
-			_update_appearance()
-		)
-		_flip_tween.tween_property(self, "scale:x", 1.0, 0.07)
-		await _flip_tween.finished
-		_flip_in_progress = false
-	else:
-		face_up = true
-		_update_appearance()
+	await CardAnimationsScript.flip_up(self, animated)
 
 
 func flash_error() -> void:
-	if _visual_tween != null and _visual_tween.is_valid():
-		_visual_tween.kill()
-	var tween := create_tween()
-	tween.tween_property(face_sprite, "modulate", Color("#F3B2AA"), 0.08)
-	tween.tween_property(face_sprite, "modulate", Color.WHITE, 0.12)
-	tween.tween_callback(func() -> void:
-		face_sprite.modulate = Color.WHITE
-	)
-	await tween.finished
+	await CardAnimationsScript.flash_error(self)
 
 
 func _on_face_input(event: InputEvent) -> void:
@@ -768,24 +578,11 @@ func _on_mouse_exited() -> void:
 
 
 func _cancel_flip_animation() -> void:
-	if _flip_tween != null and _flip_tween.is_valid():
-		_flip_tween.kill()
-	if _flip_in_progress:
-		position.y = _flip_original_y
-		scale.x = 1.0
-	_flip_in_progress = false
+	CardAnimationsScript.cancel_flip_animation(self)
 
 
 func _animate_pose(target_scale: Vector2, y_offset: float) -> void:
-	if _visual_tween != null and _visual_tween.is_valid():
-		_visual_tween.kill()
-	_visual_tween = create_tween().set_parallel().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	_visual_tween.tween_property(self, "scale", target_scale, 0.12)
-	_visual_tween.tween_property(face_sprite, "position:y", y_offset, 0.12)
-	_visual_tween.tween_property(back_sprite, "position:y", y_offset, 0.12)
-	_visual_tween.tween_property(
-		value_label, "position:y", _value_font_offset.y + y_offset, 0.12
-	)
+	CardAnimationsScript.animate_pose(self, target_scale, y_offset)
 
 
 func _apply_value_label_offset(pose_y := 0.0) -> void:

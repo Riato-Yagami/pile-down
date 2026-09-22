@@ -9,6 +9,7 @@ script = ExtResource("3_kvajt")
 id = &"upheaval"
 display_name = "UPHEAVAL"
 font = ExtResource("1_jximv")
+tile_font_size = 14
 tile_font_offset = Vector2(0, -1)
 title_font_offset = Vector2(0, -1)
 title_font_size = null

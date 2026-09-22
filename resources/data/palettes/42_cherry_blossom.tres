@@ -1,11 +1,11 @@
-[gd_resource type="Resource" script_class="ColorPaletteData" format=3]
+[gd_resource type="Resource" script_class="ColorPaletteData" format=3 uid="uid://bpfsjhxuwt5b"]
 
-[ext_resource type="Resource" path="res://resources/data/achievements/26_bring_a_friend_full_activation.tres" id="1_oxfwt"]
-[ext_resource type="Script" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_up0f8"]
+[ext_resource type="Script" uid="uid://bdlkhp3dt6mr" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_up0f8"]
+[ext_resource type="Resource" path="res://resources/data/achievements/63_family_photo.tres" id="progression_reward"]
 
 [resource]
 script = ExtResource("2_up0f8")
-id = &"cherry_blossom"
 display_name = "CHERRY BLOSSOM"
 colors = Array[Color]([Color(0.34901962, 0.050980393, 0.13333334, 1), Color(0.5019608, 0.05882353, 0.18431373, 1), Color(0.6431373, 0.07450981, 0.23529412, 1), Color(0.7882353, 0.09411765, 0.2901961, 1), Color(1, 0.3019608, 0.42745098, 1), Color(1, 0.45882353, 0.56078434, 1), Color(1, 0.56078434, 0.6392157, 1), Color(1, 0.7019608, 0.75686276, 1), Color(1, 0.8, 0.8352941, 1), Color(1, 0.9411765, 0.9529412, 1)])
-required_achievement = ExtResource("1_oxfwt")
+required_achievement = ExtResource("progression_reward")
+id = &"cherry_blossom"

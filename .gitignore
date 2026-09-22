@@ -1,10 +1,15 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
-build/linux/
-build/android/*.apk
-build/web/
-build/windows/
+build/platforms/
 build/.godot_config/
 build/.godot_data/
 build/.template_cache/
+build/.cache/
+build/.godot_config_*/
+build/.godot_data_*/
+build/tmp/
+build/export.local.sh
+
+build/keystore/
+.env

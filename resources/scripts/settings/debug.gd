@@ -1,8 +1,12 @@
 class_name DebugSettings
 extends RefCounted
 
+const BONUS_CATALOG := preload("res://resources/data/bonuses.tres")
+const SPECIAL_RULE_CATALOG := preload("res://resources/data/special_rules.tres")
+const BACKGROUND_CATALOG := preload("res://resources/data/backgrounds.tres")
+
 # Master switch. Every option below is ignored while this is false.
-const ENABLED := true
+const ENABLED := false
 
 # Mistakes still play their feedback, but never consume a life.
 const GOD_MODE := false
@@ -24,6 +28,10 @@ const SHOW_DUST_DEBUG := false
 const FORCE_RUN_SEED := ""
 const FORCE_FLAWLESS := false
 const DISABLE_FLAWLESS := false
+const FORCE_BACKGROUND_ID := ""
+const FORCE_THEME_PALETTE := ""
+const DISABLE_SHADER_BACKGROUNDS := false
+const DISABLE_BG_MORPH_TRANSITION := false
 
 # Keep empty for normal rule selection. Debug locks bypass incompatibilities,
 # required-rule constraints and minimum rounds so any combination can be tested.
@@ -33,7 +41,7 @@ const DISABLE_FLAWLESS := false
 # hot_potatoes, blind_delivery, mirror_match, sudden_death, grace_period,
 # colorblind, floor_is_lava, pixelated, shaking_piles, wavy_baby.
 const LOCK_SPECIAL_RULES: Array[StringName] = [
-	#"pixelated",
+	#"free_range_cards",
 	#"wavy_baby",
 	#"shaking_piles",
 	#"lights_out",
@@ -52,9 +60,9 @@ const LOCK_SPECIAL_RULES: Array[StringName] = [
 # bring_a_friend, pile_mover, double_down, deja_vu, rule_breaker, adaptation.
 const LOCK_BONUSES: Dictionary = {
 	#&"lucky_hand": 1,
-	#&"bring_a_friend": 3,
+	#&"wild_card": 3,
 	#&"pile_mover":1,
-	#&"double_down": 3,
+	#&"double_down": 1,
 	#&"redraw":2,u
 }
 
@@ -115,10 +123,47 @@ static func get_locked_special_rules() -> Array[StringName]:
 		return []
 	var locked_rules: Array[StringName] = []
 	locked_rules.assign(LOCK_SPECIAL_RULES)
+	for entry in SPECIAL_RULE_CATALOG.enabled_data:
+		var data := entry as SpecialRuleData
+		if data != null and data.debug_always_on_next_launch:
+			locked_rules.append(data.id)
 	return locked_rules
 
 
 static func get_locked_bonuses() -> Dictionary:
 	if not ENABLED:
 		return {}
-	return LOCK_BONUSES.duplicate()
+	var locked := LOCK_BONUSES.duplicate()
+	for entry in BONUS_CATALOG.enabled_data:
+		var data := entry as BonusData
+		if data != null and data.debug_lock_level != 0:
+			locked[data.id] = data.debug_lock_level
+	return locked
+
+
+static func get_forced_background_id() -> StringName:
+	if not ENABLED:
+		return &""
+	var manual := StringName(FORCE_BACKGROUND_ID.strip_edges())
+	if manual != &"":
+		return manual
+	for entry in BACKGROUND_CATALOG.enabled_data:
+		var data := entry as BackgroundThemeData
+		if data != null and data.debug_force_next_launch:
+			return data.id
+	return &""
+
+
+static func get_editor_background_preview_id() -> StringName:
+	if not ENABLED:
+		return &""
+	for entry in BACKGROUND_CATALOG.enabled_data:
+		var data := entry as BackgroundThemeData
+		if data != null and data.debug_editor_preview:
+			return data.id
+	var selectable_catalog := BACKGROUND_CATALOG as SelectableDataCatalog
+	if selectable_catalog != null:
+		var selected := selectable_catalog.get_selected_data() as BackgroundThemeData
+		if selected != null:
+			return selected.id
+	return get_forced_background_id()

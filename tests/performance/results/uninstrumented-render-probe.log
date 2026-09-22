@@ -1,0 +1,19 @@
+Command: Godot_v4.7.2.exe --path . --rendering-method gl_compatibility --quit-after 120
+Profile: .godot/audit-profiles/perf-render-probe
+Exit code: 0
+Console output captured from the initial renderer capability probe (no benchmark script):
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 576.80 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 2070 SUPER
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+ERROR: Texture with GL ID of 138: leaked 3848 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:82)
+ERROR: Texture with GL ID of 139: leaked 3848 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:82)
+ERROR: Parameter "RenderingServer::get_singleton()" is null.
+   at: ~ImageTexture (scene/resources/image_texture.cpp:245)
+ERROR: Parameter "RenderingServer::get_singleton()" is null.
+   at: ~ImageTexture (scene/resources/image_texture.cpp:245)
+ERROR: 2 RID allocations of type 'N5GLES37TextureE' were leaked at exit.

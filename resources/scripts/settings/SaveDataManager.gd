@@ -1,7 +1,7 @@
 class_name SaveDataManager
 extends Node
 
-const SAVE_PATH := "user://pile_down.cfg"
+const SAVE_PATH := SaveConfig.PATH
 const EXPORT_FORMAT := "pile-down-save"
 const EXPORT_VERSION := 1
 
@@ -53,6 +53,10 @@ func import_json(path: String) -> Error:
 		if not values is Dictionary:
 			return ERR_INVALID_DATA
 		for key_value in (values as Dictionary):
+			if section == "challenges" and not ChallengeManager.is_valid_progress_value(
+				str(key_value), values[key_value]
+			):
+				return ERR_INVALID_DATA
 			imported.set_value(
 				section, str(key_value), (values as Dictionary)[key_value]
 			)

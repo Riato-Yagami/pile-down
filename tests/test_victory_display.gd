@@ -25,9 +25,20 @@ func _run() -> void:
 	assert(not game.overlay_title.text.contains("0 ROUNDS"))
 	assert(game.overlay.visible)
 	assert(game.end_seed_display.visible)
-	assert(game.end_seed_display.value_label.text == game.run_seed_label.left(5))
+	assert(game.end_seed_display.value_label.text.begins_with(game.run_seed_label.left(5)))
 	assert(game.end_seed_display.copy_button.texture_normal != null)
 	await process_frame
+	assert(
+		game.overlay_panel.get_global_rect().encloses(
+			game.end_seed_display.get_global_rect()
+		)
+	)
+	game.end_seed_display.set_seed(
+		"0123456789abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz"
+	)
+	game.end_seed_display._set_highlight(true)
+	await create_timer(game.end_seed_display.resize_animation_duration + 0.05).timeout
+	assert(game.end_seed_display.value_label.text.contains("\n"))
 	assert(
 		game.overlay_panel.get_global_rect().encloses(
 			game.end_seed_display.get_global_rect()

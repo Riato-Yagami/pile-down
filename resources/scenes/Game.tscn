@@ -54,12 +54,26 @@
 [ext_resource type="Texture2D" uid="uid://cx1h322mxrbyi" path="res://resources/materials/icons/trophies.tres" id="44_achievement"]
 [ext_resource type="Texture2D" path="res://resources/materials/textures/ui/notification.tres" id="45_notification"]
 [ext_resource type="PackedScene" uid="uid://btkfwvuebrq3c" path="res://resources/scenes/ui/SeedCopyDisplay.tscn" id="46_seed_copy"]
-[ext_resource type="Material" uid="uid://ctk4lbjyu3d1x" path="res://resources/materials/StripeBackgroundMaterial.tres" id="46_stripe_material"]
-[ext_resource type="Material" uid="uid://cu8wckhiq2csy" path="res://resources/materials/DeformableBackgroundMaterial.tres" id="47_deform_material"]
-[ext_resource type="Script" uid="uid://bw0xn7y3cadsc" path="res://resources/scripts/effects/DeformableStripeBackground.gd" id="48_deform_controller"]
+[ext_resource type="Material" uid="uid://ctk4lbjyu3d1x" path="res://resources/materials/backgrounds/StripeBackgroundMaterial.tres" id="46_stripe_material"]
+[ext_resource type="Material" uid="uid://cu8wckhiq2csy" path="res://resources/materials/backgrounds/DeformableBackgroundMaterial.tres" id="47_deform_material"]
+[ext_resource type="Script" uid="uid://bw0xn7y3cadsc" path="res://resources/scripts/effects/BackgroundEffects.gd" id="48_deform_controller"]
 [ext_resource type="Script" uid="uid://dpro0nvh1a7iv" path="res://resources/scripts/effects/ReliefLighting.gd" id="49_relief_lighting"]
 [ext_resource type="PackedScene" uid="uid://csg0sfqi87rcr" path="res://resources/scenes/gameplay/Pile.tscn" id="50_editor_pile_preview"]
 [ext_resource type="PackedScene" uid="uid://brvd6qt0cdmx4" path="res://resources/scenes/bonuses/ActiveBonusBadge.tscn" id="51_active_bonus_badge"]
+
+[sub_resource type="StyleBoxTexture" id="DeleteSavePanel"]
+texture = ExtResource("15")
+texture_margin_left = 40.0
+texture_margin_top = 64.0
+texture_margin_right = 30.0
+texture_margin_bottom = 56.0
+content_margin_left = 24.0
+content_margin_top = 48.0
+content_margin_right = 16.0
+content_margin_bottom = 44.0
+
+[sub_resource type="Theme" id="DeleteSaveTheme"]
+AcceptDialog/styles/panel = SubResource("DeleteSavePanel")
 
 [sub_resource type="Theme" id="PixelTheme"]
 default_font = ExtResource("12")
@@ -234,18 +248,18 @@ texture_margin_top = 6.0
 texture_margin_right = 8.0
 texture_margin_bottom = 6.0
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_d4gu4"]
+resource_local_to_scene = true
+shader = SubResource("ButtonHighlightShader")
+shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
+shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+
 [sub_resource type="StyleBoxFlat" id="SpriteButtonPressed"]
 bg_color = Color(0.176, 0.373, 0.62, 1)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
 corner_radius_bottom_right = 5
 corner_radius_bottom_left = 5
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_d4gu4"]
-resource_local_to_scene = true
-shader = SubResource("Shader_cw3lv")
-shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
-shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_b3b7l"]
 resource_local_to_scene = true
@@ -290,6 +304,12 @@ shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
 shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_8af6y"]
+resource_local_to_scene = true
+shader = SubResource("Shader_cw3lv")
+shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
+shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_bwbmk"]
 resource_local_to_scene = true
 shader = SubResource("Shader_cw3lv")
 shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
@@ -363,7 +383,7 @@ void fragment() {
 	COLOR = source;
 }"
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_bwbmk"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_6pw2q"]
 resource_local_to_scene = true
 shader = SubResource("ProgressionButtonHighlightShader")
 shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
@@ -381,13 +401,12 @@ void fragment() {
 }
 "
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_6pw2q"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_dbqh1"]
 resource_local_to_scene = true
 shader = SubResource("FontPreviewTileShader")
 shader_parameter/tile_color = Color(0.302, 0.51, 0.761, 1)
 
 [node name="Game" type="Control" unique_id=694228927]
-visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -406,13 +425,12 @@ start_adaptive_in_editor = true
 [node name="Artwork" type="Control" parent="." unique_id=401090310]
 layout_mode = 1
 anchors_preset = 0
-offset_right = 1460.0
-offset_bottom = 803.0
+offset_right = 256.0
+offset_bottom = 320.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("48_deform_controller")
-background_pixel_size = 1.0
 effect_speed = 0.95
 motion_lifetime = 1.4
 wave_speed = 200.0
@@ -421,9 +439,10 @@ tile_impact_wave_lifetime = 0.6
 tile_impact_wave_strength = 7.2
 
 [node name="BackgroundArt" type="ColorRect" parent="Artwork" unique_id=957653642]
+visible = false
 material = ExtResource("46_stripe_material")
 layout_mode = 1
-anchors_preset = 15
+anchors_preset = -1
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
@@ -469,13 +488,16 @@ range_item_cull_mask = 2
 texture = SubResource("ReliefLightTexture")
 texture_scale = 0.7
 
-[node name="Gameplay" type="Node" parent="." unique_id=1536313836]
+[node name="Gameplay" type="Control" parent="." unique_id=1536313836]
+layout_mode = 1
+anchors_preset = 0
 
 [node name="TimerRing" type="TextureRect" parent="Gameplay" unique_id=1181363924]
 unique_name_in_owner = true
 light_mask = 2
 texture_filter = 1
 material = SubResource("ClockProgressMaterial")
+layout_mode = 0
 offset_left = 9.0
 offset_top = 6.0
 offset_right = 37.0
@@ -505,7 +527,7 @@ vertical_alignment = 1
 [node name="RoundPanel" type="TextureRect" parent="Gameplay" unique_id=1126469928]
 unique_name_in_owner = true
 texture_filter = 1
-anchors_preset = 1
+layout_mode = 0
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -73.0
@@ -532,6 +554,7 @@ vertical_alignment = 1
 
 [node name="RunTimeLabel" type="Label" parent="Gameplay" unique_id=140272360]
 unique_name_in_owner = true
+layout_mode = 0
 offset_left = 18.0
 offset_top = 13.0
 offset_right = 199.0
@@ -548,7 +571,7 @@ unique_name_in_owner = true
 visible = false
 z_index = 10
 texture_filter = 1
-anchors_preset = 1
+layout_mode = 0
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -40.0
@@ -561,9 +584,31 @@ texture_normal = ExtResource("31_escape")
 script = ExtResource("34_texture_highlight")
 highlight_material = SubResource("EscapeButtonHighlightMaterial")
 
+[node name="ActiveBonusBar" type="GridContainer" parent="Gameplay" unique_id=432128681]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = -74.0
+offset_right = -30.0
+offset_bottom = -60.0
+grow_horizontal = 2
+grow_vertical = 0
+layout_direction = 3
+theme_override_constants/h_separation = 3
+theme_override_constants/v_separation = 3
+columns = 6
+
+[node name="EditorBonusBadgePreview" parent="Gameplay/ActiveBonusBar" unique_id=1152465567 instance=ExtResource("51_active_bonus_badge")]
+layout_mode = 2
+text = "BAF III"
+highlight_material = null
+
 [node name="PilesBoard" type="Control" parent="Gameplay" unique_id=1086969405]
 unique_name_in_owner = true
-layout_mode = 3
+layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -581,7 +626,7 @@ mouse_filter = 1
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(160, 160)
-anchors_preset = 8
+layout_mode = 0
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
@@ -599,7 +644,7 @@ theme_override_styles/panel = SubResource("Wave")
 [node name="TransientLabel" type="Label" parent="Gameplay" unique_id=1854612339]
 unique_name_in_owner = true
 visible = false
-anchors_preset = 8
+layout_mode = 0
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
@@ -618,17 +663,19 @@ autowrap_mode = 2
 
 [node name="HandTray" type="Control" parent="Gameplay" unique_id=1006987005]
 unique_name_in_owner = true
-layout_mode = 3
+layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 18.0
 offset_top = -55.0
+offset_right = 1197.0
 grow_horizontal = 2
 grow_vertical = 0
 script = ExtResource("7_conveyor_tray")
-conveyor_turn_point_x = 65.0
+conveyor_turn_point_x = 59.0
+screen_edge_margins = null
+conveyor_right_bleed = null
 
 [node name="RegularHandBackground" type="NinePatchRect" parent="Gameplay/HandTray" unique_id=1712941913]
 unique_name_in_owner = true
@@ -749,7 +796,7 @@ offset_left = 17.0
 offset_top = 12.0
 offset_right = 29.0
 offset_bottom = 24.0
-theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_color = Color(0.235294, 0.235294, 0.235294, 1)
 theme_override_font_sizes/font_size = 10
 text = "2"
 horizontal_alignment = 1
@@ -757,7 +804,7 @@ vertical_alignment = 1
 
 [node name="DragLayer" type="Control" parent="Gameplay" unique_id=648215424]
 unique_name_in_owner = true
-layout_mode = 3
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -767,7 +814,7 @@ mouse_filter = 2
 
 [node name="LavaLayer" type="Control" parent="Gameplay" unique_id=1312685521]
 unique_name_in_owner = true
-layout_mode = 3
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -775,33 +822,11 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="ActiveBonusBar" type="GridContainer" parent="Gameplay" unique_id=432128681]
-unique_name_in_owner = true
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 30.0
-offset_top = -74.0
-offset_right = -30.0
-offset_bottom = -60.0
-grow_horizontal = 2
-grow_vertical = 0
-layout_direction = 3
-theme_override_constants/h_separation = 3
-theme_override_constants/v_separation = 3
-columns = 6
-
-[node name="EditorBonusBadgePreview" parent="Gameplay/ActiveBonusBar" unique_id=1152465567 instance=ExtResource("51_active_bonus_badge")]
-layout_mode = 2
-text = "BAF III"
-highlight_material = null
-
 [node name="ActiveBonusDescription" type="PanelContainer" parent="Gameplay" unique_id=1608555819]
 unique_name_in_owner = true
 self_modulate = Color(1, 1, 1, 0.6313726)
 z_index = 4
-anchors_preset = -1
+layout_mode = 0
 offset_left = 64.0
 offset_top = 180.0
 offset_right = 192.0
@@ -823,31 +848,28 @@ autowrap_mode = 3
 unique_name_in_owner = true
 visible = false
 z_index = 50
-anchors_preset = 2
+layout_mode = 0
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 5.0
-offset_top = -78.0
+offset_top = -26.0
 offset_right = 157.0
 offset_bottom = -4.0
 grow_vertical = 0
+mouse_filter = 1
 theme_override_colors/font_color = Color(1, 1, 1, 0.82)
 theme_override_colors/font_outline_color = Color(0.1, 0.1, 0.1, 0.9)
 theme_override_constants/outline_size = 2
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 8
-text = "[S] NEXT MUSIC SECTION
-[G] GOD MODE: OFF
-[R] RESET GAME
-[H] CLEAR GLOBAL PROGRESSION
-[T] SHOW RUN TIME
-[M] MUTE AUDIO
-[ESC] BACK TO MENU"
+text = "DEBUG SHORTCUTS
+HOVER TO OPEN  F1 HIDE"
 
 [node name="DebugProbabilityPanel" type="Label" parent="Gameplay" unique_id=1757741604]
 unique_name_in_owner = true
 visible = false
 z_index = 50
+layout_mode = 0
 offset_left = 5.0
 offset_top = 60.0
 offset_right = 155.0
@@ -952,7 +974,6 @@ unique_name_in_owner = true
 layer = 20
 
 [node name="BonusSelection" parent="PresentationLayers/BonusSelectionLayer" unique_id=830019442 instance=ExtResource("28_bonus_selection")]
-visible = false
 
 [node name="Title" parent="PresentationLayers/BonusSelectionLayer/BonusSelection" index="1" unique_id=1196632029]
 theme_override_font_sizes/normal_font_size = 20
@@ -961,11 +982,16 @@ theme_override_font_sizes/normal_font_size = 20
 highlight_material = SubResource("ShaderMaterial_c6tix")
 
 [node name="SkipButton" parent="PresentationLayers/BonusSelectionLayer/BonusSelection" index="4"]
+custom_minimum_size = Vector2(86, 20)
+custom_maximum_size = Vector2(54.115, 24.085)
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxTexture_k0uil")
 theme_override_styles/pressed = SubResource("StyleBoxTexture_k0uil")
 theme_override_styles/hover = SubResource("StyleBoxTexture_k0uil")
 theme_override_styles/disabled = SubResource("StyleBoxTexture_k0uil")
 theme_override_styles/focus = SubResource("StyleBoxTexture_k0uil")
+text = "skip"
+highlight_material = SubResource("ShaderMaterial_d4gu4")
 
 [node name="SkippableSequenceLayer" type="CanvasLayer" parent="PresentationLayers" unique_id=1910882523]
 layer = 30
@@ -1051,7 +1077,7 @@ theme_override_styles/pressed = SubResource("SpriteButtonPressed")
 theme_override_styles/hover = SubResource("SpriteButton")
 text = "CONTINUE"
 script = ExtResource("22_highlight")
-highlight_material = SubResource("ShaderMaterial_d4gu4")
+highlight_material = SubResource("ShaderMaterial_b3b7l")
 
 [node name="QuitRestartButton" parent="PresentationLayers/QuitPopupLayer/QuitPopup/Center/Panel/Content/Buttons" unique_id=1150324439 instance=ExtResource("22_region_button")]
 unique_name_in_owner = true
@@ -1062,7 +1088,7 @@ theme_override_styles/pressed = SubResource("SpriteButtonPressed")
 theme_override_styles/hover = SubResource("SpriteButton")
 text = "RESTART"
 script = ExtResource("22_highlight")
-highlight_material = SubResource("ShaderMaterial_b3b7l")
+highlight_material = SubResource("ShaderMaterial_2j8wy")
 
 [node name="QuitRunButton" parent="PresentationLayers/QuitPopupLayer/QuitPopup/Center/Panel/Content/Buttons" unique_id=2042110092 instance=ExtResource("22_region_button")]
 unique_name_in_owner = true
@@ -1073,7 +1099,7 @@ theme_override_styles/pressed = SubResource("SpriteButtonPressed")
 theme_override_styles/hover = SubResource("SpriteButton")
 text = "QUIT"
 script = ExtResource("22_highlight")
-highlight_material = SubResource("ShaderMaterial_2j8wy")
+highlight_material = SubResource("ShaderMaterial_d7b04")
 
 [node name="PauseSeedMargin" type="MarginContainer" parent="PresentationLayers/QuitPopupLayer/QuitPopup/Center/Panel/Content" unique_id=1996146495]
 unique_name_in_owner = true
@@ -1087,14 +1113,20 @@ theme_override_constants/margin_bottom = 2
 [node name="PauseSeedDisplay" parent="PresentationLayers/QuitPopupLayer/QuitPopup/Center/Panel/Content/PauseSeedMargin" unique_id=1996146496 instance=ExtResource("46_seed_copy")]
 unique_name_in_owner = true
 layout_mode = 2
+position_offset = Vector2(4, 3)
+side_padding = Vector2(4, 6)
 
-[node name="Screens" type="Node" parent="." unique_id=2062740707]
+[node name="Screens" type="Control" parent="." unique_id=2062740707]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+mouse_filter = 2
 
 [node name="AchievementPopup" type="Control" parent="Screens" unique_id=1735031890]
 unique_name_in_owner = true
 visible = false
 z_index = 100
-layout_mode = 3
+layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_left = 38.0
@@ -1141,7 +1173,7 @@ autowrap_mode = 2
 [node name="OverlayLegacy" type="Control" parent="Screens" unique_id=1498983076]
 process_mode = 4
 visible = false
-layout_mode = 3
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -1234,7 +1266,7 @@ theme_override_styles/pressed = SubResource("SpriteButtonPressed")
 theme_override_styles/hover = SubResource("SpriteButton")
 text = "REPLAY"
 script = ExtResource("22_highlight")
-highlight_material = SubResource("ShaderMaterial_d7b04")
+highlight_material = SubResource("ShaderMaterial_tlylo")
 
 [node name="LegacyOverlayEndlessButton" parent="Screens/OverlayLegacy/Center/ResultStack/Panel/Content/OverlayButtons" unique_id=1277210770 instance=ExtResource("22_region_button")]
 visible = false
@@ -1245,7 +1277,7 @@ theme_override_styles/pressed = SubResource("SpriteButtonPressed")
 theme_override_styles/hover = SubResource("SpriteButton")
 text = "INFINITE"
 script = ExtResource("22_highlight")
-highlight_material = SubResource("ShaderMaterial_tlylo")
+highlight_material = SubResource("ShaderMaterial_alyih")
 
 [node name="LegacyOverlayQuitButton" parent="Screens/OverlayLegacy/Center/ResultStack/Panel/Content/OverlayButtons" unique_id=1724562451 instance=ExtResource("22_region_button")]
 custom_minimum_size = Vector2(110, 31)
@@ -1256,7 +1288,7 @@ theme_override_styles/pressed = SubResource("SpriteButtonPressed")
 theme_override_styles/hover = SubResource("SpriteButton")
 text = "QUIT"
 script = ExtResource("22_highlight")
-highlight_material = SubResource("ShaderMaterial_alyih")
+highlight_material = SubResource("ShaderMaterial_h3d45")
 
 [node name="LegacyOverlayHighScore" type="RichTextLabel" parent="Screens/OverlayLegacy" unique_id=1165595282]
 custom_minimum_size = Vector2(236, 20)
@@ -1285,12 +1317,13 @@ scroll_active = false
 [node name="Overlay" parent="Screens" unique_id=527809653 instance=ExtResource("36_end_screen")]
 unique_name_in_owner = true
 visible = false
+layout_mode = 1
 show_editor_preview = false
 
 [node name="Splash" type="Control" parent="Screens" unique_id=1259278219]
 unique_name_in_owner = true
 visible = false
-layout_mode = 3
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -1304,6 +1337,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 color = Color(0.969, 0.965, 0.949, 1)
 
 [node name="Center" type="CenterContainer" parent="Screens/Splash" unique_id=1815383714]
@@ -1396,7 +1430,7 @@ theme_override_styles/pressed = SubResource("SpriteButtonPressed")
 theme_override_styles/hover = SubResource("SpriteButton")
 text = "PLAY"
 script = ExtResource("22_highlight")
-highlight_material = SubResource("ShaderMaterial_h3d45")
+highlight_material = SubResource("ShaderMaterial_ddaiw")
 
 [node name="CheckpointSelector" type="HBoxContainer" parent="Screens/Splash/Center/Content/RunButtons" unique_id=246945019]
 layout_mode = 2
@@ -1410,7 +1444,7 @@ theme_override_styles/pressed = SubResource("SpriteButtonPressed")
 theme_override_styles/hover = SubResource("SpriteButton")
 text = "FROM"
 script = ExtResource("22_highlight")
-highlight_material = SubResource("ShaderMaterial_ddaiw")
+highlight_material = SubResource("ShaderMaterial_8af6y")
 
 [node name="CheckpointArrows" type="VBoxContainer" parent="Screens/Splash/Center/Content/RunButtons/CheckpointSelector" unique_id=1071569152]
 layout_mode = 2
@@ -1449,7 +1483,7 @@ theme_override_styles/pressed = SubResource("SpriteButtonPressed")
 theme_override_styles/hover = SubResource("SpriteButton")
 text = "ENDLESS"
 script = ExtResource("22_highlight")
-highlight_material = SubResource("ShaderMaterial_8af6y")
+highlight_material = SubResource("ShaderMaterial_bwbmk")
 
 [node name="ProgressionButton" type="TextureButton" parent="Screens/Splash" unique_id=448854562]
 unique_name_in_owner = true
@@ -1524,14 +1558,16 @@ anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 8.0
-offset_top = -118.0
-offset_right = 198.0
+offset_top = -26.0
+offset_right = 150.0
 offset_bottom = -8.0
 grow_vertical = 0
+mouse_filter = 1
 theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 0.82)
 theme_override_fonts/font = ExtResource("6_1vynq")
-theme_override_font_sizes/font_size = 8
-text = "DEBUG SHORTCUTS"
+theme_override_font_sizes/font_size = 6
+text = "DEBUG SHORTCUTS
+HOVER TO OPEN  F1 HIDE"
 
 [node name="OptionsMenu" type="Control" parent="Screens/Splash" unique_id=1183997088]
 unique_name_in_owner = true
@@ -1550,6 +1586,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 color = Color(0.969, 0.965, 0.949, 1)
 
 [node name="Margin" type="MarginContainer" parent="Screens/Splash/OptionsMenu" unique_id=597374488]
@@ -1557,19 +1594,21 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 12.0
-offset_top = 12.0
-offset_right = -12.0
-offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
 
 [node name="Layout" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin" unique_id=1877249336]
 layout_mode = 2
 theme_override_constants/separation = 8
 
 [node name="Header" type="HBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout" unique_id=950710411]
+custom_minimum_size = Vector2(0, 29)
 layout_mode = 2
+theme_override_constants/separation = 4
 
 [node name="Title" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Header" unique_id=1547225580]
 layout_mode = 2
@@ -1592,10 +1631,10 @@ highlight_material = SubResource("EscapeButtonHighlightMaterial")
 [node name="Body" type="HBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout" unique_id=524780684]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 8
+theme_override_constants/separation = 5
 
 [node name="Navigation" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body" unique_id=18332861]
-custom_minimum_size = Vector2(34, 0)
+custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
 theme_override_constants/separation = 4
 
@@ -1604,7 +1643,7 @@ unique_name_in_owner = true
 modulate = Color(0.3019608, 0.50980395, 0.7607843, 1)
 light_mask = 2
 texture_filter = 1
-custom_minimum_size = Vector2(34, 34)
+custom_minimum_size = Vector2(30, 34)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("38_options")
@@ -1617,7 +1656,7 @@ highlight_material = SubResource("EscapeButtonHighlightMaterial")
 unique_name_in_owner = true
 light_mask = 2
 texture_filter = 1
-custom_minimum_size = Vector2(34, 34)
+custom_minimum_size = Vector2(30, 34)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("40_sounds")
@@ -1630,7 +1669,7 @@ highlight_material = SubResource("EscapeButtonHighlightMaterial")
 unique_name_in_owner = true
 light_mask = 2
 texture_filter = 1
-custom_minimum_size = Vector2(34, 34)
+custom_minimum_size = Vector2(30, 34)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("42_graphics")
@@ -1643,7 +1682,7 @@ highlight_material = SubResource("EscapeButtonHighlightMaterial")
 unique_name_in_owner = true
 light_mask = 2
 texture_filter = 1
-custom_minimum_size = Vector2(34, 34)
+custom_minimum_size = Vector2(30, 34)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("41_saves")
@@ -1656,7 +1695,7 @@ highlight_material = SubResource("EscapeButtonHighlightMaterial")
 unique_name_in_owner = true
 light_mask = 2
 texture_filter = 1
-custom_minimum_size = Vector2(34, 34)
+custom_minimum_size = Vector2(30, 34)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("43_links")
@@ -1742,7 +1781,7 @@ theme_override_constants/separation = 4
 [node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls/MusicRow" unique_id=1718612431]
 custom_minimum_size = Vector2(72, 24)
 layout_mode = 2
-theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_color = Color(0.235294, 0.235294, 0.235294, 1)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "MUSIC"
@@ -1845,14 +1884,61 @@ theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "SCREEN SIZE"
 
-[node name="AdaptiveResolutionButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content" unique_id=607069609]
+[node name="ScreenSizeSelector" type="HBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content" unique_id=1927612479]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="ScreenSizeArrows" type="HBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content/ScreenSizeSelector" unique_id=288497577]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="ScreenSizeUpButton" type="TextureButton" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content/ScreenSizeSelector/ScreenSizeArrows" unique_id=2036790411]
+unique_name_in_owner = true
+texture_filter = 1
+custom_minimum_size = Vector2(14, 24)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("32_arrow_up")
+ignore_texture_size = true
+stretch_mode = 3
+script = ExtResource("34_texture_highlight")
+highlight_material = SubResource("ShaderMaterial_65kn7")
+
+[node name="ScreenSizeDownButton" type="TextureButton" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content/ScreenSizeSelector/ScreenSizeArrows" unique_id=1928949849]
+unique_name_in_owner = true
+texture_filter = 1
+custom_minimum_size = Vector2(14, 24)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("33_arrow_down")
+ignore_texture_size = true
+stretch_mode = 3
+script = ExtResource("34_texture_highlight")
+highlight_material = SubResource("ShaderMaterial_65kn7")
+
+[node name="AdaptiveResolutionButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content/ScreenSizeSelector" unique_id=607069609]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
-text = "ADAPTIVE SCREEN SIZE"
+text = "CLASSIC"
+flat = true
+alignment = 0
+autowrap_mode = 3
+script = ExtResource("22_highlight")
+highlight_material = SubResource("ShaderMaterial_65kn7")
+
+[node name="TruePixelArtButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content" unique_id=1529890630]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 16
+text = "TRUE PIXEL ART"
 flat = true
 alignment = 0
 autowrap_mode = 3
@@ -1887,7 +1973,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
-text = "  BACKGROUND DEFORMATION"
+text = "BACKGROUND DEFORMATION"
 flat = true
 alignment = 0
 autowrap_mode = 3
@@ -2018,7 +2104,13 @@ unique_name_in_owner = true
 [node name="DeleteSaveConfirmation" type="ConfirmationDialog" parent="Screens/Splash/OptionsMenu" unique_id=479253506]
 unique_name_in_owner = true
 title = "DELETE SAVE"
-dialog_text = "Delete all saved data? This cannot be undone."
+borderless = true
+transparent = true
+transparent_bg = true
+theme = SubResource("DeleteSaveTheme")
+dialog_text = "DELETE SAVE?\n\nAll progress and settings\nwill be erased.\nThis cannot be undone."
+ok_button_text = "DELETE"
+cancel_button_text = "CANCEL"
 
 [node name="CheckpointMenu" type="Control" parent="Screens/Splash" unique_id=137033687]
 unique_name_in_owner = true
@@ -2076,11 +2168,13 @@ script = ExtResource("22_highlight")
 
 [node name="ProgressionMenu" parent="Screens" unique_id=1548032098 instance=ExtResource("36_progression_menu")]
 visible = false
-font_button_highlight_material = SubResource("ShaderMaterial_bwbmk")
-font_preview_tile_material = SubResource("ShaderMaterial_6pw2q")
+layout_mode = 1
+font_button_highlight_material = SubResource("ShaderMaterial_6pw2q")
+font_preview_tile_material = SubResource("ShaderMaterial_dbqh1")
 
 [node name="ChallengeSelection" parent="Screens" unique_id=504750781 instance=ExtResource("17_challenges")]
 unique_name_in_owner = true
+layout_mode = 1
 
 [node name="SaveDataManager" type="Node" parent="." unique_id=217628651]
 unique_name_in_owner = true

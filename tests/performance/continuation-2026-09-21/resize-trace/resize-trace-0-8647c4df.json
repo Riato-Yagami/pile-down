@@ -1,0 +1,3416 @@
+{
+  "config": {
+    "name": "resize-trace-0",
+    "scenario": "resize",
+    "cap": 60,
+    "pixel": false,
+    "screen_mode": "semi_adaptive",
+    "seed": "PERF-A",
+    "trace_resize": true
+  },
+  "command": [
+    "H:\\Programmes\\Dev\\Godot\\4.7.2\\Godot_v4.7.2.exe",
+    "--path",
+    "H:\\Programmes\\Dev\\Godot\\Project\\pile-down",
+    "--rendering-method",
+    "gl_compatibility",
+    "--script",
+    "tests/performance/performance_probe.gd",
+    "--",
+    "{\"name\": \"resize-trace-0\", \"scenario\": \"resize\", \"cap\": 60, \"pixel\": false, \"screen_mode\": \"semi_adaptive\", \"seed\": \"PERF-A\", \"trace_resize\": true}"
+  ],
+  "elapsed": 15.306974300000093,
+  "exit_code": 0,
+  "timed_out": false,
+  "completed": true,
+  "metadata": [
+    {
+      "adapter": "NVIDIA GeForce RTX 2070 SUPER",
+      "config": {
+        "cap": 60.0,
+        "name": "resize-trace-0",
+        "pixel": false,
+        "scenario": "resize",
+        "screen_mode": "semi_adaptive",
+        "seed": "PERF-A",
+        "trace_resize": true
+      },
+      "content_scale_factor": 1.0,
+      "content_scale_mode": 1,
+      "content_scale_size": "(256, 320)",
+      "cpu": "Intel(R) Core(TM) i7-4770K CPU @ 3.50GHz",
+      "debug_build": true,
+      "debug_settings_enabled": false,
+      "display": "Windows",
+      "engine": {
+        "build": "official",
+        "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+        "hex": 263938,
+        "major": 4,
+        "minor": 7,
+        "patch": 2,
+        "status": "stable",
+        "string": "4.7.2-stable (official)",
+        "timestamp": 0
+      },
+      "max_fps": 60,
+      "processors": 8,
+      "renderer": "gl_compatibility",
+      "screen_mode": "semi_adaptive",
+      "true_pixel_art": false,
+      "viewport": "(256.0, 320.0)",
+      "vsync": 0,
+      "window": "(512, 640)"
+    }
+  ],
+  "phases": [
+    {
+      "fps": 12.7826564916721,
+      "fps_min_interval": 5.21167206074725,
+      "frames": 5,
+      "intervals_ms": [
+        165.924,
+        191.877,
+        3.233,
+        13.411,
+        16.71
+      ],
+      "max_ms": 191.877,
+      "mean_ms": 78.231,
+      "over_33ms": 2,
+      "p95_ms": 165.924,
+      "p99_ms": 165.924,
+      "phase": "boot",
+      "samples": [
+        {
+          "draw_calls": 0.0,
+          "nodes": 1.0,
+          "objects": 2146.0,
+          "orphans": 0.0,
+          "physics_ms": 0.0,
+          "process_ms": 0.0,
+          "render_cpu_ms": 0.0,
+          "render_gpu_ms": 0.0,
+          "resources": 547.0,
+          "static_bytes": 71521424.0,
+          "texture_bytes": 7976252.0,
+          "time_ms": 6278,
+          "tweens": 0,
+          "video_bytes": 14386884.0
+        },
+        {
+          "draw_calls": 11.0,
+          "nodes": 754.0,
+          "objects": 4254.0,
+          "orphans": 0.0,
+          "physics_ms": 169.705,
+          "process_ms": 191.8,
+          "render_cpu_ms": 0.0,
+          "render_gpu_ms": 0.0,
+          "resources": 549.0,
+          "static_bytes": 85254282.0,
+          "texture_bytes": 11705196.0,
+          "time_ms": 6636,
+          "tweens": 1,
+          "video_bytes": 30896980.0
+        },
+        {
+          "background_layers": 0,
+          "draw_calls": 11.0,
+          "nodes": 754.0,
+          "objects": 4252.0,
+          "orphans": 0.0,
+          "physics_ms": 169.705,
+          "process_ms": 191.8,
+          "render_cpu_ms": 0.0,
+          "render_gpu_ms": 0.0,
+          "resources": 549.0,
+          "static_bytes": 85255082.0,
+          "texture_bytes": 11705196.0,
+          "time_ms": 6671,
+          "tweens": 0,
+          "video_bytes": 30896980.0
+        }
+      ],
+      "seconds": 0.391155
+    },
+    {
+      "fps": 58.6440654300216,
+      "fps_min_interval": 12.8905847169228,
+      "frames": 126,
+      "intervals_ms": [
+        77.576,
+        3.117,
+        13.543,
+        16.683,
+        16.658,
+        16.674,
+        16.684,
+        16.64,
+        16.691,
+        16.642,
+        16.748,
+        16.591,
+        16.658,
+        16.665,
+        16.667,
+        16.675,
+        16.665,
+        16.657,
+        16.669,
+        16.662,
+        16.668,
+        16.674,
+        16.659,
+        16.663,
+        16.677,
+        16.655,
+        16.67,
+        16.665,
+        16.665,
+        16.669,
+        16.664,
+        16.692,
+        16.639,
+        16.697,
+        16.696,
+        37.622,
+        2.865,
+        13.802,
+        16.695,
+        16.641,
+        16.68,
+        16.668,
+        16.663,
+        16.656,
+        16.664,
+        16.681,
+        16.659,
+        16.669,
+        16.674,
+        16.646,
+        16.666,
+        16.669,
+        16.662,
+        16.663,
+        16.689,
+        16.643,
+        16.68,
+        16.652,
+        16.668,
+        16.666,
+        16.67,
+        16.666,
+        16.662,
+        16.68,
+        16.653,
+        16.667,
+        16.666,
+        16.666,
+        16.699,
+        16.642,
+        16.656,
+        16.669,
+        16.69,
+        16.676,
+        16.625,
+        16.693,
+        16.655,
+        16.675,
+        16.642,
+        16.68,
+        16.687,
+        16.636,
+        16.704,
+        16.658,
+        16.632,
+        16.69,
+        16.679,
+        16.632,
+        16.664,
+        16.7,
+        16.63,
+        16.671,
+        16.659,
+        16.69,
+        16.645,
+        16.667,
+        16.661,
+        16.685,
+        16.65,
+        16.713,
+        16.621,
+        16.668,
+        16.665,
+        16.67,
+        16.678,
+        16.655,
+        16.686,
+        16.644,
+        16.677,
+        16.655,
+        16.68,
+        16.676,
+        16.653,
+        16.657,
+        16.665,
+        16.682,
+        16.653,
+        16.66,
+        16.678,
+        16.656,
+        16.669,
+        16.673,
+        16.665,
+        16.666,
+        16.658,
+        16.699
+      ],
+      "max_ms": 77.576,
+      "mean_ms": 17.0520238095238,
+      "over_33ms": 2,
+      "p95_ms": 16.699,
+      "p99_ms": 16.748,
+      "phase": "start",
+      "samples": [
+        {
+          "background_layers": 0,
+          "draw_calls": 11.0,
+          "nodes": 754.0,
+          "objects": 4251.0,
+          "orphans": 0.0,
+          "physics_ms": 0.063,
+          "process_ms": 8.626,
+          "render_cpu_ms": 0.787000000476837,
+          "render_gpu_ms": 0.828000009059906,
+          "resources": 549.0,
+          "static_bytes": 85294210.0,
+          "texture_bytes": 11705196.0,
+          "time_ms": 7674,
+          "tweens": 0,
+          "video_bytes": 30896980.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 18.0,
+          "nodes": 754.0,
+          "objects": 4279.0,
+          "orphans": 0.0,
+          "physics_ms": 0.063,
+          "process_ms": 8.626,
+          "render_cpu_ms": 0.742999970912933,
+          "render_gpu_ms": 1.01300001144409,
+          "resources": 549.0,
+          "static_bytes": 85454346.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 7935,
+          "tweens": 6,
+          "video_bytes": 30984362.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 17.0,
+          "nodes": 754.0,
+          "objects": 4271.0,
+          "orphans": 0.0,
+          "physics_ms": 0.099,
+          "process_ms": 82.423,
+          "render_cpu_ms": 0.694999992847443,
+          "render_gpu_ms": 1.06400001049042,
+          "resources": 549.0,
+          "static_bytes": 85451070.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 8201,
+          "tweens": 3,
+          "video_bytes": 30984362.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 14.0,
+          "nodes": 761.0,
+          "objects": 4284.0,
+          "orphans": 0.0,
+          "physics_ms": 0.099,
+          "process_ms": 82.423,
+          "render_cpu_ms": 0.674000024795532,
+          "render_gpu_ms": 0.935000002384186,
+          "resources": 549.0,
+          "static_bytes": 85509838.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 8456,
+          "tweens": 1,
+          "video_bytes": 30984362.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 14.0,
+          "nodes": 761.0,
+          "objects": 4278.0,
+          "orphans": 0.0,
+          "physics_ms": 0.099,
+          "process_ms": 82.423,
+          "render_cpu_ms": 0.829999983310699,
+          "render_gpu_ms": 0.879999995231628,
+          "resources": 549.0,
+          "static_bytes": 85507850.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 8722,
+          "tweens": 0,
+          "video_bytes": 30984362.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 14.0,
+          "nodes": 761.0,
+          "objects": 4278.0,
+          "orphans": 0.0,
+          "physics_ms": 0.099,
+          "process_ms": 82.423,
+          "render_cpu_ms": 1.0,
+          "render_gpu_ms": 0.916000008583069,
+          "resources": 549.0,
+          "static_bytes": 85509462.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 8989,
+          "tweens": 0,
+          "video_bytes": 30984362.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 14.0,
+          "nodes": 761.0,
+          "objects": 4278.0,
+          "orphans": 0.0,
+          "physics_ms": 0.083,
+          "process_ms": 37.556,
+          "render_cpu_ms": 0.86599999666214,
+          "render_gpu_ms": 1.067999958992,
+          "resources": 549.0,
+          "static_bytes": 85510898.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 9256,
+          "tweens": 0,
+          "video_bytes": 30984362.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 14.0,
+          "nodes": 761.0,
+          "objects": 4278.0,
+          "orphans": 0.0,
+          "physics_ms": 0.083,
+          "process_ms": 37.556,
+          "render_cpu_ms": 0.689000010490417,
+          "render_gpu_ms": 1.08500003814697,
+          "resources": 549.0,
+          "static_bytes": 85512638.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 9506,
+          "tweens": 0,
+          "video_bytes": 30984362.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 14.0,
+          "nodes": 761.0,
+          "objects": 4284.0,
+          "orphans": 0.0,
+          "physics_ms": 0.083,
+          "process_ms": 37.556,
+          "render_cpu_ms": 0.746999979019165,
+          "render_gpu_ms": 0.926999986171722,
+          "resources": 549.0,
+          "static_bytes": 85519842.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 9772,
+          "tweens": 1,
+          "video_bytes": 30984362.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 14.0,
+          "nodes": 771.0,
+          "objects": 4300.0,
+          "orphans": 0.0,
+          "physics_ms": 0.083,
+          "process_ms": 37.556,
+          "render_cpu_ms": 0.925999999046326,
+          "render_gpu_ms": 0.876999974250793,
+          "resources": 549.0,
+          "static_bytes": 85985246.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 9825,
+          "tweens": 1,
+          "video_bytes": 30984362.0
+        }
+      ],
+      "seconds": 2.148555
+    },
+    {
+      "fps": 60.0088691074342,
+      "fps_min_interval": 30.1213891984698,
+      "frames": 59,
+      "intervals_ms": [
+        33.199,
+        2.43,
+        14.263,
+        16.646,
+        16.681,
+        16.662,
+        16.663,
+        16.659,
+        16.665,
+        16.666,
+        16.664,
+        16.668,
+        16.688,
+        16.645,
+        16.667,
+        16.681,
+        16.664,
+        16.664,
+        16.685,
+        16.631,
+        16.67,
+        16.663,
+        16.666,
+        16.671,
+        16.696,
+        16.634,
+        16.664,
+        16.688,
+        16.651,
+        16.659,
+        16.711,
+        16.62,
+        16.669,
+        16.703,
+        16.63,
+        16.663,
+        16.717,
+        16.619,
+        16.666,
+        16.666,
+        16.663,
+        16.672,
+        16.666,
+        16.66,
+        16.673,
+        16.662,
+        16.672,
+        16.657,
+        16.666,
+        16.718,
+        16.639,
+        16.651,
+        16.657,
+        16.668,
+        16.663,
+        16.69,
+        16.64,
+        16.667,
+        16.687
+      ],
+      "max_ms": 33.199,
+      "mean_ms": 16.6642033898305,
+      "over_33ms": 0,
+      "p95_ms": 16.711,
+      "p99_ms": 16.718,
+      "phase": "resize_stable_before",
+      "samples": [
+        {
+          "background_layers": 1,
+          "draw_calls": 14.0,
+          "nodes": 771.0,
+          "objects": 4300.0,
+          "orphans": 0.0,
+          "physics_ms": 0.083,
+          "process_ms": 37.556,
+          "render_cpu_ms": 0.925999999046326,
+          "render_gpu_ms": 0.876999974250793,
+          "resources": 549.0,
+          "static_bytes": 85983630.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 9827,
+          "tweens": 1,
+          "video_bytes": 30984362.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4296.0,
+          "orphans": 0.0,
+          "physics_ms": 0.057,
+          "process_ms": 37.454,
+          "render_cpu_ms": 1.67299997806549,
+          "render_gpu_ms": 0.999000012874603,
+          "resources": 549.0,
+          "static_bytes": 85970430.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 10093,
+          "tweens": 0,
+          "video_bytes": 30984362.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4296.0,
+          "orphans": 0.0,
+          "physics_ms": 0.057,
+          "process_ms": 37.454,
+          "render_cpu_ms": 0.759999990463257,
+          "render_gpu_ms": 1.00100004673004,
+          "resources": 549.0,
+          "static_bytes": 85971978.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 10343,
+          "tweens": 0,
+          "video_bytes": 30984362.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4296.0,
+          "orphans": 0.0,
+          "physics_ms": 0.057,
+          "process_ms": 37.454,
+          "render_cpu_ms": 0.837999999523163,
+          "render_gpu_ms": 0.917999982833862,
+          "resources": 549.0,
+          "static_bytes": 85973534.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 10610,
+          "tweens": 0,
+          "video_bytes": 30984362.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4296.0,
+          "orphans": 0.0,
+          "physics_ms": 0.057,
+          "process_ms": 37.454,
+          "render_cpu_ms": 0.876999974250793,
+          "render_gpu_ms": 0.896000027656555,
+          "resources": 549.0,
+          "static_bytes": 85974862.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 10812,
+          "tweens": 0,
+          "video_bytes": 30984362.0
+        }
+      ],
+      "seconds": 0.983188
+    },
+    {
+      "fps": 57.2000753769882,
+      "fps_min_interval": 36.697247706422,
+      "frames": 180,
+      "intervals_ms": [
+        13.408,
+        19.818,
+        15.903,
+        16.764,
+        20.718,
+        25.933,
+        18.665,
+        19.686,
+        19.974,
+        27.25,
+        21.841,
+        20.624,
+        22.589,
+        26.798,
+        20.129,
+        18.628,
+        17.186,
+        15.951,
+        14.851,
+        20.352,
+        15.296,
+        16.501,
+        17.403,
+        17.417,
+        16.164,
+        20.853,
+        22.203,
+        20.034,
+        18.926,
+        17.144,
+        25.586,
+        25.629,
+        21.156,
+        17.678,
+        21.962,
+        17.389,
+        17.931,
+        18.904,
+        18.156,
+        17.745,
+        22.342,
+        15.271,
+        19.044,
+        22.824,
+        19.285,
+        25.386,
+        20.688,
+        19.653,
+        14.864,
+        20.391,
+        19.029,
+        16.067,
+        18.02,
+        15.445,
+        18.209,
+        20.591,
+        18.623,
+        19.386,
+        16.47,
+        20.858,
+        16.395,
+        12.325,
+        11.974,
+        11.659,
+        14.316,
+        16.683,
+        16.66,
+        16.682,
+        16.634,
+        16.689,
+        16.65,
+        16.678,
+        16.65,
+        16.683,
+        16.628,
+        16.702,
+        16.655,
+        16.667,
+        16.662,
+        16.678,
+        16.656,
+        16.666,
+        16.661,
+        16.675,
+        16.662,
+        16.658,
+        16.669,
+        16.671,
+        16.663,
+        16.664,
+        16.683,
+        16.652,
+        16.664,
+        16.69,
+        16.639,
+        16.669,
+        16.663,
+        16.666,
+        16.665,
+        16.67,
+        16.665,
+        16.724,
+        16.609,
+        16.686,
+        16.665,
+        16.644,
+        16.69,
+        16.644,
+        16.664,
+        16.71,
+        16.621,
+        16.67,
+        16.671,
+        16.661,
+        16.662,
+        17.389,
+        16.396,
+        16.953,
+        16.532,
+        16.081,
+        16.592,
+        16.727,
+        16.664,
+        16.677,
+        16.649,
+        16.676,
+        16.668,
+        16.658,
+        16.668,
+        16.666,
+        16.664,
+        16.667,
+        16.669,
+        16.667,
+        16.66,
+        16.67,
+        16.666,
+        16.666,
+        16.662,
+        16.666,
+        16.663,
+        16.669,
+        16.667,
+        16.667,
+        16.665,
+        16.662,
+        16.675,
+        16.664,
+        16.664,
+        16.667,
+        16.679,
+        16.653,
+        16.676,
+        16.669,
+        16.73,
+        16.583,
+        16.757,
+        16.577,
+        16.707,
+        16.628,
+        16.871,
+        16.455,
+        16.67,
+        18.462,
+        15.677,
+        15.862,
+        16.663,
+        16.666,
+        16.676,
+        16.653,
+        16.827,
+        16.51,
+        16.671,
+        16.658,
+        16.667,
+        16.664,
+        16.672,
+        16.664,
+        16.677,
+        16.656
+      ],
+      "max_ms": 27.25,
+      "mean_ms": 17.4824944444445,
+      "over_33ms": 0,
+      "p95_ms": 22.203,
+      "p99_ms": 25.933,
+      "phase": "resize_continuous",
+      "samples": [
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4296.0,
+          "orphans": 0.0,
+          "physics_ms": 0.057,
+          "process_ms": 37.454,
+          "render_cpu_ms": 0.876999974250793,
+          "render_gpu_ms": 0.896000027656555,
+          "resources": 549.0,
+          "static_bytes": 85974878.0,
+          "texture_bytes": 11792578.0,
+          "time_ms": 10813,
+          "tweens": 0,
+          "video_bytes": 30984362.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4296.0,
+          "orphans": 0.0,
+          "physics_ms": 0.061,
+          "process_ms": 27.119,
+          "render_cpu_ms": 1.81299996376038,
+          "render_gpu_ms": 1.17999994754791,
+          "resources": 549.0,
+          "static_bytes": 86497962.0,
+          "texture_bytes": 14724322.0,
+          "time_ms": 11076,
+          "tweens": 0,
+          "video_bytes": 33916106.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4296.0,
+          "orphans": 0.0,
+          "physics_ms": 0.061,
+          "process_ms": 27.119,
+          "render_cpu_ms": 1.62100005149841,
+          "render_gpu_ms": 1.09099996089935,
+          "resources": 549.0,
+          "static_bytes": 86635218.0,
+          "texture_bytes": 18306922.0,
+          "time_ms": 11336,
+          "tweens": 0,
+          "video_bytes": 37498706.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4295.0,
+          "orphans": 0.0,
+          "physics_ms": 0.061,
+          "process_ms": 27.119,
+          "render_cpu_ms": 1.79200005531311,
+          "render_gpu_ms": 0.894999980926514,
+          "resources": 549.0,
+          "static_bytes": 86727182.0,
+          "texture_bytes": 22236346.0,
+          "time_ms": 11594,
+          "tweens": 0,
+          "video_bytes": 41428130.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4295.0,
+          "orphans": 0.0,
+          "physics_ms": 0.061,
+          "process_ms": 27.119,
+          "render_cpu_ms": 1.67499995231628,
+          "render_gpu_ms": 0.906000018119812,
+          "resources": 549.0,
+          "static_bytes": 87236122.0,
+          "texture_bytes": 21006266.0,
+          "time_ms": 11847,
+          "tweens": 0,
+          "video_bytes": 40198050.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4295.0,
+          "orphans": 0.0,
+          "physics_ms": 0.042,
+          "process_ms": 26.613,
+          "render_cpu_ms": 1.21399998664856,
+          "render_gpu_ms": 0.787999987602234,
+          "resources": 549.0,
+          "static_bytes": 86508738.0,
+          "texture_bytes": 15188354.0,
+          "time_ms": 12110,
+          "tweens": 0,
+          "video_bytes": 34380138.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4295.0,
+          "orphans": 0.0,
+          "physics_ms": 0.042,
+          "process_ms": 26.613,
+          "render_cpu_ms": 1.33800005912781,
+          "render_gpu_ms": 0.842000007629395,
+          "resources": 549.0,
+          "static_bytes": 86877098.0,
+          "texture_bytes": 15606214.0,
+          "time_ms": 12360,
+          "tweens": 0,
+          "video_bytes": 34797998.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4295.0,
+          "orphans": 0.0,
+          "physics_ms": 0.042,
+          "process_ms": 26.613,
+          "render_cpu_ms": 1.32099997997284,
+          "render_gpu_ms": 0.996999979019165,
+          "resources": 549.0,
+          "static_bytes": 86973666.0,
+          "texture_bytes": 19813126.0,
+          "time_ms": 12627,
+          "tweens": 0,
+          "video_bytes": 39004910.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4295.0,
+          "orphans": 0.0,
+          "physics_ms": 0.042,
+          "process_ms": 26.613,
+          "render_cpu_ms": 1.76999998092651,
+          "render_gpu_ms": 1.01499998569489,
+          "resources": 549.0,
+          "static_bytes": 87047162.0,
+          "texture_bytes": 24891606.0,
+          "time_ms": 12894,
+          "tweens": 0,
+          "video_bytes": 44083390.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4295.0,
+          "orphans": 0.0,
+          "physics_ms": 0.044,
+          "process_ms": 17.114,
+          "render_cpu_ms": 1.15400004386902,
+          "render_gpu_ms": 0.847000002861023,
+          "resources": 549.0,
+          "static_bytes": 86625546.0,
+          "texture_bytes": 14493926.0,
+          "time_ms": 13160,
+          "tweens": 0,
+          "video_bytes": 33685710.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4295.0,
+          "orphans": 0.0,
+          "physics_ms": 0.044,
+          "process_ms": 17.114,
+          "render_cpu_ms": 1.17599999904633,
+          "render_gpu_ms": 0.885999977588654,
+          "resources": 549.0,
+          "static_bytes": 86771302.0,
+          "texture_bytes": 18588294.0,
+          "time_ms": 13427,
+          "tweens": 0,
+          "video_bytes": 37780078.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4295.0,
+          "orphans": 0.0,
+          "physics_ms": 0.044,
+          "process_ms": 17.114,
+          "render_cpu_ms": 1.43499994277954,
+          "render_gpu_ms": 0.992999970912933,
+          "resources": 549.0,
+          "static_bytes": 87330474.0,
+          "texture_bytes": 18441094.0,
+          "time_ms": 13695,
+          "tweens": 0,
+          "video_bytes": 37632878.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4295.0,
+          "orphans": 0.0,
+          "physics_ms": 0.044,
+          "process_ms": 17.114,
+          "render_cpu_ms": 2.02800011634827,
+          "render_gpu_ms": 0.959999978542328,
+          "resources": 549.0,
+          "static_bytes": 87366902.0,
+          "texture_bytes": 23191926.0,
+          "time_ms": 13960,
+          "tweens": 0,
+          "video_bytes": 42383710.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4295.0,
+          "orphans": 0.0,
+          "physics_ms": 0.044,
+          "process_ms": 17.114,
+          "render_cpu_ms": 2.02800011634827,
+          "render_gpu_ms": 0.959999978542328,
+          "resources": 549.0,
+          "static_bytes": 87369598.0,
+          "texture_bytes": 23191926.0,
+          "time_ms": 13960,
+          "tweens": 0,
+          "video_bytes": 42383710.0
+        }
+      ],
+      "seconds": 3.146849
+    },
+    {
+      "fps": 60.3090840557859,
+      "fps_min_interval": 59.8587333892015,
+      "frames": 60,
+      "intervals_ms": [
+        11.567,
+        16.667,
+        16.685,
+        16.646,
+        16.669,
+        16.665,
+        16.666,
+        16.665,
+        16.666,
+        16.665,
+        16.667,
+        16.666,
+        16.67,
+        16.663,
+        16.666,
+        16.698,
+        16.673,
+        16.628,
+        16.704,
+        16.626,
+        16.666,
+        16.704,
+        16.628,
+        16.672,
+        16.689,
+        16.646,
+        16.658,
+        16.676,
+        16.658,
+        16.661,
+        16.688,
+        16.648,
+        16.666,
+        16.666,
+        16.685,
+        16.652,
+        16.66,
+        16.706,
+        16.626,
+        16.666,
+        16.666,
+        16.664,
+        16.669,
+        16.665,
+        16.666,
+        16.665,
+        16.667,
+        16.664,
+        16.668,
+        16.666,
+        16.666,
+        16.664,
+        16.667,
+        16.669,
+        16.666,
+        16.664,
+        16.665,
+        16.684,
+        16.654,
+        16.673
+      ],
+      "max_ms": 16.706,
+      "mean_ms": 16.58125,
+      "over_33ms": 0,
+      "p95_ms": 16.698,
+      "p99_ms": 16.704,
+      "phase": "resize_stable_after",
+      "samples": [
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4295.0,
+          "orphans": 0.0,
+          "physics_ms": 0.044,
+          "process_ms": 17.114,
+          "render_cpu_ms": 2.02800011634827,
+          "render_gpu_ms": 0.959999978542328,
+          "resources": 549.0,
+          "static_bytes": 87524250.0,
+          "texture_bytes": 23191926.0,
+          "time_ms": 13965,
+          "tweens": 0,
+          "video_bytes": 42383710.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4295.0,
+          "orphans": 0.0,
+          "physics_ms": 0.096,
+          "process_ms": 18.322,
+          "render_cpu_ms": 0.748000025749207,
+          "render_gpu_ms": 1.06900000572205,
+          "resources": 549.0,
+          "static_bytes": 87448554.0,
+          "texture_bytes": 23191926.0,
+          "time_ms": 14227,
+          "tweens": 0,
+          "video_bytes": 42383710.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4295.0,
+          "orphans": 0.0,
+          "physics_ms": 0.096,
+          "process_ms": 18.322,
+          "render_cpu_ms": 1.17200005054474,
+          "render_gpu_ms": 1.15499997138977,
+          "resources": 549.0,
+          "static_bytes": 87450102.0,
+          "texture_bytes": 23191926.0,
+          "time_ms": 14493,
+          "tweens": 0,
+          "video_bytes": 42383710.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4295.0,
+          "orphans": 0.0,
+          "physics_ms": 0.096,
+          "process_ms": 18.322,
+          "render_cpu_ms": 0.800999999046326,
+          "render_gpu_ms": 1.1710000038147,
+          "resources": 549.0,
+          "static_bytes": 87451730.0,
+          "texture_bytes": 23191926.0,
+          "time_ms": 14760,
+          "tweens": 0,
+          "video_bytes": 42383710.0
+        },
+        {
+          "background_layers": 1,
+          "draw_calls": 16.0,
+          "nodes": 771.0,
+          "objects": 4295.0,
+          "orphans": 0.0,
+          "physics_ms": 0.096,
+          "process_ms": 18.322,
+          "render_cpu_ms": 0.801999986171722,
+          "render_gpu_ms": 1.57099997997284,
+          "resources": 549.0,
+          "static_bytes": 87453058.0,
+          "texture_bytes": 23191926.0,
+          "time_ms": 14964,
+          "tweens": 0,
+          "video_bytes": 42383710.0
+        }
+      ],
+      "seconds": 0.994875
+    }
+  ],
+  "process_samples": [
+    {
+      "wall": 2166.0855772,
+      "rss_bytes": 430080,
+      "private_bytes": 3862528,
+      "cpu_seconds": 0.0
+    },
+    {
+      "wall": 2166.3361558,
+      "rss_bytes": 62222336,
+      "private_bytes": 66973696,
+      "cpu_seconds": 0.3125
+    },
+    {
+      "wall": 2166.5870682,
+      "rss_bytes": 99729408,
+      "private_bytes": 118919168,
+      "cpu_seconds": 0.5625
+    },
+    {
+      "wall": 2166.83815,
+      "rss_bytes": 74268672,
+      "private_bytes": 94449664,
+      "cpu_seconds": 0.828125
+    },
+    {
+      "wall": 2167.0886892,
+      "rss_bytes": 146706432,
+      "private_bytes": 158572544,
+      "cpu_seconds": 1.125
+    },
+    {
+      "wall": 2167.3396037,
+      "rss_bytes": 162361344,
+      "private_bytes": 183468032,
+      "cpu_seconds": 1.375
+    },
+    {
+      "wall": 2167.5905933,
+      "rss_bytes": 152645632,
+      "private_bytes": 173899776,
+      "cpu_seconds": 1.625
+    },
+    {
+      "wall": 2167.8412766,
+      "rss_bytes": 161107968,
+      "private_bytes": 182214656,
+      "cpu_seconds": 1.875
+    },
+    {
+      "wall": 2168.0917571,
+      "rss_bytes": 155865088,
+      "private_bytes": 178118656,
+      "cpu_seconds": 2.125
+    },
+    {
+      "wall": 2168.3427417,
+      "rss_bytes": 156844032,
+      "private_bytes": 177537024,
+      "cpu_seconds": 2.34375
+    },
+    {
+      "wall": 2168.5929272,
+      "rss_bytes": 208904192,
+      "private_bytes": 206073856,
+      "cpu_seconds": 2.5625
+    },
+    {
+      "wall": 2168.843825,
+      "rss_bytes": 223014912,
+      "private_bytes": 219172864,
+      "cpu_seconds": 2.8125
+    },
+    {
+      "wall": 2169.0946373,
+      "rss_bytes": 241250304,
+      "private_bytes": 237432832,
+      "cpu_seconds": 3.0625
+    },
+    {
+      "wall": 2169.3448765,
+      "rss_bytes": 251658240,
+      "private_bytes": 247939072,
+      "cpu_seconds": 3.3125
+    },
+    {
+      "wall": 2169.5957687,
+      "rss_bytes": 254877696,
+      "private_bytes": 251019264,
+      "cpu_seconds": 3.5625
+    },
+    {
+      "wall": 2169.8460777,
+      "rss_bytes": 256237568,
+      "private_bytes": 252203008,
+      "cpu_seconds": 3.8125
+    },
+    {
+      "wall": 2170.097012,
+      "rss_bytes": 257347584,
+      "private_bytes": 253288448,
+      "cpu_seconds": 4.0625
+    },
+    {
+      "wall": 2170.3484416,
+      "rss_bytes": 260964352,
+      "private_bytes": 256921600,
+      "cpu_seconds": 4.296875
+    },
+    {
+      "wall": 2170.5988036,
+      "rss_bytes": 265699328,
+      "private_bytes": 261738496,
+      "cpu_seconds": 4.53125
+    },
+    {
+      "wall": 2170.8491779,
+      "rss_bytes": 263843840,
+      "private_bytes": 259633152,
+      "cpu_seconds": 4.78125
+    },
+    {
+      "wall": 2171.0996439,
+      "rss_bytes": 271020032,
+      "private_bytes": 264552448,
+      "cpu_seconds": 5.03125
+    },
+    {
+      "wall": 2171.3505622,
+      "rss_bytes": 271077376,
+      "private_bytes": 264552448,
+      "cpu_seconds": 5.28125
+    },
+    {
+      "wall": 2171.601471,
+      "rss_bytes": 271265792,
+      "private_bytes": 264552448,
+      "cpu_seconds": 5.53125
+    },
+    {
+      "wall": 2171.8522685,
+      "rss_bytes": 274378752,
+      "private_bytes": 267718656,
+      "cpu_seconds": 5.796875
+    },
+    {
+      "wall": 2172.1032403,
+      "rss_bytes": 274391040,
+      "private_bytes": 267718656,
+      "cpu_seconds": 6.046875
+    },
+    {
+      "wall": 2172.3541616,
+      "rss_bytes": 268636160,
+      "private_bytes": 265138176,
+      "cpu_seconds": 6.28125
+    },
+    {
+      "wall": 2172.6050839,
+      "rss_bytes": 288358400,
+      "private_bytes": 286658560,
+      "cpu_seconds": 6.515625
+    },
+    {
+      "wall": 2172.8558473,
+      "rss_bytes": 290209792,
+      "private_bytes": 303833088,
+      "cpu_seconds": 6.65625
+    },
+    {
+      "wall": 2173.1067665,
+      "rss_bytes": 290213888,
+      "private_bytes": 303833088,
+      "cpu_seconds": 6.703125
+    },
+    {
+      "wall": 2173.3576803,
+      "rss_bytes": 290213888,
+      "private_bytes": 303833088,
+      "cpu_seconds": 6.75
+    },
+    {
+      "wall": 2173.608621,
+      "rss_bytes": 290213888,
+      "private_bytes": 303833088,
+      "cpu_seconds": 6.796875
+    },
+    {
+      "wall": 2173.8589771,
+      "rss_bytes": 295174144,
+      "private_bytes": 308064256,
+      "cpu_seconds": 6.9375
+    },
+    {
+      "wall": 2174.1098674,
+      "rss_bytes": 295190528,
+      "private_bytes": 308064256,
+      "cpu_seconds": 7.0
+    },
+    {
+      "wall": 2174.3608473,
+      "rss_bytes": 295194624,
+      "private_bytes": 308064256,
+      "cpu_seconds": 7.0625
+    },
+    {
+      "wall": 2174.6112821,
+      "rss_bytes": 295301120,
+      "private_bytes": 308977664,
+      "cpu_seconds": 7.109375
+    },
+    {
+      "wall": 2174.8617447,
+      "rss_bytes": 295305216,
+      "private_bytes": 308977664,
+      "cpu_seconds": 7.171875
+    },
+    {
+      "wall": 2175.1123337,
+      "rss_bytes": 295305216,
+      "private_bytes": 308977664,
+      "cpu_seconds": 7.25
+    },
+    {
+      "wall": 2175.3627966,
+      "rss_bytes": 295305216,
+      "private_bytes": 308977664,
+      "cpu_seconds": 7.3125
+    },
+    {
+      "wall": 2175.6129878,
+      "rss_bytes": 295305216,
+      "private_bytes": 308977664,
+      "cpu_seconds": 7.359375
+    },
+    {
+      "wall": 2175.8634669,
+      "rss_bytes": 295309312,
+      "private_bytes": 308977664,
+      "cpu_seconds": 7.421875
+    },
+    {
+      "wall": 2176.1144351,
+      "rss_bytes": 295968768,
+      "private_bytes": 309837824,
+      "cpu_seconds": 7.5625
+    },
+    {
+      "wall": 2176.3652474,
+      "rss_bytes": 295968768,
+      "private_bytes": 309837824,
+      "cpu_seconds": 7.609375
+    },
+    {
+      "wall": 2176.6163651,
+      "rss_bytes": 295972864,
+      "private_bytes": 309837824,
+      "cpu_seconds": 7.65625
+    },
+    {
+      "wall": 2176.8668676,
+      "rss_bytes": 295972864,
+      "private_bytes": 309837824,
+      "cpu_seconds": 7.71875
+    },
+    {
+      "wall": 2177.1176446,
+      "rss_bytes": 300773376,
+      "private_bytes": 383827968,
+      "cpu_seconds": 7.921875
+    },
+    {
+      "wall": 2177.3685806,
+      "rss_bytes": 305131520,
+      "private_bytes": 543813632,
+      "cpu_seconds": 8.125
+    },
+    {
+      "wall": 2177.6195056,
+      "rss_bytes": 307548160,
+      "private_bytes": 751411200,
+      "cpu_seconds": 8.3125
+    },
+    {
+      "wall": 2177.8698062,
+      "rss_bytes": 308371456,
+      "private_bytes": 887296000,
+      "cpu_seconds": 8.53125
+    },
+    {
+      "wall": 2178.120678,
+      "rss_bytes": 308592640,
+      "private_bytes": 1036623872,
+      "cpu_seconds": 8.765625
+    },
+    {
+      "wall": 2178.371511,
+      "rss_bytes": 308760576,
+      "private_bytes": 1037402112,
+      "cpu_seconds": 8.9375
+    },
+    {
+      "wall": 2178.6217327,
+      "rss_bytes": 308862976,
+      "private_bytes": 1038249984,
+      "cpu_seconds": 9.09375
+    },
+    {
+      "wall": 2178.8719534,
+      "rss_bytes": 308559872,
+      "private_bytes": 1040044032,
+      "cpu_seconds": 9.296875
+    },
+    {
+      "wall": 2179.1224527,
+      "rss_bytes": 307601408,
+      "private_bytes": 1200496640,
+      "cpu_seconds": 9.515625
+    },
+    {
+      "wall": 2179.372935,
+      "rss_bytes": 307736576,
+      "private_bytes": 1199771648,
+      "cpu_seconds": 9.65625
+    },
+    {
+      "wall": 2179.6236529,
+      "rss_bytes": 307474432,
+      "private_bytes": 1198854144,
+      "cpu_seconds": 9.84375
+    },
+    {
+      "wall": 2179.8746756,
+      "rss_bytes": 307490816,
+      "private_bytes": 1199386624,
+      "cpu_seconds": 10.015625
+    },
+    {
+      "wall": 2180.1256126,
+      "rss_bytes": 307728384,
+      "private_bytes": 1199005696,
+      "cpu_seconds": 10.21875
+    },
+    {
+      "wall": 2180.376562,
+      "rss_bytes": 307728384,
+      "private_bytes": 1199005696,
+      "cpu_seconds": 10.3125
+    },
+    {
+      "wall": 2180.6269942,
+      "rss_bytes": 307732480,
+      "private_bytes": 1199005696,
+      "cpu_seconds": 10.390625
+    },
+    {
+      "wall": 2180.877601,
+      "rss_bytes": 307732480,
+      "private_bytes": 1199005696,
+      "cpu_seconds": 10.453125
+    },
+    {
+      "wall": 2181.1284948,
+      "rss_bytes": 291672064,
+      "private_bytes": 1163747328,
+      "cpu_seconds": 10.546875
+    }
+  ],
+  "observations": [
+    {
+      "expected": true,
+      "matches": true,
+      "name": "menu_visible",
+      "observed": true
+    },
+    {
+      "expected": true,
+      "matches": true,
+      "name": "ready",
+      "observed": true
+    },
+    {
+      "name": "initial_signature",
+      "observed": {
+        "cards": [
+          2
+        ],
+        "hand_size": 1,
+        "piles": 1,
+        "rules": [],
+        "seed": "PERF-A",
+        "timer": 5.0,
+        "value": 3
+      }
+    },
+    {
+      "name": "initial_background",
+      "observed": "diamonds"
+    }
+  ],
+  "diagnostics": [
+    {
+      "label": "menu_processing_scripts",
+      "scripts": {
+        "res://resources/scripts/core/GameManager.gd": {
+          "count": 1,
+          "hidden": 0
+        },
+        "res://resources/scripts/effects/BackgroundEffects.gd": {
+          "count": 1,
+          "hidden": 0
+        },
+        "res://resources/scripts/effects/DustPool.gd": {
+          "count": 1,
+          "hidden": 0
+        },
+        "res://resources/scripts/gameplay/TimerManager.gd": {
+          "count": 1,
+          "hidden": 0
+        },
+        "res://resources/scripts/special_rules/rules/FlashlightOverlay.gd": {
+          "count": 1,
+          "hidden": 1
+        },
+        "res://resources/scripts/special_rules/rules/MovingPilePattern.gd": {
+          "count": 1,
+          "hidden": 0
+        },
+        "res://resources/scripts/ui/PixelGridSnap.gd": {
+          "count": 2,
+          "hidden": 2
+        },
+        "res://resources/scripts/ui/ProgressionScrollVisual.gd": {
+          "count": 5,
+          "hidden": 5
+        },
+        "res://resources/scripts/ui/SelectableText.gd": {
+          "count": 1,
+          "hidden": 1
+        }
+      }
+    },
+    {
+      "actual_sizes": [
+        "(512, 640)",
+        "(528, 648)",
+        "(544, 656)",
+        "(560, 664)",
+        "(576, 672)",
+        "(592, 680)",
+        "(608, 688)",
+        "(624, 696)",
+        "(640, 704)",
+        "(656, 712)",
+        "(672, 720)",
+        "(688, 728)",
+        "(704, 736)",
+        "(720, 744)",
+        "(736, 752)",
+        "(752, 760)",
+        "(768, 768)",
+        "(784, 776)",
+        "(800, 784)",
+        "(816, 792)",
+        "(832, 800)",
+        "(848, 808)",
+        "(864, 816)",
+        "(880, 824)",
+        "(896, 832)",
+        "(912, 840)",
+        "(928, 848)",
+        "(944, 856)",
+        "(960, 864)",
+        "(976, 872)",
+        "(992, 880)",
+        "(1008, 888)",
+        "(1024, 896)",
+        "(1040, 904)",
+        "(1056, 912)",
+        "(1072, 920)",
+        "(1088, 928)",
+        "(1104, 936)",
+        "(1120, 944)",
+        "(1136, 952)",
+        "(1152, 640)",
+        "(1168, 648)",
+        "(1184, 656)",
+        "(1200, 664)",
+        "(1216, 672)",
+        "(1232, 680)",
+        "(1248, 688)",
+        "(1264, 696)",
+        "(1280, 704)",
+        "(1296, 712)",
+        "(1312, 720)",
+        "(1328, 728)",
+        "(1344, 736)",
+        "(1360, 744)",
+        "(1376, 752)",
+        "(1392, 760)",
+        "(1408, 768)",
+        "(1424, 776)",
+        "(1440, 784)",
+        "(1456, 792)",
+        "(512, 800)",
+        "(528, 808)",
+        "(544, 816)",
+        "(560, 824)",
+        "(576, 832)",
+        "(592, 840)",
+        "(608, 848)",
+        "(624, 856)",
+        "(640, 864)",
+        "(656, 872)",
+        "(672, 880)",
+        "(688, 888)",
+        "(704, 896)",
+        "(720, 904)",
+        "(736, 912)",
+        "(752, 920)",
+        "(768, 928)",
+        "(784, 936)",
+        "(800, 944)",
+        "(816, 952)",
+        "(832, 640)",
+        "(848, 648)",
+        "(864, 656)",
+        "(880, 664)",
+        "(896, 672)",
+        "(912, 680)",
+        "(928, 688)",
+        "(944, 696)",
+        "(960, 704)",
+        "(976, 712)",
+        "(992, 720)",
+        "(1008, 728)",
+        "(1024, 736)",
+        "(1040, 744)",
+        "(1056, 752)",
+        "(1072, 760)",
+        "(1088, 768)",
+        "(1104, 776)",
+        "(1120, 784)",
+        "(1136, 792)",
+        "(1152, 800)",
+        "(1168, 808)",
+        "(1184, 816)",
+        "(1200, 824)",
+        "(1216, 832)",
+        "(1232, 840)",
+        "(1248, 848)",
+        "(1264, 856)",
+        "(1280, 864)",
+        "(1296, 872)",
+        "(1312, 880)",
+        "(1328, 888)",
+        "(1344, 896)",
+        "(1360, 904)",
+        "(1376, 912)",
+        "(1392, 920)",
+        "(1408, 928)",
+        "(1424, 936)",
+        "(1440, 944)",
+        "(1456, 952)",
+        "(512, 640)",
+        "(528, 648)",
+        "(544, 656)",
+        "(560, 664)",
+        "(576, 672)",
+        "(592, 680)",
+        "(608, 688)",
+        "(624, 696)",
+        "(640, 704)",
+        "(656, 712)",
+        "(672, 720)",
+        "(688, 728)",
+        "(704, 736)",
+        "(720, 744)",
+        "(736, 752)",
+        "(752, 760)",
+        "(768, 768)",
+        "(784, 776)",
+        "(800, 784)",
+        "(816, 792)",
+        "(832, 800)",
+        "(848, 808)",
+        "(864, 816)",
+        "(880, 824)",
+        "(896, 832)",
+        "(912, 840)",
+        "(928, 848)",
+        "(944, 856)",
+        "(960, 864)",
+        "(976, 872)",
+        "(992, 880)",
+        "(1008, 888)",
+        "(1024, 896)",
+        "(1040, 904)",
+        "(1056, 912)",
+        "(1072, 920)",
+        "(1088, 928)",
+        "(1104, 936)",
+        "(1120, 944)",
+        "(1136, 952)",
+        "(1152, 640)",
+        "(1168, 648)",
+        "(1184, 656)",
+        "(1200, 664)",
+        "(1216, 672)",
+        "(1232, 680)",
+        "(1248, 688)",
+        "(1264, 696)",
+        "(1280, 704)",
+        "(1296, 712)",
+        "(1312, 720)",
+        "(1328, 728)",
+        "(1344, 736)",
+        "(1360, 744)",
+        "(1376, 752)",
+        "(1392, 760)",
+        "(1408, 768)",
+        "(1424, 776)",
+        "(1440, 784)",
+        "(1456, 792)"
+      ],
+      "label": "resize_set_size",
+      "total_ms": [
+        0.071,
+        7.251,
+        7.712,
+        7.535,
+        8.645,
+        11.422,
+        6.44,
+        9.085,
+        9.872,
+        12.502,
+        8.703,
+        9.838,
+        7.4,
+        8.318,
+        9.291,
+        6.67,
+        6.398,
+        7.313,
+        5.596,
+        7.034,
+        6.977,
+        7.484,
+        8.11,
+        7.174,
+        7.285,
+        6.753,
+        12.214,
+        9.556,
+        7.367,
+        7.695,
+        14.768,
+        11.575,
+        7.492,
+        7.757,
+        8.995,
+        5.751,
+        6.489,
+        6.422,
+        5.899,
+        6.773,
+        7.691,
+        6.255,
+        6.404,
+        6.861,
+        5.282,
+        8.572,
+        6.942,
+        6.428,
+        5.836,
+        6.566,
+        7.057,
+        7.17,
+        6.594,
+        6.791,
+        6.547,
+        6.844,
+        6.806,
+        6.453,
+        6.326,
+        7.237,
+        6.759,
+        6.206,
+        5.542,
+        5.668,
+        5.875,
+        6.11,
+        5.562,
+        7.117,
+        6.382,
+        5.838,
+        6.416,
+        6.185,
+        5.687,
+        6.97,
+        5.577,
+        5.002,
+        5.653,
+        6.339,
+        5.966,
+        5.989,
+        5.944,
+        5.934,
+        5.499,
+        5.466,
+        5.972,
+        5.841,
+        6.215,
+        5.864,
+        5.136,
+        5.402,
+        5.256,
+        5.162,
+        4.795,
+        6.314,
+        5.599,
+        5.51,
+        5.404,
+        6.176,
+        5.257,
+        5.743,
+        5.579,
+        7.042,
+        4.952,
+        6.503,
+        5.427,
+        6.877,
+        5.992,
+        5.573,
+        6.057,
+        6.271,
+        5.683,
+        5.973,
+        5.832,
+        7.053,
+        6.105,
+        6.73,
+        7.757,
+        7.664,
+        8.789,
+        7.397,
+        6.551,
+        6.306,
+        6.186,
+        6.889,
+        5.617,
+        7.332,
+        5.147,
+        6.322,
+        6.297,
+        7.006,
+        5.948,
+        6.025,
+        5.124,
+        6.168,
+        5.458,
+        6.542,
+        5.079,
+        7.99,
+        5.992,
+        7.339,
+        6.094,
+        7.207,
+        4.973,
+        6.547,
+        5.576,
+        7.645,
+        5.29,
+        6.339,
+        5.329,
+        6.8,
+        5.618,
+        6.275,
+        5.797,
+        6.642,
+        5.614,
+        6.405,
+        5.309,
+        6.982,
+        5.753,
+        5.763,
+        5.519,
+        6.841,
+        6.394,
+        7.173,
+        6.816,
+        6.415,
+        5.805,
+        5.475,
+        5.074,
+        5.315,
+        5.189,
+        5.581,
+        4.982,
+        5.645,
+        5.187,
+        5.182,
+        5.216,
+        5.666,
+        5.516,
+        5.443
+      ]
+    },
+    {
+      "calls": [
+        {
+          "depth": 0,
+          "frame": 250,
+          "ms": 1.028,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 250,
+          "ms": 0.325,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 251,
+          "ms": 0.605,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 251,
+          "ms": 0.353,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 252,
+          "ms": 0.561,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 252,
+          "ms": 0.468,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 253,
+          "ms": 0.676,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 253,
+          "ms": 0.698,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 254,
+          "ms": 0.638,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 254,
+          "ms": 0.535,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 255,
+          "ms": 0.622,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 255,
+          "ms": 1.227,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 256,
+          "ms": 1.376,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 256,
+          "ms": 0.769,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 257,
+          "ms": 0.709,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 257,
+          "ms": 0.425,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 258,
+          "ms": 0.674,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 258,
+          "ms": 1.289,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 259,
+          "ms": 0.745,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 259,
+          "ms": 0.543,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 260,
+          "ms": 0.651,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 260,
+          "ms": 0.42,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 261,
+          "ms": 0.666,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 261,
+          "ms": 0.52,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 262,
+          "ms": 0.749,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 262,
+          "ms": 0.372,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 263,
+          "ms": 0.544,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 263,
+          "ms": 0.455,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 264,
+          "ms": 0.671,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 264,
+          "ms": 0.346,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 265,
+          "ms": 0.552,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 265,
+          "ms": 1.007,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 266,
+          "ms": 0.84,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 266,
+          "ms": 0.516,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 267,
+          "ms": 0.513,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 267,
+          "ms": 0.354,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 268,
+          "ms": 0.536,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 268,
+          "ms": 0.377,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 269,
+          "ms": 0.682,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 269,
+          "ms": 0.334,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 270,
+          "ms": 0.713,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 270,
+          "ms": 0.555,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 271,
+          "ms": 0.922,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 271,
+          "ms": 0.507,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 272,
+          "ms": 0.66,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 272,
+          "ms": 0.618,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 273,
+          "ms": 0.604,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 273,
+          "ms": 0.332,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 274,
+          "ms": 0.924,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 274,
+          "ms": 0.648,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 275,
+          "ms": 0.526,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 275,
+          "ms": 0.329,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 276,
+          "ms": 0.523,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 276,
+          "ms": 0.34,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 277,
+          "ms": 0.526,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 277,
+          "ms": 0.47,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 278,
+          "ms": 0.777,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 278,
+          "ms": 0.421,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 279,
+          "ms": 0.838,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 279,
+          "ms": 0.556,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 280,
+          "ms": 0.525,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 280,
+          "ms": 0.401,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 281,
+          "ms": 0.709,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 281,
+          "ms": 0.5,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 282,
+          "ms": 0.503,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 282,
+          "ms": 0.438,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 283,
+          "ms": 0.531,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 283,
+          "ms": 0.387,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 284,
+          "ms": 0.531,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 284,
+          "ms": 0.387,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 285,
+          "ms": 0.535,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 285,
+          "ms": 0.374,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 286,
+          "ms": 0.685,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 286,
+          "ms": 0.455,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 287,
+          "ms": 0.647,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 287,
+          "ms": 0.881,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 288,
+          "ms": 1.21,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 288,
+          "ms": 0.467,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 289,
+          "ms": 0.723,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 289,
+          "ms": 0.58,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 290,
+          "ms": 0.63,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 291,
+          "ms": 0.535,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 291,
+          "ms": 0.381,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 292,
+          "ms": 0.751,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 292,
+          "ms": 0.452,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 293,
+          "ms": 0.523,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 293,
+          "ms": 0.504,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 294,
+          "ms": 1.193,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 295,
+          "ms": 0.576,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 295,
+          "ms": 0.323,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 296,
+          "ms": 0.529,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 296,
+          "ms": 0.356,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 297,
+          "ms": 0.485,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 298,
+          "ms": 0.544,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 298,
+          "ms": 0.344,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 299,
+          "ms": 0.665,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 299,
+          "ms": 0.35,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 300,
+          "ms": 0.496,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 301,
+          "ms": 0.537,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 301,
+          "ms": 0.339,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 302,
+          "ms": 0.562,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 303,
+          "ms": 0.519,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 303,
+          "ms": 0.32,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 304,
+          "ms": 0.562,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 304,
+          "ms": 0.4,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 305,
+          "ms": 0.658,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 306,
+          "ms": 0.548,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 306,
+          "ms": 0.341,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 307,
+          "ms": 0.488,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 308,
+          "ms": 0.636,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 308,
+          "ms": 0.357,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 309,
+          "ms": 1.007,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 309,
+          "ms": 0.348,
+          "source": "item_rect"
+        },
+        {
+          "depth": 0,
+          "frame": 310,
+          "ms": 0.766,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 311,
+          "ms": 0.477,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 312,
+          "ms": 0.526,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 313,
+          "ms": 0.524,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 314,
+          "ms": 0.683,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 315,
+          "ms": 0.588,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 316,
+          "ms": 0.893,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 317,
+          "ms": 0.767,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 318,
+          "ms": 0.723,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 319,
+          "ms": 0.869,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 320,
+          "ms": 0.765,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 321,
+          "ms": 0.629,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 322,
+          "ms": 0.664,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 323,
+          "ms": 0.583,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 324,
+          "ms": 0.458,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 325,
+          "ms": 0.644,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 326,
+          "ms": 0.695,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 327,
+          "ms": 0.74,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 328,
+          "ms": 0.744,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 329,
+          "ms": 0.757,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 330,
+          "ms": 0.57,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 331,
+          "ms": 0.516,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 332,
+          "ms": 0.563,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 333,
+          "ms": 0.599,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 334,
+          "ms": 0.755,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 335,
+          "ms": 0.845,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 336,
+          "ms": 0.607,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 337,
+          "ms": 0.494,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 338,
+          "ms": 0.526,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 339,
+          "ms": 0.479,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 340,
+          "ms": 0.512,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 341,
+          "ms": 0.481,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 342,
+          "ms": 0.855,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 343,
+          "ms": 0.605,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 344,
+          "ms": 0.532,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 345,
+          "ms": 0.572,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 346,
+          "ms": 0.809,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 347,
+          "ms": 0.468,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 348,
+          "ms": 0.653,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 349,
+          "ms": 0.588,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 350,
+          "ms": 0.761,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 351,
+          "ms": 0.493,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 352,
+          "ms": 0.93,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 353,
+          "ms": 0.587,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 354,
+          "ms": 0.925,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 355,
+          "ms": 0.663,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 356,
+          "ms": 0.611,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 357,
+          "ms": 0.906,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 358,
+          "ms": 0.831,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 359,
+          "ms": 0.665,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 360,
+          "ms": 0.682,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 361,
+          "ms": 0.707,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 362,
+          "ms": 0.865,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 363,
+          "ms": 0.581,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 364,
+          "ms": 1.045,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 365,
+          "ms": 0.662,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 366,
+          "ms": 0.606,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 367,
+          "ms": 0.512,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 368,
+          "ms": 0.569,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 369,
+          "ms": 0.528,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 370,
+          "ms": 1.02,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 371,
+          "ms": 0.562,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 372,
+          "ms": 1.169,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 373,
+          "ms": 0.557,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 374,
+          "ms": 0.743,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 375,
+          "ms": 0.458,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 376,
+          "ms": 0.762,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 377,
+          "ms": 0.887,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 378,
+          "ms": 0.654,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 379,
+          "ms": 0.731,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 380,
+          "ms": 0.6,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 381,
+          "ms": 0.455,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 382,
+          "ms": 0.693,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 383,
+          "ms": 0.617,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 384,
+          "ms": 0.763,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 385,
+          "ms": 0.479,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 386,
+          "ms": 0.846,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 387,
+          "ms": 0.805,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 388,
+          "ms": 0.785,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 389,
+          "ms": 0.751,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 390,
+          "ms": 0.601,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 391,
+          "ms": 0.462,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 392,
+          "ms": 0.694,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 393,
+          "ms": 0.56,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 394,
+          "ms": 0.947,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 395,
+          "ms": 0.469,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 396,
+          "ms": 0.798,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 397,
+          "ms": 0.536,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 398,
+          "ms": 0.784,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 399,
+          "ms": 0.561,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 400,
+          "ms": 0.644,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 401,
+          "ms": 0.72,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 402,
+          "ms": 0.606,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 403,
+          "ms": 0.561,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 404,
+          "ms": 0.668,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 405,
+          "ms": 0.475,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 406,
+          "ms": 0.587,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 407,
+          "ms": 0.764,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 408,
+          "ms": 0.697,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 409,
+          "ms": 0.647,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 410,
+          "ms": 0.788,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 411,
+          "ms": 0.694,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 412,
+          "ms": 0.768,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 413,
+          "ms": 0.478,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 414,
+          "ms": 0.73,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 415,
+          "ms": 0.687,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 416,
+          "ms": 0.528,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 417,
+          "ms": 0.515,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 418,
+          "ms": 0.515,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 419,
+          "ms": 0.485,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 420,
+          "ms": 0.685,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 421,
+          "ms": 0.459,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 422,
+          "ms": 0.679,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 423,
+          "ms": 0.459,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 424,
+          "ms": 0.552,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 425,
+          "ms": 0.46,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 426,
+          "ms": 0.603,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 427,
+          "ms": 0.607,
+          "source": "viewport"
+        },
+        {
+          "depth": 0,
+          "frame": 428,
+          "ms": 0.607,
+          "source": "viewport"
+        }
+      ],
+      "label": "resize_handler_calls"
+    }
+  ],
+  "errors": [
+    "ERROR: Failed to read the root certificate store."
+  ],
+  "log": "resize-trace-0-8647c4df.log"
+}

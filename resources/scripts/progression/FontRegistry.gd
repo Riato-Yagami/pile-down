@@ -1,7 +1,7 @@
 class_name FontRegistry
 extends RefCounted
 
-const CATALOG: DataCatalog = preload("res://resources/data/fonts.tres")
+const CATALOG := preload("res://resources/data/fonts.tres")
 
 
 static func create_all() -> Array[FontData]:
@@ -12,4 +12,5 @@ static func create_all() -> Array[FontData]:
 			push_warning("Ignoring non-FontData entry in font catalog.")
 			continue
 		result.append(data)
+	ProgressionOrdering.sort_unlockables(result)
 	return result

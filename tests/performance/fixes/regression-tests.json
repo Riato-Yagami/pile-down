@@ -1,0 +1,32 @@
+[
+  {
+    "test": "test_adaptive_background.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nadaptive rects: viewport=(480, 320) main=(480.0, 320.0) center=(480.0, 320.0) game=(480.0, 320.0) game_global=(0.0, 0.0) screens=[P: (112.0, 0.0), S: (256.0, 320.0)] artwork=(480.0, 320.0) background=(480.0, 320.0)\nresized adaptive rects: viewport=(640, 360) main=(568.0, 320.0) game_global=(0.0, 0.0) screens=[P: (156.0, 0.0), S: (256.0, 320.0)] artwork=(568.0, 320.0) background=(568.0, 320.0)\nwide adaptive rects: viewport=(1908, 968) main=(630.0, 320.0) game_global=(0.0, 0.0) screens=[P: (187.0, 0.0), S: (256.0, 320.0)] artwork=(630.0, 320.0) background=(630.0, 320.0)\nstandalone rects: game=(630.0, 320.0) screens=[P: (187.0, 0.0), S: (256.0, 320.0)] board=[P: (233.0, 64.0), S: (164.0, 163.0)] artwork=[P: (0.0, 0.0), S: (630.0, 320.0)]\n"
+  },
+  {
+    "test": "test_background_themes.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nBackground theme tests passed.\n"
+  },
+  {
+    "test": "test_background_transition_cleanup.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nBackground transition cleanup tests passed.\n"
+  },
+  {
+    "test": "test_cursor_lifecycle.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nCursor lifecycle tests passed.\n"
+  },
+  {
+    "test": "test_true_pixel_grid.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\n"
+  }
+]

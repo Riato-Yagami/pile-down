@@ -1,0 +1,29 @@
+[
+  {
+    "name": "start-A",
+    "scenario": "baseline",
+    "cap": 60,
+    "pixel": false,
+    "screen_mode": "semi_adaptive",
+    "seed": "PERF-A",
+    "duration": 2.0
+  },
+  {
+    "name": "start-B",
+    "scenario": "baseline",
+    "cap": 60,
+    "pixel": false,
+    "screen_mode": "semi_adaptive",
+    "seed": "PERF-B",
+    "duration": 2.0
+  },
+  {
+    "name": "start-C",
+    "scenario": "baseline",
+    "cap": 60,
+    "pixel": false,
+    "screen_mode": "semi_adaptive",
+    "seed": "PERF-C",
+    "duration": 2.0
+  }
+]

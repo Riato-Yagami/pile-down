@@ -17,8 +17,10 @@ signal special_rule_round_completed(
 signal hand_combo_resolved(summary: HandComboSummary)
 signal life_lost()
 signal run_completed(summary: RunSummary)
+signal pile_round_started(pile_count: int, descending: bool)
+signal pile_placement_resolved(pile_index: int, values: Array[int], complete: bool)
 
-const SAVE_PATH := "user://pile_down.cfg"
+const SAVE_PATH := SaveConfig.PATH
 const Difficulty := preload("res://resources/scripts/settings/difficulty.gd")
 
 var definitions: Array[AchievementData] = AchievementRegistry.create_all()
@@ -26,6 +28,10 @@ var unlocked: Array[StringName] = []
 var unlock_dates: Dictionary = {}
 var bonuses_maxed_once: Dictionary = {}
 var bonus_highest_levels: Dictionary = {}
+var _round_pile_count := 0
+var _round_descending := true
+var _touched_piles: Dictionary = {}
+var _pile_finished := false
 
 
 func _ready() -> void:
@@ -36,6 +42,8 @@ func _ready() -> void:
 	special_rule_round_completed.connect(_on_special_rule_round_completed)
 	hand_combo_resolved.connect(_on_hand_combo_resolved)
 	run_completed.connect(_on_run_completed)
+	pile_round_started.connect(_on_pile_round_started)
+	pile_placement_resolved.connect(_on_pile_placement_resolved)
 
 
 func load_progress() -> void:
@@ -60,6 +68,7 @@ func load_progress() -> void:
 	bonus_highest_levels = config.get_value(
 		"progression", "bonus_highest_levels", {}
 	)
+	check_all_achievements()
 
 
 func unlock(id: StringName, persist := true) -> bool:
@@ -73,7 +82,42 @@ func unlock(id: StringName, persist := true) -> bool:
 	if persist:
 		_save()
 	achievement_unlocked.emit(data)
+	if id != &"all_achievements":
+		check_all_achievements(persist)
 	return true
+
+
+func check_all_achievements(persist := true) -> void:
+	if find(&"all_achievements") == null or unlocked.has(&"all_achievements"):
+		return
+	for data in definitions:
+		if data.id != &"all_achievements" and not unlocked.has(data.id):
+			return
+	unlock(&"all_achievements", persist)
+
+
+func _on_pile_round_started(pile_count: int, descending: bool) -> void:
+	_round_pile_count = pile_count
+	_round_descending = descending
+	_touched_piles.clear()
+	_pile_finished = false
+
+
+func _on_pile_placement_resolved(
+	pile_index: int, values: Array[int], complete: bool
+) -> void:
+	_touched_piles[pile_index] = true
+	if _round_pile_count < 4 or values.size() != _round_pile_count:
+		return
+	if complete:
+		if not _pile_finished and _touched_piles.size() == 1:
+			unlock(&"one_at_a_time")
+		_pile_finished = true
+	# Invalid drops never reach this signal, so mistakes do not disqualify either feat.
+	if _round_descending and not _pile_finished and values.all(
+		func(value: int) -> bool: return value == 1
+	):
+		unlock(&"family_photo")
 
 
 func find(id: StringName) -> AchievementData:
@@ -157,6 +201,9 @@ func record_challenge_completion(
 	challenge_definitions: Array[ChallengeData]
 ) -> void:
 	var completion_ids := {
+		&"reload_required": &"complete_reload_required",
+		&"one_shot": &"complete_one_shot",
+		&"true_colors": &"complete_true_colors",
 		&"shared_clock": &"complete_shared_clock",
 		&"conveyor_belt": &"complete_conveyor_belt",
 		&"boss_rush": &"complete_boss_rush",
@@ -299,13 +346,13 @@ func _evaluate_speedrun_milestones(summary: RunSummary) -> void:
 	if (
 		summary.completed_rounds >= _required_count(&"speedrun_20_rounds", 20)
 		and summary.run_time_seconds
-		< _time_limit_seconds(&"speedrun_20_rounds", 600.0)
+		< _time_limit_seconds(&"speedrun_20_rounds", 1200.0)
 	):
 		unlock(&"speedrun_20_rounds")
 	if (
 		summary.normal_game_completed
 		and summary.run_time_seconds
-		< _time_limit_seconds(&"speedrun_full_game", 1800.0)
+		< _time_limit_seconds(&"speedrun_full_game", 2700.0)
 	):
 		unlock(&"speedrun_full_game")
 
@@ -355,8 +402,7 @@ static func _contains_all_enabled(
 
 
 func _save() -> void:
-	var config := ConfigFile.new()
-	config.load(SAVE_PATH)
+	var config := SaveConfig.load_current()
 	config.set_value("progression", "unlocked_achievements", unlocked)
 	config.set_value("progression", "achievement_unlock_dates", unlock_dates)
 	config.set_value("progression", "bonuses_maxed_once", bonuses_maxed_once)

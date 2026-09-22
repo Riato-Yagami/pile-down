@@ -1,11 +1,11 @@
-[gd_resource type="Resource" script_class="ColorPaletteData" format=3]
+[gd_resource type="Resource" script_class="ColorPaletteData" format=3 uid="uid://gnchtmc2gsfx"]
 
-[ext_resource type="Resource" path="res://resources/data/achievements/07_half_without_checkpoint.tres" id="1_xwev3"]
-[ext_resource type="Script" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_bl8cc"]
+[ext_resource type="Script" uid="uid://bdlkhp3dt6mr" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_bl8cc"]
+[ext_resource type="Resource" uid="uid://bt4ta6bl3mm4q" path="res://resources/data/achievements/09_half_no_life_lost.tres" id="progression_reward"]
 
 [resource]
 script = ExtResource("2_bl8cc")
-id = &"pastel"
 display_name = "PASTEL"
 colors = Array[Color]([Color(0.92941177, 0.8627451, 0.8235294, 1), Color(1, 0.94509804, 0.9019608, 1), Color(0.99215686, 0.8862745, 0.89411765, 1), Color(0.98039216, 0.8235294, 0.88235295, 1), Color(0.77254903, 0.87058824, 0.8666667, 1), Color(0.85882354, 0.90588236, 0.89411765, 1), Color(0.9411765, 0.9372549, 0.92156863, 1), Color(0.8392157, 0.8862745, 0.9137255, 1), Color(0.7372549, 0.83137256, 0.9019608, 1), Color(0.6, 0.75686276, 0.87058824, 1)])
-required_achievement = ExtResource("1_xwev3")
+required_achievement = ExtResource("progression_reward")
+id = &"pastel"

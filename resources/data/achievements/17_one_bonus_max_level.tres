@@ -1,11 +1,13 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://cq6cebqsi26lv"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_32e1o"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1_32e1o"]
 
 [resource]
 script = ExtResource("1_32e1o")
-id = &"one_bonus_max_level"
 title = "FULLY UPGRADED"
 description = "Raise a bonus to its maximum level."
 category = &"BONUSES & RULES"
+difficulty = 3
+reward_rationale = "Un premier bonus poussé à pleine saveur."
 reward_font = &"grape_soda"
+id = &"one_bonus_max_level"

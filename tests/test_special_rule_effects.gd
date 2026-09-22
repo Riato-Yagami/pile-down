@@ -101,9 +101,23 @@ func _run() -> void:
 	var continuous_position := entrance_card.global_position
 	await process_frame
 	assert(entrance_card.global_position.distance_to(continuous_position) < 2.0)
+	var placed_wandering_card := hand_manager.current_cards[1]
+	placed_wandering_card.global_position = Vector2(34.0, 92.0)
+	placed_wandering_card.enable_wandering(2, true)
+	await placed_wandering_card.animate_valid_drop(Vector2(140.0, 118.0), 0.12)
+	assert(not placed_wandering_card.wandering_enabled)
+	assert(placed_wandering_card.global_position.distance_to(Vector2(140.0, 118.0)) < 0.5)
+	hand_manager.forget_card(placed_wandering_card)
+	placed_wandering_card.queue_free()
 	var discarded_cards := hand_manager.current_cards.duplicate()
-	await hand_manager.discard_hand(free_range_layer)
-	await process_frame
+	hand_manager.discard_hand(free_range_layer)
+	await create_timer(0.16).timeout
+	assert(is_instance_valid(discarded_cards[0]))
+	assert(
+		not is_zero_approx(discarded_cards[0].rotation)
+		or discarded_cards[0].modulate.a < 1.0
+	)
+	await create_timer(0.45).timeout
 	for card in discarded_cards:
 		assert(not is_instance_valid(card))
 
@@ -142,6 +156,7 @@ func _run() -> void:
 
 	var flashlight := FlashlightScene.instantiate() as FlashlightOverlay
 	stage.add_child(flashlight)
+	assert(flashlight.darkness_alpha >= 0.98)
 	assert(
 		is_equal_approx(
 			flashlight.flashlight_radius,

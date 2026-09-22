@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://csg0sfqi87rcr"]
 
 [ext_resource type="Script" uid="uid://cgq5p8m16pb3q" path="res://resources/scripts/gameplay/Pile.gd" id="1"]
-[ext_resource type="Texture2D" path="res://resources/materials/TileFaceLitTexture.tres" id="2"]
-[ext_resource type="Texture2D" path="res://resources/materials/TileBackLitTexture.tres" id="3"]
+[ext_resource type="Texture2D" path="res://resources/materials/textures/tiles/TileFaceLitTexture.tres" id="2"]
+[ext_resource type="Texture2D" path="res://resources/materials/textures/tiles/TileBackLitTexture.tres" id="3"]
 [ext_resource type="PackedScene" path="res://resources/scenes/special_rules/RegenerationRing.tscn" id="4"]
 [ext_resource type="FontFile" uid="uid://0lls67bvy7ct" path="res://resources/fonts/VCR_OSD_MONO_1.001.ttf" id="5"]
 

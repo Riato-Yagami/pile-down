@@ -6,12 +6,10 @@
 
 [resource]
 script = ExtResource("3_708ij")
-id = &"digital_disco"
 display_name = "DIGITAL DISCO"
 font = ExtResource("1_iys68")
 tile_font_size = 16
 tile_font_offset = Vector2(0, 1)
 title_font_offset = Vector2(1, 0)
-title_font_size = null
-override_hidden_tile_with_font = null
 required_achievement = ExtResource("2_iys68")
+id = &"digital_disco"

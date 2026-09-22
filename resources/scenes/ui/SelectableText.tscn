@@ -1,0 +1,70 @@
+[gd_scene format=3 uid="uid://ckv4xpp58pvfb"]
+
+[ext_resource type="Script" uid="uid://c4jq5vm6cyt8w" path="res://resources/scripts/ui/SelectableText.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://ewyetsx1yxo3" path="res://resources/sprites/ui/check/unchecked.png" id="2_unchecked"]
+[ext_resource type="FontFile" uid="uid://0lls67bvy7ct" path="res://resources/fonts/VCR_OSD_MONO_1.001.ttf" id="3_yxskl"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_yxskl"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_kmgxk"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_iuw3a"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_r7mr1"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_u3jm0"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_o1jam"]
+
+[node name="SelectableText" type="Button" unique_id=1162727522]
+texture_filter = 1
+custom_minimum_size = Vector2(70, 24)
+offset_right = 70.0
+offset_bottom = 24.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 0)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 0)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 0)
+theme_override_colors/font_hover_pressed_color = Color(1, 1, 1, 0)
+theme_override_colors/font_disabled_color = Color(1, 1, 1, 0)
+theme_override_constants/h_separation = 1
+theme_override_styles/normal = SubResource("StyleBoxEmpty_yxskl")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_kmgxk")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_iuw3a")
+theme_override_styles/hover_pressed = SubResource("StyleBoxEmpty_r7mr1")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_u3jm0")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_o1jam")
+toggle_mode = true
+text = "SELECT"
+alignment = 0
+autowrap_mode = 3
+script = ExtResource("1_script")
+
+[node name="CheckboxSprite" type="TextureRect" parent="." unique_id=139743028]
+texture_filter = 1
+layout_mode = 0
+offset_left = 1.0
+offset_top = 5.0
+offset_right = 13.0
+offset_bottom = 18.0
+mouse_filter = 2
+texture = ExtResource("2_unchecked")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TextLabel" type="Label" parent="." unique_id=1099107311]
+custom_minimum_size = Vector2(54, 15)
+layout_mode = 0
+offset_left = 16.0
+offset_top = 4.0
+offset_right = 70.0
+offset_bottom = 19.0
+theme_override_colors/font_color = Color(0.23529412, 0.23529412, 0.23529412, 1)
+theme_override_fonts/font = ExtResource("3_yxskl")
+theme_override_font_sizes/font_size = 16
+text = "SELECT"
+vertical_alignment = 1
+clip_text = true

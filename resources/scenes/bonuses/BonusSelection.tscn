@@ -1,9 +1,10 @@
-[gd_scene load_steps=7 format=3 uid="uid://4qoantl5j8b1"]
+[gd_scene load_steps=8 format=3 uid="uid://4qoantl5j8b1"]
 
 [ext_resource type="Script" uid="uid://d1o52b36ndtri" path="res://resources/scripts/bonuses/BonusSelection.gd" id="1"]
 [ext_resource type="PackedScene" path="res://resources/scenes/bonuses/BonusChoiceCard.tscn" id="2"]
 [ext_resource type="FontFile" uid="uid://camkk5gui0ppq" path="res://resources/fonts/Tiny5-Regular.ttf" id="3_no1hs"]
 [ext_resource type="PackedScene" path="res://resources/scenes/ui/RegionButton.tscn" id="4_skip"]
+[ext_resource type="Texture2D" uid="uid://ckdjfkkb8bsph" path="res://resources/materials/textures/ui/buttons/button.tres" id="5_button"]
 
 [sub_resource type="Shader" id="ButtonHighlightShader"]
 code = "shader_type canvas_item;
@@ -122,3 +123,5 @@ grow_horizontal = 0
 grow_vertical = 0
 text = "SKIP"
 theme_override_fonts/font = ExtResource("3_no1hs")
+button_texture = ExtResource("5_button")
+highlight_material = SubResource("ShaderMaterial_thxoa")

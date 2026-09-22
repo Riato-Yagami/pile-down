@@ -1,0 +1,12 @@
+[
+  {
+    "name": "states-trace",
+    "scenario": "states",
+    "cap": 60,
+    "seed": "PERF-A",
+    "trace_render": true,
+    "pixel": false,
+    "screen_mode": "semi_adaptive",
+    "duration": 1
+  }
+]

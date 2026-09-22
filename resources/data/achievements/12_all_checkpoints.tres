@@ -1,11 +1,13 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://drlu3dm57gb2p"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_2as7l"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1_2as7l"]
 
 [resource]
 script = ExtResource("1_2as7l")
-id = &"all_checkpoints"
 title = "ALL STOPS"
 description = "Unlock every checkpoint in Normal Mode."
 category = &"CHECKPOINTS"
+difficulty = 6
+reward_rationale = "Un HUD complet pour tous les points de passage."
 reward_font = &"eight_bit_hud"
+id = &"all_checkpoints"

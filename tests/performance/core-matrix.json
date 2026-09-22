@@ -1,0 +1,78 @@
+[
+  {
+    "name": "states-A",
+    "scenario": "states",
+    "seed": "PERF-A",
+    "duration": 3,
+    "cap": 60
+  },
+  {
+    "name": "states-B",
+    "scenario": "states",
+    "seed": "PERF-B",
+    "duration": 3,
+    "cap": 60
+  },
+  {
+    "name": "states-C",
+    "scenario": "states",
+    "seed": "PERF-C",
+    "duration": 3,
+    "cap": 60
+  },
+  {
+    "name": "renderer-gl_compatibility",
+    "scenario": "baseline",
+    "renderer": "gl_compatibility",
+    "duration": 4,
+    "cap": 0
+  },
+  {
+    "name": "renderer-mobile",
+    "scenario": "baseline",
+    "renderer": "mobile",
+    "duration": 4,
+    "cap": 0
+  },
+  {
+    "name": "renderer-forward_plus",
+    "scenario": "baseline",
+    "renderer": "forward_plus",
+    "duration": 4,
+    "cap": 0
+  },
+  {
+    "name": "overlap-0",
+    "scenario": "overlap",
+    "duration": 2,
+    "cap": 60,
+    "iterations": 30
+  },
+  {
+    "name": "overlap-1",
+    "scenario": "overlap",
+    "duration": 2,
+    "cap": 60,
+    "iterations": 30
+  },
+  {
+    "name": "overlap-2",
+    "scenario": "overlap",
+    "duration": 2,
+    "cap": 60,
+    "iterations": 30
+  },
+  {
+    "name": "stress",
+    "scenario": "stress",
+    "duration": 3,
+    "cap": 60,
+    "iterations": 30
+  },
+  {
+    "name": "endless",
+    "scenario": "endless",
+    "cap": 60,
+    "iterations": 12
+  }
+]

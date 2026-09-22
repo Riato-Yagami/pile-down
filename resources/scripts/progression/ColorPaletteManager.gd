@@ -3,7 +3,7 @@ extends Node
 
 signal palette_changed(palette_id: StringName)
 
-const SAVE_PATH := "user://pile_down.cfg"
+const SAVE_PATH := SaveConfig.PATH
 
 var definitions: Array[ColorPaletteData] = ColorPaletteRegistry.create_all()
 var unlocked: Array[StringName] = []
@@ -11,8 +11,7 @@ var selected_palette: StringName = &"arcade"
 
 
 func load_progress() -> void:
-	var config := ConfigFile.new()
-	config.load(SAVE_PATH)
+	var config := SaveConfig.load_current()
 	for data in definitions:
 		if data.default_unlocked and not unlocked.has(data.id):
 			unlocked.append(data.id)
@@ -62,8 +61,7 @@ func find(id: StringName) -> ColorPaletteData:
 
 
 func _save() -> void:
-	var config := ConfigFile.new()
-	config.load(SAVE_PATH)
+	var config := SaveConfig.load_current()
 	config.set_value("progression", "unlocked_palettes", unlocked)
 	config.set_value("settings", "selected_palette", selected_palette)
 	config.save(SAVE_PATH)

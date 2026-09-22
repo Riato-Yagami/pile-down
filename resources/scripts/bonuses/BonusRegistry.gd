@@ -1,7 +1,7 @@
 class_name BonusRegistry
 extends RefCounted
 
-const CATALOG: DataCatalog = preload("res://resources/data/bonuses.tres")
+const CATALOG := preload("res://resources/data/bonuses.tres")
 
 
 static func create_all() -> Array[BonusData]:

@@ -5,7 +5,22 @@
 [ext_resource type="Texture2D" path="res://resources/materials/textures/ui/panels/pop-up.tres" id="3_popup"]
 [ext_resource type="PackedScene" path="res://resources/scenes/ui/RegionButton.tscn" id="4_button"]
 [ext_resource type="Texture2D" uid="uid://ckdjfkkb8bsph" path="res://resources/materials/textures/ui/buttons/button.tres" id="5_gk13o"]
-[ext_resource type="PackedScene" path="res://resources/scenes/ui/SeedCopyDisplay.tscn" id="6_seed_copy"]
+[ext_resource type="PackedScene" uid="uid://btkfwvuebrq3c" path="res://resources/scenes/ui/SeedCopyDisplay.tscn" id="6_seed_copy"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_67rst"]
+atlas = ExtResource("5_gk13o")
+region = Rect2(0, 0, 86, 31)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_auuht"]
+content_margin_left = 9.0
+content_margin_top = 4.0
+content_margin_right = 9.0
+content_margin_bottom = 4.0
+texture = SubResource("AtlasTexture_67rst")
+texture_margin_left = 8.0
+texture_margin_top = 6.0
+texture_margin_right = 8.0
+texture_margin_bottom = 6.0
 
 [sub_resource type="Shader" id="ButtonHighlightShader"]
 code = "shader_type canvas_item;
@@ -23,41 +38,11 @@ void fragment() {
 	COLOR = source;
 }"
 
-[sub_resource type="ShaderMaterial" id="ButtonHighlightMaterial"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fsyr8"]
 resource_local_to_scene = true
 shader = SubResource("ButtonHighlightShader")
 shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
 shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_gk13o"]
-atlas = ExtResource("5_gk13o")
-region = Rect2(0, 0, 86, 31)
-
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_67rst"]
-content_margin_left = 9.0
-content_margin_top = 4.0
-content_margin_right = 9.0
-content_margin_bottom = 4.0
-texture = SubResource("AtlasTexture_gk13o")
-texture_margin_left = 8.0
-texture_margin_top = 6.0
-texture_margin_right = 8.0
-texture_margin_bottom = 6.0
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_auuht"]
-atlas = ExtResource("5_gk13o")
-region = Rect2(0, 0, 86, 31)
-
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_fsyr8"]
-content_margin_left = 9.0
-content_margin_top = 4.0
-content_margin_right = 9.0
-content_margin_bottom = 4.0
-texture = SubResource("AtlasTexture_auuht")
-texture_margin_left = 8.0
-texture_margin_top = 6.0
-texture_margin_right = 8.0
-texture_margin_bottom = 6.0
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_orfsp"]
 atlas = ExtResource("5_gk13o")
@@ -73,6 +58,33 @@ texture_margin_left = 8.0
 texture_margin_top = 6.0
 texture_margin_right = 8.0
 texture_margin_bottom = 6.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_b0ioj"]
+resource_local_to_scene = true
+shader = SubResource("ButtonHighlightShader")
+shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
+shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_iea5y"]
+atlas = ExtResource("5_gk13o")
+region = Rect2(0, 0, 86, 31)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_vitw5"]
+content_margin_left = 9.0
+content_margin_top = 4.0
+content_margin_right = 9.0
+content_margin_bottom = 4.0
+texture = SubResource("AtlasTexture_iea5y")
+texture_margin_left = 8.0
+texture_margin_top = 6.0
+texture_margin_right = 8.0
+texture_margin_bottom = 6.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_0vgki"]
+resource_local_to_scene = true
+shader = SubResource("ButtonHighlightShader")
+shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
+shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
 
 [node name="EndScreen" type="Control" unique_id=1403354288]
 layout_mode = 3
@@ -125,7 +137,7 @@ scroll_active = false
 [node name="OverlayPanel" type="NinePatchRect" parent="OverlayCenter/ResultStack" unique_id=1651946499]
 unique_name_in_owner = true
 texture_filter = 1
-custom_minimum_size = Vector2(180, 230)
+custom_minimum_size = Vector2(236, 255)
 layout_mode = 2
 size_flags_horizontal = 4
 texture = ExtResource("3_popup")
@@ -175,11 +187,6 @@ fit_content = true
 scroll_active = false
 horizontal_alignment = 1
 
-[node name="EndSeedDisplay" parent="OverlayCenter/ResultStack/OverlayPanel/Content" instance=ExtResource("6_seed_copy")]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-
 [node name="OverlayButtons" type="VBoxContainer" parent="OverlayCenter/ResultStack/OverlayPanel/Content" unique_id=641676646]
 unique_name_in_owner = true
 layout_mode = 2
@@ -190,29 +197,17 @@ theme_override_constants/separation = 6
 unique_name_in_owner = true
 custom_minimum_size = Vector2(110, 31)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxTexture_67rst")
-theme_override_styles/pressed = SubResource("StyleBoxTexture_67rst")
-theme_override_styles/hover = SubResource("StyleBoxTexture_67rst")
-theme_override_styles/disabled = SubResource("StyleBoxTexture_67rst")
-theme_override_styles/focus = SubResource("StyleBoxTexture_67rst")
+theme_override_styles/normal = SubResource("StyleBoxTexture_auuht")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_auuht")
+theme_override_styles/hover = SubResource("StyleBoxTexture_auuht")
+theme_override_styles/disabled = SubResource("StyleBoxTexture_auuht")
+theme_override_styles/focus = SubResource("StyleBoxTexture_auuht")
 text = "REPLAY"
-highlight_material = SubResource("ButtonHighlightMaterial")
+highlight_material = SubResource("ShaderMaterial_fsyr8")
 
 [node name="OverlayEndlessButton" parent="OverlayCenter/ResultStack/OverlayPanel/Content/OverlayButtons" unique_id=1000261176 instance=ExtResource("4_button")]
 unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(110, 31)
-layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxTexture_fsyr8")
-theme_override_styles/pressed = SubResource("StyleBoxTexture_fsyr8")
-theme_override_styles/hover = SubResource("StyleBoxTexture_fsyr8")
-theme_override_styles/disabled = SubResource("StyleBoxTexture_fsyr8")
-theme_override_styles/focus = SubResource("StyleBoxTexture_fsyr8")
-text = "INFINITE"
-highlight_material = SubResource("ButtonHighlightMaterial")
-
-[node name="OverlayQuitButton" parent="OverlayCenter/ResultStack/OverlayPanel/Content/OverlayButtons" unique_id=1689466545 instance=ExtResource("4_button")]
-unique_name_in_owner = true
 custom_minimum_size = Vector2(110, 31)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxTexture_dsqwc")
@@ -220,8 +215,25 @@ theme_override_styles/pressed = SubResource("StyleBoxTexture_dsqwc")
 theme_override_styles/hover = SubResource("StyleBoxTexture_dsqwc")
 theme_override_styles/disabled = SubResource("StyleBoxTexture_dsqwc")
 theme_override_styles/focus = SubResource("StyleBoxTexture_dsqwc")
+text = "INFINITE"
+highlight_material = SubResource("ShaderMaterial_b0ioj")
+
+[node name="OverlayQuitButton" parent="OverlayCenter/ResultStack/OverlayPanel/Content/OverlayButtons" unique_id=1689466545 instance=ExtResource("4_button")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 31)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxTexture_vitw5")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_vitw5")
+theme_override_styles/hover = SubResource("StyleBoxTexture_vitw5")
+theme_override_styles/disabled = SubResource("StyleBoxTexture_vitw5")
+theme_override_styles/focus = SubResource("StyleBoxTexture_vitw5")
 text = "QUIT"
-highlight_material = SubResource("ButtonHighlightMaterial")
+highlight_material = SubResource("ShaderMaterial_0vgki")
+
+[node name="EndSeedDisplay" parent="OverlayCenter/ResultStack/OverlayPanel/Content" unique_id=1904356536 instance=ExtResource("6_seed_copy")]
+unique_name_in_owner = true
+layout_mode = 2
+side_padding = Vector2(0.2, 0)
 
 [node name="OverlayUnlocks" type="RichTextLabel" parent="OverlayCenter/ResultStack" unique_id=12267111]
 unique_name_in_owner = true

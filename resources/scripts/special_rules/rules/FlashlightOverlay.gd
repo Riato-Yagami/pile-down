@@ -5,7 +5,7 @@ const Difficulty := preload("res://resources/scripts/settings/difficulty.gd")
 
 var flashlight_radius := Difficulty.LIGHTS_OUT_RADIUS
 @export var flashlight_softness := 14.0
-@export var darkness_alpha := 0.94
+@export_range(0.0, 1.0, 0.005) var darkness_alpha := 0.985
 
 var target_position := Vector2(128.0, 160.0)
 var light_position := Vector2(128.0, 160.0)

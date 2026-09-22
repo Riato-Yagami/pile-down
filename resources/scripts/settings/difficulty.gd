@@ -25,7 +25,7 @@ const MIN_TURN_TIME := 3.0
 #const MIN_TURN_TIME := 3.0
 
 # The counter starts here and reaches zero after this many cleared rounds.
-const MAX_ROUNDS := 50
+const MAX_ROUNDS := 30
 # Compatibility alias for scenes and saves created before MAX_ROUNDS was named.
 const TOTAL_ROUNDS := MAX_ROUNDS
 
@@ -51,6 +51,8 @@ const STARTER_STAT_MULTIPLIER := 2.0
 # Permanent progression checkpoints use the internal, increasing round number.
 const CHECKPOINT_INTERVAL := 5
 const ENABLE_CHECKPOINTS := true
+const BG_TRANSITION_DURATION := 0.95
+const BG_MORPH_PIXELATED := true
 
 # The first round uses these pile/card weights independently from the regular
 # weights above.

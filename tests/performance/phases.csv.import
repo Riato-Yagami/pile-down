@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://cej28kdwys2hu"
+
+[deps]
+
+files=["res://tests/performance/phases.file.translation", "res://tests/performance/phases.phase.translation", "res://tests/performance/phases.frames.translation", "res://tests/performance/phases.seconds.translation", "res://tests/performance/phases.fps.translation", "res://tests/performance/phases.fps.translation", "res://tests/performance/phases.mean.translation", "res://tests/performance/phases.p95.translation", "res://tests/performance/phases.p99.translation", "res://tests/performance/phases.max.translation", "res://tests/performance/phases.over.translation", "res://tests/performance/phases.gpu.translation", "res://tests/performance/phases.render.translation", "res://tests/performance/phases.draw.translation", "res://tests/performance/phases.static.translation", "res://tests/performance/phases.video.translation", "res://tests/performance/phases.texture.translation", "res://tests/performance/phases.nodes.translation", "res://tests/performance/phases.objects.translation", "res://tests/performance/phases.resources.translation", "res://tests/performance/phases.orphans.translation", "res://tests/performance/phases.tweens.translation", "res://tests/performance/phases.background.translation"]
+
+source_file="res://tests/performance/phases.csv"
+dest_files=["res://tests/performance/phases.file.translation", "res://tests/performance/phases.phase.translation", "res://tests/performance/phases.frames.translation", "res://tests/performance/phases.seconds.translation", "res://tests/performance/phases.fps.translation", "res://tests/performance/phases.fps.translation", "res://tests/performance/phases.mean.translation", "res://tests/performance/phases.p95.translation", "res://tests/performance/phases.p99.translation", "res://tests/performance/phases.max.translation", "res://tests/performance/phases.over.translation", "res://tests/performance/phases.gpu.translation", "res://tests/performance/phases.render.translation", "res://tests/performance/phases.draw.translation", "res://tests/performance/phases.static.translation", "res://tests/performance/phases.video.translation", "res://tests/performance/phases.texture.translation", "res://tests/performance/phases.nodes.translation", "res://tests/performance/phases.objects.translation", "res://tests/performance/phases.resources.translation", "res://tests/performance/phases.orphans.translation", "res://tests/performance/phases.tweens.translation", "res://tests/performance/phases.background.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true

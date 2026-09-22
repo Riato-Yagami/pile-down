@@ -1,0 +1,23 @@
+[
+  {
+    "name": "overlap-0",
+    "scenario": "overlap",
+    "duration": 2,
+    "cap": 60,
+    "iterations": 30
+  },
+  {
+    "name": "overlap-1",
+    "scenario": "overlap",
+    "duration": 2,
+    "cap": 60,
+    "iterations": 30
+  },
+  {
+    "name": "overlap-2",
+    "scenario": "overlap",
+    "duration": 2,
+    "cap": 60,
+    "iterations": 30
+  }
+]

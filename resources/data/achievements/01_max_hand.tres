@@ -1,11 +1,13 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://df0haixkt1mtx"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_5al4h"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1_5al4h"]
 
 [resource]
 script = ExtResource("1_5al4h")
-id = &"max_hand"
 title = "FULL HAND"
 description = "Reach the maximum hand size."
 category = &"STATS"
+difficulty = 3
+reward_rationale = "Une police compacte pour une main pleine."
 reward_font = &"dico"
+id = &"max_hand"

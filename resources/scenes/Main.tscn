@@ -1,6 +1,7 @@
-[gd_scene format=3 uid="uid://dejgbp7oj3xk1"]
+[gd_scene load_steps=3 format=3 uid="uid://dejgbp7oj3xk1"]
 
 [ext_resource type="PackedScene" uid="uid://nhd7ja2wd0h5" path="res://resources/scenes/Game.tscn" id="1_game"]
+[ext_resource type="Script" path="res://resources/scripts/ui/CustomCursor.gd" id="2_cursor"]
 
 [node name="Main" type="Control" unique_id=1300097332]
 layout_mode = 3
@@ -19,6 +20,9 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 color = Color(0.968627, 0.964706, 0.94902, 1)
+
+[node name="CustomCursor" type="Node" parent="."]
+script = ExtResource("2_cursor")
 
 [node name="GameCenter" type="CenterContainer" parent="." unique_id=388488657]
 layout_mode = 1

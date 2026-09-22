@@ -1,0 +1,32 @@
+[
+  {
+    "test": "test_endless_mode.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nEndless mode integration test passed.\nWARNING: 2 ObjectDB instances were leaked at exit (run with `--verbose` for details).\n   at: cleanup (core/object/object.cpp:2536)\n"
+  },
+  {
+    "test": "test_mistake_retry.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nMistake retry integration test passed.\n"
+  },
+  {
+    "test": "test_save_data_manager.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nSave data manager tests passed.\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\n"
+  },
+  {
+    "test": "test_seed_replay.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nSeed replay tests passed.\n"
+  },
+  {
+    "test": "test_touch_drag.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nTouch drag integration test passed.\n"
+  }
+]

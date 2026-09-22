@@ -1,0 +1,14 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://cngfxuvwafhsv"]
+
+[ext_resource type="Shader" uid="uid://eaj47v5jwon8" path="res://resources/shaders/backgrounds/BackgroundWaves.gdshader" id="1_shader"]
+
+[resource]
+resource_local_to_scene = true
+shader = ExtResource("1_shader")
+shader_parameter/speed = Vector2(0.2, 0)
+shader_parameter/time = 0.0
+shader_parameter/rotation = 0.0
+shader_parameter/wave_width = 0.18
+shader_parameter/wave_amplitude = 0.7
+shader_parameter/wave_frequency = Vector2(7.5, 14)
+shader_parameter/wave_type = 0

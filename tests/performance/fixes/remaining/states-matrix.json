@@ -1,0 +1,29 @@
+[
+  {
+    "name": "states-A",
+    "scenario": "states",
+    "cap": 60,
+    "seed": "PERF-A",
+    "pixel": false,
+    "screen_mode": "semi_adaptive",
+    "duration": 1
+  },
+  {
+    "name": "states-B",
+    "scenario": "states",
+    "cap": 60,
+    "seed": "PERF-B",
+    "pixel": false,
+    "screen_mode": "semi_adaptive",
+    "duration": 1
+  },
+  {
+    "name": "states-C",
+    "scenario": "states",
+    "cap": 60,
+    "seed": "PERF-C",
+    "pixel": false,
+    "screen_mode": "semi_adaptive",
+    "duration": 1
+  }
+]

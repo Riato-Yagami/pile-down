@@ -1,7 +1,7 @@
 class_name AchievementRegistry
 extends RefCounted
 
-const CATALOG: DataCatalog = preload("res://resources/data/achievements.tres")
+const CATALOG := preload("res://resources/data/achievements.tres")
 
 
 static func create_all() -> Array[AchievementData]:
@@ -12,6 +12,7 @@ static func create_all() -> Array[AchievementData]:
 			push_warning("Ignoring non-AchievementData entry in achievement catalog.")
 			continue
 		result.append(data)
+	ProgressionOrdering.sort_achievements(result)
 	return result
 
 

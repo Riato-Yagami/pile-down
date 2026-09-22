@@ -1,10 +1,11 @@
 [gd_resource type="Resource" script_class="ColorPaletteData" format=3 uid="uid://cx5jufy8i0i4"]
 
 [ext_resource type="Script" uid="uid://bdlkhp3dt6mr" path="res://resources/scripts/progression/ColorPaletteData.gd" id="1_mmg8e"]
+[ext_resource type="Resource" path="res://resources/data/achievements/62_complete_true_colors.tres" id="progression_reward"]
 
 [resource]
 script = ExtResource("1_mmg8e")
-id = &"arcade_crt"
 display_name = "ARCADE"
 colors = Array[Color]([Color(0.34901962, 0.38431373, 0.45882353, 1), Color(0, 0.72156864, 0.8509804, 1), Color(1, 0.23921569, 0.5058824, 1), Color(1, 0.8235294, 0.24705882, 1), Color(0, 0.72156864, 0.5803922, 1), Color(1, 0.4392157, 0.2627451, 1), Color(0.4509804, 0.34117648, 0.8509804, 1), Color(0.23921569, 0.49411765, 1, 1), Color(0.6392157, 0.79607844, 0.21960784, 1), Color(0.8235294, 0.32156864, 0.88235295, 1)])
-default_unlocked = true
+required_achievement = ExtResource("progression_reward")
+id = &"arcade_crt"

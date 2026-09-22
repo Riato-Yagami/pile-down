@@ -1,11 +1,11 @@
-[gd_resource type="Resource" script_class="ColorPaletteData" format=3]
+[gd_resource type="Resource" script_class="ColorPaletteData" format=3 uid="uid://d3n7j3l864tar"]
 
-[ext_resource type="Resource" path="res://resources/data/achievements/04_complete_10_rounds.tres" id="1_41htt"]
-[ext_resource type="Script" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_1ut5v"]
+[ext_resource type="Script" uid="uid://bdlkhp3dt6mr" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_1ut5v"]
+[ext_resource type="Resource" path="res://resources/data/achievements/05_complete_half_game.tres" id="progression_reward"]
 
 [resource]
 script = ExtResource("2_1ut5v")
-id = &"ocean_sunset"
 display_name = "OCEAN SUNSET"
 colors = Array[Color]([Color(0, 0.07058824, 0.09803922, 1), Color(0, 0.37254903, 0.4509804, 1), Color(0.039215688, 0.5764706, 0.5882353, 1), Color(0.5803922, 0.8235294, 0.7411765, 1), Color(0.9137255, 0.84705883, 0.6509804, 1), Color(0.93333334, 0.60784316, 0, 1), Color(0.7921569, 0.40392157, 0.007843138, 1), Color(0.73333335, 0.24313726, 0.011764706, 1), Color(0.68235296, 0.1254902, 0.07058824, 1), Color(0.60784316, 0.13333334, 0.14901961, 1)])
-required_achievement = ExtResource("1_41htt")
+required_achievement = ExtResource("progression_reward")
+id = &"ocean_sunset"

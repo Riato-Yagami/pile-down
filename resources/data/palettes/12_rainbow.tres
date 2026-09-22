@@ -1,11 +1,11 @@
-[gd_resource type="Resource" script_class="ColorPaletteData" format=3]
+[gd_resource type="Resource" script_class="ColorPaletteData" format=3 uid="uid://bkaud3uevu1xm"]
 
-[ext_resource type="Resource" path="res://resources/data/achievements/12_all_checkpoints.tres" id="1_tq7lw"]
-[ext_resource type="Script" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_ve5rx"]
+[ext_resource type="Script" uid="uid://bdlkhp3dt6mr" path="res://resources/scripts/progression/ColorPaletteData.gd" id="2_ve5rx"]
+[ext_resource type="Resource" path="res://resources/data/achievements/59_challenge_accepted.tres" id="progression_reward"]
 
 [resource]
 script = ExtResource("2_ve5rx")
-id = &"rainbow"
 display_name = "RAINBOW"
 colors = Array[Color]([Color(0.8980392, 0.22352941, 0.20784314, 1), Color(0.9607843, 0.4862745, 0, 1), Color(0.9843137, 0.7529412, 0.1764706, 1), Color(0.4862745, 0.7019608, 0.25882354, 1), Color(0.18039216, 0.61960787, 0.38431373, 1), Color(0, 0.6509804, 0.6509804, 1), Color(0.14901961, 0.5176471, 0.84705883, 1), Color(0.3254902, 0.40392157, 0.7882353, 1), Color(0.5568628, 0.33333334, 0.78039217, 1), Color(0.827451, 0.30588236, 0.60784316, 1)])
-required_achievement = ExtResource("1_tq7lw")
+required_achievement = ExtResource("progression_reward")
+id = &"rainbow"

@@ -31,13 +31,14 @@ func _run() -> void:
 		)
 	)
 	assert(game.pause_seed_display.copy_button.texture_normal != null)
-	assert(game.pause_seed_display.value_label.text == "REPLA")
+	assert(game.pause_seed_display.value_label.text == "REPLA..")
 	game.pause_seed_display.collapsed_character_count = 7
-	assert(game.pause_seed_display.value_label.text == "REPLAY-")
+	assert(game.pause_seed_display.value_label.text == "REPLAY-..")
 	game.pause_seed_display.collapsed_character_count = 5
 	# Headless builds have no clipboard, so expose Copy to validate its layout.
 	game.pause_seed_display.copy_button.visible = true
 	game.pause_seed_display._set_highlight(true)
+	assert(game.pause_seed_display.tooltip_text.is_empty())
 	assert(game.pause_seed_display.value_label.text == "REPLAY-INPUT-SEED")
 	await create_timer(
 		game.pause_seed_display.resize_animation_duration + 0.05
@@ -51,8 +52,14 @@ func _run() -> void:
 		game.pause_seed_display.value_label.get_theme_color("font_color")
 		== Color("6da7e5")
 	)
+	game.pause_seed_display._play_copy_feedback()
+	assert(game.pause_seed_display.value_label.text == "COPIED")
+	await create_timer(
+		game.pause_seed_display.copy_feedback_duration + 0.05
+	).timeout
+	assert(game.pause_seed_display.value_label.text == "REPLAY-INPUT-SEED")
 	game.pause_seed_display._set_highlight(false)
-	assert(game.pause_seed_display.value_label.text == "REPLA")
+	assert(game.pause_seed_display.value_label.text == "REPLA..")
 	assert(
 		game.pause_seed_display.value_label.get_theme_color("font_color")
 		== Color("4d82c2")

@@ -14,7 +14,12 @@ func _run() -> void:
 	await _wait_until_unlocked(game)
 
 	assert(game.debug_help.visible)
+	assert(game.debug_help.text.contains("DEBUG SHORTCUTS"))
+	assert(not game.debug_help.text.contains("[S] NEXT MUSIC SECTION"))
+	assert(game.debug_help.mouse_filter == Control.MOUSE_FILTER_PASS)
+	game._set_debug_help_expanded(true)
 	assert(game.debug_help.text.contains("[S] NEXT MUSIC SECTION"))
+	assert(game.debug_help.text.contains("[B] NEXT BACKGROUND"))
 	assert(game.debug_help.text.contains("[L] LOSE ONE LIFE"))
 	assert(game.debug_help.text.contains("[K] DIE NOW"))
 	assert(game.debug_help.text.contains("[U] TOGGLE UNLOCK EVERYTHING"))
@@ -23,6 +28,15 @@ func _run() -> void:
 		DebugSettings.toggle_unlock_everything()
 	game._apply_debug_unlock_everything()
 	assert(game.challenge_manager.debug_unlock_all)
+	assert(game.max_discovered_tile_value == DifficultySettings.MAX_CARD_VALUE)
+	assert(game.max_discovered_pile_count == DifficultySettings.MAX_PILES)
+	assert(game.max_discovered_hand_size == DifficultySettings.MAX_HAND_SIZE)
+	assert(game.min_discovered_turn_time == DifficultySettings.MIN_TURN_TIME)
+	var seed_limits := game._seed_difficulty_limits()
+	assert(seed_limits.max_start_value == DifficultySettings.MAX_CARD_VALUE)
+	assert(seed_limits.max_pile_count == DifficultySettings.MAX_PILES)
+	assert(seed_limits.max_hand_size == DifficultySettings.MAX_HAND_SIZE)
+	assert(seed_limits.min_turn_time == DifficultySettings.MIN_TURN_TIME)
 	assert(
 		game.challenge_manager.completed.size()
 		== game.challenge_manager.definitions.size()
@@ -48,6 +62,11 @@ func _run() -> void:
 		game.music_manager.section_change_requested
 		or game.music_manager.current_section == initial_section + 1
 	)
+	var background_event := InputEventKey.new()
+	background_event.keycode = KEY_B
+	background_event.pressed = true
+	assert(game._handle_debug_shortcut(background_event))
+	assert(game.background_manager.last_background_id != &"")
 
 	var initial_god_mode := DebugSettings.is_god_mode_enabled()
 	var god_event := InputEventKey.new()

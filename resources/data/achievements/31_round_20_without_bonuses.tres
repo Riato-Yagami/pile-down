@@ -1,11 +1,13 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://cos0vrsx4hr1s"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_data"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1_data"]
 
 [resource]
 script = ExtResource("1_data")
-id = &"round_20_without_bonuses"
 title = "BARE HANDS"
 description = "Complete 20 rounds without taking a bonus."
 category = &"ROUNDS"
+difficulty = 5
+reward_rationale = "Une palette dépouillée pour jouer sans bonus."
 required_count = 20
+id = &"round_20_without_bonuses"

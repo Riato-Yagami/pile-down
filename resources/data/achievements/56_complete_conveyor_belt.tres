@@ -1,11 +1,13 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://dd4oalxpe4rjp"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
-id = &"complete_conveyor_belt"
 title = "EXPRESS DELIVERY"
 description = "Complete Conveyor Belt."
 category = &"CHALLENGES"
-
+difficulty = 6
+reward_rationale = "Une touche de cuisine après le service sur tapis roulant."
+reward_font = &"boiled_pasta"
+id = &"complete_conveyor_belt"

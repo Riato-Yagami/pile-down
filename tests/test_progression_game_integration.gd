@@ -17,22 +17,26 @@ func _run() -> void:
 	assert(is_equal_approx(
 		float(stripe_material.get_shader_parameter("stripe_scroll_speed")),
 		float(preload(
-			"res://resources/materials/StripeBackgroundMaterial.tres"
+			"res://resources/materials/backgrounds/StripeBackgroundMaterial.tres"
 		).get_shader_parameter("stripe_scroll_speed"))
 	))
 	await process_frame
-	assert(game.hand_tray is NinePatchRect)
+	assert(game.hand_tray is ConveyorHandTray)
 	assert(game.start_adaptive_in_editor)
-	assert(game.hand_tray.patch_margin_left == 18)
-	assert(game.hand_tray.patch_margin_right == 18)
+	assert(game.hand_tray.regular_background.patch_margin_left == 18)
+	assert(game.hand_tray.regular_background.patch_margin_right == 18)
 	assert(not game.progression_menu.visible)
 	assert(not game.progression_menu.show_editor_preview)
 	assert(game.back_button.anchor_left == 1.0)
 	assert(game.back_button.anchor_right == 1.0)
 	assert(game.options_button.texture_normal != null)
 	assert(game.splash_debug_help.visible == game.Debug.is_enabled())
+	assert(game.splash_debug_help.text.contains("DEBUG SHORTCUTS"))
+	assert(not game.splash_debug_help.text.contains("[E] WIN CURRENT ROUND"))
+	game._set_debug_help_expanded(true)
 	assert(game.splash_debug_help.text.contains("[U] TOGGLE UNLOCK EVERYTHING"))
 	assert(game.splash_debug_help.text.contains("[E] WIN CURRENT ROUND"))
+	assert(game.splash_debug_help.text.contains("[B] NEXT BACKGROUND"))
 	game.options_button.pressed.emit()
 	await process_frame
 	assert(game.options_menu.visible)
@@ -146,7 +150,7 @@ func _run() -> void:
 	assert(game.dust_pool.enabled)
 	assert(game.background_enabled_button.icon == game.SELECTED_TEXTURE)
 	assert(game.dust_effects_button.visible)
-	assert(game.deformable_stripe_background.visible)
+	assert(game.background_effects.visible)
 	assert(game.get_node_or_null("%LightingEffectsButton") == null)
 	assert(not game.relief_lighting.enabled)
 	assert(not game.uniform_relief_light.visible)
@@ -162,25 +166,22 @@ func _run() -> void:
 	var relief_key := InputEventKey.new()
 	relief_key.keycode = KEY_V
 	relief_key.pressed = true
-	assert(game._handle_debug_shortcut(relief_key) == game.Debug.is_enabled())
-	if game.Debug.is_enabled():
-		assert(game.uniform_relief_light.energy > normal_energy)
-		assert(not game.uniform_relief_light.visible)
-		assert(not game.pointer_relief_light.visible)
+	assert(not game._handle_debug_shortcut(relief_key))
+	assert(game.uniform_relief_light.energy == normal_energy)
 	game.dust_effects_button.pressed.emit()
 	assert(game.dust_effects_button.icon == game.UNCHECKED_TEXTURE)
 	assert(not game.dust_pool.enabled)
-	assert(game.deformable_stripe_background.visible)
+	assert(game.background_effects.visible)
 	assert(is_zero_approx(float(
-		game.deformable_stripe_background._shader_material.get_shader_parameter(
+		game.background_effects._shader_material.get_shader_parameter(
 			"effect_enabled"
 		)
 	)))
 	assert(float(
-		game.deformable_stripe_background._stripe_material.get_shader_parameter(
+		game.background_effects._stripe_material.get_shader_parameter(
 			"effect_enabled"
 		)
-	) > 0.0)
+	) == 0.0)
 	var round_wave := game.get_node("Gameplay/RoundWave") as Control
 	game._show_round_wave()
 	assert(round_wave.visible)
@@ -193,24 +194,30 @@ func _run() -> void:
 	assert(not round_wave.visible)
 	game.background_enabled_button.pressed.emit()
 	assert(game.background_enabled_button.icon == game.UNCHECKED_TEXTURE)
-	assert(not game.deformable_stripe_background.visible)
+	assert(game.background_effects.visible)
 	assert(not game.dust_effects_button.visible)
 	assert(not game._is_background_deformation_active())
 	game.background_enabled_button.pressed.emit()
 	assert(game.background_enabled_button.icon == game.SELECTED_TEXTURE)
-	assert(game.deformable_stripe_background.visible)
+	assert(game.background_effects.visible)
 	assert(game.dust_effects_button.visible)
-	assert(game.adaptive_resolution_button is HighlightButton)
-	assert(game.adaptive_resolution_button.text == "ADAPTIVE SCREEN SIZE")
-	assert(game.adaptive_resolution_button.get_theme_stylebox("focus") is StyleBoxEmpty)
-	assert(
-		game.adaptive_resolution_button.get_theme_color("font_color")
-		== game.OPTION_TEXT_COLOR
+	assert(not game.adaptive_resolution_button.visible)
+	assert(game.adaptive_resolution_button.text == "")
+	var screen_size_choices := (
+		game.adaptive_resolution_button.get_parent().get_node("ScreenSizeModeSelector")
+		as OptionButton
 	)
+	assert(screen_size_choices.item_count == 3)
+	assert(screen_size_choices.get_item_text(0) == "CLASSIC")
+	assert(screen_size_choices.get_item_text(1) == "SEMI ADAPTIVE")
+	assert(screen_size_choices.get_item_text(2) == "ADAPTIVE")
 	game._set_adaptive_resolution(false)
 	assert(game.get_window().content_scale_size == Vector2i(256, 320))
-	assert(game.adaptive_resolution_button.icon == game.UNCHECKED_TEXTURE)
-	game.adaptive_resolution_button.pressed.emit()
+	assert(screen_size_choices.selected == 0)
+	assert(screen_size_choices.get_popup().is_item_checked(0))
+	assert(not screen_size_choices.get_popup().is_item_checked(1))
+	assert(not screen_size_choices.get_popup().is_item_checked(2))
+	screen_size_choices.item_selected.emit(2)
 	assert(
 		game.get_window().content_scale_mode
 		== Window.CONTENT_SCALE_MODE_VIEWPORT
@@ -220,8 +227,11 @@ func _run() -> void:
 		game.get_window().content_scale_aspect
 		== Window.CONTENT_SCALE_ASPECT_EXPAND
 	)
-	assert(game.adaptive_resolution_button.icon == game.SELECTED_TEXTURE)
-	game.adaptive_resolution_button.pressed.emit()
+	assert(screen_size_choices.selected == 2)
+	assert(not screen_size_choices.get_popup().is_item_checked(0))
+	assert(not screen_size_choices.get_popup().is_item_checked(1))
+	assert(screen_size_choices.get_popup().is_item_checked(2))
+	screen_size_choices.item_selected.emit(0)
 	assert(
 		game.get_window().content_scale_mode
 		== Window.CONTENT_SCALE_MODE_VIEWPORT
@@ -231,7 +241,10 @@ func _run() -> void:
 		game.get_window().content_scale_aspect
 		== Window.CONTENT_SCALE_ASPECT_KEEP
 	)
-	assert(game.adaptive_resolution_button.icon == game.UNCHECKED_TEXTURE)
+	assert(screen_size_choices.selected == 0)
+	assert(screen_size_choices.get_popup().is_item_checked(0))
+	assert(not screen_size_choices.get_popup().is_item_checked(1))
+	assert(not screen_size_choices.get_popup().is_item_checked(2))
 	game.save_options_button.pressed.emit()
 	assert(game.options_page_title.text == "SAVE DATA")
 	assert(not game.gameplay_options.visible)

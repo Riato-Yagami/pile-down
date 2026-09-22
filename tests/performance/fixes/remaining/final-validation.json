@@ -1,0 +1,12 @@
+[
+  {
+    "name": "editor",
+    "exit_code": 0,
+    "errors": []
+  },
+  {
+    "name": "startup",
+    "exit_code": 0,
+    "errors": []
+  }
+]

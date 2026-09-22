@@ -1,8 +1,8 @@
 [gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://resources/scripts/gameplay/Card.gd" id="1"]
-[ext_resource type="Texture2D" path="res://resources/materials/TileFaceLitTexture.tres" id="2"]
-[ext_resource type="Texture2D" path="res://resources/materials/TileBackLitTexture.tres" id="3"]
+[ext_resource type="Texture2D" path="res://resources/materials/textures/tiles/TileFaceLitTexture.tres" id="2"]
+[ext_resource type="Texture2D" path="res://resources/materials/textures/tiles/TileBackLitTexture.tres" id="3"]
 [ext_resource type="FontFile" path="res://resources/fonts/VCR_OSD_MONO_1.001.ttf" id="4"]
 [ext_resource type="PackedScene" path="res://resources/scenes/special_rules/RegenerationRing.tscn" id="5"]
 

@@ -11,6 +11,10 @@ enum Rarity { COMMON, RARE, LEGENDARY }
 @export var max_level: int
 @export var weight: float
 @export var minimum_round: int
+@export_category("Debug")
+## Zero disables the data-driven lock. Positive locks the level; negative also
+## forces chance-based activations, matching DebugSettings.LOCK_BONUSES.
+@export var debug_lock_level := 0
 
 
 func _init(

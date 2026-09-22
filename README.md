@@ -1,5 +1,18 @@
 # Pile Down
 
+L’audit de performances et ses limites sont documentés dans
+[`PERFORMANCE_AUDIT.md`](PERFORMANCE_AUDIT.md). Les benchmarks reproductibles
+restent dans `tests/performance/` et utilisent des sauvegardes isolées :
+
+```sh
+python tests/performance/run_benchmarks.py --godot godot --matrix tests/performance/core-matrix.json --timeout 300
+python tests/performance/run_benchmarks.py --godot godot --matrix tests/performance/display-matrix.json --timeout 150
+```
+
+Exécuter les matrices successivement, sans autre benchmark simultané. Elles
+ouvrent des fenêtres de jeu et conservent métriques et logs dans
+`tests/performance/results/`. Ne pas utiliser `--fixed-fps` pour ces mesures.
+
 Prototype jouable réalisé avec Godot 4. **Pile Down** est un solitaire rapide
 de mémoire : il faut compléter des piles descendantes avant la fin de chaque
 compte à rebours.
@@ -100,54 +113,93 @@ godot --path .
 
 ## Build Web
 
+Pour mémoriser les chemins propres à un PC, copier
+`build/export.local.sh.example` vers `build/export.local.sh` et y renseigner
+Godot (`PILE_DOWN_GODOT_BIN`), le JDK (`JAVA_HOME`) et le SDK Android
+(`ANDROID_HOME`). Tous les scripts de build chargent automatiquement ce fichier,
+qui est ignoré par Git. Les valeurs déjà définies dans le terminal restent
+prioritaires avec les affectations par défaut du modèle. Les variables
+`PILE_DOWN_JAVA_HOME` et `PILE_DOWN_ANDROID_SDK` restent prioritaires pour Android.
+Dans Git Bash, il suffit ensuite de lancer `bash build/scripts/build_android.sh`
+ou le script de la plateforme souhaitée, sans refaire les commandes `export`.
+
 Le preset `Web` produit une version release sans threads, compatible avec un
 hébergement statique standard :
 
 ```sh
-./build/build_web.sh
+./build/scripts/build_web.sh
 ```
 
 Les templates d'export doivent correspondre à la version de Godot utilisée.
 S'ils manquent, les scripts téléchargent automatiquement les templates
-officiels correspondants dans `build/.godot_data/`. Le premier téléchargement
-est volumineux, mais l'archive est ensuite conservée dans
-`build/.template_cache/`.
+officiels correspondants. Les caches sont regroupés dans `build/.cache/` :
+`templates/` conserve l'archive téléchargée, `data/` les données Godot sous
+Linux et `config/` la configuration locale. Sous Windows, Git Bash et Godot
+natif utilisent `config/Godot/export_templates/` via un `APPDATA` local au
+build. Le premier téléchargement est volumineux ; les builds suivants
+réutilisent les templates sans réseau. Une archive déjà téléchargée peut
+être fournie avec `PILE_DOWN_TEMPLATE_ARCHIVE=/chemin/vers/templates.tpz`.
+Les scripts nécessitent Bash, Python 3 et `unzip`, ainsi que `curl` si les
+templates doivent être téléchargés. Sous Windows, les lancer depuis Git Bash
+et définir `PILE_DOWN_GODOT_BIN` avec le chemin du véritable exécutable Godot
+(pas un raccourci ni un lanceur console dont l'exécutable associé manque).
+`PILE_DOWN_PYTHON_BIN` permet de choisir Python (`python` sous Windows,
+`python3` ailleurs). L'empaquetage conserve les droits d'exécution Linux,
+y compris lorsque le ZIP est créé sous Windows.
 Le script lit `VERSION` (par exemple `v0.2`), produit le point d'entrée
-`build/web/index.html`, puis crée automatiquement
-`build/web/pile-down-web-<version>.zip`. Pour utiliser un
+`build/platforms/web/index.html`, puis crée automatiquement
+`build/platforms/web/pile-down-web-<version>.zip`. Pour utiliser un
 autre exécutable Godot :
 
 ```sh
-PILE_DOWN_GODOT_BIN=/chemin/vers/godot ./build/build_web.sh
+PILE_DOWN_GODOT_BIN=/chemin/vers/godot ./build/scripts/build_web.sh
 ```
 
 Le build Linux x86_64 et son archive versionnée sont produits dans
-`build/linux/` avec :
+`build/platforms/linux/` avec :
 
 ```sh
-./build/build_linux.sh
+./build/scripts/build_linux.sh
 ```
 
 Le build Windows x86_64 produit `pile-down.exe` et une archive versionnée dans
-`build/windows/` avec :
+`build/platforms/windows/` avec :
 
 ```sh
-./build/build_windows.sh
+./build/scripts/build_windows.sh
 ```
 
 Le preset `Android` produit un APK ARM64 en mode portrait. Le build par défaut
+utilise les templates APK standards, sans compilation Gradle. Le script transmet
+les chemins validés du JDK et du SDK Android aux paramètres Godot du build,
+puis vérifie que l'APK a bien été créé avant d'annoncer la réussite. Le build
 est signé avec une clé de debug locale générée dans `build/.android/` et peut
 être installé directement sur un appareil :
 
 ```sh
-./build/build_android.sh
+./build/scripts/build_android.sh
 ```
 
 L'APK versionné est écrit dans
-`build/android/pile-down-android-<version>.apk`. L'export Android nécessite
+`build/platforms/android/pile-down-android-<version>.apk`. L'export Android nécessite
 OpenJDK 17 et un SDK Android configuré dans les paramètres d'éditeur Godot.
 Le SDK doit notamment contenir Platform-Tools 35+, Build-Tools 35.0.1 et la
 plateforme Android 35.
+
+Le script utilise `JAVA_HOME` pour le JDK et `ANDROID_HOME` (ou
+`ANDROID_SDK_ROOT`) pour le SDK. `PILE_DOWN_JAVA_HOME` et
+`PILE_DOWN_ANDROID_SDK` permettent de remplacer ces chemins. Sous Windows,
+le SDK est recherch? par d?faut dans `%LOCALAPPDATA%/Android/Sdk` ; le JDK
+17 ou plus r?cent doit ?tre install? et configur? explicitement (Java 8
+et un simple JRE ne suffisent pas). Exemple Git Bash, en rempla?ant le
+chemin du JDK par son emplacement r?el :
+
+```bash
+export JAVA_HOME="C:/chemin/vers/jdk-17"
+export ANDROID_HOME="$LOCALAPPDATA/Android/Sdk"
+bash build/scripts/build_android.sh
+```
+
 Le preset utilise les icônes Android dédiées de
 `resources/sprites/android/` : une icône adaptative dont le motif reste dans
 la zone sûre des masques de lanceur, ainsi qu'une silhouette monochrome pour
@@ -164,15 +216,83 @@ PILE_DOWN_ANDROID_EXPORT_MODE=release \
 GODOT_ANDROID_KEYSTORE_RELEASE_PATH=/chemin/vers/pile-down.keystore \
 GODOT_ANDROID_KEYSTORE_RELEASE_USER=pile_down \
 GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=mot_de_passe \
-./build/build_android.sh
+./build/scripts/build_android.sh
 ```
 
-Pour produire les versions Web, Linux, Windows et Android en une seule
-commande :
+Pour produire un **Android App Bundle (`.aab`) release signé** pour Google Play,
+utiliser le script dédié depuis Bash ou Git Bash :
+
+```bash
+export GODOT_ANDROID_KEYSTORE_RELEASE_PATH="C:/chemin/vers/upload.keystore"
+export GODOT_ANDROID_KEYSTORE_RELEASE_USER="upload"
+read -rsp "Mot de passe de la clé : " GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD
+echo
+export GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD
+bash build/scripts/build_android_aab.sh
+unset GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD
+```
+
+Ce script utilise les mêmes variables JDK, SDK et Godot que l'export APK,
+mais impose le mode release et le preset **Android AAB**. Les trois variables
+de signature sont obligatoires ; aucune clé de debug n'est utilisée pour l'AAB.
+Elles peuvent aussi être définies dans le fichier local `.env` à la racine,
+chargé automatiquement par le script AAB.
+Utiliser de préférence **OpenJDK 17** : le template Gradle actuel accepte les
+JDK 17 à 23, mais échoue avec Java 25 fourni par certaines versions d'Android
+Studio (`Unsupported class file major version 69`). Définir
+`PILE_DOWN_JAVA_HOME` dans `build/export.local.sh` vers un JDK compatible.
+Le fichier produit est `build/platforms/android/pile-down-android-<version>.aab`.
+Le script installe le template `android_source.zip` correspondant à Godot, puis
+le projet Gradle au premier export si `android/build/` n'existe pas. Un projet
+Gradle déjà présent est conservé ; après un changement de version Godot, mettre
+à jour son modèle via **Projet → Installer le modèle de compilation Android**.
+Le premier build Gradle peut télécharger ses dépendances et nécessite un accès réseau.
+
+Les presets **Android** et **Android AAB** utilisent le nom de package
+`dev.juels.piledown`, attendu par la fiche Google Play. Renommer le fichier `.aab`
+ne change pas cet identifiant intégré au bundle.
+Avant la publication, configurer dans le preset **Android AAB** le numéro de version utilisateur (`version/name`)
+et un `version/code` supérieur à celui déjà envoyé sur Google Play. Le fichier
+`VERSION` contrôle le nom du fichier de sortie, pas ces métadonnées Android.
+Le preset APK `Android` reste indépendant. Les clés et mots de passe doivent
+rester hors du dépôt. Voir aussi la
+[documentation d'export Android Godot](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_android.html).
+
+Pour produire les versions Windows, Web, Linux, Android APK et Android AAB en une
+seule commande (JDK, SDK Android et signature release requis comme ci-dessus) :
 
 ```sh
-./build/build_all.sh
+./build/scripts/build_all.sh
 ```
+
+Le dossier `build/scripts/` regroupe les scripts et leurs outils communs.
+Les exports sont rangés par plateforme dans `build/platforms/web/`, `linux/`,
+`windows/` et `android/`. Les archives des différentes versions
+cohabitent dans chaque dossier : par exemple `pile-down-windows-v2.0.zip` et
+`pile-down-windows-v2.1.zip`. Le fichier `VERSION` détermine le nom de l'archive.
+Une nouvelle version conserve les anciennes archives ; relancer la même version
+remplace son archive. Les fichiers non versionnés (`index.html`, `pile-down.exe`,
+etc.) correspondent au dernier export. Les presets de l'éditeur utilisent ces
+mêmes dossiers par plateforme.
+`renders/tiles/` contient les rendus utilisés par les outils de publication,
+et `.android/` la clé de signature de debug. Les fichiers temporaires sont
+regroupés dans `tmp/screenshots/`, `tmp/reports/`, `tmp/logs/` et `tmp/tools/` ;
+les futurs profils de tests doivent aussi rester sous `tmp/`. Les caches et
+`tmp/` sont ignorés par Git. Le contenu de `.cache/` est régénérable ; supprimer
+les templates oblige toutefois à les télécharger de nouveau.
+
+Les tests hors ligne des scripts vérifient les versions officielles, Mono et
+prérelease, les chemins Windows, la réutilisation des templates, les erreurs
+d'arguments ou d'archive, les droits d'exécution dans les ZIP et la conservation
+de plusieurs versions dans le même dossier de plateforme :
+
+```sh
+python tests/test_build_scripts.py
+```
+
+Si Bash n'est pas dans le PATH, définir `PILE_DOWN_BASH` avec son chemin.
+Ces tests utilisent des fixtures ; la validation des exports réels reste
+`./build/scripts/build_all.sh`.
 
 La description HTML prête à intégrer à la page itch.io se trouve dans
 `publishing/itch-description.html`, avec les images de publication. Les cinq
@@ -185,6 +305,14 @@ godot --display-driver x11 --rendering-driver opengl3 \
   --audio-driver Dummy --path . --resolution 512x640 \
   --script tests/capture_publishing_screenshots.gd
 ```
+
+Les captures portrait de la v2.0 pour Google Play sont dans
+[`publishing/screenshots/2.0/`](publishing/screenshots/2.0/README.md) : huit PNG
+par série, sans chronomètre global ni transparence. `android/` utilise le mode
+adaptatif en 1080 × 1920 ; `classic/` le mode classique en 1280 × 1600 (ratio 4:5).
+Les séries `tablet-7/` et `tablet-10/` utilisent le mode adaptatif portrait en
+1440 × 2560 et 1800 × 3200 respectivement.
+L'ordre conseillé et les commandes de régénération accompagnent les images.
 
 ## Commandes
 
@@ -273,6 +401,10 @@ l'horloge produit un flash rouge synchronisé avec chaque tick.
 
 ## Structure
 
+La répartition des responsabilités, les déplacements de ressources et les limites
+de la validation de la refactorisation sont détaillés dans
+[`REFACTORING.md`](REFACTORING.md).
+
 ```text
 pile-down/
 ├── resources/
@@ -300,14 +432,17 @@ pile-down/
 │   ├── scripts/
 │   │   ├── audio/
 │   │   ├── bonuses/
-│   │   ├── challenges/
-│   │   ├── core/
+│   │   ├── challenges/           # ui/ : construction et style de la page Seeds
+│   │   ├── core/                 # debug/ et session/ : orchestration spécialisée
 │   │   ├── data/                 # types Data et DataCatalog communs
-│   │   ├── gameplay/
-│   │   ├── progression/
+│   │   ├── gameplay/             # card/, interaction/, round/
+│   │   ├── progression/          # records et checkpoints/
+│   │   ├── settings/             # SaveConfig et display/ScreenSizeOptions
 │   │   ├── special_rules/
 │   │   │   └── rules/
-│   │   └── ui/
+│   │   └── ui/                   # game/ et progression/ : présentation
+│   ├── materials/                # backgrounds/ et textures/tiles/
+│   ├── shaders/                  # backgrounds/ et ui/
 │   └── sprites/
 │       ├── android/
 │       ├── backgrounds/
@@ -330,14 +465,21 @@ ordre de présentation et d'utilisation. Les bonus et règles spéciales sont do
 éditables dans leurs propres `.tres`, au même titre que les achievements,
 challenges, polices et palettes.
 
-- `resources/scenes/Game.tscn` et `resources/scripts/core/GameManager.gd` : version principale en 2D,
-  interface minimaliste, rounds, erreurs, drag-and-drop et progression.
+- `resources/scenes/Game.tscn` et `resources/scripts/core/GameManager.gd` : références
+  de scène, état partagé et points d'entrée des signaux. Les contrôleurs spécialisés
+  portent le déroulement des sessions/rounds, les interactions et la présentation.
 - `resources/scripts/gameplay/PileLayoutManager.gd` : dispositions compactes et stables des piles.
+- `resources/scripts/tools/export_unlockables.gd` : export Markdown des déblocables
+  et achievements actifs, avec leurs conditions, valeurs par défaut et comptes.
+- `resources/scripts/ui/DifficultyAnnouncement.gd` : apparition successive des hausses
+  de difficulté, avec déplacement fluide de la première ligne et léger rebond
+  de la seconde. Les deux restent lisibles ensemble ; l'annonce reste passable.
 - `resources/scripts/gameplay/DifficultyProgression.gd` : état et calculs pondérés
   de la progression de difficulté, y compris les paliers de soulagement.
 - `resources/scripts/settings/GameOptionsController.gd` : chargement et
-  application des options audio, gameplay et graphiques, gestion de la
-  résolution, du fond, de la poussière et des dialogues de sauvegarde. Les
+  application des options audio, gameplay et graphiques, du fond, de la poussière
+  et des dialogues de sauvegarde. `settings/display/ScreenSizeOptions.gd` porte
+  la résolution et les sélecteurs d'affichage. Les
   méthodes homonymes de `GameManager` restent des façades pour les signaux des
   scènes et la compatibilité des tests.
 - `resources/scripts/progression/ProgressionSnapshotBuilder.gd` : conversion de
@@ -413,6 +555,34 @@ victoire sans nouveau record affiche `YOU WON` et la durée totale. Le format
 du score utilise des unités lisibles, par exemple `1 min 12 s 323 ms`, et omet
 les heures ou les minutes lorsqu'elles valent zéro. Il est présenté sous la
 forme `in 1 min 12 s 323 ms`.
+
+## Exporter les déblocages actifs
+
+Depuis la racine du projet :
+
+```sh
+godot --headless --path . --script resources/scripts/tools/export_unlockables.gd
+```
+
+Le script produit `DEBLOCAGES.md` avec uniquement les polices, palettes,
+challenges et achievements présents dans les `enabled_data` de leurs catalogues.
+Il indique les totaux par catégorie, le total des déblocables, les disponibilités
+par défaut, la difficulté interne et les liens entre achievements et récompenses,
+avec la logique de chaque association. Le tri suit la difficulté croissante dans
+chaque catégorie ; les récompenses par défaut sont placées en premier.
+Les cases et espaces de notes servent à préparer une nouvelle répartition ;
+ils ne modifient pas les ressources du jeu automatiquement.
+
+Pour conserver un document annoté, choisir un nouveau fichier de sortie :
+
+```sh
+godot --headless --path . --script resources/scripts/tools/export_unlockables.gd -- DEBLOCAGES_NOUVEAUX.md
+```
+
+Le script refuse d'écraser un fichier existant. Ajouter `--force` après `--`
+pour le régénérer explicitement (cela remplace aussi les annotations).
+Le dossier de destination doit déjà exister. Aucune sauvegarde joueur n'est lue
+ou modifiée, et les options de déblocage du mode debug sont ignorées.
 
 ## Régler la difficulté
 
@@ -510,13 +680,13 @@ second corrige indépendamment le titre rendu avec cette police dans la liste.
 par une tuile neutre et rend ce symbole avec la même police, taille et offset
 que les chiffres, dans le jeu comme dans les previews. Cette option est activée
 par défaut.
-`FontRegistry` charge les entrées activées de `resources/data/fonts.tres` dans
-l'ordre explicite du catalogue. La liste des achievements provient de
+`FontRegistry` charge les entrées activées de `resources/data/fonts.tres` et les
+trie par difficulté de l'achievement requis. La liste des achievements provient de
 `resources/data/achievements.tres`. La taille choisie s'applique aux chiffres dans le jeu,
 au titre de la police dans sa liste et immédiatement dans l'aperçu de l'éditeur
 lorsqu'elle est modifiée. Dans le preview de l'éditeur uniquement, la police et
 la palette sélectionnées apparaissent en tête de leurs listes ; leur ordre en jeu
-reste celui des catalogues. Les réglages `Defaults` et `Editor Preview` sont
+reste celui de la difficulté de déblocage. Les réglages `Defaults` et `Editor Preview` sont
 centralisés sur le nœud `FontCatalog` de `ProgressionMenu`. `Default Font` et
 `Default Palette` déterminent les choix initiaux et de réinitialisation du jeu.
 Le bouton `Reload Editor Preview` de ce même nœud permet de forcer le rendu. La
@@ -571,14 +741,32 @@ ont été supprimées du dépôt car leurs licences jointes interdisaient l'usag
 commercial. Les fichiers `.fon` restent hors du catalogue, car Godot ne les
 prend pas en charge.
 
+La palette `OR MASSIF` propose dix teintes bronze, dorées et champagne. Elle
+se débloque avec `LA TOTALE`, obtenu en débloquant tous les autres achievements
+actifs (sans se compter lui-même), y compris `PHOTO DE FAMILLE` et `CHACUN SON TOUR`.
+Avec au moins quatre piles, `PHOTO DE FAMILLE` demande de les amener toutes à 1
+avant d'en terminer une, dans un round descendant ; `CHACUN SON TOUR` demande
+de terminer une pile avant de poser une carte sur une autre. Les erreurs sont
+autorisées pour les deux, et les placements automatiques des bonus comptent.
+Les conditions sont réinitialisées à chaque round. `LA TOTALE` est aussi vérifié
+au chargement de la progression pour les sauvegardes déjà complètes.
+
 Chaque fichier de `resources/data/palettes/` décrit une palette de dix couleurs
 modifiables dans l'inspecteur. `ColorPaletteRegistry` charge les entrées
-activées de `resources/data/palettes.tres` dans l'ordre explicite du catalogue. La page Fonts
+activées de `resources/data/palettes.tres`, triées par difficulté de déblocage. La page Fonts
 présente les polices et les palettes comme les autres listes de progression,
 dans deux rangées verticales possédant chacune son propre défilement. Elle
 permet de sélectionner séparément la police et la palette ; la palette choisie
 est sauvegardée dans `settings/selected_palette`, prévisualisée sur neuf tuiles
 et appliquée aux cartes, aux piles et aux jokers.
+La police et la palette actives restent cochées : pour les remplacer, il faut
+choisir une autre entrée débloquée dans la même catégorie.
+`ThemeManager` dérive aussi un thème global depuis la palette sélectionnée :
+couleur de fond, teintes secondaires de shader, accent UI et échantillons de
+boutons. La liste des palettes affiche donc les dix couleurs de tuiles ainsi
+qu'une miniature du bouton et du fond associés. Les anciennes sauvegardes
+restent compatibles : en l'absence de palette sélectionnée, la palette de base
+déverrouillée est utilisée.
 Le sélecteur `LOCKED / BOTH / UNLOCKED` filtre immédiatement la liste de la page
 courante et revient sur `BOTH` à l'ouverture du menu.
 Les changements de page des menus Progression et Options utilisent un court
@@ -601,11 +789,31 @@ dans le carré ; le carré devient doré au niveau maximal. Les états binaires
 utilisent les sprites `ui/check/checked.png` et `ui/check/unchecked.png`.
 Les achievements permanents sont décrits individuellement dans
 `resources/data/achievements/`. `AchievementRegistry` charge les entrées
-activées de `resources/data/achievements.tres` dans leur ordre explicite. Ils sont évalués uniquement
+activées de `resources/data/achievements.tres`, regroupées par catégorie puis
+triées par `difficulty` croissante. Ils sont évalués uniquement
 sur les événements de jeu concernés et regroupés sous `STATS`, `ROUNDS`,
-`CHECKPOINTS`, `ENDLESS`, `BONUSES & RULES`, `COMBOS` et `SPEEDRUN`. Les
+`CHECKPOINTS`, `ENDLESS`, `BONUSES & RULES`, `COMBOS`, `SPEEDRUN`, `CHALLENGES`
+et `PROGRESSION`. La difficulté interne va de 1 (initiation) à 10 (collection
+complète), sans être affichée au joueur. `ProgressionOrdering` applique aussi
+ce classement aux polices, palettes et challenges d'après leur achievement
+requis, avec les éléments disponibles par défaut en tête et l'ID pour départager
+les égalités. Chaque catégorie garde son ordre de première apparition dans le
+catalogue. Les 48 achievements actifs ont chacun une récompense distincte parmi
+20 polices, 22 palettes et 6 challenges verrouillés ; la police et la palette
+`CLASSIC` restent disponibles par défaut sans prérequis. `reward_rationale`
+documente les associations dans l'export. Les acquis des anciennes sauvegardes
+sont conservés, et les nouvelles associations sont appliquées au chargement.
+`NO LOOKING BACK` et son achievement de complétion restent hors des catalogues
+actifs ; ils ne bloquent donc plus `LA TOTALE`. Les
 seuils modifiables sont stockés dans chaque ressource via `required_count` et,
-pour les speedruns, `time_limit_seconds` exprimé en secondes. Le succès
+pour les speedruns, `time_limit_seconds` exprimé en secondes. Les objectifs sont
+strictement moins de **5 minutes pour 10 rounds**, **20 minutes pour 20 rounds**
+et **45 minutes pour les 30 rounds** d'une partie normale commencée au début.
+Le chrono compte le temps actif, animations de jeu comprises ; les transitions
+entre rounds, les choix de bonus et les pauses en sont exclus. L'équilibrage
+et les limites du joueur automatisé sont détaillés dans
+[`tests/speedrun_balance.md`](tests/speedrun_balance.md).
+Le succès
 `FIRST STEP` se débloque après le premier round terminé. `BARE HANDS` exige
 20 rounds d'une run normale sans bonus et `NO FRILLS` exige de terminer cette
 run entière sans bonus.
@@ -664,7 +872,8 @@ que les suivantes restent en file. Leur position est recalculée sous les timers
 8 pixels, y compris lorsque la résolution adaptative modifie la zone logique.
 Les choix sont appliqués
 immédiatement et sauvegardés dans `gameplay/achievement_notifications` et
-`gameplay/show_timer`.
+`gameplay/show_timer`. Le chronomètre global est masqué par défaut ; un choix
+déjà sauvegardé reste prioritaire. Le compte à rebours de chaque tour reste affiché.
 
 L'écran de fin de partie affiche les checkpoints débloqués, bonus découverts,
 règles rencontrées et achievements obtenus pendant la partie sans titre
@@ -708,19 +917,51 @@ La page `LINKS` ouvre les profils externes dans le navigateur du système :
 acceptées par le gestionnaire de liens.
 Les sélecteurs d'import et d'export utilisent les dialogues natifs du système
 pour ne pas dépasser la fenêtre logique du jeu ; la confirmation de suppression
-reste compacte et replie son texte automatiquement.
-La page `GRAPHICS` conserve toujours le viewport logique 256×320 afin que le
-zoom et la taille des sprites ne changent pas. La case unique `ADAPTIVE SCREEN
-SIZE` étend la zone logique sur l'axe supplémentaire afin de remplir les écrans
-de formats différents, notamment les tablettes. Lorsqu'elle est désactivée, le
-ratio reste fixe avec des marges si nécessaire. Le choix est sauvegardé dans
-`graphics/adaptive_resolution` et appliqué immédiatement. Dans la sous-rubrique
+utilise le sprite de popup et la police du jeu, avec les boutons `CANCEL` et
+`DELETE`. `CANCEL` reçoit le focus à l'ouverture ; le texte se replie
+automatiquement pour rester lisible.
+Par défaut, le jeu démarre en HD (`TRUE PIXEL ART` désactivé) et en mode
+`SEMI ADAPTIVE`. Les préférences graphiques déjà sauvegardées sont conservées.
+La page `GRAPHICS` utilise une référence logique 256×320 afin que le zoom et
+la taille des sprites ne changent pas. Le sélecteur de taille propose
+`CLASSIC`, `SEMI ADAPTIVE` et `ADAPTIVE`. Le choix est sauvegardé dans
+`graphics/screen_size_mode` et appliqué immédiatement ; les anciennes valeurs
+`graphics/adaptive_resolution` restent prises en charge. `TRUE PIXEL ART`,
+sauvegardé dans `graphics/true_pixel_art`, active le stretch viewport basse
+résolution : tout le jeu est rendu à l'échelle des sprites et des polices avant
+d'être agrandi. Lorsqu'il est désactivé, le jeu revient au mode canvas haute
+résolution et les fonds ne sont plus pixellisés. Dans la sous-rubrique
 `BACKGROUND`, `BACKGROUND DEFORMATION` active uniquement la déformation et
 conserve les bandes lorsqu'elle est désactivée. Le choix reste sauvegardé dans
 `graphics/dust_effects`. `SHOW BACKGROUND`, sauvegardé dans
 `graphics/background_enabled`, est l'option parente et permet de masquer
 entièrement le fond généré. Sa sous-option indentée `BACKGROUND DEFORMATION`
 n'est affichée que lorsque le fond est actif.
+Les fonds principaux sont des presets procéduraux pilotés par shader via
+`BackgroundManager` et `BackgroundLayer`. La run démarre avec un fond choisi par
+le stream cosmétique du seed, puis chaque annonce `TIER RELIEF` choisit un
+nouveau preset en évitant fortement la répétition immédiate. La transition dure
+`BG_TRANSITION_DURATION` et peut être skippée avec l'annonce ; le skip place le
+nouveau fond dans son état final. La série de presets contient `stripes`,
+`grid`, `dots`, `waves`, `diamonds`, `brick`, `checkered` et `circles`. Les
+shaders reçoivent les couleurs de `BackgroundThemeCatalog`, donc changer les
+données partagées du catalogue modifie aussi tous les fonds.
+Les motifs sont calculés en pixels logiques du viewport avec une référence fixe
+256×320 : le fond couvre toujours toute la fenêtre, mais une fenêtre plus large
+ajoute du motif au lieu d'étirer ou d'incliner celui déjà visible. Le mode HD
+conserve ainsi la même échelle de bandes, grilles, points et vagues que le mode
+true pixel-art.
+Chaque preset possède une entrée de catalogue et un material dans
+`resources/materials/backgrounds/`. Les réglages communs (`viewport_size`,
+`reference_size`, couleurs, intensité et pixellisation) viennent des données du
+catalogue, tandis que les réglages de forme et la vitesse vectorielle restent
+locaux au material concerné. Ces réglages communs sont envoyés aux shaders via
+les Shader Globals `background_*`, déclarés dans `project.godot`, afin de ne pas
+apparaître comme paramètres éditables sur chaque material. `diamonds` réutilise
+le shader de grille avec une rotation différente, `brick` utilise le décalage
+alterné des lignes, `checkered` expose une largeur, une longueur et une forme
+de pavage (`Rectangle`, `Triangle` ou `Diamond`), et `circles` réutilise le
+shader de points avec un rayon intérieur.
 Le pool léger de poussière volatile est réparti dans tout le viewport. Les cartes la
 repoussent localement à leur passage et les piles mobiles appliquent une
 impulsion réduite. La souris produit elle aussi une impulsion discrète, bien
@@ -754,6 +995,11 @@ Les deux passes partagent un filtre de pixellisation en espace écran. Le régla
 des blocs (2 pixels par défaut) pour les bandes et leur déformation. Cette
 quantification dans les shaders évite un `SubViewport`, dont la texture aurait
 compliqué l'alignement du back-buffer en résolution adaptative.
+`Editor Preview > Editor Background Preview High Resolution` désactive cette
+pixellisation sur les presets procéduraux pour inspecter le fond en haute
+résolution dans l'éditeur. En jeu, `TRUE PIXEL ART` laisse cette pixellisation
+active et force le rendu viewport low-res ; quand l'option est coupée, le
+contrôleur garde le layout adaptatif mais rend le fond en haute résolution.
 `PilesBoard` conserve de son côté une taille fixe de 164×163 et utilise des
 ancres centrales. Les positions locales des piles ne sont jamais recalculées
 pendant un round ; lors d'un redimensionnement, seul le plateau complet suit le
@@ -831,7 +1077,10 @@ pour une réactivation ultérieure. L'ancien champ de sauvegarde
 `Dust Automatic Tile Influence` et `Dust Completion Wave Influence` permettent
 d'ajuster séparément la couleur et chaque interaction depuis l'inspecteur.
 `SHOW_DUST_DEBUG` dans `debug.gd` affiche son repère de
-diagnostic. Comme les choix de police et de palette, les options à
+diagnostic. `FORCE_BACKGROUND_ID`, `FORCE_THEME_PALETTE`,
+`DISABLE_SHADER_BACKGROUNDS` et `DISABLE_BG_MORPH_TRANSITION` permettent de
+tester rapidement les fonds, les thèmes et leurs fallbacks. Comme les choix de
+police et de palette, les options à
 sélection unique affichent le carré `selected` pour la valeur active et le
 carré `unchecked` pour les autres valeurs. Leur couleur reste inchangée ; seule
 la surbrillance commune aux boutons apparaît au survol. Ces choix sont affichés
@@ -864,13 +1113,10 @@ verrouillée conserve le titre `???`, dont les trois caractères utilisent ses
 trois premières couleurs sans révéler son nom. Les noms de
 polices et de palettes reviennent automatiquement à la ligne et agrandissent
 leur entrée lorsqu'ils dépassent la largeur disponible.
-Le catalogue est construit directement depuis les ressources présentes dans le
-dossier. Il inclut notamment `PEACHY DELIGHT`, `PURPLE RAINDROPS`, `BLUES`,
-`OCEAN SUNSET`, `PASTEL`, `MAGICAL SEASIDE`, `MINTY`, `LEMONADE`, `COZY`,
-`TROPICAL`, `VIBRANT RAINBOW DELIGHT`, `FAIRY GARDEN`, `FIRECRACKER`, `FIESTA`,
-`FUNKY`, `MEADOW`, `CHERRY BLOSSOM`, `SPRING` et `SOFT RAINBOW`. Les dix-huit
-premières nouvelles récompenses utilisent chacune un achievement jusque-là sans
-palette ; `SOFT RAINBOW` est disponible par défaut. Chaque palette contient dix teintes distinctes
+Le catalogue actif contient uniquement les ressources de `enabled_data` dans
+`palettes.tres`, sans doublon. `CLASSIC` est disponible par défaut ; les 22 autres
+palettes correspondent chacune à un achievement distinct. `DEBLOCAGES.md`
+répertorie les associations actuelles. Chaque palette contient dix teintes distinctes
 indexées de `0` à `9`. Les palettes verrouillées sont accordées par leurs
 achievements associés et enregistrées dans `progression/unlocked_palettes`.
 La règle `COLORBLIND` ne modifie jamais la palette sélectionnée : elle remplace
@@ -1008,6 +1254,11 @@ Quatre variantes supplémentaires sont chargées par le même registre :
 Les réglages de ces modes sont centralisés dans
 `resources/scripts/settings/difficulty.gd`. Leurs achievements de déblocage et
 de completion sont des ressources ordinaires de `resources/data/achievements/`.
+Chaque challenge actif possède un achievement obtenu en terminant son parcours
+normal : `LOCK AND RELOAD` (Reload Required), `ONE AND DONE` (One Shot),
+`COLOR ME VICTORIOUS` (True Colors), `AGAINST THE CLOCK` (Shared Clock),
+`EXPRESS DELIVERY` (Conveyor Belt) et `BOSS SLAYER` (Boss Rush).
+Une défaite ou une run Endless ne valide pas ces achievements de complétion.
 `CHALLENGE ACCEPTED` parcourt dynamiquement toutes les définitions chargées par
 `ChallengeRegistry`.
 

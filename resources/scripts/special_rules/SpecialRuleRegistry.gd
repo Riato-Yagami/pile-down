@@ -1,7 +1,7 @@
 class_name SpecialRuleRegistry
 extends RefCounted
 
-const CATALOG: DataCatalog = preload("res://resources/data/special_rules.tres")
+const CATALOG := preload("res://resources/data/special_rules.tres")
 
 
 static func create_all_rules() -> Array[SpecialRuleData]:

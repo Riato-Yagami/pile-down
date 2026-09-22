@@ -9,7 +9,7 @@ uniform vec2 light_position = vec2(128.0, 160.0);
 uniform vec2 viewport_size = vec2(256.0, 320.0);
 uniform float radius = 54.0;
 uniform float softness = 14.0;
-uniform float darkness_alpha = 0.94;
+uniform float darkness_alpha = 0.985;
 
 void fragment() {
 	vec2 pixel_position = UV * viewport_size;
@@ -32,3 +32,4 @@ grow_vertical = 2
 mouse_filter = 2
 material = SubResource("FlashlightMaterial")
 script = ExtResource("1")
+darkness_alpha = 0.985

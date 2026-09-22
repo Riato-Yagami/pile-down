@@ -11,8 +11,8 @@ static func build(menu: ProgressionMenu) -> Dictionary:
 	var preview_title_font_size := 20
 	var preview_override_hidden_tile := false
 	var preview_font_title := "CURRENT FONT"
-	if catalog.editor_preview_font != null:
-		var editor_font := catalog.editor_preview_font
+	var editor_font := catalog.get_editor_preview_font()
+	if editor_font != null:
 		preview_font = editor_font.font
 		preview_font_size = editor_font.tile_font_size
 		preview_font_offset = editor_font.tile_font_offset
@@ -25,8 +25,8 @@ static func build(menu: ProgressionMenu) -> Dictionary:
 		preview_override_hidden_tile = editor_font.override_hidden_tile_with_font
 		preview_font_title = editor_font.display_name
 	var preview_palettes: Array[Dictionary] = []
-	if catalog.editor_preview_palette != null:
-		var editor_palette := catalog.editor_preview_palette
+	var editor_palette := catalog.get_editor_preview_palette()
+	if editor_palette != null:
 		preview_palettes.append({
 			"id": editor_palette.id,
 			"title": editor_palette.display_name,

@@ -4,9 +4,10 @@
 
 [resource]
 script = ExtResource("1_klhdd")
-id = &"double_down_full_activation"
 title = "DOWN THE LINE"
 description = "Use every possible Double Down placement in one activation."
 category = &"COMBOS"
-reward_font = &"pixeled"
+difficulty = 6
+reward_rationale = "Une cascade de gouttes pour la chaîne descendante complète."
 required_count = 3
+id = &"double_down_full_activation"

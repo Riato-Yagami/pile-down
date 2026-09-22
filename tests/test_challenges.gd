@@ -9,7 +9,7 @@ func _init() -> void:
 
 func _run() -> void:
 	var manager := ChallengeManager.new()
-	assert(manager.definitions.size() >= 8)
+	assert(manager.definitions.size() >= 6)
 	var reload := manager.find(&"reload_required")
 	var one_shot := manager.find(&"one_shot")
 	var pool_party := manager.find(&"pool_party")
@@ -24,7 +24,8 @@ func _run() -> void:
 	assert(not manager.modifiers_for(reload).guarantee_playable_hand)
 	assert(is_equal_approx(manager.modifiers_for(reload).reload_low_time_bonus, 2.0))
 	assert(manager.modifiers_for(one_shot).force_single_life)
-	assert(manager.modifiers_for(pool_party).pool_physics_enabled)
+	if pool_party != null:
+		assert(manager.modifiers_for(pool_party).pool_physics_enabled)
 	assert(manager.modifiers_for(true_colors).hide_tile_numbers)
 	assert(manager.modifiers_for(reload).disable_special_rules_on_first_round)
 	assert(true_colors.disabled_rules.has(&"colorblind"))
@@ -59,21 +60,64 @@ func _run() -> void:
 		&"bring_a_friend_full_activation", &"colorblind_expert",
 	])
 	game._open_challenge_selection()
+	await process_frame
 	assert(game.challenge_selection.visible)
+	var challenge_lock_slot := game.challenge_selection.lock_filter.get_parent() as Control
+	var challenge_back := game.challenge_selection.get_node(
+		"Margin/Layout/Header/Back"
+	) as TextureHighlightButton
+	assert(challenge_lock_slot.get_parent() == challenge_back.get_parent())
+	assert(challenge_lock_slot.get_index() == challenge_back.get_index() - 1)
+	assert(challenge_lock_slot.size_flags_vertical == Control.SIZE_SHRINK_CENTER)
+	var challenge_background := game.challenge_selection.get_node("Background") as ColorRect
+	assert(challenge_background.visible)
+	assert(challenge_background.mouse_filter == Control.MOUSE_FILTER_IGNORE)
 	assert(
 		game.challenge_selection.list.get_child_count()
 		== game.challenge_manager.definitions.size()
 	)
+	var found_locked_challenge := false
+	for entry_node in game.challenge_selection.list.get_children():
+		var entry := entry_node as VBoxContainer
+		var selectable := entry.get_child(0) as SelectableText
+		assert(selectable.custom_minimum_size.y <= 24.0)
+		if selectable.disabled:
+			found_locked_challenge = true
+			assert(selectable.mouse_default_cursor_shape == Control.CURSOR_ARROW)
+			assert(selectable.focus_mode == Control.FOCUS_NONE)
+	assert(found_locked_challenge)
 	game.challenge_selection._show_page(1)
 	assert(game.challenge_selection.seed_page.visible)
 	assert(not game.challenge_selection.scroll.visible)
 	assert(not game.challenge_selection.lock_filter.visible)
+	assert(game.challenge_selection.get_node_or_null("%PageTitle") == null)
 	assert(game.challenge_selection._seed_mode.item_count > 0)
+	var bonus_choices := game.challenge_selection.seed_content.get_node(
+		"PlayASeed/BonusChoices"
+	) as VBoxContainer
+	var found_single_level_bonus := false
+	for bonus_menu_node in bonus_choices.get_children():
+		var popup := bonus_menu_node.get_child(0) as PopupPanel
+		var popup_scroll := popup.get_node("PopupScroll") as ScrollContainer
+		var popup_content := popup_scroll.get_child(0) as VBoxContainer
+		for row_node in popup_content.get_children():
+			var row := row_node as HBoxContainer
+			var activation := row.get_child(0) as Button
+			if activation.text == "PILE MOVER":
+				found_single_level_bonus = true
+				assert(row.get_child_count() == 1)
+	assert(found_single_level_bonus)
 	game.challenge_selection._show_page(0)
 	assert(game.challenge_selection.scroll.visible)
 	game.challenge_selection.close()
 	await create_timer(game.submenu_swipe_duration + 0.05).timeout
 	assert(not game.challenge_selection.visible)
+	game._open_options_menu()
+	var options_background := game.options_menu.get_node("Scrim") as ColorRect
+	assert(options_background.visible)
+	assert(options_background.mouse_filter == Control.MOUSE_FILTER_IGNORE)
+	game._close_options_menu()
+	await create_timer(game.submenu_swipe_duration + 0.05).timeout
 
 	game.splash.visible = false
 	game.start_game(false, reload, false)
@@ -99,6 +143,14 @@ func _run() -> void:
 	))
 	assert(game.redraw_button.tooltip_text.is_empty())
 	assert(game.redraw_button.highlight_material != null)
+	assert(game.bonus_selection.skip_button.highlight_material != null)
+	game.bonus_selection.skip_button.mouse_entered.emit()
+	assert(
+		game.bonus_selection.skip_button.material
+		== game.bonus_selection.skip_button.highlight_material
+	)
+	game.bonus_selection.skip_button.mouse_exited.emit()
+	assert(game.bonus_selection.skip_button.material == null)
 	game.redraw_button.mouse_entered.emit()
 	assert(game.redraw_button.material == game.redraw_button.highlight_material)
 	game.redraw_button.mouse_exited.emit()

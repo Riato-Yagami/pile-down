@@ -4,10 +4,11 @@
 
 [resource]
 script = ExtResource("1_g2weo")
-id = &"speedrun_10_rounds"
 title = "QUICK TEN"
 description = "Complete 10 rounds in under 5 minutes."
 category = &"SPEEDRUN"
-reward_font = &"better_vcr"
+difficulty = 3
+reward_rationale = "Une première course rapide ouvre le challenge chronométré."
 required_count = 10
 time_limit_seconds = 300.0
+id = &"speedrun_10_rounds"

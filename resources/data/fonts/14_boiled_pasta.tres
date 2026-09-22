@@ -1,17 +1,15 @@
 [gd_resource type="Resource" script_class="FontData" format=3 uid="uid://d4baww0as3ppp"]
 
 [ext_resource type="FontFile" uid="uid://bmcr76ckf3kq8" path="res://resources/fonts/extra/boiled_pasta/Boiled Pasta.ttf" id="1_pf5g8"]
-[ext_resource type="Resource" path="res://resources/data/achievements/21_five_different_bonuses.tres" id="2_pf5g8"]
 [ext_resource type="Script" uid="uid://dj883c8fbgkvi" path="res://resources/scripts/progression/FontData.gd" id="3_3iite"]
+[ext_resource type="Resource" path="res://resources/data/achievements/56_complete_conveyor_belt.tres" id="progression_reward"]
 
 [resource]
 script = ExtResource("3_3iite")
-id = &"boiled_pasta"
 display_name = "BOILED PASTA"
 font = ExtResource("1_pf5g8")
 tile_font_size = 16
 tile_font_offset = Vector2(0, 2)
-title_font_offset = null
 title_font_size = 16
-override_hidden_tile_with_font = null
-required_achievement = ExtResource("2_pf5g8")
+required_achievement = ExtResource("progression_reward")
+id = &"boiled_pasta"

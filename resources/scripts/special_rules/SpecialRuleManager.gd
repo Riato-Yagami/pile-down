@@ -44,14 +44,13 @@ func set_run_rng(
 ) -> void:
 	rng = rule_stream
 	movement_rng = movement_stream
+	# Avoid carrying the previous run's anti-repeat history into a seed replay.
+	_last_special_rule_round = -1000
+	_previous_drawn_rule_ids.clear()
 
 
 func _shuffle_with_rng(values: Array, stream: RandomNumberGenerator) -> void:
-	for index in range(values.size() - 1, 0, -1):
-		var swap_index := stream.randi_range(0, index)
-		var temporary: Variant = values[index]
-		values[index] = values[swap_index]
-		values[swap_index] = temporary
+	RunRNG.shuffle(values, stream)
 
 
 func get_special_rule_capacity(round_number: int) -> int:

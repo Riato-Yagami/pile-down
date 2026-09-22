@@ -3,6 +3,9 @@ extends SpecialRule
 
 const Difficulty := preload("res://resources/scripts/settings/difficulty.gd")
 
+@export_category("Debug")
+@export var debug_always_on_next_launch := false
+
 
 func _init(
 	rule_id: StringName = &"",

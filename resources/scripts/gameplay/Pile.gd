@@ -68,7 +68,7 @@ func set_value_font(
 
 
 func set_tile_palette(colors: Array[Color]) -> void:
-	if colors.size() != 9:
+	if colors.size() != 10:
 		return
 	_tile_colors = colors.duplicate()
 	if is_node_ready():

@@ -1,17 +1,16 @@
 [gd_resource type="Resource" script_class="FontData" format=3 uid="uid://cn272aca5d6nd"]
 
 [ext_resource type="FontFile" uid="uid://eun61f46ujit" path="res://resources/fonts/extra/alkhemikal/Alkhemikal.ttf" id="1_oatbd"]
-[ext_resource type="Resource" path="res://resources/data/achievements/18_all_bonuses_maxed_once.tres" id="2_oatbd"]
 [ext_resource type="Script" uid="uid://dj883c8fbgkvi" path="res://resources/scripts/progression/FontData.gd" id="3_6ekju"]
+[ext_resource type="Resource" uid="uid://bwaefqp7guhgo" path="res://resources/data/achievements/18_all_bonuses_maxed_once.tres" id="progression_reward"]
 
 [resource]
 script = ExtResource("3_6ekju")
-id = &"alkhemikal"
 display_name = "ALKHEMIKAL"
 font = ExtResource("1_oatbd")
 tile_font_size = 32
 tile_font_offset = Vector2(1, 1)
 title_font_offset = Vector2(1, 0)
 title_font_size = 16
-override_hidden_tile_with_font = null
-required_achievement = ExtResource("2_oatbd")
+required_achievement = ExtResource("progression_reward")
+id = &"alkhemikal"

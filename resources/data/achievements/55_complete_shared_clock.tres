@@ -1,11 +1,12 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://ckr6q5d8yd0l4"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
-id = &"complete_shared_clock"
 title = "AGAINST THE CLOCK"
 description = "Complete Shared Clock."
 category = &"CHALLENGES"
-
+difficulty = 6
+reward_rationale = "Une pause rafraîchissante après la pression du chronomètre."
+id = &"complete_shared_clock"

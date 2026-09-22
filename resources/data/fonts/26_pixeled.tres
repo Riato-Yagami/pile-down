@@ -1,17 +1,16 @@
 [gd_resource type="Resource" script_class="FontData" format=3 uid="uid://cci054ue06w4h"]
 
 [ext_resource type="FontFile" uid="uid://ny5hn0bi7o53" path="res://resources/fonts/extra/pixeled/Pixeled.ttf" id="1_2551l"]
-[ext_resource type="Resource" path="res://resources/data/achievements/24_double_down_full_activation.tres" id="2_2551l"]
 [ext_resource type="Script" uid="uid://dj883c8fbgkvi" path="res://resources/scripts/progression/FontData.gd" id="3_kkck4"]
+[ext_resource type="Resource" path="res://resources/data/achievements/00_max_piles.tres" id="progression_reward"]
 
 [resource]
 script = ExtResource("3_kkck4")
-id = &"pixeled"
 display_name = "PIXELED"
 font = ExtResource("1_2551l")
 tile_font_size = 10
 tile_font_offset = Vector2(1, -1)
 title_font_offset = Vector2(1, -4)
 title_font_size = 10
-override_hidden_tile_with_font = null
-required_achievement = ExtResource("2_2551l")
+required_achievement = ExtResource("progression_reward")
+id = &"pixeled"

@@ -54,3 +54,12 @@ static func _fnv1a_64(text: String) -> int:
 	for byte in text.to_utf8_buffer():
 		result = (result ^ int(byte)) * FNV_PRIME
 	return result
+
+
+## Shuffle in place without consuming any other run stream.
+static func shuffle(values: Array, stream: RandomNumberGenerator) -> void:
+	for index in range(values.size() - 1, 0, -1):
+		var swap_index := stream.randi_range(0, index)
+		var temporary: Variant = values[index]
+		values[index] = values[swap_index]
+		values[swap_index] = temporary

@@ -1,0 +1,62 @@
+[
+  {
+    "name": "start-A",
+    "scenario": "baseline",
+    "cap": 60,
+    "seed": "PERF-A",
+    "pixel": false,
+    "screen_mode": "semi_adaptive",
+    "duration": 1
+  },
+  {
+    "name": "resize-0",
+    "scenario": "resize",
+    "cap": 60,
+    "seed": "PERF-A",
+    "pixel": false,
+    "screen_mode": "semi_adaptive"
+  },
+  {
+    "name": "start-B",
+    "scenario": "baseline",
+    "cap": 60,
+    "seed": "PERF-B",
+    "pixel": false,
+    "screen_mode": "semi_adaptive",
+    "duration": 1
+  },
+  {
+    "name": "resize-1",
+    "scenario": "resize",
+    "cap": 60,
+    "seed": "PERF-A",
+    "pixel": false,
+    "screen_mode": "semi_adaptive"
+  },
+  {
+    "name": "start-C",
+    "scenario": "baseline",
+    "cap": 60,
+    "seed": "PERF-C",
+    "pixel": false,
+    "screen_mode": "semi_adaptive",
+    "duration": 1
+  },
+  {
+    "name": "resize-2",
+    "scenario": "resize",
+    "cap": 60,
+    "seed": "PERF-A",
+    "pixel": false,
+    "screen_mode": "semi_adaptive"
+  },
+  {
+    "name": "states-final",
+    "scenario": "states",
+    "cap": 60,
+    "seed": "PERF-A",
+    "pixel": false,
+    "screen_mode": "semi_adaptive",
+    "duration": 1
+  }
+]

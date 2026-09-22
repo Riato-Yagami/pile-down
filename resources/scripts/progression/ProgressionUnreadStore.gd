@@ -3,8 +3,7 @@ extends RefCounted
 
 
 static func load(game: GameManager) -> void:
-	var config := ConfigFile.new()
-	config.load(game.AUDIO_CONFIG_PATH)
+	var config := SaveConfig.load_current()
 	game.unread_progression_pages.clear()
 	game.unread_progression_items.clear()
 	for value in config.get_value("progression", "unread_pages", []):
@@ -80,8 +79,7 @@ static func mark_page_viewed(game: GameManager, page: int) -> void:
 
 
 static func save(game: GameManager) -> void:
-	var config := ConfigFile.new()
-	config.load(game.AUDIO_CONFIG_PATH)
+	var config := SaveConfig.load_current()
 	config.set_value(
 		"progression", "unread_pages", game.unread_progression_pages
 	)

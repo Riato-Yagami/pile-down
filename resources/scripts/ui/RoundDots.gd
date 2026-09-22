@@ -7,32 +7,8 @@ const FULL_TEXTURE := preload(
 const EMPTY_TEXTURE := preload(
 	"res://resources/materials/textures/hand/life/life-point-empty.tres"
 )
-const REINFORCED_SHADER := """
-shader_type canvas_item;
-uniform vec4 gold_color : source_color = vec4(0.851, 0.647, 0.078, 1.0);
-void fragment() {
-	vec4 source = texture(TEXTURE, UV) * COLOR;
-	float vertical_shine = mix(1.12, 0.82, UV.y);
-	COLOR = vec4(
-		gold_color.rgb * vertical_shine,
-		source.a * gold_color.a
-	);
-}
-"""
-const SAFETY_NET_SHADER := """
-shader_type canvas_item;
-void fragment() {
-	vec4 source = texture(TEXTURE, UV) * COLOR;
-	float bevel = mix(0.72, 0.34, UV.y);
-	float shine = smoothstep(0.0, 0.12, 1.0 - abs(UV.x - 0.38));
-	vec3 silver = mix(
-		vec3(0.24, 0.28, 0.33),
-		vec3(0.66, 0.71, 0.76),
-		clamp(bevel + shine * 0.16, 0.0, 1.0)
-	);
-	COLOR = vec4(silver, source.a);
-}
-"""
+const REINFORCED_SHADER := preload("res://resources/shaders/ui/GoldStatus.gdshader")
+const SAFETY_NET_SHADER := preload("res://resources/shaders/ui/SafetyNet.gdshader")
 
 var remaining := 3
 var maximum := 3
@@ -173,14 +149,12 @@ func _update_life_points() -> void:
 		point.modulate = Color.WHITE
 		if safety_net_active:
 			var safety_material := ShaderMaterial.new()
-			var safety_shader := Shader.new()
-			safety_shader.code = SAFETY_NET_SHADER
+			var safety_shader: Shader = SAFETY_NET_SHADER
 			safety_material.shader = safety_shader
 			point.material = safety_material
 		elif reinforced_remaining > 0 and index >= visible_maximum - reinforced_remaining:
 			var reinforced_material := ShaderMaterial.new()
-			var shader := Shader.new()
-			shader.code = REINFORCED_SHADER
+			var shader: Shader = REINFORCED_SHADER
 			reinforced_material.shader = shader
 			point.material = reinforced_material
 		else:

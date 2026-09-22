@@ -1,0 +1,51 @@
+[
+  {
+    "case": "touch_mirror",
+    "seconds": 7.36,
+    "completed": true,
+    "observations": [
+      {
+        "expected": true,
+        "matches": true,
+        "name": "menu_visible",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "run_ready",
+        "observed": true
+      },
+      {
+        "name": "mirrored_back_rect",
+        "observed": "[P: (221.0, 279.0), S: (23.0, -13.0)]"
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "mirrored_back_detected",
+        "observed": true
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "mirrored_back_mouse_detected",
+        "observed": true
+      },
+      {
+        "expected": false,
+        "matches": true,
+        "name": "mirrored_back_outside_rejected",
+        "observed": false
+      },
+      {
+        "expected": true,
+        "matches": true,
+        "name": "mirrored_back_opens_popup_via_input",
+        "observed": true
+      }
+    ],
+    "output": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n\nERROR: Failed to read the root certificate store.\n   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"menu_visible\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"run_ready\",\"observed\":true}\nAUDIT {\"name\":\"mirrored_back_rect\",\"observed\":\"[P: (221.0, 279.0), S: (23.0, -13.0)]\"}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"mirrored_back_detected\",\"observed\":true}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"mirrored_back_mouse_detected\",\"observed\":true}\nAUDIT {\"expected\":false,\"matches\":true,\"name\":\"mirrored_back_outside_rejected\",\"observed\":false}\nAUDIT {\"expected\":true,\"matches\":true,\"name\":\"mirrored_back_opens_popup_via_input\",\"observed\":true}\nAUDIT_DONE {\"detail\":\"standard\",\"observations\":7,\"scenario\":\"touch_mirror\"}\n",
+    "exit_code": 0
+  }
+]

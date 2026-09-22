@@ -1,11 +1,13 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://dd1f0kjdelod3"]
 
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_yahpo"]
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1_yahpo"]
 
 [resource]
 script = ExtResource("1_yahpo")
-id = &"minimum_timer"
 title = "FINAL SECONDS"
 description = "Reach the shortest possible timer."
 category = &"STATS"
-reward_font = &"digital_disco"
+difficulty = 7
+reward_rationale = "Des chiffres numériques pour les dernières secondes."
+reward_font = &"digitalix"
+id = &"minimum_timer"

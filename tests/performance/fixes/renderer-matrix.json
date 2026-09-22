@@ -1,0 +1,23 @@
+[
+  {
+    "name": "renderer-gl_compatibility",
+    "scenario": "baseline",
+    "renderer": "gl_compatibility",
+    "duration": 4,
+    "cap": 0
+  },
+  {
+    "name": "renderer-mobile",
+    "scenario": "baseline",
+    "renderer": "mobile",
+    "duration": 4,
+    "cap": 0
+  },
+  {
+    "name": "renderer-forward_plus",
+    "scenario": "baseline",
+    "renderer": "forward_plus",
+    "duration": 4,
+    "cap": 0
+  }
+]

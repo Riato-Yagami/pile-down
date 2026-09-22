@@ -1,0 +1,14 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://bdmatcircle1"]
+
+[ext_resource type="Shader" uid="uid://dg4fc5dt4oiqj" path="res://resources/shaders/backgrounds/BackgroundDots.gdshader" id="1_shader"]
+
+[resource]
+resource_local_to_scene = true
+shader = ExtResource("1_shader")
+shader_parameter/speed = Vector2(0.012, -0.01)
+shader_parameter/time = 0.0
+shader_parameter/rotation = 192.0
+shader_parameter/dot_radius = 0.5
+shader_parameter/inner_dot_radius = 0.38
+shader_parameter/dot_spacing = Vector2(12, 15)
+shader_parameter/row_offset = 0.0

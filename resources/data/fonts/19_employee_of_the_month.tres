@@ -1,17 +1,16 @@
 [gd_resource type="Resource" script_class="FontData" format=3 uid="uid://da4j2go6321e5"]
 
 [ext_resource type="FontFile" uid="uid://bsfy7nx2j1j85" path="res://resources/fonts/extra/employee_of_the_month/employee-of-the-month.ttf" id="1_tveib"]
-[ext_resource type="Resource" path="res://resources/data/achievements/07_half_without_checkpoint.tres" id="2_tveib"]
 [ext_resource type="Script" uid="uid://dj883c8fbgkvi" path="res://resources/scripts/progression/FontData.gd" id="3_058as"]
+[ext_resource type="Resource" uid="uid://ccb32mqkabm7l" path="res://resources/data/achievements/07_half_without_checkpoint.tres" id="progression_reward"]
 
 [resource]
 script = ExtResource("3_058as")
-id = &"employee_of_the_month"
 display_name = "EMPLOYEE OF THE MONTH"
 font = ExtResource("1_tveib")
 tile_font_size = 12
 tile_font_offset = Vector2(1, -2)
 title_font_offset = Vector2(0, -2)
 title_font_size = 12
-override_hidden_tile_with_font = null
-required_achievement = ExtResource("2_tveib")
+required_achievement = ExtResource("progression_reward")
+id = &"employee_of_the_month"

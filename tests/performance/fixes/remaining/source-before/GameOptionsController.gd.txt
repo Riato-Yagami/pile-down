@@ -1,0 +1,570 @@
+class_name GameOptionsController
+extends RefCounted
+
+const ScreenSizeOptionsScript := preload(
+	"res://resources/scripts/settings/display/ScreenSizeOptions.gd"
+)
+const SCREEN_SIZE_MODE_CLASSIC = ScreenSizeOptionsScript.SCREEN_SIZE_MODE_CLASSIC
+const SCREEN_SIZE_MODE_SEMI_ADAPTIVE = ScreenSizeOptionsScript.SCREEN_SIZE_MODE_SEMI_ADAPTIVE
+const SCREEN_SIZE_MODE_ADAPTIVE = ScreenSizeOptionsScript.SCREEN_SIZE_MODE_ADAPTIVE
+const SCREEN_SIZE_MODES = ScreenSizeOptionsScript.SCREEN_SIZE_MODES
+const SCREEN_SIZE_LABELS = ScreenSizeOptionsScript.SCREEN_SIZE_LABELS
+const VOLUME_BAR_EDGE_MARGIN := 8.0
+const SCREEN_SIZE_SELECTOR_HEIGHT = ScreenSizeOptionsScript.SCREEN_SIZE_SELECTOR_HEIGHT
+const SCREEN_SIZE_SELECTOR_CONTENT_RIGHT = ScreenSizeOptionsScript.SCREEN_SIZE_SELECTOR_CONTENT_RIGHT
+const BUTTON_TEXTURE = ScreenSizeOptionsScript.BUTTON_TEXTURE
+const MULTI_SELECTION_ARROW_TEXTURE = ScreenSizeOptionsScript.MULTI_SELECTION_ARROW_TEXTURE
+
+
+static func setup_audio(game: GameManager) -> void:
+	var config := _load_config(game)
+	game.music_volume_slider.set_value_no_signal(
+		float(config.get_value("audio", "music_volume", 1.0)) * 100.0
+	)
+	game.sound_volume_slider.set_value_no_signal(
+		float(config.get_value("audio", "sound_volume", 1.0)) * 100.0
+	)
+	if game.music_volume_slider.value > 0.0:
+		game._music_volume_before_mute = game.music_volume_slider.value
+	if game.sound_volume_slider.value > 0.0:
+		game._sound_volume_before_mute = game.sound_volume_slider.value
+	game.music_volume_slider.value_changed.connect(
+		game._on_volume_changed.bind(game.MUSIC_BUS_NAME, "music_volume")
+	)
+	game.sound_volume_slider.value_changed.connect(
+		game._on_volume_changed.bind(game.SFX_BUS_NAME, "sound_volume")
+	)
+	_setup_volume_row(game, game.music_volume_slider)
+	_setup_volume_row(game, game.sound_volume_slider)
+	apply_bus_volume(game.MUSIC_BUS_NAME, game.music_volume_slider.value / 100.0)
+	apply_bus_volume(game.SFX_BUS_NAME, game.sound_volume_slider.value / 100.0)
+
+
+static func _setup_volume_row(game: GameManager, slider: HSlider) -> void:
+	var row := slider.get_parent() as HBoxContainer
+	if row == null:
+		return
+	var label := row.get_child(0) as Label
+	if label != null:
+		label.add_theme_color_override(&"font_color", game.OPTION_TEXT_COLOR)
+	_connect_volume_highlight(game, slider, label)
+	var spacer := row.get_node_or_null("RightMargin") as Control
+	if spacer == null:
+		spacer = Control.new()
+		spacer.name = "RightMargin"
+		row.add_child(spacer)
+	spacer.custom_minimum_size.x = VOLUME_BAR_EDGE_MARGIN
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+
+static func _connect_volume_highlight(
+	game: GameManager, slider: HSlider, label: Label
+) -> void:
+	if label == null:
+		return
+	var mouse_enter := _set_volume_label_state.bind(
+		game, slider, label, &"volume_label_hovered", true
+	)
+	var mouse_exit := _set_volume_label_state.bind(
+		game, slider, label, &"volume_label_hovered", false
+	)
+	var focus_enter := _set_volume_label_state.bind(
+		game, slider, label, &"volume_label_focused", true
+	)
+	var focus_exit := _set_volume_label_state.bind(
+		game, slider, label, &"volume_label_focused", false
+	)
+	if not slider.mouse_entered.is_connected(mouse_enter):
+		slider.mouse_entered.connect(mouse_enter)
+	if not slider.mouse_exited.is_connected(mouse_exit):
+		slider.mouse_exited.connect(mouse_exit)
+	if not slider.focus_entered.is_connected(focus_enter):
+		slider.focus_entered.connect(focus_enter)
+	if not slider.focus_exited.is_connected(focus_exit):
+		slider.focus_exited.connect(focus_exit)
+	_refresh_volume_label_highlight(game, slider, label)
+
+
+static func _set_volume_label_state(
+	game: GameManager,
+	slider: HSlider,
+	label: Label,
+	state_key: StringName,
+	enabled: bool
+) -> void:
+	slider.set_meta(state_key, enabled)
+	_refresh_volume_label_highlight(game, slider, label)
+
+
+static func _refresh_volume_label_highlight(
+	game: GameManager, slider: HSlider, label: Label
+) -> void:
+	if label == null:
+		return
+	var highlighted := (
+		bool(slider.get_meta(&"volume_label_hovered", false))
+		or bool(slider.get_meta(&"volume_label_focused", false))
+	)
+	label.add_theme_color_override(
+		&"font_color",
+		game.OPTIONS_SELECTED_COLOR if highlighted else game.OPTION_TEXT_COLOR
+	)
+
+
+static func _connect_option_text_highlight(game: GameManager, button: Button) -> void:
+	var mouse_enter := _set_option_text_state.bind(
+		game, button, &"option_text_hovered", true
+	)
+	var mouse_exit := _set_option_text_state.bind(
+		game, button, &"option_text_hovered", false
+	)
+	var focus_enter := _set_option_text_state.bind(
+		game, button, &"option_text_focused", true
+	)
+	var focus_exit := _set_option_text_state.bind(
+		game, button, &"option_text_focused", false
+	)
+	if not button.mouse_entered.is_connected(mouse_enter):
+		button.mouse_entered.connect(mouse_enter)
+	if not button.mouse_exited.is_connected(mouse_exit):
+		button.mouse_exited.connect(mouse_exit)
+	if not button.focus_entered.is_connected(focus_enter):
+		button.focus_entered.connect(focus_enter)
+	if not button.focus_exited.is_connected(focus_exit):
+		button.focus_exited.connect(focus_exit)
+	_refresh_option_text_highlight(game, button)
+
+
+static func _set_option_text_state(
+	game: GameManager,
+	button: Button,
+	state_key: StringName,
+	enabled: bool
+) -> void:
+	button.set_meta(state_key, enabled)
+	_refresh_option_text_highlight(game, button)
+
+
+static func _refresh_option_text_highlight(game: GameManager, button: Button) -> void:
+	if button == null:
+		return
+	var highlighted := (
+		bool(button.get_meta(&"option_text_hovered", false))
+		or bool(button.get_meta(&"option_text_focused", false))
+	)
+	var color := game.OPTIONS_SELECTED_COLOR if highlighted else game.OPTION_TEXT_COLOR
+	for color_name in [
+		&"font_color", &"font_pressed_color", &"font_disabled_color",
+	]:
+		button.add_theme_color_override(color_name, color)
+
+
+static func style_buttons(game: GameManager) -> void:
+	var buttons: Array[Button] = [
+		game.achievement_notifications_button,
+		game.timer_display_button,
+		game.adaptive_resolution_button,
+		game.true_pixel_art_button,
+		game.dust_effects_button,
+		game.background_enabled_button,
+		game.export_save_button,
+		game.import_save_button,
+		game.delete_save_button,
+		game.itch_link_button,
+		game.kofi_link_button,
+	]
+	for button in buttons:
+		button.add_theme_stylebox_override(&"focus", StyleBoxEmpty.new())
+		for color_name in [&"font_color", &"font_disabled_color"]:
+			button.add_theme_color_override(color_name, game.OPTION_TEXT_COLOR)
+		for color_name in [
+			&"font_hover_color", &"font_hover_pressed_color", &"font_focus_color",
+		]:
+			button.add_theme_color_override(color_name, game.OPTIONS_SELECTED_COLOR)
+		button.add_theme_color_override(&"font_pressed_color", game.OPTION_TEXT_COLOR)
+		button.add_theme_constant_override(&"h_separation", 3)
+		_connect_option_text_highlight(game, button)
+
+
+static func setup_gameplay(game: GameManager) -> void:
+	var config := _load_config(game)
+	game._achievement_notifications_enabled = bool(config.get_value(
+		"gameplay", "achievement_notifications", true
+	))
+	game._global_timer_enabled = bool(config.get_value(
+		"gameplay", "show_timer", true
+	))
+	refresh_gameplay(game)
+
+
+static func toggle_achievement_notifications(game: GameManager) -> void:
+	game._achievement_notifications_enabled = not game._achievement_notifications_enabled
+	if not game._achievement_notifications_enabled:
+		game._achievement_notification_queue.clear()
+		game.achievement_popup.visible = false
+	save_gameplay(game, "achievement_notifications", game._achievement_notifications_enabled)
+	refresh_gameplay(game)
+
+
+static func toggle_timer(game: GameManager) -> void:
+	game._global_timer_enabled = not game._global_timer_enabled
+	save_gameplay(game, "show_timer", game._global_timer_enabled)
+	refresh_gameplay(game)
+
+
+static func save_gameplay(game: GameManager, key: String, value: bool) -> void:
+	var config := _load_config(game)
+	config.set_value("gameplay", key, value)
+	config.save(game.AUDIO_CONFIG_PATH)
+
+
+static func refresh_gameplay(game: GameManager) -> void:
+	game.achievement_notifications_button.icon = (
+		game.SELECTED_TEXTURE
+		if game._achievement_notifications_enabled else game.UNCHECKED_TEXTURE
+	)
+	game.timer_display_button.icon = (
+		game.SELECTED_TEXTURE
+		if game._global_timer_enabled else game.UNCHECKED_TEXTURE
+	)
+	_refresh_option_text_highlight(game, game.achievement_notifications_button)
+	_refresh_option_text_highlight(game, game.timer_display_button)
+	game.run_time_label.visible = game._global_timer_enabled and not game.splash.visible
+
+
+static func setup_graphics(game: GameManager) -> void:
+	var config := _load_config(game)
+	var default_screen_size_mode := SCREEN_SIZE_MODE_SEMI_ADAPTIVE
+	if config.has_section_key("graphics", "adaptive_resolution"):
+		default_screen_size_mode = (
+			SCREEN_SIZE_MODE_ADAPTIVE
+			if bool(config.get_value("graphics", "adaptive_resolution"))
+			else SCREEN_SIZE_MODE_CLASSIC
+		)
+	game._screen_size_mode = StringName(config.get_value(
+		"graphics", "screen_size_mode",
+		default_screen_size_mode
+	))
+	if not SCREEN_SIZE_MODES.has(game._screen_size_mode):
+		game._screen_size_mode = SCREEN_SIZE_MODE_SEMI_ADAPTIVE
+	game._adaptive_resolution = game._screen_size_mode == SCREEN_SIZE_MODE_ADAPTIVE
+	game._true_pixel_art_enabled = bool(config.get_value(
+		"graphics", "true_pixel_art", false
+	))
+	game._dust_enabled = bool(config.get_value("graphics", "dust_effects", true))
+	game._background_enabled = bool(config.get_value(
+		"graphics", "background_enabled", true
+	))
+	if OS.has_feature("editor") and game.start_adaptive_in_editor:
+		game._screen_size_mode = SCREEN_SIZE_MODE_SEMI_ADAPTIVE
+		game._adaptive_resolution = false
+	apply_resolution(game)
+	refresh_dust(game)
+	refresh_background(game)
+	game.relief_lighting.set_enabled(false)
+
+
+static func setup_dust_pool(game: GameManager) -> void:
+	game.background_effects = (
+		game.get_node("Artwork")
+	)
+	game.background_effects.setup()
+	game.background_effects.set_pixelated_background(game._true_pixel_art_enabled)
+	game.background_effects.enabled = game._dust_enabled
+	game.background_effects.visible = true
+	game.background_effects.set_base_pattern_enabled(game._background_enabled)
+	game.background_manager.setup(
+		game.background_effects,
+		game.theme_manager.get_active_theme(),
+		game._background_enabled,
+		game._true_pixel_art_enabled
+	)
+	var pool_control := Control.new()
+	pool_control.set_script(game.DustPoolScript)
+	game.dust_pool = pool_control as DustPool
+	game.dust_pool.name = "DustPool"
+	game.get_node("Artwork").add_child(game.dust_pool)
+	game.dust_pool.setup(
+		dust_particle_target_count(game),
+		DebugSettings.is_dust_debug_visible(),
+		game.dust_viscosity,
+		game.dust_particle_color
+	)
+	game.dust_pool.particles_visible = false
+	game.dust_pool.enabled = game._dust_enabled
+
+
+static func resize_dust_distribution(game: GameManager) -> void:
+	apply_low_resolution_layout(game)
+	if is_instance_valid(game.relief_lighting):
+		var viewport_size := game.get_viewport_rect().size
+		game.relief_lighting.follow_pointer(viewport_size * 0.5, viewport_size)
+	if is_instance_valid(game.background_effects):
+		game.background_effects.call_deferred("resize_to_viewport")
+	if is_instance_valid(game.background_manager):
+		game.background_manager.call_deferred("resize_to_viewport")
+	if is_instance_valid(game.dust_pool):
+		game.dust_pool.call_deferred(
+			"resize_to_viewport", dust_particle_target_count(game)
+		)
+
+
+static func dust_particle_target_count(game: GameManager) -> int:
+	var viewport_size := game.get_viewport_rect().size
+	return maxi(roundi(
+		game.dust_particles_per_10000_pixels
+		* viewport_size.x * viewport_size.y / 10000.0
+	), 0)
+
+
+static func rebuild_dust_pool(game: GameManager) -> void:
+	if not is_instance_valid(game.dust_pool):
+		return
+	game.dust_pool.setup(
+		dust_particle_target_count(game),
+		DebugSettings.is_dust_debug_visible(),
+		game.dust_viscosity,
+		game.dust_particle_color
+	)
+	game.dust_pool.enabled = game._dust_enabled
+
+
+static func toggle_dust(game: GameManager) -> void:
+	game._dust_enabled = not game._dust_enabled
+	var config := _load_config(game)
+	config.set_value("graphics", "dust_effects", game._dust_enabled)
+	config.save(game.AUDIO_CONFIG_PATH)
+	if is_instance_valid(game.dust_pool):
+		game.dust_pool.enabled = game._dust_enabled
+	if is_instance_valid(game.background_effects):
+		game.background_effects.enabled = game._dust_enabled
+	refresh_dust(game)
+
+
+static func refresh_dust(game: GameManager) -> void:
+	game.dust_effects_button.modulate = Color.WHITE
+	game.dust_effects_button.icon = (
+		game.SELECTED_TEXTURE if game._dust_enabled else game.UNCHECKED_TEXTURE
+	)
+
+
+static func toggle_background(game: GameManager) -> void:
+	game._background_enabled = not game._background_enabled
+	var config := _load_config(game)
+	config.set_value("graphics", "background_enabled", game._background_enabled)
+	config.save(game.AUDIO_CONFIG_PATH)
+	if is_instance_valid(game.background_effects):
+		game.background_effects.visible = true
+		game.background_effects.set_base_pattern_enabled(
+			game._background_enabled and not game.splash.visible
+		)
+	if is_instance_valid(game.background_manager):
+		game.background_manager.set_enabled(
+			game._background_enabled and not game.splash.visible
+		)
+	refresh_background(game)
+
+
+static func refresh_background(game: GameManager) -> void:
+	game.background_enabled_button.modulate = Color.WHITE
+	game.background_enabled_button.icon = (
+		game.SELECTED_TEXTURE
+		if game._background_enabled else game.UNCHECKED_TEXTURE
+	)
+	game.dust_effects_button.visible = game._background_enabled
+
+
+static func set_adaptive_resolution(game: GameManager, adaptive: bool) -> void:
+	ScreenSizeOptionsScript.set_adaptive_resolution(game, adaptive)
+
+
+static func set_screen_size_mode(game: GameManager, index: int) -> void:
+	ScreenSizeOptionsScript.set_screen_size_mode(game, index)
+
+
+static func step_screen_size_mode(game: GameManager, direction: int) -> void:
+	ScreenSizeOptionsScript.step_screen_size_mode(game, direction)
+
+
+static func _save_screen_size_mode(game: GameManager) -> void:
+	ScreenSizeOptionsScript._save_screen_size_mode(game)
+
+
+static func toggle_true_pixel_art(game: GameManager) -> void:
+	ScreenSizeOptionsScript.toggle_true_pixel_art(game)
+
+
+static func apply_resolution(game: GameManager) -> void:
+	ScreenSizeOptionsScript.apply_resolution(game)
+
+
+static func apply_low_resolution_layout(game: GameManager) -> void:
+	ScreenSizeOptionsScript.apply_low_resolution_layout(game)
+
+
+static func _logical_layout_size(game: GameManager) -> Vector2:
+	return ScreenSizeOptionsScript._logical_layout_size(game)
+
+
+static func _true_pixel_layout_size(game: GameManager) -> Vector2:
+	return ScreenSizeOptionsScript._true_pixel_layout_size(game)
+
+
+static func _available_layout_size(game: GameManager) -> Vector2:
+	return ScreenSizeOptionsScript._available_layout_size(game)
+
+
+static func _setup_screen_size_options(game: GameManager) -> void:
+	ScreenSizeOptionsScript._setup_screen_size_options(game)
+
+
+static func refresh_screen_size_options(game: GameManager) -> void:
+	ScreenSizeOptionsScript.refresh_screen_size_options(game)
+
+
+static func _refresh_screen_size_options(game: GameManager) -> void:
+	ScreenSizeOptionsScript._refresh_screen_size_options(game)
+
+
+static func _style_screen_size_selector(game: GameManager, selector: OptionButton) -> void:
+	ScreenSizeOptionsScript._style_screen_size_selector(game, selector)
+
+
+static func _screen_size_selector_style(content_right := 9.0) -> StyleBoxTexture:
+	return ScreenSizeOptionsScript._screen_size_selector_style(content_right)
+
+
+static func _on_screen_size_mode_selected(index: int, game: GameManager) -> void:
+	ScreenSizeOptionsScript._on_screen_size_mode_selected(index, game)
+
+
+static func _uses_expanded_canvas(game: GameManager) -> bool:
+	return ScreenSizeOptionsScript._uses_expanded_canvas(game)
+
+
+static func _screen_size_mode_index(game: GameManager) -> int:
+	return ScreenSizeOptionsScript._screen_size_mode_index(game)
+
+
+static func _centered_game_offset(
+	logical_size: Vector2,
+	locked_size: Vector2i
+) -> Vector2:
+	return ScreenSizeOptionsScript._centered_game_offset(logical_size, locked_size)
+
+
+static func _apply_control_canvas(
+	control: Control,
+	logical_size: Vector2,
+	offset: Vector2,
+	scale_factor: float
+) -> void:
+	ScreenSizeOptionsScript._apply_control_canvas(control, logical_size, offset, scale_factor)
+
+
+static func _apply_canvas_item(
+	node: Node,
+	logical_size: Vector2,
+	offset: Vector2,
+	scale_factor: float
+) -> void:
+	ScreenSizeOptionsScript._apply_canvas_item(node, logical_size, offset, scale_factor)
+
+
+static func _apply_canvas_layer_scale(
+	parent: Node,
+	logical_size: Vector2,
+	offset: Vector2,
+	scale_factor: float,
+	transition_control: Control
+) -> void:
+	ScreenSizeOptionsScript._apply_canvas_layer_scale(
+		parent, logical_size, offset, scale_factor, transition_control
+	)
+
+
+static func _fit_full_rect_children(parent: Control) -> void:
+	ScreenSizeOptionsScript._fit_full_rect_children(parent)
+
+
+static func _apply_true_pixel_art_mode(game: GameManager) -> void:
+	ScreenSizeOptionsScript._apply_true_pixel_art_mode(game)
+
+
+static func setup_save_dialogs(game: GameManager) -> void:
+	game.export_save_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	game.import_save_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	for dialog in [game.export_save_dialog, game.import_save_dialog]:
+		dialog.access = FileDialog.ACCESS_FILESYSTEM
+		dialog.filters = PackedStringArray(["*.json ; JSON save files"])
+		dialog.use_native_dialog = true
+	game.export_save_dialog.current_file = "pile-down-save.json"
+	var confirmation_label := game.delete_save_confirmation.get_label()
+	confirmation_label.custom_minimum_size.x = 196.0
+	confirmation_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	confirmation_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	confirmation_label.add_theme_font_override(
+		&"font", game.delete_save_button.get_theme_font(&"font")
+	)
+	confirmation_label.add_theme_font_size_override(&"font_size", 16)
+	confirmation_label.add_theme_color_override(&"font_color", game.OPTION_TEXT_COLOR)
+	for button in [
+		game.delete_save_confirmation.get_cancel_button(),
+		game.delete_save_confirmation.get_ok_button(),
+	]:
+		button.custom_minimum_size = Vector2(88, 28)
+		button.add_theme_font_override(
+			&"font", game.delete_save_button.get_theme_font(&"font")
+		)
+		button.add_theme_font_size_override(&"font_size", 16)
+		button.add_theme_color_override(&"font_color", game.OPTION_TEXT_COLOR)
+		button.add_theme_color_override(&"font_hover_color", game.OPTIONS_SELECTED_COLOR)
+		button.add_theme_color_override(&"font_focus_color", game.OPTIONS_SELECTED_COLOR)
+		for state in [&"normal", &"hover", &"pressed", &"focus"]:
+			button.add_theme_stylebox_override(state, StyleBoxEmpty.new())
+
+
+static func export_save(game: GameManager, path: String) -> void:
+	var error := game.save_data_manager.export_json(path)
+	game.save_status.text = "SAVE EXPORTED" if error == OK else "EXPORT FAILED"
+
+
+static func import_save(game: GameManager, path: String) -> void:
+	var error := game.save_data_manager.import_json(path)
+	if error != OK:
+		game.save_status.text = "INVALID SAVE FILE"
+		return
+	game.get_tree().reload_current_scene()
+
+
+static func delete_save(game: GameManager) -> void:
+	var error := game.save_data_manager.delete_save()
+	if error != OK:
+		game.save_status.text = "DELETE FAILED"
+		return
+	game.get_tree().reload_current_scene()
+
+
+static func volume_changed(
+	game: GameManager, value: float, bus_name: StringName, config_key: String
+) -> void:
+	var linear_volume := value / 100.0
+	apply_bus_volume(bus_name, linear_volume)
+	var config := _load_config(game)
+	config.set_value("audio", config_key, linear_volume)
+	config.save(game.AUDIO_CONFIG_PATH)
+
+
+static func apply_bus_volume(bus_name: StringName, linear_volume: float) -> void:
+	var bus_index := AudioServer.get_bus_index(bus_name)
+	if bus_index < 0:
+		return
+	AudioServer.set_bus_volume_db(
+		bus_index, linear_to_db(maxf(linear_volume, 0.0001))
+	)
+	AudioServer.set_bus_mute(bus_index, is_zero_approx(linear_volume))
+
+
+static func _load_config(game: GameManager) -> ConfigFile:
+	var config := SaveConfig.load_current()
+	return config

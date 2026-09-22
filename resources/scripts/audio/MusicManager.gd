@@ -15,9 +15,11 @@ var low_pass_enabled := false
 var _low_pass: AudioEffectLowPassFilter
 var _low_pass_effect_index := -1
 var _filter_tween: Tween
+var _headless_audio := false
 
 
 func _ready() -> void:
+	_headless_audio = DisplayServer.get_name() == "headless"
 	_ensure_music_bus()
 	bus = MUSIC_BUS_NAME
 	volume_db = Settings.MUSIC_VOLUME_DB
@@ -25,7 +27,7 @@ func _ready() -> void:
 	game_music = load(GAME_SECTION_PATH % current_section) as AudioStreamWAV
 	stream = menu_music
 	set_low_pass_enabled(true)
-	play()
+	_play_if_audible()
 
 
 func _exit_tree() -> void:
@@ -45,7 +47,7 @@ func reset_game_sections(section_number := 1) -> void:
 	section_change_requested = false
 	if stream != menu_music:
 		stream = game_music
-		play()
+		_play_if_audible()
 
 
 func transition_to_game_music() -> void:
@@ -72,7 +74,7 @@ func transition_to_menu_music() -> void:
 	if stream == menu_music:
 		return
 	stream = menu_music
-	play()
+	_play_if_audible()
 
 
 func _play_game_music() -> void:
@@ -81,7 +83,7 @@ func _play_game_music() -> void:
 		return
 	game_music_requested = false
 	stream = game_music
-	play()
+	_play_if_audible()
 
 
 func is_playing_menu_music() -> bool:
@@ -174,12 +176,13 @@ func _play_section(section_number: int, section_path: String) -> void:
 	game_music = load(section_path) as AudioStreamWAV
 	section_change_requested = false
 	stream = game_music
-	play()
+	_play_if_audible()
 
 
 func wait_for_next_hand_beat() -> void:
 	if (
 		not Settings.SYNC_HANDS_TO_MUSIC
+		or _headless_audio
 		or not playing
 		or Settings.MUSIC_BPM <= 0.0
 		or Settings.HAND_BEAT_INTERVAL <= 0.0
@@ -198,3 +201,9 @@ func wait_for_next_hand_beat() -> void:
 	if grid_position <= 0.02 or remaining_time <= 0.02:
 		return
 	await get_tree().create_timer(remaining_time).timeout
+
+
+func _play_if_audible() -> void:
+	if _headless_audio:
+		return
+	play()

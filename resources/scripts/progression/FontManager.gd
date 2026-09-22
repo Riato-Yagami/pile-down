@@ -3,15 +3,14 @@ extends Node
 
 signal font_changed(font_id: StringName)
 
-const SAVE_PATH := "user://pile_down.cfg"
+const SAVE_PATH := SaveConfig.PATH
 var definitions: Array[FontData] = FontRegistry.create_all()
 var unlocked: Array[StringName] = []
 var selected_font: StringName = &"press_start_2p"
 
 
 func load_progress() -> void:
-	var config := ConfigFile.new()
-	config.load(SAVE_PATH)
+	var config := SaveConfig.load_current()
 	for data in definitions:
 		if data.default_unlocked and not unlocked.has(data.id):
 			unlocked.append(data.id)
@@ -60,8 +59,7 @@ func find(id: StringName) -> FontData:
 
 
 func _save() -> void:
-	var config := ConfigFile.new()
-	config.load(SAVE_PATH)
+	var config := SaveConfig.load_current()
 	config.set_value("progression", "unlocked_fonts", unlocked)
 	config.set_value("settings", "selected_font", selected_font)
 	config.save(SAVE_PATH)

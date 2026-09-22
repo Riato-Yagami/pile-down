@@ -1,8 +1,12 @@
-[gd_resource type="Resource" script_class="AchievementData" format=3]
-[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1"]
+[gd_resource type="Resource" script_class="AchievementData" format=3 uid="uid://bjidtn6tdaq31"]
+
+[ext_resource type="Script" uid="uid://btpltxgjxuhvx" path="res://resources/scripts/progression/AchievementData.gd" id="1"]
+
 [resource]
 script = ExtResource("1")
-id = &"full_magazine"
 title = "FULL MAGAZINE"
 description = "Reach Redraw III."
 category = &"CHALLENGES"
+difficulty = 4
+reward_rationale = "Redraw III prépare directement au challenge de rechargement."
+id = &"full_magazine"
