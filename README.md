@@ -205,6 +205,18 @@ Le preset utilise les icônes Android dédiées de
 la zone sûre des masques de lanceur, ainsi qu'une silhouette monochrome pour
 les icônes thématiques. Leur motif reprend directement les rendus pixel-art
 des tuiles `3`, `2` et `1` du jeu, sans lissage.
+Le motif est centré sur les deux axes ; les fonds adaptatif et classique sont
+unis, en `#f7f6f2`, comme le fond du jeu. Pour reconstruire les PNG à partir
+du motif existant :
+
+```sh
+godot --headless --path . --script resources/scripts/tools/GenerateAndroidIcons.gd
+```
+
+La fiche Google Play utilise ses propres visuels, renseignés dans Play Console.
+Lors d'une première publication en test interne, Google peut afficher une fiche
+provisoire pendant 48 heures : voir [l'aide Google Play sur les tests](https://support.google.com/googleplay/android-developer/answer/9845334?hl=fr).
+
 Les exports Web, Linux et Windows utilisent la même pile de vraies tuiles via
 `resources/sprites/branding/game-icon.png`, sur fond transparent et sans les couches
 adaptatives propres à Android.
@@ -588,6 +600,16 @@ ou modifiée, et les options de déblocage du mode debug sont ignorées.
 
 Tous les réglages sont centralisés dans `resources/scripts/settings/difficulty.gd` :
 
+`LAST_PILE_DRAW_SUPPRESSION` vaut `0.75` par défaut. Il retire cette proportion
+des tirages ordinaires correspondant à la prochaine valeur de la dernière pile
+choisie par le joueur, puis les remplace par une autre valeur. À `0`, le tirage
+et sa séquence aléatoire sont inchangés ; à `1`, cette valeur est exclue lorsqu'une
+autre valeur jouable existe. Si toutes les piles attendent la même valeur, la
+main reste jouable. Les piles terminées et le début de chaque round annulent
+la cible. Le tapis roulant utilise également ce réglage. Lucky Hand et les
+jokers conservent leurs effets ; Reload Required garde ses mains aléatoires
+sans solution garantie et sa première main volontairement injouable.
+
 La montée en difficulté est plus rapide au début : après une hausse normale,
 un second attribut peut augmenter avec une probabilité qui diminue à chaque
 round. En contrepartie, la probabilité qu'un round n'ajoute aucune difficulté
@@ -911,17 +933,22 @@ Dans `resources/scenes/progression/ProgressionMenu.tscn`, `StatsNotification` es
 placement. Le bouton d'inspecteur `Copy Notification Placement` recopie sa
 position et sa taille sur les badges des autres onglets.
 
-La page `LINKS` ouvre les profils externes dans le navigateur du système :
-`ITCH.IO` mène à `https://juel-s.itch.io/` et `KO-FI` à
-`https://ko-fi.com/juels`. Seules les adresses HTTPS codées dans le jeu sont
-acceptées par le gestionnaire de liens.
+La page `LINKS` ouvre `JUELS.DEV`, `ITCH.IO` et `KO-FI` dans le navigateur du
+système. Les titres, URL et leur ordre viennent du catalogue
+`resources/data/links.tres` : ajouter une ressource `LinkData` à `enabled_data`
+ajoute automatiquement son bouton. Seules les adresses HTTPS sont acceptées.
+Les menus défilants, y compris les listes de sélection de seed, acceptent le
+swipe tactile. Glisser sur un bouton fait défiler sans l'activer ; toucher hors
+d'une liste déroulante la referme. Le glissement d'une tuile conserve le point
+de saisie initial pendant le délai de révélation.
 Les sélecteurs d'import et d'export utilisent les dialogues natifs du système
 pour ne pas dépasser la fenêtre logique du jeu ; la confirmation de suppression
 utilise le sprite de popup et la police du jeu, avec les boutons `CANCEL` et
 `DELETE`. `CANCEL` reçoit le focus à l'ouverture ; le texte se replie
 automatiquement pour rester lisible.
 Par défaut, le jeu démarre en HD (`TRUE PIXEL ART` désactivé) et en mode
-`SEMI ADAPTIVE`. Les préférences graphiques déjà sauvegardées sont conservées.
+`SEMI ADAPTIVE`, ou `ADAPTIVE` sur un appareil tactile dont l'écran est en
+portrait. Les préférences graphiques déjà sauvegardées sont conservées.
 La page `GRAPHICS` utilise une référence logique 256×320 afin que le zoom et
 la taille des sprites ne changent pas. Le sélecteur de taille propose
 `CLASSIC`, `SEMI ADAPTIVE` et `ADAPTIVE`. Le choix est sauvegardé dans

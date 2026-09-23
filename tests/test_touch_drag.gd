@@ -76,6 +76,9 @@ func _run() -> void:
 		await process_frame
 	var position_after_drag := card.get_global_rect().abs().get_center()
 	assert(position_after_drag.distance_to(position_before_drag) > 5.0)
+	var grabbed_point := card.get_global_transform() * card._pointer_offset
+	assert(grabbed_point.distance_to(drag.position) < 0.1)
+	assert(card._pointer_offset.distance_to(card.size * 0.5) < 1.0)
 
 	var release := InputEventScreenTouch.new()
 	release.index = 0

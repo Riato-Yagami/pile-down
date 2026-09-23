@@ -38,7 +38,7 @@ static func open_options_menu(host: GameManager) -> void:
 		host.OPTION_SAVE:
 			host.save_options_button.grab_focus()
 		host.OPTION_LINKS:
-			host.itch_link_button.grab_focus()
+			host.link_button_template.grab_focus()
 
 
 static func show_options_page(host: GameManager, page: int, animate := false) -> void:
@@ -81,6 +81,24 @@ static func show_options_page(host: GameManager, page: int, animate := false) ->
 			host.options_page_title.get_parent() as Control,
 			signi(host._options_page - previous_page)
 		)
+
+
+static func setup_links(host: GameManager) -> void:
+	var catalog := preload("res://resources/data/links.tres") as DataCatalog
+	var template := host.link_button_template
+	var buttons: Array[Button] = []
+	for index in catalog.enabled_data.size():
+		var button := template if index == 0 else template.duplicate(Node.DUPLICATE_SCRIPTS) as Button
+		if index > 0:
+			button.name = "Link%d" % index
+			button.unique_name_in_owner = false
+			host.links_options.add_child(button)
+		buttons.append(button)
+	for index in buttons.size():
+		var link := catalog.enabled_data[index] as LinkData
+		buttons[index].text = link.title
+		buttons[index].pressed.connect(host._open_external_link.bind(link.url))
+	template.visible = not buttons.is_empty()
 
 
 static func open_external_link(host: GameManager, url: String) -> void:

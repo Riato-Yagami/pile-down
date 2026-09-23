@@ -74,7 +74,8 @@ static func play_draw(host: PlayingCard, delay: float) -> void:
 	host.modulate.a = 0.0
 	host.position.y += 9.0
 	var destination_y := host.position.y - 9.0
-	var tween := host.create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	host._draw_tween = host.create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	var tween := host._draw_tween
 	tween.tween_interval(delay)
 	tween.tween_property(host, "position:y", destination_y, 0.18)
 	tween.parallel().tween_property(host, "modulate:a", 1.0, 0.14)

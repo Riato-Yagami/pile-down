@@ -16,6 +16,7 @@ static func place_selected_card(host: GameManager, pile: MemoryPile) -> void:
 		host.timer_manager.stop_countdown()
 	host.hand_manager.lock_hand()
 	var card := host.selected_card
+	host._last_played_pile = pile
 	var placed_value := pile.expected_value() if card.is_joker else card.card_value
 	var origin := card.global_position
 	host._root_action_id += 1

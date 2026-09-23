@@ -41,7 +41,9 @@ func generate_hand(
 	deja_vu_level := 0,
 	active_piles: Array[MemoryPile] = [],
 	guarantee_playable_card := true,
-	force_unplayable_hand := false
+	force_unplayable_hand := false,
+	last_played_pile: MemoryPile = null,
+	last_pile_suppression := 0.0
 ) -> void:
 	if clear_existing:
 		clear_hand(container, true)
@@ -78,13 +80,25 @@ func generate_hand(
 		if should_create_joker
 		else -1
 	)
-	var guaranteed_value := playable_values[rng.randi_range(0, playable_values.size() - 1)]
+	var avoided_value := -1
+	var active_suppression := 0.0 if force_unplayable_hand else last_pile_suppression
+	if is_instance_valid(last_played_pile) and not last_played_pile.completed:
+		avoided_value = last_played_pile.expected_value()
+	var guaranteed_value := _draw_with_suppression(
+		playable_values, avoided_value, active_suppression
+	)
+	var ordinary_values: Array[int] = []
+	for value in range(1 if pile_up else 0, start_value + (1 if pile_up else 0)):
+		ordinary_values.append(value)
+	# When every playable pile needs the same value, retain the usual draw.
+	var has_alternative := playable_values.any(func(value: int) -> bool: return value != avoided_value)
+	var suppression := active_suppression if has_alternative else 0.0
 	var values: Array[int] = []
 	for i in cards_to_create:
 		if force_unplayable_hand:
 			values.append(unplayable_values[rng.randi_range(0, unplayable_values.size() - 1)])
 		else:
-			values.append(rng.randi_range(1 if pile_up else 0, start_value if pile_up else start_value - 1))
+			values.append(_draw_with_suppression(ordinary_values, avoided_value, suppression))
 	var regular_slots: Array[int] = []
 	for index in cards_to_create:
 		if index != joker_position:
@@ -123,6 +137,26 @@ func generate_hand(
 			hover_reveal, use_roman_numerals,
 			modifiers, animate_draw, enter_from_right
 		)
+
+
+func _draw_with_suppression(pool: Array[int], avoided_value: int, suppression: float) -> int:
+	var value := pool[rng.randi_range(0, pool.size() - 1)]
+	return suppress_draw(value, pool, avoided_value, suppression)
+
+
+func suppress_draw(value: int, pool: Array[int], avoided_value: int, suppression: float) -> int:
+	var chance := clampf(suppression, 0.0, 1.0)
+	if value != avoided_value or chance <= 0.0:
+		return value
+	var alternatives: Array[int] = []
+	for candidate in pool:
+		if candidate != avoided_value:
+			alternatives.append(candidate)
+	if alternatives.is_empty():
+		return value
+	if chance >= 1.0 or rng.randf() < chance:
+		return alternatives[rng.randi_range(0, alternatives.size() - 1)]
+	return value
 
 
 func _apply_lucky_hand(

@@ -210,6 +210,7 @@ static func _refresh_screen_size_options(game: GameManager) -> void:
 
 
 static func _style_screen_size_selector(game: GameManager, selector: OptionButton) -> void:
+	preload("res://resources/scripts/ui/PopupTouchInput.gd").install(selector.get_popup())
 	selector.custom_minimum_size = Vector2(0.0, SCREEN_SIZE_SELECTOR_HEIGHT)
 	selector.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	selector.flat = false

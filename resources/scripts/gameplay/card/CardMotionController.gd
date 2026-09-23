@@ -47,6 +47,9 @@ static func _update_drag(card: PlayingCard, delta: float) -> void:
 			card.drag_timer.time_left / maxf(card.drag_timer.wait_time, 0.001)
 		)
 	var previous := card.global_position
+	if card.touch_index >= 0:
+		card.update_touch_drag(card.drag_target)
+		return
 	# Mirror Match can invert either axis, so the grabbed point must be
 	# transformed instead of treated as a simple position offset.
 	var drag_parent := card.get_parent() as CanvasItem

@@ -2067,28 +2067,14 @@ theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "FIND JUELS ONLINE"
 
-[node name="ItchLinkButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/LinksOptions" unique_id=395988428]
+[node name="LinkButtonTemplate" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/LinksOptions" unique_id=395988428]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
-text = "ITCH.IO"
-flat = true
-alignment = 0
-autowrap_mode = 3
-script = ExtResource("22_highlight")
-highlight_material = SubResource("ShaderMaterial_65kn7")
-
-[node name="KofiLinkButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/LinksOptions" unique_id=1832797592]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 24)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_fonts/font = ExtResource("6_1vynq")
-theme_override_font_sizes/font_size = 16
-text = "KO-FI"
+text = ""
 flat = true
 alignment = 0
 autowrap_mode = 3

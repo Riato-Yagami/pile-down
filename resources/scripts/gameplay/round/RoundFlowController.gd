@@ -41,6 +41,7 @@ static func start_round(host: GameManager) -> void:
 		child.queue_free()
 	host.piles.clear()
 	host._last_reminder_pile = null
+	host._last_played_pile = null
 	host.bonus_manager.begin_round()
 	host.round_modifiers = await host.special_rule_manager.begin_round(host._progression_round())
 	if gameplay_generation != host._gameplay_generation:
@@ -270,7 +271,9 @@ static func generate_next_hand(
 		host.bonus_manager.level(&"deja_vu"),
 		host.piles,
 		host.challenge_modifiers.guarantee_playable_hand,
-		force_reload_tutorial_hand
+		force_reload_tutorial_hand,
+		host._last_played_pile,
+		host.Difficulty.LAST_PILE_DRAW_SUPPRESSION
 	)
 	if wandering_cards:
 		host._draw_wandering_hand()

@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="DataCatalog" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/data/DataCatalog.gd" id="1"]
+[ext_resource type="Script" path="res://resources/scripts/data/Data.gd" id="2"]
+[ext_resource type="Script" path="res://resources/scripts/data/LinkData.gd" id="3"]
+
+[sub_resource type="Resource" id="Juels"]
+script = ExtResource("3")
+id = &"juels"
+title = "JUELS.DEV"
+url = "https://juels.dev"
+
+[sub_resource type="Resource" id="Itch"]
+script = ExtResource("3")
+id = &"itch"
+title = "ITCH.IO"
+url = "https://juel-s.itch.io/"
+
+[sub_resource type="Resource" id="Kofi"]
+script = ExtResource("3")
+id = &"kofi"
+title = "KO-FI"
+url = "https://ko-fi.com/juels"
+
+[resource]
+script = ExtResource("1")
+enabled_data = Array[ExtResource("2")]([SubResource("Juels"), SubResource("Itch"), SubResource("Kofi")])

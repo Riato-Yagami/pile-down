@@ -144,13 +144,26 @@ static func spawn_conveyor_card(host: GameManager) -> PlayingCard:
 			var chain_value := lucky_value + step * (chain_index + 1)
 			if chain_value >= 0 and chain_value <= host.start_value:
 				host._lucky_conveyor_queue.append(chain_value)
-	if not host._lucky_conveyor_queue.is_empty():
+	var lucky_queued := not host._lucky_conveyor_queue.is_empty()
+	if lucky_queued:
 		value = host._lucky_conveyor_queue.pop_front()
 	elif force_playable:
 		value = host.hand_manager.get_most_advanced_value(
 			playable_values,
 			host.round_modifiers.stack_direction == RoundModifiers.StackDirection.UP
 		)
+	if not lucky_queued and is_instance_valid(host._last_played_pile) and not host._last_played_pile.completed:
+		var avoided_value := host._last_played_pile.expected_value()
+		if playable_values.any(func(candidate: int) -> bool: return candidate != avoided_value):
+			var pool: Array[int] = playable_values.duplicate()
+			if not force_playable:
+				pool.assign(range(
+					1 if host.round_modifiers.stack_direction == RoundModifiers.StackDirection.UP else 0,
+					host.start_value + (1 if host.round_modifiers.stack_direction == RoundModifiers.StackDirection.UP else 0)
+				))
+			value = host.hand_manager.suppress_draw(
+				value, pool, avoided_value, host.Difficulty.LAST_PILE_DRAW_SUPPRESSION
+			)
 	if playable_values.has(value):
 		host._conveyor_unplayable_spawns = 0
 	else:

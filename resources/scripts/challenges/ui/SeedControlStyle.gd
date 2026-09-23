@@ -24,6 +24,7 @@ static func style_seed_input(host: ChallengeSelection, input: LineEdit) -> void:
 
 
 static func style_seed_selector(host: ChallengeSelection, selector: OptionButton) -> void:
+	preload("res://resources/scripts/ui/PopupTouchInput.gd").install(selector.get_popup())
 	selector.custom_minimum_size = Vector2(0, host.SEED_MENU_HEIGHT)
 	selector.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	selector.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -169,6 +170,7 @@ static func attach_multi_select_popup(
 	scroll_container.add_child(popup_content)
 	popup.add_child(scroll_container)
 	menu.add_child(popup)
+	preload("res://resources/scripts/ui/PopupTouchInput.gd").install(popup)
 	popup.about_to_popup.connect(host._style_scrollbar.bind(scroll_container))
 	return popup
 

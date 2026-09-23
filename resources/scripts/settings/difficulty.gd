@@ -7,6 +7,10 @@ const START_HAND_SIZE := 1
 const START_CARD_VALUE := 3
 const START_TURN_TIME := 5.0
 
+# Reject this fraction of ordinary draws matching the last player-selected pile.
+# Keep a playable fallback; Lucky Hand and forced Reload Required hands bypass it.
+const LAST_PILE_DRAW_SUPPRESSION := 0.75
+
 # Shared Clock derives its budget from the current round difficulty.
 const SHARED_CLOCK_BASE_MULTIPLIER := 1.0
 const SHARED_CLOCK_MIN_TIME := 8.0

@@ -39,7 +39,7 @@ func handle_gui_input(event: InputEvent) -> void:
 		elif touch.index == touch_index:
 			touch_index = -1
 			hide_highlight()
-			if Rect2(Vector2.ZERO, button.size).has_point(touch.position):
+			if not touch.canceled and Rect2(Vector2.ZERO, button.size).has_point(touch.position):
 				button.pressed.emit()
 			button.accept_event()
 	elif event is InputEventScreenDrag:

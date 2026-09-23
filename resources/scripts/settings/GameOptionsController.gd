@@ -170,9 +170,10 @@ static func style_buttons(game: GameManager) -> void:
 		game.export_save_button,
 		game.import_save_button,
 		game.delete_save_button,
-		game.itch_link_button,
-		game.kofi_link_button,
 	]
+	for child in game.links_options.get_children():
+		if child is Button:
+			buttons.append(child)
 	for button in buttons:
 		button.add_theme_stylebox_override(&"focus", StyleBoxEmpty.new())
 		for color_name in [&"font_color", &"font_disabled_color"]:
@@ -235,6 +236,9 @@ static func refresh_gameplay(game: GameManager) -> void:
 static func setup_graphics(game: GameManager) -> void:
 	var config := _load_config(game)
 	var default_screen_size_mode := SCREEN_SIZE_MODE_SEMI_ADAPTIVE
+	var screen_size := DisplayServer.screen_get_size()
+	if DisplayServer.is_touchscreen_available() and screen_size.y > screen_size.x:
+		default_screen_size_mode = SCREEN_SIZE_MODE_ADAPTIVE
 	if config.has_section_key("graphics", "adaptive_resolution"):
 		default_screen_size_mode = (
 			SCREEN_SIZE_MODE_ADAPTIVE

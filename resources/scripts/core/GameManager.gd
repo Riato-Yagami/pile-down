@@ -120,8 +120,6 @@ const OPTION_SOUND := 1
 const OPTION_GRAPHICS := 2
 const OPTION_SAVE := 3
 const OPTION_LINKS := 4
-const ITCH_URL := "https://juel-s.itch.io/"
-const KOFI_URL := "https://ko-fi.com/juels"
 const LOCKED_VIEWPORT_SIZE := Vector2i(256, 320)
 const AUDIO_CONFIG_PATH := SaveConfig.PATH
 const DEATH_POPUP_DELAY := 0.1
@@ -224,8 +222,7 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var pointer_relief_light: PointLight2D = %PointerReliefLight
 @onready var achievement_notifications_button: Button = %AchievementNotificationsButton
 @onready var timer_display_button: Button = %TimerDisplayButton
-@onready var itch_link_button: Button = %ItchLinkButton
-@onready var kofi_link_button: Button = %KofiLinkButton
+@onready var link_button_template: Button = %LinkButtonTemplate
 @onready var export_save_button: Button = %ExportSaveButton
 @onready var import_save_button: Button = %ImportSaveButton
 @onready var delete_save_button: Button = %DeleteSaveButton
@@ -420,6 +417,7 @@ var _timer_display_hidden := false
 var _timer_visibility_tween: Tween
 var _gameplay_back_cursor_update_queued := false
 var _last_reminder_pile: MemoryPile
+var _last_played_pile: MemoryPile
 var drag_companions: Array[PlayingCard] = []
 var _companion_offsets: Dictionary = {}
 var _companion_home_positions: Dictionary = {}
@@ -479,6 +477,7 @@ var achievement_popup_after_announcements_delay := 0.25
 
 
 func _ready() -> void:
+	add_child(preload("res://resources/scripts/ui/MenuTouchScroll.gd").new())
 	screens.visible = true
 	_initialize_run_rng(RunRNGScript.generate_run_seed())
 	quit_content.move_child(pause_seed_margin, quit_content.get_child_count() - 1)
@@ -560,8 +559,7 @@ func _ready() -> void:
 		_toggle_achievement_notifications
 	)
 	timer_display_button.pressed.connect(_toggle_timer_display)
-	itch_link_button.pressed.connect(_open_external_link.bind(ITCH_URL))
-	kofi_link_button.pressed.connect(_open_external_link.bind(KOFI_URL))
+	GameMenuPresenterScript.setup_links(self)
 	export_save_button.pressed.connect(_open_export_save_dialog)
 	import_save_button.pressed.connect(_open_import_save_dialog)
 	delete_save_button.pressed.connect(_open_delete_save_confirmation)

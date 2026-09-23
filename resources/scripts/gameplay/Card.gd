@@ -81,6 +81,7 @@ var _drag_starting := false
 var _entrance_unlock_pending := false
 var _entrance_animation_running := false
 var _entrance_tween: Tween
+var _draw_tween: Tween
 var _entrance_home_positions: Dictionary = {}
 var _held_hand_visual_position := Vector2.ZERO
 var drag_state := DragState.IDLE
@@ -103,6 +104,7 @@ var touch_state := TouchState.IDLE
 var touch_index := -1
 var touch_origin := Vector2.ZERO
 var touch_position := Vector2.ZERO
+var _touch_grab_offset := Vector2.ZERO
 var _touch_started_at_msec := 0
 var _touch_generation := 0
 
@@ -258,9 +260,20 @@ func begin_external_drag(pointer_position: Vector2, preserve_touch_face := false
 	home_global_position = stable_hand_global_position
 	drag_target = pointer_position
 	_last_target = pointer_position
-	_pointer_offset = get_global_transform().affine_inverse() * pointer_position
+	# The reveal delay can let the finger travel far before the drag starts.
+	# Keep the original grab point, not the finger's new position outside the tile.
+	_pointer_offset = (
+		_touch_grab_offset if touch_index >= 0
+		else get_global_transform().affine_inverse() * pointer_position
+	)
 	z_index = 100
-	_animate_pose(Vector2(1.06, 1.06), -2.0)
+	if touch_index >= 0:
+		# Do not animate the grab transform after positioning it under the finger.
+		if _visual_tween != null and _visual_tween.is_valid():
+			_visual_tween.kill()
+		scale = Vector2(1.06, 1.06)
+	else:
+		_animate_pose(Vector2(1.06, 1.06), -2.0)
 	if preserve_touch_face and _blind_delivery_enabled():
 		_schedule_blind_delivery_touch_hide()
 	if (
@@ -275,6 +288,11 @@ func begin_external_drag(pointer_position: Vector2, preserve_touch_face := false
 
 func prepare_external_drag(preserve_touch_face := false) -> void:
 	_drag_starting = true
+	# The initial hand's Y tween must not keep writing hand-local coordinates
+	# after the card is moved into DragLayer.
+	if _draw_tween != null and _draw_tween.is_valid():
+		_draw_tween.kill()
+		modulate.a = 1.0
 	# A hover flip animates this Control's local Y position. It must finish
 	# before reparenting, otherwise its cleanup writes the old hand-local Y
 	# into DragLayer and makes the card jump across a mirrored board.
@@ -300,8 +318,8 @@ func update_touch_drag(pointer_position: Vector2) -> void:
 		drag_parent.get_global_transform().affine_inverse()
 		* pointer_position
 	)
-	var grab_offset := get_transform().basis_xform(_pointer_offset)
-	position = pointer_in_parent - grab_offset
+	# Control transforms include the pivot offset as well as rotation/scale.
+	position += pointer_in_parent - get_transform() * _pointer_offset
 	_last_target = pointer_position
 
 
@@ -310,6 +328,7 @@ func begin_touch_interaction(index: int, pointer_position: Vector2) -> void:
 	touch_index = index
 	touch_origin = pointer_position
 	touch_position = pointer_position
+	_touch_grab_offset = get_global_transform().affine_inverse() * pointer_position
 	_touch_started_at_msec = Time.get_ticks_msec()
 	touch_state = TouchState.REVEALED
 	if hover_reveal_enabled:
