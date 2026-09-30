@@ -32,7 +32,7 @@ static func handle_debug_shortcut(host: GameManager, event: InputEvent) -> bool:
 			return false
 		host._debug_win_round()
 		return true
-	if host._debug_action_in_progress and key_event.keycode != KEY_R:
+	if host._debug_action_in_progress:
 		return false
 	match key_event.keycode:
 		KEY_F1:
@@ -66,9 +66,6 @@ static func handle_debug_shortcut(host: GameManager, event: InputEvent) -> bool:
 		KEY_V:
 			host.relief_lighting.toggle_debug_boost()
 			host._refresh_debug_help()
-			return true
-		KEY_R:
-			host._debug_reset_game()
 			return true
 		KEY_H:
 			host._debug_reset_progression()

@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://nhd7ja2wd0h5"]
 
+[ext_resource type="Script" path="res://resources/scripts/ui/OptionsMenuLayout.gd" id="options_layout"]
 [ext_resource type="Script" uid="uid://cndv55sh4bdu0" path="res://resources/scripts/core/GameManager.gd" id="1"]
 [ext_resource type="Script" uid="uid://dni0tcchvcu0r" path="res://resources/scripts/gameplay/HandManager.gd" id="2"]
 [ext_resource type="PackedScene" path="res://resources/scenes/gameplay/Card.tscn" id="3"]
@@ -81,7 +82,7 @@ default_font_size = 20
 
 [sub_resource type="Gradient" id="ReliefLightGradient"]
 offsets = PackedFloat32Array(0, 0.72, 1)
-colors = PackedColorArray(1, 1, 1, 0.72, 1, 1, 1, 0.18, 1, 1, 1, 0)
+colors = PackedColorArray(1.000000000, 1.000000000, 1.000000000, 0.720000029, 1.000000000, 1.000000000, 1.000000000, 0.180000007, 1.000000000, 1.000000000, 1.000000000, 0.000000000)
 
 [sub_resource type="GradientTexture2D" id="ReliefLightTexture"]
 gradient = SubResource("ReliefLightGradient")
@@ -95,8 +96,9 @@ fill_to = Vector2(1, 0.5)
 code = "shader_type canvas_item;
 
 uniform float progress : hint_range(0.0, 1.0) = 1.0;
-uniform vec4 progress_color : source_color = vec4(0.302, 0.51, 0.761, 1.0);
-uniform vec4 flash_color : source_color = vec4(0.878, 0.392, 0.333, 1.0);
+uniform vec4 progress_color : source_color = vec4(0.301960796, 0.509803951, 0.760784328, 1.000000000);
+uniform vec4 empty_clock_color : source_color = vec4(0.800000012, 0.800000012, 0.800000012, 1.000000000);
+uniform vec4 flash_color : source_color = vec4(0.878431380, 0.392156869, 0.333333343, 1.000000000);
 uniform float flash_strength : hint_range(0.0, 1.0) = 0.0;
 
 void fragment() {
@@ -106,7 +108,7 @@ void fragment() {
 	if (source.a > 0.0 && green_key) {
 		float angle = atan(UV.y - 0.5, UV.x - 0.5);
 		float clockwise_from_top = fract((angle + 1.57079632679) / 6.28318530718);
-		clock_color = clockwise_from_top <= progress ? progress_color : vec4(0.8, 0.8, 0.8, source.a);
+		clock_color = clockwise_from_top <= progress ? progress_color : vec4(empty_clock_color.rgb, source.a);
 	} else {
 		clock_color = source;
 	}
@@ -117,15 +119,15 @@ void fragment() {
 resource_local_to_scene = true
 shader = SubResource("ClockProgressShader")
 shader_parameter/progress = 1.0
-shader_parameter/progress_color = Color(0.302, 0.51, 0.761, 1)
-shader_parameter/flash_color = Color(0.878, 0.392, 0.333, 1)
+shader_parameter/progress_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+shader_parameter/flash_color = Color(0.878431380, 0.392156869, 0.333333343, 1.000000000)
 shader_parameter/flash_strength = 0.0
 
 [sub_resource type="Shader" id="Shader_cw3lv"]
 code = "shader_type canvas_item;
 
-uniform vec4 base_color : source_color = vec4(0.302, 0.51, 0.761, 1.0);
-uniform vec4 highlight_color : source_color = vec4(0.427, 0.655, 0.898, 1.0);
+uniform vec4 base_color : source_color = vec4(0.301960796, 0.509803951, 0.760784328, 1.000000000);
+uniform vec4 highlight_color : source_color = vec4(0.427450985, 0.654901981, 0.898039222, 1.000000000);
 
 void fragment() {
 	vec4 texture_color = texture(TEXTURE, UV);
@@ -143,16 +145,16 @@ void fragment() {
 [sub_resource type="ShaderMaterial" id="EscapeButtonHighlightMaterial"]
 resource_local_to_scene = true
 shader = SubResource("Shader_cw3lv")
-shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
-shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
 
 [sub_resource type="StyleBoxFlat" id="Wave"]
-bg_color = Color(0.31, 0.64, 0.63, 0.04)
+bg_color = Color(0.310000002, 0.639999986, 0.629999995, 0.039999999)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.31, 0.64, 0.63, 0.28)
+border_color = Color(0.310000002, 0.639999986, 0.629999995, 0.280000001)
 corner_radius_top_left = 100
 corner_radius_top_right = 100
 corner_radius_bottom_right = 100
@@ -190,7 +192,7 @@ uniform vec2 center_uv = vec2(0.5);
 uniform float radius = 2.0;
 uniform float aspect_ratio = 1.0;
 uniform float feather = 0.008;
-uniform vec4 mask_color : source_color = vec4(0.969, 0.965, 0.949, 1.0);
+uniform vec4 mask_color : source_color = vec4(0.968627453, 0.964705884, 0.949019611, 1.000000000);
 
 void fragment() {
 	vec2 delta = UV - center_uv;
@@ -206,13 +208,13 @@ shader_parameter/center_uv = Vector2(0.5, 0.5)
 shader_parameter/radius = 2.0
 shader_parameter/aspect_ratio = 1.0
 shader_parameter/feather = 0.008
-shader_parameter/mask_color = Color(0.969, 0.965, 0.949, 1)
+shader_parameter/mask_color = Color(0.968627453, 0.964705884, 0.949019611, 1.000000000)
 
 [sub_resource type="Shader" id="ButtonHighlightShader"]
 code = "shader_type canvas_item;
 
-uniform vec4 base_color : source_color = vec4(0.302, 0.51, 0.761, 1.0);
-uniform vec4 highlight_color : source_color = vec4(0.427, 0.655, 0.898, 1.0);
+uniform vec4 base_color : source_color = vec4(0.301960796, 0.509803951, 0.760784328, 1.000000000);
+uniform vec4 highlight_color : source_color = vec4(0.427450985, 0.654901981, 0.898039222, 1.000000000);
 
 void fragment() {
 	vec4 texture_color = texture(TEXTURE, UV);
@@ -230,8 +232,8 @@ void fragment() {
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_c6tix"]
 resource_local_to_scene = true
 shader = SubResource("ButtonHighlightShader")
-shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
-shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_c606d"]
 atlas = ExtResource("14")
@@ -251,11 +253,11 @@ texture_margin_bottom = 6.0
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_d4gu4"]
 resource_local_to_scene = true
 shader = SubResource("ButtonHighlightShader")
-shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
-shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
 
 [sub_resource type="StyleBoxFlat" id="SpriteButtonPressed"]
-bg_color = Color(0.176, 0.373, 0.62, 1)
+bg_color = Color(0.175999999, 0.372999996, 0.620000005, 1.000000000)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
 corner_radius_bottom_right = 5
@@ -264,62 +266,62 @@ corner_radius_bottom_left = 5
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_b3b7l"]
 resource_local_to_scene = true
 shader = SubResource("Shader_cw3lv")
-shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
-shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_2j8wy"]
 resource_local_to_scene = true
 shader = SubResource("Shader_cw3lv")
-shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
-shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_d7b04"]
 resource_local_to_scene = true
 shader = SubResource("Shader_cw3lv")
-shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
-shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_tlylo"]
 resource_local_to_scene = true
 shader = SubResource("Shader_cw3lv")
-shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
-shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_alyih"]
 resource_local_to_scene = true
 shader = SubResource("Shader_cw3lv")
-shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
-shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_h3d45"]
 resource_local_to_scene = true
 shader = SubResource("Shader_cw3lv")
-shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
-shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ddaiw"]
 resource_local_to_scene = true
 shader = SubResource("Shader_cw3lv")
-shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
-shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_8af6y"]
 resource_local_to_scene = true
 shader = SubResource("Shader_cw3lv")
-shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
-shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_bwbmk"]
 resource_local_to_scene = true
 shader = SubResource("Shader_cw3lv")
-shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
-shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_65kn7"]
 resource_local_to_scene = true
 shader = SubResource("ButtonHighlightShader")
-shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
-shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
 
 [sub_resource type="AtlasTexture" id="TransparentSliderGrabber"]
 atlas = ExtResource("21_bar")
@@ -331,9 +333,9 @@ region = Rect2(0, 0, 1, 1)
 code = "shader_type canvas_item;
 
 uniform float progress : hint_range(0.0, 1.0) = 1.0;
-uniform vec4 fill_color : source_color = vec4(0.302, 0.51, 0.761, 1.0);
-uniform vec4 empty_color : source_color = vec4(0.725, 0.765, 0.812, 1.0);
-uniform vec4 highlight_color : source_color = vec4(0.427, 0.655, 0.898, 1.0);
+uniform vec4 fill_color : source_color = vec4(0.301960796, 0.509803951, 0.760784328, 1.000000000);
+uniform vec4 empty_color : source_color = vec4(0.725000024, 0.764999986, 0.811999977, 1.000000000);
+uniform vec4 highlight_color : source_color = vec4(0.427450985, 0.654901981, 0.898039222, 1.000000000);
 uniform float highlighted : hint_range(0.0, 1.0) = 0.0;
 
 void fragment() {
@@ -350,25 +352,25 @@ void fragment() {
 resource_local_to_scene = true
 shader = SubResource("VolumeBarShader")
 shader_parameter/progress = 1.0
-shader_parameter/fill_color = Color(0.302, 0.51, 0.761, 1)
-shader_parameter/empty_color = Color(0.725, 0.765, 0.812, 1)
-shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+shader_parameter/fill_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+shader_parameter/empty_color = Color(0.725000024, 0.764999986, 0.811999977, 1.000000000)
+shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
 shader_parameter/highlighted = 0.0
 
 [sub_resource type="ShaderMaterial" id="SoundVolumeBarMaterial"]
 resource_local_to_scene = true
 shader = SubResource("VolumeBarShader")
 shader_parameter/progress = 1.0
-shader_parameter/fill_color = Color(0.302, 0.51, 0.761, 1)
-shader_parameter/empty_color = Color(0.725, 0.765, 0.812, 1)
-shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+shader_parameter/fill_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+shader_parameter/empty_color = Color(0.725000024, 0.764999986, 0.811999977, 1.000000000)
+shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
 shader_parameter/highlighted = 0.0
 
 [sub_resource type="Shader" id="ProgressionButtonHighlightShader"]
 code = "shader_type canvas_item;
 
-uniform vec4 base_color : source_color = vec4(0.302, 0.51, 0.761, 1.0);
-uniform vec4 highlight_color : source_color = vec4(0.3019608, 0.50980395, 0.7607843, 1.0);
+uniform vec4 base_color : source_color = vec4(0.301960796, 0.509803951, 0.760784328, 1.000000000);
+uniform vec4 highlight_color : source_color = vec4(0.301960796, 0.509803951, 0.760784328, 1.000000000);
 
 void fragment() {
 	vec4 texture_color = texture(TEXTURE, UV);
@@ -386,13 +388,13 @@ void fragment() {
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_6pw2q"]
 resource_local_to_scene = true
 shader = SubResource("ProgressionButtonHighlightShader")
-shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
-shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
 
 [sub_resource type="Shader" id="FontPreviewTileShader"]
 code = "shader_type canvas_item;
 
-uniform vec4 tile_color : source_color = vec4(0.302, 0.51, 0.761, 1.0);
+uniform vec4 tile_color : source_color = vec4(0.301960796, 0.509803951, 0.760784328, 1.000000000);
 
 void fragment() {
 	vec4 source = texture(TEXTURE, UV);
@@ -404,7 +406,7 @@ void fragment() {
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_dbqh1"]
 resource_local_to_scene = true
 shader = SubResource("FontPreviewTileShader")
-shader_parameter/tile_color = Color(0.302, 0.51, 0.761, 1)
+shader_parameter/tile_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
 
 [node name="Game" type="Control" unique_id=694228927]
 layout_mode = 3
@@ -418,7 +420,7 @@ script = ExtResource("1")
 replay_mask_duration = 0.4
 dust_particles_per_10000_pixels = 100.0
 dust_viscosity = 10.0
-dust_particle_color = Color(0.46666667, 0.45490196, 0.6313726, 0.93333334)
+dust_particle_color = Color(0.466666669, 0.454901963, 0.631372571, 0.933333337)
 dust_dragged_tile_influence = 0.5
 start_adaptive_in_editor = true
 
@@ -517,7 +519,7 @@ offset_right = 1.0
 offset_bottom = -1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_colors/font_color = Color(0.235294119, 0.235294119, 0.235294119, 1.000000000)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "5"
@@ -546,7 +548,7 @@ anchor_bottom = 1.0
 offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_colors/font_color = Color(0.235294119, 0.235294119, 0.235294119, 1.000000000)
 theme_override_font_sizes/font_size = 20
 text = "100"
 horizontal_alignment = 1
@@ -559,7 +561,7 @@ offset_left = 18.0
 offset_top = 13.0
 offset_right = 199.0
 offset_bottom = 31.0
-theme_override_colors/font_color = Color(0.541, 0.533, 0.51, 1)
+theme_override_colors/font_color = Color(0.541176498, 0.533333361, 0.509803951, 1.000000000)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "1 min 12 s 323 ms"
@@ -655,7 +657,7 @@ offset_right = 220.0
 offset_bottom = 36.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_colors/font_color = Color(0.235294119, 0.235294119, 0.235294119, 1.000000000)
 theme_override_font_sizes/font_size = 20
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -674,7 +676,6 @@ grow_horizontal = 2
 grow_vertical = 0
 script = ExtResource("7_conveyor_tray")
 conveyor_turn_point_x = 59.0
-screen_edge_margins = null
 conveyor_right_bleed = null
 
 [node name="RegularHandBackground" type="NinePatchRect" parent="Gameplay/HandTray" unique_id=1712941913]
@@ -796,7 +797,7 @@ offset_left = 17.0
 offset_top = 12.0
 offset_right = 29.0
 offset_bottom = 24.0
-theme_override_colors/font_color = Color(0.235294, 0.235294, 0.235294, 1)
+theme_override_colors/font_color = Color(0.235294119, 0.235294119, 0.235294119, 1.000000000)
 theme_override_font_sizes/font_size = 10
 text = "2"
 horizontal_alignment = 1
@@ -824,7 +825,7 @@ mouse_filter = 2
 
 [node name="ActiveBonusDescription" type="PanelContainer" parent="Gameplay" unique_id=1608555819]
 unique_name_in_owner = true
-self_modulate = Color(1, 1, 1, 0.6313726)
+self_modulate = Color(1.000000000, 1.000000000, 1.000000000, 0.631372571)
 z_index = 4
 layout_mode = 0
 offset_left = 64.0
@@ -857,8 +858,8 @@ offset_right = 157.0
 offset_bottom = -4.0
 grow_vertical = 0
 mouse_filter = 1
-theme_override_colors/font_color = Color(1, 1, 1, 0.82)
-theme_override_colors/font_outline_color = Color(0.1, 0.1, 0.1, 0.9)
+theme_override_colors/font_color = Color(1.000000000, 1.000000000, 1.000000000, 0.819999993)
+theme_override_colors/font_outline_color = Color(0.100000001, 0.100000001, 0.100000001, 0.899999976)
 theme_override_constants/outline_size = 2
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 8
@@ -874,8 +875,8 @@ offset_left = 5.0
 offset_top = 60.0
 offset_right = 155.0
 offset_bottom = 132.0
-theme_override_colors/font_color = Color(1, 1, 1, 0.9)
-theme_override_colors/font_outline_color = Color(0.1, 0.1, 0.1, 0.9)
+theme_override_colors/font_color = Color(1.000000000, 1.000000000, 1.000000000, 0.899999976)
+theme_override_colors/font_outline_color = Color(0.100000001, 0.100000001, 0.100000001, 0.899999976)
 theme_override_constants/outline_size = 2
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 8
@@ -958,7 +959,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.969, 0.965, 0.949, 1)
+color = Color(0.968627453, 0.964705884, 0.949019611, 1.000000000)
 
 [node name="MenuTransitionLayer" type="CanvasLayer" parent="PresentationLayers" unique_id=1818659348]
 unique_name_in_owner = true
@@ -983,7 +984,6 @@ highlight_material = SubResource("ShaderMaterial_c6tix")
 
 [node name="SkipButton" parent="PresentationLayers/BonusSelectionLayer/BonusSelection" index="4"]
 custom_minimum_size = Vector2(86, 20)
-custom_maximum_size = Vector2(54.115, 24.085)
 theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxTexture_k0uil")
 theme_override_styles/pressed = SubResource("StyleBoxTexture_k0uil")
@@ -1028,7 +1028,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.08, 0.09, 0.12, 0.46)
+color = Color(0.079999998, 0.090000004, 0.119999997, 0.460000008)
 
 [node name="Center" type="CenterContainer" parent="PresentationLayers/QuitPopupLayer/QuitPopup" unique_id=523622726]
 layout_mode = 1
@@ -1163,7 +1163,7 @@ stretch_mode = 5
 unique_name_in_owner = true
 custom_minimum_size = Vector2(130, 0)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_colors/font_color = Color(0.235294119, 0.235294119, 0.235294119, 1.000000000)
 theme_override_fonts/font = ExtResource("12")
 theme_override_font_sizes/font_size = 20
 text = "STACK OVERFLOW"
@@ -1187,7 +1187,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.969, 0.965, 0.949, 0.9)
+color = Color(0.968999982, 0.964999974, 0.949000001, 0.899999976)
 
 [node name="Center" type="CenterContainer" parent="Screens/OverlayLegacy" unique_id=282762708]
 layout_mode = 1
@@ -1231,7 +1231,7 @@ alignment = 1
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 mouse_filter = 2
-theme_override_colors/default_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_colors/default_color = Color(0.235294119, 0.235294119, 0.235294119, 1.000000000)
 theme_override_font_sizes/normal_font_size = 20
 bbcode_enabled = true
 text = "[center]100 rounds left[/center]"
@@ -1242,7 +1242,7 @@ scroll_active = false
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 mouse_filter = 2
-theme_override_colors/default_color = Color(0.541, 0.533, 0.51, 1)
+theme_override_colors/default_color = Color(0.541176498, 0.533333361, 0.509803951, 1.000000000)
 theme_override_fonts/normal_font = ExtResource("6_1vynq")
 theme_override_font_sizes/normal_font_size = 16
 bbcode_enabled = true
@@ -1294,7 +1294,7 @@ highlight_material = SubResource("ShaderMaterial_h3d45")
 custom_minimum_size = Vector2(236, 20)
 layout_mode = 0
 mouse_filter = 2
-theme_override_colors/default_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_colors/default_color = Color(0.235294119, 0.235294119, 0.235294119, 1.000000000)
 theme_override_font_sizes/normal_font_size = 20
 bbcode_enabled = true
 text = "[center][wave amp=25.0 freq=3.0 connected=1]HIGHSCORE[/wave][/center]"
@@ -1305,7 +1305,7 @@ scroll_active = false
 custom_minimum_size = Vector2(236, 0)
 layout_mode = 0
 mouse_filter = 2
-theme_override_colors/default_color = Color(0.302, 0.51, 0.761, 1)
+theme_override_colors/default_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
 theme_override_fonts/normal_font = ExtResource("6_1vynq")
 theme_override_font_sizes/normal_font_size = 16
 bbcode_enabled = true
@@ -1338,7 +1338,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.969, 0.965, 0.949, 1)
+color = Color(0.968627453, 0.964705884, 0.949019611, 1.000000000)
 
 [node name="Center" type="CenterContainer" parent="Screens/Splash" unique_id=1815383714]
 layout_mode = 1
@@ -1359,7 +1359,7 @@ layout_mode = 2
 offset_transform_enabled = true
 offset_transform_position = Vector2(-10, 0)
 mouse_filter = 2
-theme_override_colors/default_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_colors/default_color = Color(0.235294119, 0.235294119, 0.235294119, 1.000000000)
 theme_override_font_sizes/normal_font_size = 40
 bbcode_enabled = true
 text = "[wave amp=25.0 freq=3.0 connected=1] .PILE DOWN.[/wave]"
@@ -1372,7 +1372,7 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
-theme_override_colors/font_color = Color(0.878, 0.392, 0.333, 1)
+theme_override_colors/font_color = Color(0.878431380, 0.392156869, 0.333333343, 1.000000000)
 theme_override_font_sizes/font_size = 14
 text = "DEBUG MODE"
 horizontal_alignment = 1
@@ -1391,7 +1391,7 @@ anchor_right = 1.0
 offset_bottom = 52.0
 grow_horizontal = 2
 mouse_filter = 2
-theme_override_colors/default_color = Color(0.541, 0.533, 0.51, 1)
+theme_override_colors/default_color = Color(0.541176498, 0.533333361, 0.509803951, 1.000000000)
 theme_override_constants/line_separation = 4
 theme_override_font_sizes/normal_font_size = 20
 bbcode_enabled = true
@@ -1408,7 +1408,7 @@ offset_left = 30.0
 offset_top = 49.0
 offset_right = 250.0
 offset_bottom = 73.0
-theme_override_colors/font_color = Color(0.541, 0.533, 0.51, 1)
+theme_override_colors/font_color = Color(0.541176498, 0.533333361, 0.509803951, 1.000000000)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "in 1 min 12 s 323 ms"
@@ -1563,13 +1563,14 @@ offset_right = 150.0
 offset_bottom = -8.0
 grow_vertical = 0
 mouse_filter = 1
-theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 0.82)
+theme_override_colors/font_color = Color(0.234999999, 0.234999999, 0.234999999, 0.819999993)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 6
 text = "DEBUG SHORTCUTS
 HOVER TO OPEN  F1 HIDE"
 
 [node name="OptionsMenu" type="Control" parent="Screens/Splash" unique_id=1183997088]
+script = ExtResource("options_layout")
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -1587,7 +1588,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.969, 0.965, 0.949, 1)
+color = Color(0.968627453, 0.964705884, 0.949019611, 1.000000000)
 
 [node name="Margin" type="MarginContainer" parent="Screens/Splash/OptionsMenu" unique_id=597374488]
 layout_mode = 1
@@ -1613,7 +1614,7 @@ theme_override_constants/separation = 4
 [node name="Title" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Header" unique_id=1547225580]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_colors/font_color = Color(0.235294119, 0.235294119, 0.235294119, 1.000000000)
 theme_override_font_sizes/font_size = 20
 text = "OPTIONS"
 
@@ -1628,19 +1629,21 @@ texture_normal = ExtResource("31_escape")
 script = ExtResource("34_texture_highlight")
 highlight_material = SubResource("EscapeButtonHighlightMaterial")
 
-[node name="Body" type="HBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout" unique_id=524780684]
+[node name="Body" type="BoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout" unique_id=524780684]
+vertical = true
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 5
 
-[node name="Navigation" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body" unique_id=18332861]
+[node name="Navigation" type="BoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body" unique_id=18332861]
+alignment = 1
 custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
 theme_override_constants/separation = 4
 
 [node name="GameplayOptionsButton" type="TextureButton" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Navigation" unique_id=1118789519]
 unique_name_in_owner = true
-modulate = Color(0.3019608, 0.50980395, 0.7607843, 1)
+modulate = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
 light_mask = 2
 texture_filter = 1
 custom_minimum_size = Vector2(30, 34)
@@ -1704,32 +1707,38 @@ stretch_mode = 3
 script = ExtResource("34_texture_highlight")
 highlight_material = SubResource("EscapeButtonHighlightMaterial")
 
-[node name="Page" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body" unique_id=345235265]
+[node name="PageScroll" type="ScrollContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Page" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll" unique_id=345235265]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="OptionsPageTitle" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page" unique_id=561215275]
+[node name="OptionsPageTitle" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page" unique_id=561215275]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
+theme_override_colors/font_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
 theme_override_font_sizes/font_size = 20
 text = "SOUND"
 
-[node name="GameplayOptions" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page" unique_id=29131972]
+[node name="GameplayOptions" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page" unique_id=29131972]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 2
 
-[node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GameplayOptions" unique_id=2121987407]
+[node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GameplayOptions" unique_id=2121987407]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
+theme_override_colors/font_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "DISPLAY"
 
-[node name="AchievementNotificationsButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GameplayOptions" unique_id=881072139]
+[node name="AchievementNotificationsButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GameplayOptions" unique_id=881072139]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
@@ -1743,7 +1752,7 @@ autowrap_mode = 3
 script = ExtResource("22_highlight")
 highlight_material = SubResource("ShaderMaterial_65kn7")
 
-[node name="TimerDisplayButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GameplayOptions" unique_id=834538790]
+[node name="TimerDisplayButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GameplayOptions" unique_id=834538790]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
@@ -1757,37 +1766,88 @@ autowrap_mode = 3
 script = ExtResource("22_highlight")
 highlight_material = SubResource("ShaderMaterial_65kn7")
 
-[node name="SoundOptions" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page" unique_id=517089021]
+[node name="EndSeedButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GameplayOptions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 16
+text = "SHOW END SEED"
+flat = true
+alignment = 0
+autowrap_mode = 3
+script = ExtResource("22_highlight")
+highlight_material = SubResource("ShaderMaterial_65kn7")
+
+[node name="AccessibilityLabel" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GameplayOptions"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 16
+text = "ACCESSIBILITY"
+
+[node name="ClickToPlaceButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GameplayOptions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 16
+text = "CLICK TO PLACE"
+tooltip_text = "Select a tile, then a pile. At least one input mode stays enabled."
+flat = true
+alignment = 0
+autowrap_mode = 3
+script = ExtResource("22_highlight")
+highlight_material = SubResource("ShaderMaterial_65kn7")
+
+[node name="DragAndDropButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GameplayOptions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 16
+text = "DRAG AND DROP"
+tooltip_text = "Drag a tile onto a pile. At least one input mode stays enabled."
+flat = true
+alignment = 0
+autowrap_mode = 3
+script = ExtResource("22_highlight")
+highlight_material = SubResource("ShaderMaterial_65kn7")
+
+[node name="SoundOptions" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page" unique_id=517089021]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="AudioControls" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions" unique_id=2084179241]
+[node name="AudioControls" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/SoundOptions" unique_id=2084179241]
 layout_mode = 2
 theme_override_constants/separation = 2
 
-[node name="Title" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls" unique_id=1397884041]
+[node name="Title" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/SoundOptions/AudioControls" unique_id=1397884041]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
+theme_override_colors/font_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "VOLUME"
 
-[node name="MusicRow" type="HBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls" unique_id=165726750]
+[node name="MusicRow" type="HBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/SoundOptions/AudioControls" unique_id=165726750]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls/MusicRow" unique_id=1718612431]
+[node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/SoundOptions/AudioControls/MusicRow" unique_id=1718612431]
 custom_minimum_size = Vector2(72, 24)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.235294, 0.235294, 0.235294, 1)
+theme_override_colors/font_color = Color(0.235294119, 0.235294119, 0.235294119, 1.000000000)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "MUSIC"
 vertical_alignment = 1
 
-[node name="MusicVolumeSlider" type="HSlider" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls/MusicRow" unique_id=1338331245]
+[node name="MusicVolumeSlider" type="HSlider" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/SoundOptions/AudioControls/MusicRow" unique_id=1338331245]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(84, 24)
 layout_mode = 2
@@ -1803,7 +1863,7 @@ theme_override_styles/grabber_area_highlight = SubResource("EmptySliderStyle")
 value = 100.0
 script = ExtResource("20_volume")
 
-[node name="Bar" type="NinePatchRect" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls/MusicRow/MusicVolumeSlider" unique_id=241571226]
+[node name="Bar" type="NinePatchRect" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/SoundOptions/AudioControls/MusicRow/MusicVolumeSlider" unique_id=241571226]
 material = SubResource("MusicVolumeBarMaterial")
 layout_mode = 1
 anchors_preset = 14
@@ -1820,20 +1880,20 @@ patch_margin_top = 2
 patch_margin_right = 2
 patch_margin_bottom = 2
 
-[node name="SoundRow" type="HBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls" unique_id=403265211]
+[node name="SoundRow" type="HBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/SoundOptions/AudioControls" unique_id=403265211]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls/SoundRow" unique_id=1444721140]
+[node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/SoundOptions/AudioControls/SoundRow" unique_id=1444721140]
 custom_minimum_size = Vector2(72, 24)
 layout_mode = 2
-theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_color = Color(0.000000000, 0.000000000, 0.000000000, 1.000000000)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "SOUNDS"
 vertical_alignment = 1
 
-[node name="SoundVolumeSlider" type="HSlider" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls/SoundRow" unique_id=1751041834]
+[node name="SoundVolumeSlider" type="HSlider" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/SoundOptions/AudioControls/SoundRow" unique_id=1751041834]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(84, 24)
 layout_mode = 2
@@ -1849,7 +1909,7 @@ theme_override_styles/grabber_area_highlight = SubResource("EmptySliderStyle")
 value = 100.0
 script = ExtResource("20_volume")
 
-[node name="Bar" type="NinePatchRect" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SoundOptions/AudioControls/SoundRow/SoundVolumeSlider" unique_id=212451574]
+[node name="Bar" type="NinePatchRect" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/SoundOptions/AudioControls/SoundRow/SoundVolumeSlider" unique_id=212451574]
 material = SubResource("SoundVolumeBarMaterial")
 layout_mode = 1
 anchors_preset = 14
@@ -1866,34 +1926,34 @@ patch_margin_top = 2
 patch_margin_right = 2
 patch_margin_bottom = 2
 
-[node name="GraphicsOptions" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page" unique_id=369152806]
+[node name="GraphicsOptions" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page" unique_id=369152806]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Content" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions" unique_id=2071489164]
+[node name="Content" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GraphicsOptions" unique_id=2071489164]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 2
 
-[node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content" unique_id=244331881]
+[node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GraphicsOptions/Content" unique_id=244331881]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
+theme_override_colors/font_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "SCREEN SIZE"
 
-[node name="ScreenSizeSelector" type="HBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content" unique_id=1927612479]
+[node name="ScreenSizeSelector" type="HBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GraphicsOptions/Content" unique_id=1927612479]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 2
 
-[node name="ScreenSizeArrows" type="HBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content/ScreenSizeSelector" unique_id=288497577]
+[node name="ScreenSizeArrows" type="HBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GraphicsOptions/Content/ScreenSizeSelector" unique_id=288497577]
 layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="ScreenSizeUpButton" type="TextureButton" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content/ScreenSizeSelector/ScreenSizeArrows" unique_id=2036790411]
+[node name="ScreenSizeUpButton" type="TextureButton" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GraphicsOptions/Content/ScreenSizeSelector/ScreenSizeArrows" unique_id=2036790411]
 unique_name_in_owner = true
 texture_filter = 1
 custom_minimum_size = Vector2(14, 24)
@@ -1905,7 +1965,7 @@ stretch_mode = 3
 script = ExtResource("34_texture_highlight")
 highlight_material = SubResource("ShaderMaterial_65kn7")
 
-[node name="ScreenSizeDownButton" type="TextureButton" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content/ScreenSizeSelector/ScreenSizeArrows" unique_id=1928949849]
+[node name="ScreenSizeDownButton" type="TextureButton" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GraphicsOptions/Content/ScreenSizeSelector/ScreenSizeArrows" unique_id=1928949849]
 unique_name_in_owner = true
 texture_filter = 1
 custom_minimum_size = Vector2(14, 24)
@@ -1917,7 +1977,7 @@ stretch_mode = 3
 script = ExtResource("34_texture_highlight")
 highlight_material = SubResource("ShaderMaterial_65kn7")
 
-[node name="AdaptiveResolutionButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content/ScreenSizeSelector" unique_id=607069609]
+[node name="AdaptiveResolutionButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GraphicsOptions/Content/ScreenSizeSelector" unique_id=607069609]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
@@ -1931,7 +1991,7 @@ autowrap_mode = 3
 script = ExtResource("22_highlight")
 highlight_material = SubResource("ShaderMaterial_65kn7")
 
-[node name="TruePixelArtButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content" unique_id=1529890630]
+[node name="TruePixelArtButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GraphicsOptions/Content" unique_id=1529890630]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
@@ -1945,14 +2005,14 @@ autowrap_mode = 3
 script = ExtResource("22_highlight")
 highlight_material = SubResource("ShaderMaterial_65kn7")
 
-[node name="BackgroundLabel" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content" unique_id=1694687744]
+[node name="BackgroundLabel" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GraphicsOptions/Content" unique_id=1694687744]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
+theme_override_colors/font_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "BACKGROUND"
 
-[node name="BackgroundEnabledButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content" unique_id=1517006260]
+[node name="BackgroundEnabledButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GraphicsOptions/Content" unique_id=1517006260]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
@@ -1966,7 +2026,7 @@ autowrap_mode = 3
 script = ExtResource("22_highlight")
 highlight_material = SubResource("ShaderMaterial_65kn7")
 
-[node name="DustEffectsButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/GraphicsOptions/Content" unique_id=386496742]
+[node name="DustEffectsButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GraphicsOptions/Content" unique_id=386496742]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
@@ -1980,30 +2040,30 @@ autowrap_mode = 3
 script = ExtResource("22_highlight")
 highlight_material = SubResource("ShaderMaterial_65kn7")
 
-[node name="SaveOptions" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page" unique_id=1369491556]
+[node name="SaveOptions" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page" unique_id=1369491556]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="SaveData" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SaveOptions" unique_id=852823004]
+[node name="SaveData" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/SaveOptions" unique_id=852823004]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 3
 
-[node name="Title" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SaveOptions/SaveData" unique_id=1344683528]
+[node name="Title" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/SaveOptions/SaveData" unique_id=1344683528]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
+theme_override_colors/font_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "SAVE DATA"
 
-[node name="Buttons" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SaveOptions/SaveData" unique_id=1969241822]
+[node name="Buttons" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/SaveOptions/SaveData" unique_id=1969241822]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 2
 
-[node name="ExportSaveButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SaveOptions/SaveData/Buttons" unique_id=195556717]
+[node name="ExportSaveButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/SaveOptions/SaveData/Buttons" unique_id=195556717]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
@@ -2017,7 +2077,7 @@ autowrap_mode = 3
 script = ExtResource("22_highlight")
 highlight_material = SubResource("ShaderMaterial_65kn7")
 
-[node name="ImportSaveButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SaveOptions/SaveData/Buttons" unique_id=1398306628]
+[node name="ImportSaveButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/SaveOptions/SaveData/Buttons" unique_id=1398306628]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
@@ -2031,7 +2091,7 @@ autowrap_mode = 3
 script = ExtResource("22_highlight")
 highlight_material = SubResource("ShaderMaterial_65kn7")
 
-[node name="DeleteSaveButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SaveOptions/SaveData/Buttons" unique_id=311336783]
+[node name="DeleteSaveButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/SaveOptions/SaveData/Buttons" unique_id=311336783]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
@@ -2045,29 +2105,29 @@ autowrap_mode = 3
 script = ExtResource("22_highlight")
 highlight_material = SubResource("ShaderMaterial_65kn7")
 
-[node name="SaveStatus" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/SaveOptions/SaveData" unique_id=2117054953]
+[node name="SaveStatus" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/SaveOptions/SaveData" unique_id=2117054953]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.541, 0.533, 0.51, 1)
+theme_override_colors/font_color = Color(0.541176498, 0.533333361, 0.509803951, 1.000000000)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 12
 autowrap_mode = 2
 
-[node name="LinksOptions" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page" unique_id=645486794]
+[node name="LinksOptions" type="VBoxContainer" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page" unique_id=645486794]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 2
 
-[node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/LinksOptions" unique_id=1677015471]
+[node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/LinksOptions" unique_id=1677015471]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
+theme_override_colors/font_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "FIND JUELS ONLINE"
 
-[node name="LinkButtonTemplate" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Page/LinksOptions" unique_id=395988428]
+[node name="LinkButtonTemplate" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/LinksOptions" unique_id=395988428]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
@@ -2115,7 +2175,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.969, 0.965, 0.949, 1)
+color = Color(0.968627453, 0.964705884, 0.949019611, 1.000000000)
 
 [node name="Center" type="CenterContainer" parent="Screens/Splash/CheckpointMenu" unique_id=1709969302]
 layout_mode = 1
@@ -2132,7 +2192,7 @@ alignment = 1
 
 [node name="Title" type="Label" parent="Screens/Splash/CheckpointMenu/Center/Content" unique_id=1882437620]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_colors/font_color = Color(0.235294119, 0.235294119, 0.235294119, 1.000000000)
 theme_override_font_sizes/font_size = 24
 text = "CHECKPOINTS"
 horizontal_alignment = 1

@@ -1,5 +1,9 @@
 # Pile Down
 
+Le devlog itch.io des nouveautés depuis la version jam 1.2 se trouve dans
+[`publish/devlog-1.2-vers-2.2-fr.md`](publish/devlog-1.2-vers-2.2-fr.md), avec une
+[version anglaise](publish/devlog-1.2-to-2.2-en.html).
+
 L’audit de performances et ses limites sont documentés dans
 [`PERFORMANCE_AUDIT.md`](PERFORMANCE_AUDIT.md). Les benchmarks reproductibles
 restent dans `tests/performance/` et utilisent des sauvegardes isolées :
@@ -24,7 +28,13 @@ compte à rebours.
 - La carte posée est visible un court instant, puis sa valeur est masquée.
 - Chaque nouvelle main contient au moins une carte jouable.
 - Une mauvaise carte, une pile invalide ou un chronomètre arrivé à zéro coûte
-  une erreur. Le round se termine après trois erreurs.
+  une vie. La partie se termine lorsqu'il ne reste plus de vie.
+- Une nouvelle partie commence avec toutes ses vies. Après chaque round gagné,
+  le round suivant rend seulement **une vie**, sans dépasser le maximum autorisé
+  par les bonus et les règles. Dans `resources/scripts/settings/difficulty.gd`,
+  `ROUND_LIFE_REGEN = 1` règle cette récupération ; `-1` rétablit la récupération
+  complète à chaque round. Un départ depuis une étape commence aussi avec toutes
+  ses vies. La limite d'une vie des défis et de Mort subite reste prioritaire.
 - Une pile qui atteint zéro est complétée. Le round est gagné quand toutes les
   piles ont disparu.
 - Le compteur de rounds commence à `100`, puis descend après chaque victoire.
@@ -49,11 +59,15 @@ tour n'affiche que des secondes entières.
 
 Chaque nouvelle run reçoit un seed 64 bits. Pour une run lancée depuis un seed
 saisi, le menu Pause affiche sa forme partageable et permet de la copier. Le
-seed d'une run aléatoire reste masqué pendant la partie et apparaît seulement
-sur l'écran de victoire ou de défaite. La page `CHALLENGES` accepte aussi un
+seed de la partie, aléatoire ou saisi, peut être affiché sur l'écran de victoire
+ou de défaite en activant **Seed en fin de partie** dans **Options → Jeu**.
+Cette option est désactivée par défaut. La page `CHALLENGES` accepte aussi un
 entier ou un texte dans
 `PLAY A SEED`, dans une page séparée accessible avec l'icône `seeds.png` ; seuls
 les challenges, bonus et règles spéciales déjà déverrouillés y sont proposés.
+Sur Android, un tap sur le champ seed ouvre son édition et le clavier natif ;
+un défilement ou un simple changement de focus ne l'ouvre pas. Les actions de
+la page passent à la ligne si leurs libellés traduits ne tiennent pas côte à côte.
 Chaque bonus sélectionné peut démarrer à un niveau déjà atteint dans la
 progression, sans pouvoir dépasser le meilleur niveau enregistré. Bonus et
 règles utilisent chacun un menu multi-sélection unique ; un seul niveau peut
@@ -263,10 +277,27 @@ Le premier build Gradle peut télécharger ses dépendances et nécessite un acc
 Les presets **Android** et **Android AAB** utilisent le nom de package
 `dev.juels.piledown`, attendu par la fiche Google Play. Renommer le fichier `.aab`
 ne change pas cet identifiant intégré au bundle.
-Avant la publication, configurer dans le preset **Android AAB** le numéro de version utilisateur (`version/name`)
-et un `version/code` supérieur à celui déjà envoyé sur Google Play. Le fichier
-`VERSION` contrôle le nom du fichier de sortie, pas ces métadonnées Android.
-Le preset APK `Android` reste indépendant. Les clés et mots de passe doivent
+Les scripts de build synchronisent `version/name` et `version/code` des deux
+presets Android depuis `VERSION`. L'historique versionné
+`build/android/version-codes.json` associe chaque nom à un code : `v2.0` → 1,
+`v2.1` → 2, `v2.1.1` → 3. Un nom inédit reçoit le prochain code disponible,
+même si son format change complètement ; un nom connu conserve son code.
+Changer `VERSION` pour publier une nouvelle version sur Google Play et conserver
+l'historique dans Git. Avant un export manuel depuis l'éditeur, lancer
+`python build/scripts/configure_android.py` pour synchroniser les presets.
+
+Les builds AAB release activent R8 (réduction, optimisation et obfuscation du
+code Java/Kotlin) et la suppression des ressources Android inutilisées.
+Les règles dans `build/android/` préservent les points d'entrée natifs Godot.
+Le script réinstalle automatiquement le raccord Gradle après installation du
+template ; pour un export manuel, une fois le template Android installé, lancer
+`python build/scripts/configure_android.py --prepare-gradle`.
+Conserver le fichier `android/build/build/outputs/mapping/standardRelease/mapping.txt`
+avec chaque release pour interpréter les traces obfusquées. L'APK exporté sans
+Gradle utilise le template précompilé. Le score DEX de Google Play reste à
+vérifier sur le nouveau bundle téléversé.
+
+Les clés et mots de passe doivent
 rester hors du dépôt. Voir aussi la
 [documentation d'export Android Godot](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_android.html).
 
@@ -292,6 +323,7 @@ regroupés dans `tmp/screenshots/`, `tmp/reports/`, `tmp/logs/` et `tmp/tools/` 
 les futurs profils de tests doivent aussi rester sous `tmp/`. Les caches et
 `tmp/` sont ignorés par Git. Le contenu de `.cache/` est régénérable ; supprimer
 les templates oblige toutefois à les télécharger de nouveau.
+Les logs de travail produits dans `wip/` sont regroupés dans `wip/logs/`.
 
 Les tests hors ligne des scripts vérifient les versions officielles, Mono et
 prérelease, les chemins Windows, la réutilisation des templates, les erreurs
@@ -347,7 +379,10 @@ ses valeurs initiales, `QUIT` revient à l'écran titre et `CONTINUE` referme la
 popup sans modifier la partie. Cette confirmation ne
 met en pause ni le compte à rebours du round ni le temps global de la run ; un
 second appui sur `Échap` la ferme. Dans cette popup, `Entrée` quitte la run et
-`R` la redémarre. Depuis les écrans de résultat, `ESC` revient à l'écran
+`R` la redémarre. La touche `R` fonctionne aussi directement en jeu et depuis
+les écrans de résultat, même hors du mode debug. Elle utilise la même transition
+et le même délai de lecture des valeurs initiales que le bouton Replay.
+Depuis les écrans de résultat, `ESC` revient à l'écran
 d'accueil. Le bouton fournit notamment ce contrôle aux écrans
 tactiles. Sur l'écran d'accueil, `Échap` ferme l'application desktop et reste
 sans effet dans la version Web. La
@@ -387,6 +422,49 @@ instant, puis la popup de game over apparaît. Quand toutes les piles sont termi
 restantes, jokers compris, sont défaussées vers le bas avant l'animation de
 victoire.
 La musique du menu joue en boucle sur l'accueil.
+
+Après un dépôt valide, les cartes restantes deviennent immédiatement
+saisissables, pendant les animations du coup puis jusqu'à leur disparition.
+Un second dépôt très rapide attend la fin du premier coup avant de modifier
+les piles. Dès l'appui de la souris ou du doigt, leur sortie est arrêtée,
+même avant le début du glissement. Elles restent aussi sélectionnables au clic
+pour être posées ensuite ; annuler le geste relance leur défausse. Elles peuvent encore
+être jouées sur une pile compatible, mais sont détruites si elles sont lâchées
+hors d'une pile, avec un fondu et une courte chute de 0,24 seconde.
+Une mauvaise valeur coûte toujours une erreur et défausse
+également la carte. Ce coup supplémentaire ne consomme aucune carte de la
+nouvelle main pour les bonus de chaîne.
+
+Après une erreur de placement non fatale, les autres cartes sont immédiatement
+saisissables pendant le retour de la carte refusée et les animations de dégâts.
+La perte de la dernière vie bloque immédiatement les interactions jusqu'à la fin
+de partie.
+
+Deux variables de `resources/scripts/settings/difficulty.gd` contrôlent cette
+mécanique expérimentale :
+
+- `playable_discard_enabled = true` : permet de jouer les cartes pendant leur
+  défausse après un coup valide ; `false` restaure la défausse classique.
+- `redraw_after_discard_play = true` : un coup supplémentaire valide renouvelle
+  la main et relance le tour, avec la garantie habituelle d'une carte jouable.
+  Les cartes de cette main sortante restent saisissables pendant leur défausse,
+  permettant d'enchaîner plusieurs coups supplémentaires. Les poses attendent
+  la fin du renouvellement précédent avant de modifier les piles.
+  Avec `false`, la main suivante et son décompte sont conservés ; attention,
+  le coup supplémentaire peut alors rendre cette main injouable.
+
+Les défausses de fin de round, de game over ou de redraw manuel ne deviennent pas
+jouables. Les jokers conservés et le convoyeur gardent leur fonctionnement.
+La sortie vers le bas d'une défausse jouable dure
+`PLAYABLE_DISCARD_DURATION = 0.26` seconde, comme la défausse classique ; les tuiles restent opaques jusqu'aux
+`PLAYABLE_DISCARD_FADE_DURATION = 0.15` dernières secondes. Ces constantes dans
+`difficulty.gd` règlent l'animation sans bloquer la saisie pendant le mouvement. Un appui sur une
+tuile encore visible arrête sa sortie immédiatement et la réserve pendant le
+clic ou le glissement. En sélection au clic, la carte réservée repart en défausse
+dès qu'une carte de la nouvelle main la recouvre, sans perte de vie. Une carte
+tenue en glissement reste réservée. En fin de round, les cartes restantes,
+y compris les jokers et les cartes réservées, sortent avec une animation non jouable.
+
 Lorsqu'une partie démarre, sa boucle en cours se termine avant que la musique
 du jeu ne prenne le relais. Le jeu commence avec `section-1.wav`, puis passe à
 la section numérotée suivante après chaque `TIER RELIEF`, à la fin du segment
@@ -946,12 +1024,107 @@ pour ne pas dépasser la fenêtre logique du jeu ; la confirmation de suppressio
 utilise le sprite de popup et la police du jeu, avec les boutons `CANCEL` et
 `DELETE`. `CANCEL` reçoit le focus à l'ouverture ; le texte se replie
 automatiquement pour rester lisible.
+La section `ACCESSIBILITÉ` des options de jeu propose `POSER AU CLIC` et
+`GLISSER-DÉPOSER`, tous deux activés par défaut. Un clic ou un toucher bref
+sélectionne une tuile avec un contour jaune ; cliquer ou toucher une pile
+y dépose la sélection. Un déplacement du pointeur démarre le glissement.
+Le shader `TileSelection.gdshader` suit la silhouette du sprite avec deux
+liserés d'un pixel, jaune lumineux et ambre, sans flou ni lissage.
+Désactiver le dernier mode actif réactive automatiquement l'autre. Ces choix
+sont sauvegardés dans `accessibility/click_to_place` et
+`accessibility/drag_and_drop`.
+Les onglets Options, Progression et Challenges sont horizontaux par défaut,
+alignés à gauche et rapprochés du titre. Dans
+`resources/scripts/settings/UISettings.gd`, mettre `TABS_HORIZONTAL`
+à `false` rétablit la colonne à gauche dans les trois menus.
+`OPTIONS_VERTICAL_PADDING_MIN` (2) et
+`OPTIONS_VERTICAL_PADDING_MAX` (8) bornent l'espacement vertical automatique
+entre les lignes en pixels logiques. Les grands écrans utilisent davantage
+d'espace ; les petits écrans resserrent les lignes puis permettent le
+défilement du contenu tout en gardant les onglets et le bouton de retour visibles.
+`UISettings.gd` centralise aussi les marges d'écran et de panneaux, les espaces
+du titre, du corps et des onglets, les dimensions des boutons, les tailles et
+décalages des textes de listes, les transitions et la présentation du chargement.
+Les propriétés exportées restent surchargeables dans les scènes Godot.
+
+Les couleurs fixes sont regroupées dans
+`resources/scripts/settings/colors.gd` (`GameColors`) : interface, textes,
+chargement, tuiles masquées, daltonisme, effets, particules, shaders et couleurs
+de repli. `settings.gd` et `UISettings.gd` conservent des alias compatibles.
+Les palettes cosmétiques de `resources/data/palettes/*.tres` restent la source
+des couleurs des tuiles ; leur sélection, leurs aperçus et leurs déblocages
+ne sont pas remplacés. `FALLBACK_TILE_COLORS` sert uniquement aux données vides.
+
+Relancer le jeu après modification de `colors.gd` suffit : l'autoload
+`RuntimeColors` applique les réglages aux scènes, thèmes, dégradés, matériaux
+locaux et shaders avant leur initialisation. Les palettes restent ensuite
+prioritaires pour les faces des tuiles et l'habillage du thème sélectionné.
+Les constantes `MONO_*` et `VAPOR_*` concernent les thèmes correspondants.
+
+Pour actualiser aussi les aperçus dans l'éditeur et le fond du splash natif
+(affiché avant l'exécution des scripts), synchroniser les copies sérialisées :
+
+```sh
+godot --headless --path . --script resources/scripts/tools/SyncColors.gd
+godot --headless --path . --script resources/scripts/tools/SyncColors.gd -- --check
+```
+
+Les scripts de build exécutent cette synchronisation avant les exports.
+`resources/scripts/tools/color_bindings.json`, inclus dans les exports, associe
+chaque propriété à son nom de couleur central sans toucher aux palettes.
+Mettre à jour ces liaisons lors du déplacement d'un nœud ou de l'ajout d'une
+couleur sérialisée. Les valeurs générées restent visibles dans l'éditeur ;
+modifier leur constante centrale pour conserver un réglage lors de la prochaine
+synchronisation. Les couleurs calculées depuis la palette active et les opacités
+d'animation restent calculées à l'exécution.
+`SELECTION_HIGHLIGHT` et `SELECTION_RIM` règlent le contour de sélection.
+`HIDDEN_TILE` règle les faces masquées dessinées avec une police personnalisée ;
+le dos standard reste une texture. L'ancien `TILE_MASK`, qui ne pilotait que
+l'initialisation du shader avant application de la palette, a été supprimé.
+Par défaut, `tile_text_uses_palette = true` colore les chiffres comme leur tuile,
+avec un assombrissement de `TILE_TEXT_DARKENING = 0.35`, en jeu et dans les aperçus.
+Passer ce réglage à `false` applique la couleur fixe `TILE_TEXT`.
+Le mode daltonien garde
+ses couleurs dédiées. `LOCK_TINT` règle la modulation du cadenas.
+
+Le point d'entrée est maintenant `resources/scenes/Loading.tscn`. Il affiche
+des tuiles qui s'empilent, un fond assorti aux menus, l'icône Godot et le crédit
+« by Juels », puis charge `Main.tscn`. Le pourcentage provient du chargement
+de ressources Godot ; l'empilement est une animation d'activité. La compilation
+initiale du graphe de scripts et l'instanciation restent sur le thread principal
+et peuvent brièvement suspendre l'animation. Le fond natif avant la première
+image utilise la même couleur. Les paramètres `LOADING_*` règlent l'animation.
+Le nœud `Stack` de `Loading.tscn` expose ses réglages dans l'inspecteur.
+Les tuiles conservent leur ratio natif `34 × 37` dans la taille définie.
+Une arrivée dure par défaut 0,6 seconde, avec accélération et décélération
+douces. La pile descend d'un cran et sa couche inférieure s'efface à chaque
+arrivée : la boucle ne remet plus brutalement la pile à zéro.
+L'icône Godot originale est fournie par le
+[dépôt officiel](https://github.com/godotengine/godot/tree/master/misc/logo),
+© Andrea Calabró, sous CC BY 4.0 ; sa licence est conservée dans
+`resources/sprites/branding/GODOT_LOGO_LICENSE.txt`.
+
+La saisie des défausses suit la position visuelle des tuiles. Lorsqu'une entrée
+animée est interrompue par une défausse, son mouvement est transféré à la carte
+avant le départ pour éviter une zone de saisie décalée. Un appui réserve la
+carte pendant la reconnaissance du clic ou du glissement, même après l'échéance
+initiale de sa défausse.
+Les retournements en cours sont annulés avant tout changement de parent
+(saisie, défausse ou placement automatique), pour éviter un saut vers
+l'ancienne position verticale dans la main. Leur attente se termine aussi
+en cas d'annulation.
 Par défaut, le jeu démarre en HD (`TRUE PIXEL ART` désactivé) et en mode
-`SEMI ADAPTIVE`, ou `ADAPTIVE` sur un appareil tactile dont l'écran est en
-portrait. Les préférences graphiques déjà sauvegardées sont conservées.
+`ADAPTIVE MENUS` sur toutes les plateformes, y compris Android en portrait.
+Le redimensionnement conserve les marges internes des menus et laisse leurs
+conteneurs réorganiser les contrôles sans étirer le contenu hors de l'écran.
+Dans la progression, les titres se replient dans la largeur restante après
+le badge `NOUVEAU` et l'icône, dès la première consultation des nouveautés.
+Ce mode étend le menu principal et ses sous-menus à la fenêtre tout en gardant
+le plateau centré en semi-adaptatif.
+Les préférences graphiques déjà sauvegardées sont conservées.
 La page `GRAPHICS` utilise une référence logique 256×320 afin que le zoom et
 la taille des sprites ne changent pas. Le sélecteur de taille propose
-`CLASSIC`, `SEMI ADAPTIVE` et `ADAPTIVE`. Le choix est sauvegardé dans
+`CLASSIC`, `SEMI ADAPTIVE`, `ADAPTIVE` et `ADAPTIVE MENUS`. Le choix est sauvegardé dans
 `graphics/screen_size_mode` et appliqué immédiatement ; les anciennes valeurs
 `graphics/adaptive_resolution` restent prises en charge. `TRUE PIXEL ART`,
 sauvegardé dans `graphics/true_pixel_art`, active le stretch viewport basse
@@ -1178,7 +1351,7 @@ jeu :
   secondes en cours ;
 - `G` active ou désactive le god mode pendant l'exécution ;
 - `P` affiche ou masque en direct les probabilités de difficulté du round ;
-- `R` réinitialise immédiatement la partie avec les valeurs de départ ;
+- `R` relance la partie comme le bouton Replay (également disponible hors debug) ;
 - `H` efface le high score sauvegardé.
 
 Dans `resources/scripts/settings/debug.gd`, `UNLOCK_ENDLESS_MODE` permet d'afficher
@@ -1416,9 +1589,14 @@ Les règles disponibles sont :
   puis sortie animée vers le bord le plus proche ;
 - `PILE UP` : progression inversée de 0 vers S ;
 - `LIGHTS OUT` : calque sombre avec lampe circulaire suivant le pointeur ou le
-  doigt. Sur écran tactile, elle suit immédiatement la dernière position
+  doigt. Sur écran tactile, elle démarre au centre de l'écran jusqu'au premier
+  toucher, puis suit immédiatement la dernière position
   touchée sans revenir à une position de souris inactive. Le cercle lumineux
   se referme progressivement à l'activation et se rouvre à la fin du round.
+  À leur apparition, seules les zones colorées, bordures colorées et chiffres
+  visibles des cartes et des piles s'affichent au-dessus du voile sombre.
+  Le shader produit une phosphorescence nette, sans halo ni éclairage diffus,
+  qui disparaît en 1,35 s. Un chiffre masqué reste masqué pendant cet effet.
   Son rayon en pixels se règle avec `LIGHTS_OUT_RADIUS` dans `difficulty.gd` ;
 - `PEEK-A-CARD` : cartes cachées révélées au survol ou au premier toucher. Sur
   écran tactile, un premier contact passe la carte de `IDLE` à `REVEALED`. Le
@@ -1673,6 +1851,9 @@ boîte repliable limitée à la moitié de la largeur de l'écran. La boîte se 
 sur le badge survolé tant qu'elle tient dans l'écran, puis se cale contre le bord
 le plus proche. Son label reste visible dans l'éditeur afin d'y régler
 directement sa police.
+Sur écran tactile, toucher un badge ouvre sa description ; le toucher à nouveau
+ou toucher ailleurs la ferme. Les badges consommés sont grisés tout en gardant
+leur fond opaque. Le déplacement d'une tuile ferme les descriptions.
 `BonusManager.gd` conserve l'état de la partie et pilote
 `BonusSelection.tscn`. Les propositions, le titre, le fond, les colonnes et les
 valeurs d'animation sont éditables dans cette scène, également ouverte comme
@@ -1690,3 +1871,24 @@ Le test autonome se lance avec :
 ```sh
 godot --headless --path . --script res://tests/test_bonus_system.gd
 ```
+
+### Premier geste, graine et langue
+
+Au début de chaque partie, une flèche pixel art à contour blanc indique un glissement d'une tuile
+jouable vers une pile compatible. Il disparaît au premier coup réussi, se masque
+pendant les interactions et ne modifie ni les tirages ni les règles des défis.
+L'option **Seed en fin de partie**, dans **Options → Jeu**, affiche la graine
+copiable sur l'écran de fin lorsqu'elle est activée. Désactivée par défaut,
+elle est sauvegardée dans `gameplay/show_end_seed`. La graine n'est pas affichée
+dans les options. La graine spécifique de la fenêtre de pause reste disponible.
+
+Le choix **Langue** dans **Options → Jeu** propose **Anglais** et **Français**.
+Au premier lancement, la langue du système est sélectionnée si elle est disponible,
+avec un repli sur l'anglais. La détection est retentée si une mise à jour ajoute
+la langue auparavant absente. Le choix est sauvegardé dans `interface/language`.
+Les menus se traduisent immédiatement ; les vues de progression et les résultats
+sont construits dans la langue active à leur ouverture.
+Le catalogue `resources/data/localization/fr.json` utilise les textes anglais
+comme clés et contient les traductions des menus, bonus, règles, défis et succès.
+Les presets d'export incluent ce fichier ; les identifiants de sauvegarde et les
+graines restent indépendants de la langue.

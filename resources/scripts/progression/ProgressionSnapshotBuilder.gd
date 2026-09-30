@@ -20,22 +20,22 @@ static func build(game: GameManager) -> Dictionary:
 static func highscores(game: GameManager) -> Array[Dictionary]:
 	var classic_value := "--"
 	if game.best_rounds_left >= 0:
-		classic_value = "%d rounds left" % game.best_rounds_left
+		classic_value = TranslationServer.translate("%d rounds left") % game.best_rounds_left
 		if game.best_score_time_ms >= 0:
 			classic_value += "\n" + game._format_duration(game.best_score_time_ms)
 	var endless_value := "--"
 	if game.endless_best_round >= 0:
-		endless_value = "round %d" % game.endless_best_round
+		endless_value = TranslationServer.translate("round %d") % game.endless_best_round
 		if game.endless_best_time_ms >= 0:
 			endless_value += "\n" + game._format_duration(game.endless_best_time_ms)
 	var checkpoint_lines := PackedStringArray()
 	if game.checkpoint_best_rounds_left >= 0:
 		checkpoint_lines.append(
-			"%d rounds left" % game.checkpoint_best_rounds_left
+			TranslationServer.translate("%d rounds left") % game.checkpoint_best_rounds_left
 		)
 	if game.checkpoint_endless_best_round >= 0:
 		checkpoint_lines.append(
-			"round %d reached" % game.checkpoint_endless_best_round
+			TranslationServer.translate("round %d reached") % game.checkpoint_endless_best_round
 		)
 	return [
 		{"title": "CLASSIC", "value": classic_value},
@@ -60,7 +60,7 @@ static func achievements(game: GameManager) -> Array[Dictionary]:
 			&"all_checkpoints":
 				progress_current = game.unlocked_checkpoints.size()
 				progress_target = AchievementManager.normal_checkpoint_ids().size()
-				progress = "Checkpoints unlocked: %d / %d" % [
+				progress = TranslationServer.translate("Checkpoints unlocked: %d / %d") % [
 					progress_current, progress_target,
 				]
 			&"all_bonuses_discovered":
@@ -69,7 +69,7 @@ static func achievements(game: GameManager) -> Array[Dictionary]:
 						return Difficulty.ENABLED_BONUSES.has(id)
 				).size()
 				progress_target = Difficulty.ENABLED_BONUSES.size()
-				progress = "Bonuses discovered: %d / %d" % [
+				progress = TranslationServer.translate("Bonuses discovered: %d / %d") % [
 					progress_current, progress_target,
 				]
 			&"all_bonuses_maxed_once":
@@ -79,7 +79,7 @@ static func achievements(game: GameManager) -> Array[Dictionary]:
 					)):
 						progress_current += 1
 				progress_target = Difficulty.ENABLED_BONUSES.size()
-				progress = "BONUSES MAXED\n%d / %d" % [
+				progress = TranslationServer.translate("BONUSES MAXED\n%d / %d") % [
 					progress_current, progress_target,
 				]
 			&"beat_all_special_rules":
@@ -88,13 +88,13 @@ static func achievements(game: GameManager) -> Array[Dictionary]:
 						return Difficulty.ENABLED_SPECIAL_RULES.has(id)
 				).size()
 				progress_target = Difficulty.ENABLED_SPECIAL_RULES.size()
-				progress = "Special Rules beaten: %d / %d" % [
+				progress = TranslationServer.translate("Special Rules beaten: %d / %d") % [
 					progress_current, progress_target,
 				]
 		result.append({
 			"id": data.id,
-			"title": data.title,
-			"description": data.description,
+			"title": TranslationServer.translate(data.title),
+			"description": TranslationServer.translate(data.description),
 			"category": data.category,
 			"hidden": data.hidden,
 			"unlocked": game.achievement_manager.unlocked.has(data.id),
@@ -115,8 +115,8 @@ static func bonuses(game: GameManager) -> Array[Dictionary]:
 	for data in game.bonus_manager.definitions:
 		result.append({
 			"id": data.id,
-			"title": data.title,
-			"description": data.description,
+			"title": TranslationServer.translate(data.title),
+			"description": TranslationServer.translate(data.description),
 			"seen": game.seen_bonuses.has(data.id) or game.discovered_bonuses.has(data.id),
 			"discovered": game.discovered_bonuses.has(data.id),
 			"highest_level": int(
@@ -135,8 +135,8 @@ static func special_rules(game: GameManager) -> Array[Dictionary]:
 	for data in SpecialRuleRegistry.create_all_rules():
 		result.append({
 			"id": data.id,
-			"title": data.title,
-			"description": data.description,
+			"title": TranslationServer.translate(data.title),
+			"description": TranslationServer.translate(data.description),
 			"discovered": game.encountered_special_rules.has(data.id),
 			"obtained": game.beaten_special_rules.has(data.id),
 			"new": game._is_progression_item_unread(

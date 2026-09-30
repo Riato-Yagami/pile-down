@@ -6,6 +6,9 @@ extends RefCounted
 
 
 static func start_round(host: GameManager) -> void:
+	host.hand_manager.clear_discarding_cards()
+	host._discard_play_in_progress = false
+	host._discard_source_action_active = false
 	var gameplay_generation := host._gameplay_generation
 	host._resume_run_time()
 	host.input_locked = true
@@ -62,7 +65,10 @@ static func start_round(host: GameManager) -> void:
 		if host.round_modifiers.maximum_mistakes_override > 0
 		else 3 + host.bonus_manager.spare_lives()
 	)
-	host.mistakes_left = host.maximum_mistakes
+	var previous_lives := host.mistakes_left
+	host.mistakes_left = host.Difficulty.round_start_lives(
+		host.mistakes_left, host.maximum_mistakes, host.run_completed_rounds == 0
+	)
 	host.mistakes_dots.set_maximum(host.maximum_mistakes)
 	host.mistakes_dots.set_reinforced_count(
 		0
@@ -110,6 +116,8 @@ static func start_round(host: GameManager) -> void:
 	host._replay_board_ready = true
 	for index in host.piles.size():
 		host.piles[index].play_entrance(index * 0.055)
+		if host.round_modifiers.flashlight_enabled:
+			host.flashlight_overlay.illuminate_appearance(host.piles[index], index * 0.055)
 	var open_book_count := host.bonus_manager.level(&"open_book")
 	if open_book_count > 0:
 		var open_book_candidates := host.piles.duplicate()
@@ -117,6 +125,9 @@ static func start_round(host: GameManager) -> void:
 		for index in mini(open_book_count, open_book_candidates.size()):
 			open_book_candidates[index].keep_face_up = true
 	host._update_hud()
+	if host.run_completed_rounds > 0 and host.mistakes_left > previous_lives:
+		host.mistakes_dots.play_recovery(previous_lives)
+		host.soft_audio.play_life_recovery()
 	# Start the readable hold only once the final entrance has completed. The old
 	# timing included entrance motion, leaving the number legible for too little
 	# time before its flip.
@@ -184,7 +195,8 @@ static func begin_turn(
 		# board is being replaced; never leave the transition permanently locked.
 		host.input_locked = false
 		return
-	host.selected_card = null
+	if not is_instance_valid(host.selected_card) or not host.selected_card.is_discarding:
+		host.selected_card = null
 	host.input_locked = true
 	if not hand_prepared:
 		if enter_from_right:
@@ -339,12 +351,18 @@ static func finish_round(host: GameManager) -> void:
 		completed_rule_ids.append(rule.id)
 	host._pause_run_time()
 	host.timer_manager.stop_countdown()
-	await host.cleanup_special_rule_state()
-	if transition_generation != host._run_transition_generation:
-		return
 	# Clear the remaining hand as part of the victory sequence. Jokers persist
 	# between hands, but never carry over into the next round.
+	host._discard_source_action_active = false
+	host._pending_interactive_generation = -1
+	host._card_click_controller.reset()
+	host.selected_card = null
+	host._card_touch_index = -1
+	host.hand_manager.prepare_round_discard()
 	await host._discard_current_hand(false)
+	if transition_generation != host._run_transition_generation:
+		return
+	await host.cleanup_special_rule_state()
 	if transition_generation != host._run_transition_generation:
 		return
 	host._clear_all_hand_slot_placeholders()

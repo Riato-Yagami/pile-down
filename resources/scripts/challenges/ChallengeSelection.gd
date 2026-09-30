@@ -24,10 +24,10 @@ const SeedSelectionBuilderScript := preload(
 )
 const SeedControlStyleScript := preload("res://resources/scripts/challenges/ui/SeedControlStyle.gd")
 
-const SELECTED_COLOR := Color("4d82c2")
+const SELECTED_COLOR := GameColors.ACCENT
 const SELECTION_TEXT_COLOR := SELECTED_COLOR
-const TEXT_COLOR := Color("3c3c3c")
-const MUTED_COLOR := Color("8a8882")
+const TEXT_COLOR := GameColors.TEXT
+const MUTED_COLOR := GameColors.TEXT_MUTED
 const ENTRY_FONT := preload("res://resources/fonts/Tiny5-Regular.ttf")
 const CHECKED_TEXTURE := preload(
 	"res://resources/materials/textures/ui/check/checked.tres"
@@ -96,11 +96,11 @@ const SEED_MENU_POPUP_MAX_HEIGHT := 290.0
 	set(value):
 		entry_heading_font = value
 		_refresh_editor_preview()
-@export_range(8, 32, 1) var entry_heading_font_size := 15:
+@export_range(8, 32, 1) var entry_heading_font_size := UISettings.ENTRY_HEADING_FONT_SIZE:
 	set(value):
 		entry_heading_font_size = value
 		_refresh_editor_preview()
-@export var entry_heading_text_offset := Vector2(2.0, 2.0):
+@export var entry_heading_text_offset := UISettings.ENTRY_HEADING_OFFSET:
 	set(value):
 		entry_heading_text_offset = value
 		_refresh_editor_preview()
@@ -108,7 +108,7 @@ const SEED_MENU_POPUP_MAX_HEIGHT := 290.0
 	set(value):
 		entry_details_font = value
 		_refresh_editor_preview()
-@export_range(8, 24, 1) var entry_details_font_size := 11:
+@export_range(8, 24, 1) var entry_details_font_size := UISettings.ENTRY_DETAILS_FONT_SIZE:
 	set(value):
 		entry_details_font_size = value
 		_refresh_editor_preview()
@@ -188,7 +188,7 @@ func _build_editor_challenge_preview() -> void:
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.flat = true
 		button.set_pressed_no_signal(index < 2)
-		button.text = "CHALLENGE %d" % (index + 1) if unlocked else "???"
+		button.text = TranslationServer.translate("CHALLENGE %d") % (index + 1) if unlocked else "???"
 		button.disabled = not unlocked
 		_style_card(button)
 		_style_selectable_availability(button, unlocked)
@@ -412,8 +412,8 @@ func _show_page(target_page: int, animate := false) -> void:
 	scroll.visible = showing_challenges
 	seed_page.visible = not showing_challenges
 	lock_filter.visible = showing_challenges
-	challenges_tab_button.modulate = SELECTED_COLOR if showing_challenges else Color.WHITE
-	seeds_tab_button.modulate = Color.WHITE if showing_challenges else SELECTED_COLOR
+	challenges_tab_button.modulate = SELECTED_COLOR if showing_challenges else GameColors.WHITE
+	seeds_tab_button.modulate = GameColors.WHITE if showing_challenges else SELECTED_COLOR
 	if animate and previous_page != _current_page:
 		_page_animator.play(page, signi(_current_page - previous_page))
 	_constrain_panel_content()
@@ -422,7 +422,7 @@ func _show_page(target_page: int, animate := false) -> void:
 func _constrain_panel_content() -> void:
 	if not is_node_ready():
 		return
-	var list_width := panel_body_width(30.0, 5.0, 10.0)
+	var list_width := panel_body_width(UISettings.TAB_SIZE.x, UISettings.BODY_GAP, UISettings.SCROLLBAR_MARGIN)
 	for target in [list, seed_content]:
 		target.custom_minimum_size.x = 0.0
 		target.size.x = list_width
@@ -575,14 +575,14 @@ func _add_card(
 	details.text = (
 		"Complete an achievement to unlock."
 		if not unlocked
-		else "%d ROUNDS  ·  BEST: %s\n%s" % [
+		else TranslationServer.translate("%d ROUNDS  ·  BEST: %s\n%s") % [
 			data.target_round - data.start_round,
 			_format_standard_score(
 				data,
 				manager.highscores.get(data.id, -1),
 				manager.best_times_ms.get(data.id, -1)
 			),
-			data.description,
+			tr(data.description),
 		]
 	)
 	entry.add_child(details)
@@ -598,7 +598,7 @@ func _add_card(
 		endless_button.flat = true
 		endless_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		_style_card(endless_button)
-		endless_button.text = "ENDLESS  ·  BEST: %s" % str(
+		endless_button.text = TranslationServer.translate("ENDLESS  ·  BEST: %s") % str(
 			manager.endless_highscores.get(data.id, "--")
 		)
 		endless_button.pressed.connect(challenge_selected.emit.bind(data.id, true))
@@ -620,7 +620,7 @@ func _format_rounds_left(data: ChallengeData, reached_round: Variant) -> String:
 	var reached := int(reached_round)
 	if reached < 0:
 		return "--"
-	return "%d ROUNDS LEFT" % maxi(data.target_round - reached, 0)
+	return TranslationServer.translate("%d ROUNDS LEFT") % maxi(data.target_round - reached, 0)
 
 
 func _format_standard_score(

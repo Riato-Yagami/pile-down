@@ -2,6 +2,7 @@ class_name FlashlightOverlay
 extends ColorRect
 
 const Difficulty := preload("res://resources/scripts/settings/difficulty.gd")
+const TileAfterglow := preload("res://resources/scripts/special_rules/rules/TileAfterglow.gd")
 
 var flashlight_radius := Difficulty.LIGHTS_OUT_RADIUS
 @export var flashlight_softness := 14.0
@@ -12,6 +13,21 @@ var light_position := Vector2(128.0, 160.0)
 var animated_radius := 54.0
 var _transition_tween: Tween
 var _using_touch_input := false
+var _appearance_generation := 0
+
+
+func illuminate_appearance(tile: Control, delay := 0.0) -> void:
+	var generation := _appearance_generation
+	if delay > 0.0:
+		await get_tree().create_timer(delay).timeout
+	if generation != _appearance_generation or not visible or not is_instance_valid(tile):
+		return
+	var glow := TileAfterglow.new()
+	add_child(glow)
+	if tile is PlayingCard or tile is MemoryPile:
+		glow.setup(tile.face_sprite, tile.back_sprite, tile.value_label)
+	else:
+		glow.queue_free()
 
 
 func _ready() -> void:
@@ -29,27 +45,29 @@ func _process(delta: float) -> void:
 		var viewport := get_viewport()
 		if viewport == null:
 			return
-		target_position = viewport.get_mouse_position()
+		target_position = get_global_transform_with_canvas().affine_inverse() * viewport.get_mouse_position()
 	light_position = light_position.lerp(target_position, minf(delta * 14.0, 1.0)).round()
 	_update_shader()
 
 
 func follow_touch(position: Vector2) -> void:
 	_using_touch_input = true
-	target_position = position.round()
+	target_position = (get_global_transform_with_canvas().affine_inverse() * position).round()
 	# A trailing light hides the card beneath a fast-moving finger. Touch input
 	# therefore updates immediately while mouse input keeps its soft easing.
 	light_position = target_position
 	_update_shader()
 
 
-func close_in() -> void:
+func close_in(touchscreen := DisplayServer.is_touchscreen_available()) -> void:
+	_clear_afterglows()
 	_kill_transition()
 	visible = true
-	_using_touch_input = false
+	_using_touch_input = touchscreen
 	var viewport := get_viewport()
 	target_position = (
-		viewport.get_mouse_position() if viewport != null else size * 0.5
+		size * 0.5 if touchscreen or viewport == null
+		else get_global_transform_with_canvas().affine_inverse() * viewport.get_mouse_position()
 	)
 	light_position = target_position
 	animated_radius = _fully_open_radius()
@@ -59,6 +77,7 @@ func close_in() -> void:
 
 
 func open_out(animated := true) -> void:
+	_clear_afterglows()
 	if not visible:
 		return
 	_kill_transition()
@@ -77,6 +96,13 @@ func open_out(animated := true) -> void:
 
 func _fully_open_radius() -> float:
 	return size.length() + flashlight_softness
+
+
+func _clear_afterglows() -> void:
+	_appearance_generation += 1
+	for child in get_children():
+		if child is TileAfterglow:
+			child.queue_free()
 
 
 func _kill_transition() -> void:

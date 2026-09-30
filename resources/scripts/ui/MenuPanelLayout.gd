@@ -3,10 +3,17 @@ class_name MenuPanelLayout
 extends Control
 
 @export_category("Panel Layout")
-@export var panel_margins := Vector4(12.0, 4.0, 12.0, 12.0):
+@export var panel_margins := UISettings.PANEL_MARGINS:
 	set(value):
 		panel_margins = value
 		_apply_panel_margins()
+
+var tabs_horizontal := UISettings.TABS_HORIZONTAL:
+	set(value):
+		tabs_horizontal = value
+		if is_node_ready():
+			apply_panel_layout()
+			resized.emit()
 
 var _preserving_panel_rect := false
 
@@ -17,6 +24,19 @@ func _notification(what: int) -> void:
 
 
 func apply_panel_layout() -> void:
+	var layout := get_node_or_null("Margin/Layout") as BoxContainer
+	var body := get_node_or_null("Margin/Layout/Body") as BoxContainer
+	var navigation := get_node_or_null("Margin/Layout/Body/Navigation") as BoxContainer
+	if layout != null and body != null and navigation != null:
+		layout.add_theme_constant_override(&"separation", UISettings.HEADER_GAP)
+		body.vertical = tabs_horizontal
+		body.add_theme_constant_override(&"separation", UISettings.BODY_GAP)
+		navigation.vertical = not tabs_horizontal
+		navigation.alignment = BoxContainer.ALIGNMENT_BEGIN
+		navigation.add_theme_constant_override(&"separation", UISettings.TAB_GAP)
+		for button in navigation.get_children():
+			if button is TextureButton:
+				button.custom_minimum_size = UISettings.TAB_SIZE
 	_apply_panel_margins()
 	preserve_panel_rect()
 
@@ -39,6 +59,9 @@ func preserve_panel_rect() -> void:
 func panel_body_width(
 	navigation_width: float, body_separation: float, scrollbar_margin: float
 ) -> float:
+	if tabs_horizontal:
+		navigation_width = 0.0
+		body_separation = 0.0
 	var horizontal_margins := panel_margins.x + panel_margins.z
 	var available := size.x - horizontal_margins - navigation_width
 	available -= body_separation + scrollbar_margin

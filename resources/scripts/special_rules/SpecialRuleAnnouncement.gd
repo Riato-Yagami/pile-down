@@ -41,9 +41,9 @@ func show_rules(
 	combo_label.visible = not combo_label.text.is_empty()
 	var titles: PackedStringArray = []
 	for rule in rules:
-		titles.append(rule.title)
+		titles.append(tr(rule.title))
 	rules_label.text = "\n+\n".join(titles)
-	subtitle_label.text = rules[0].subtitle if rules.size() == 1 else ""
+	subtitle_label.text = tr(rules[0].subtitle) if rules.size() == 1 else ""
 	visible = true
 	modulate.a = 0.0
 	var tween := create_tween()
@@ -213,7 +213,7 @@ func _find_delete_button(rule_index: int) -> RuleDeleteButton:
 
 
 func _update_delete_label(remaining: int) -> void:
-	delete_label.text = "DELETE" if remaining == 1 else "DELETE %d" % remaining
+	delete_label.text = "DELETE" if remaining == 1 else TranslationServer.translate("DELETE %d") % remaining
 
 
 func _hide_delete_counter() -> void:
@@ -233,7 +233,7 @@ func _hide_delete_counter() -> void:
 	)
 	await tween.finished
 	delete_label.visible = false
-	delete_label.modulate = Color.WHITE
+	delete_label.modulate = GameColors.WHITE
 	delete_label.scale = Vector2.ONE
 
 

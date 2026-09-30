@@ -1,15 +1,16 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://resources/scripts/gameplay/Card.gd" id="1"]
 [ext_resource type="Texture2D" path="res://resources/materials/textures/tiles/TileFaceLitTexture.tres" id="2"]
 [ext_resource type="Texture2D" path="res://resources/materials/textures/tiles/TileBackLitTexture.tres" id="3"]
 [ext_resource type="FontFile" path="res://resources/fonts/VCR_OSD_MONO_1.001.ttf" id="4"]
 [ext_resource type="PackedScene" path="res://resources/scenes/special_rules/RegenerationRing.tscn" id="5"]
+[ext_resource type="Shader" path="res://resources/shaders/ui/TileSelection.gdshader" id="6_selection"]
 
 [sub_resource type="Shader" id="TileColorShader"]
 code = "shader_type canvas_item;
 
-uniform vec4 tile_color : source_color = vec4(0.0, 1.0, 0.0, 1.0);
+uniform vec4 tile_color : source_color = vec4(0.184313729, 0.654901981, 0.788235307, 1.000000000);
 
 void fragment() {
 	vec4 source = texture(TEXTURE, UV);
@@ -23,6 +24,9 @@ shader = SubResource("TileColorShader")
 
 [sub_resource type="RectangleShape2D" id="DragCollisionShape"]
 size = Vector2(28, 31)
+
+[sub_resource type="ShaderMaterial" id="SelectionOutlineMaterial"]
+shader = ExtResource("6_selection")
 
 [node name="Card" type="Control"]
 custom_minimum_size = Vector2(34, 37)
@@ -92,12 +96,29 @@ offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.05, 0.05, 0.05, 1)
+theme_override_colors/font_color = Color(0.050000001, 0.050000001, 0.050000001, 1.000000000)
 theme_override_fonts/font = ExtResource("4")
 theme_override_font_sizes/font_size = 20
 text = "1"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="SelectionOutline" type="TextureRect" parent="VisualRoot"]
+unique_name_in_owner = true
+visible = false
+material = SubResource("SelectionOutlineMaterial")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -2.0
+offset_top = -2.0
+offset_right = 2.0
+offset_bottom = 2.0
+mouse_filter = 2
+texture_filter = 1
+texture = ExtResource("2")
+expand_mode = 1
 
 [node name="DragTimer" type="Timer" parent="."]
 unique_name_in_owner = true

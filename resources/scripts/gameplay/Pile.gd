@@ -2,7 +2,7 @@ class_name MemoryPile
 extends Control
 
 const TINY_REGULAR_FONT := preload("res://resources/fonts/Tiny5-Regular.ttf")
-const HIDDEN_TILE_COLOR := Color("b8b8b8")
+const HIDDEN_TILE_COLOR := GameColors.HIDDEN_TILE
 
 signal pile_selected(pile)
 signal drag_requested(pile, pointer_position)
@@ -103,12 +103,12 @@ func setup(
 	history.assign([value])
 	visible = true
 	face.disabled = false
-	modulate = Color.WHITE
+	modulate = GameColors.WHITE
 	scale = Vector2.ONE
 	rotation = 0.0
 	background_weight = 1.0
-	face.modulate = Color.WHITE
-	value_label.modulate = Color.WHITE
+	face.modulate = GameColors.WHITE
+	value_label.modulate = GameColors.WHITE
 	_set_completion_morph(0.0)
 	keep_face_up = false
 	bonus_highlight = false
@@ -291,7 +291,7 @@ func set_bonus_highlight(enabled: bool) -> void:
 	bonus_highlight = enabled
 	if enabled:
 		glow.visible = true
-		glow.modulate = Color("#D9A514", 0.4)
+		glow.modulate = GameColors.PILE_GOLD_GLOW
 	elif not _hovered_for_drop:
 		glow.visible = false
 
@@ -311,7 +311,7 @@ func show_quick_peek_flash() -> void:
 	face_up = true
 	_refresh()
 	scale = Vector2(0.9, 0.9)
-	modulate = Color(1.25, 1.25, 1.25, 0.35)
+	modulate = GameColors.PILE_FLASH
 	glow.visible = bonus_highlight
 	_visual_tween = (
 		create_tween()
@@ -320,7 +320,7 @@ func show_quick_peek_flash() -> void:
 		.set_ease(Tween.EASE_OUT)
 	)
 	_visual_tween.tween_property(self, "scale", Vector2.ONE, 0.09)
-	_visual_tween.tween_property(self, "modulate", Color.WHITE, 0.07)
+	_visual_tween.tween_property(self, "modulate", GameColors.WHITE, 0.07)
 
 
 func hide_quick_peek_flash() -> void:
@@ -333,9 +333,9 @@ func hide_quick_peek_flash() -> void:
 	_visual_tween.tween_property(self, "scale", Vector2(1.04, 1.04), 0.06)
 	await _visual_tween.finished
 	face_up = false
-	face_sprite.modulate = Color.WHITE
+	face_sprite.modulate = GameColors.WHITE
 	scale = Vector2.ONE
-	modulate = Color.WHITE
+	modulate = GameColors.WHITE
 	_refresh()
 	glow.visible = bonus_highlight
 
@@ -349,13 +349,13 @@ func set_drop_feedback(active: bool) -> void:
 	_visual_tween = create_tween().set_parallel().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	if active:
 		glow.visible = true
-		glow.modulate = Color(0.31, 0.64, 0.63, 0.24)
+		glow.modulate = GameColors.PILE_DROP_GLOW
 		_visual_tween.tween_property(self, "scale", Vector2(1.04, 1.04), 0.12)
 		_visual_tween.tween_property(face, "position:y", -3.0, 0.12)
 	else:
 		glow.visible = bonus_highlight
 		if bonus_highlight:
-			glow.modulate = Color("#D9A514", 0.4)
+			glow.modulate = GameColors.PILE_GOLD_GLOW
 		_visual_tween.tween_property(self, "scale", Vector2.ONE, 0.12)
 		_visual_tween.tween_property(face, "position:y", 0.0, 0.12)
 
@@ -371,7 +371,7 @@ func flash_invalid() -> void:
 
 func impact() -> void:
 	glow.visible = true
-	glow.modulate = Color(0.31, 0.64, 0.63, 0.22)
+	glow.modulate = GameColors.PILE_HOVER_GLOW
 	var tween := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(self, "scale", Vector2(0.94, 0.94), 0.08)
 	tween.tween_property(self, "scale", Vector2.ONE, 0.12)
@@ -379,7 +379,7 @@ func impact() -> void:
 	await tween.finished
 	glow.visible = bonus_highlight
 	if bonus_highlight:
-		glow.modulate = Color("#D9A514", 0.4)
+		glow.modulate = GameColors.PILE_GOLD_GLOW
 
 
 func complete_animation(use_background_dissolve := true) -> void:
@@ -389,7 +389,7 @@ func complete_animation(use_background_dissolve := true) -> void:
 	face_up = true
 	_refresh()
 	glow.visible = true
-	glow.modulate = Color(0.31, 0.64, 0.63, 0.25)
+	glow.modulate = GameColors.PILE_REGEN_GLOW
 	if not use_background_dissolve:
 		# Without background deformation, retain the original lift-and-fade
 		# completion so the pile does not appear to merge into a static surface.
@@ -457,11 +457,11 @@ func _refresh() -> void:
 	if not is_node_ready():
 		return
 	var color: Color = _tile_colors[current_value % _tile_colors.size()]
-	var visual_color := Color("#8B8B8B") if colorblind_enabled else color
+	var visual_color := GameColors.COLORBLIND_TILE if colorblind_enabled else color
 	var custom_hidden_tile := not face_up and _override_hidden_tile_with_font
 	face_sprite.visible = face_up or custom_hidden_tile
 	back_sprite.visible = not face_up and not custom_hidden_tile
-	back_sprite.modulate = Color.WHITE
+	back_sprite.modulate = GameColors.WHITE
 	_update_regeneration_ring_visibility()
 	var tile_material := face_sprite.material as ShaderMaterial
 	tile_material.set_shader_parameter(
@@ -496,7 +496,7 @@ func _refresh() -> void:
 		if custom_hidden_tile
 		else Settings.COLORBLIND_VALUE_COLOR
 		if colorblind_enabled
-		else color.darkened(0.35)
+		else GameColors.tile_text_color(color)
 	)
 
 

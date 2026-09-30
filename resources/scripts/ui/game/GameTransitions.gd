@@ -64,7 +64,9 @@ static func play_return_to_menu_transition(host: GameManager) -> void:
 	host.splash.set_anchors_preset(Control.PRESET_TOP_LEFT, false)
 	# Keep the centered menu rect while its background covers the wider canvas.
 	# Changing its width here moves right-anchored icons until reparenting ends.
-	host.splash.size = host.screens.size
+	if host._screen_size_mode == &"menu_adaptive":
+		splash_destination -= host.screens.position
+	host.splash.size = host._canvas_size() if host._screen_size_mode == &"menu_adaptive" else host.screens.size
 	host.splash.position = splash_destination + Vector2(0.0, host._canvas_size().y + 2.0)
 	host._prepare_splash_transition_layout()
 	host.splash.visible = true

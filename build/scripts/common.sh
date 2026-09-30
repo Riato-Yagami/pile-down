@@ -47,4 +47,7 @@ pile_down_prepare_build() {
 		echo "Godot not found: ${PILE_DOWN_GODOT_BIN}. Set PILE_DOWN_GODOT_BIN." >&2
 		return 1
 	}
+	"${PILE_DOWN_GODOT_BIN}" --headless --path . --editor --quit || return 1
+	"${PILE_DOWN_GODOT_BIN}" --headless --path . \
+		--script resources/scripts/tools/SyncColors.gd || return 1
 }

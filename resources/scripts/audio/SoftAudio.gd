@@ -145,6 +145,10 @@ func play_start() -> void:
 	_play_sequence([392.0, 523.25], 0.07, 0.07, 0.055)
 
 
+func play_life_recovery() -> void:
+	_play_sequence([523.25, 659.25, 1046.5], 0.09, 0.18, 0.04)
+
+
 func play_clock_tick(urgency := 0.0) -> void:
 	var intensity := pow(clampf(urgency, 0.0, 1.0), 2.0)
 	var frequency := lerpf(820.0, 980.0, intensity)

@@ -1,0 +1,18 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+Discard chain: mouse_early
+GRAB value=4 hit_self=true selectable=true source=false busy=false
+PRESS claimed=false selected_self=false
+MOVE dragging=true selected_self=true source=false busy=false selectable=true
+GRAB value=3 hit_self=true selectable=true source=true busy=false
+PRESS claimed=true selected_self=true
+MOVE dragging=true selected_self=true source=true busy=false selectable=true
+GRAB value=2 hit_self=true selectable=true source=true busy=false
+PRESS claimed=true selected_self=true
+MOVE dragging=true selected_self=true source=true busy=false selectable=true
+SCRIPT ERROR: Assertion failed: The next bonus grab must open as soon as the previous bonus is played
+   at: _run (res://tests/test_discard_fast_chain.gd:47)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_discard_fast_chain.gd:47)

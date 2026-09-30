@@ -47,7 +47,7 @@ static func refresh_list(game: GameManager) -> void:
 		var button := Button.new()
 		button.set_script(game.HIGHLIGHT_BUTTON_SCRIPT)
 		button.custom_minimum_size = Vector2(210, 43)
-		button.text = "CHECKPOINT %d\nROUND %d   BEST: %s" % [
+		button.text = TranslationServer.translate("CHECKPOINT %d\nROUND %d   BEST: %s") % [
 			checkpoint_id, snapshot.start_round, str(best) if best >= 0 else "--"
 		]
 		button.pressed.connect(game._on_checkpoint_selected.bind(checkpoint_id))
@@ -72,7 +72,7 @@ static func update_button_text(game: GameManager) -> void:
 	)
 	if value is Dictionary:
 		var snapshot := CheckpointSnapshot.from_dictionary(value)
-		game.checkpoint_button.text = "FROM %d" % snapshot.start_round
+		game.checkpoint_button.text = TranslationServer.translate("FROM %d") % snapshot.start_round
 	else:
 		game.checkpoint_button.text = "FROM"
 
@@ -105,7 +105,7 @@ static func show_selected(game: GameManager) -> void:
 		game.splash_high_score.text = (
 			"[center]HIGHSCORE\n--[/center]"
 			if game.checkpoint_best_rounds_left < 0
-			else "[center]HIGHSCORE\n%d rounds left[/center]"
+			else TranslationServer.translate("[center]HIGHSCORE\n%d rounds left[/center]")
 			% game.checkpoint_best_rounds_left
 		)
 		game.splash_high_score_time.visible = false
@@ -113,7 +113,7 @@ static func show_selected(game: GameManager) -> void:
 	game.splash_high_score.text = (
 		"[center]CHECKPOINT HIGHSCORE\nROUND REACHED[/center]"
 	)
-	game.splash_high_score_time.text = "BEST: %s" % (
+	game.splash_high_score_time.text = TranslationServer.translate("BEST: %s") % (
 		str(game.checkpoint_endless_best_round)
 		if game.checkpoint_endless_best_round >= 0 else "--"
 	)
@@ -122,7 +122,7 @@ static func show_selected(game: GameManager) -> void:
 
 static func show_unlocked(game: GameManager, checkpoint_id: int) -> void:
 	game._pause_achievement_notifications(&"checkpoint")
-	game.transient_label.text = "CHECKPOINT %d\nUNLOCKED" % checkpoint_id
+	game.transient_label.text = TranslationServer.translate("CHECKPOINT %d\nUNLOCKED") % checkpoint_id
 	game.transient_label.visible = true
 	game.transient_label.modulate.a = 0.0
 	var tween := game.create_tween()

@@ -8,16 +8,19 @@ func _init() -> void:
 
 
 func _run() -> void:
+	create_timer(30.0).timeout.connect(func(): quit(1))
 	var game := GameScene.instantiate() as GameManager
 	root.add_child(game)
-	game.start_game()
+	game.start_game(false, null, false, "STICKY-TEST", {}, [], {
+		"pile_count": 2, "hand_size": 3, "start_value": 5, "turn_time": 20.0,
+	})
 	var deadline := Time.get_ticks_msec() + 10000
 	while game.input_locked and Time.get_ticks_msec() < deadline:
 		await process_frame
 	assert(not game.input_locked)
-	assert(game.sticky_fingers_controller.cursor_enabled)
-
 	game.round_modifiers.sticky_fingers_enabled = true
+	game.sticky_fingers_controller.begin_round(true)
+	assert(game.sticky_fingers_controller.cursor_enabled)
 	var sticky_card := game.hand_manager.current_cards[0]
 	var rejected_card := game.hand_manager.current_cards[1]
 	var rejected_parent := rejected_card.get_parent()

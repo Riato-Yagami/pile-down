@@ -66,7 +66,7 @@ static func add_entry(
 			elif host.entry_details_font != null:
 				level_label.add_theme_font_override("font", host.entry_details_font)
 			level_label.add_theme_font_size_override("font_size", host.bonus_level_font_size)
-			level_label.add_theme_color_override("font_color", Color.WHITE)
+			level_label.add_theme_color_override("font_color", GameColors.WHITE)
 			status_icon.add_child(level_label)
 	elif not status_text.is_empty():
 		var status_label := Label.new()
@@ -83,7 +83,8 @@ static func add_entry(
 		heading_row.add_child(status_label)
 	var heading_label := Label.new()
 	heading_label.text = heading
-	heading_label.set_meta("progression_wrap_width", 18.0)
+	# Let the HBox allocate what remains after the translated NEW badge and
+	# status icon. A fixed title minimum would widen the entire menu on mobile.
 	heading_label.custom_minimum_size.x = 0.0
 	heading_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	heading_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -97,7 +98,7 @@ static func add_entry(
 	heading_label.add_theme_stylebox_override("normal", heading_offset_style)
 	heading_label.add_theme_color_override(
 		"font_color",
-		Color("4d82c2") if accent else Color("3c3c3c")
+		GameColors.ACCENT if accent else GameColors.TEXT
 	)
 	heading_label.modulate.a = host.LOCKED_ENTRY_OPACITY if muted else 1.0
 	var details_label := Label.new()
@@ -109,7 +110,7 @@ static func add_entry(
 	if host.entry_details_font != null:
 		details_label.add_theme_font_override("font", host.entry_details_font)
 	details_label.add_theme_font_size_override("font_size", host.entry_details_font_size)
-	details_label.add_theme_color_override("font_color", Color("8a8882"))
+	details_label.add_theme_color_override("font_color", GameColors.TEXT_MUTED)
 	details_label.modulate.a = host.LOCKED_ENTRY_OPACITY if muted else 1.0
 	heading_row.add_child(heading_label)
 	entry.add_child(heading_row)

@@ -11,9 +11,16 @@ config_version=5
 [application]
 
 config/name="Pile Down"
-run/main_scene="res://resources/scenes/Main.tscn"
+run/main_scene="res://resources/scenes/Loading.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
+boot_splash/bg_color=Color(0.968627453, 0.964705884, 0.949019611, 1.000000000)
+boot_splash/show_image=false
 config/icon="res://resources/sprites/branding/game-icon.png"
+
+[autoload]
+
+RuntimeColors="*res://resources/scripts/settings/RuntimeColors.gd"
+LanguageSettings="*res://resources/scripts/settings/LanguageSettings.gd"
 
 [display]
 
@@ -40,7 +47,7 @@ rendering_device/driver.windows="d3d12"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
-environment/defaults/default_clear_color=Color(0.968627, 0.964706, 0.94902, 1)
+environment/defaults/default_clear_color=Color(0.968627453, 0.964705884, 0.949019611, 1.000000000)
 2d/snap/snap_2d_transforms_to_pixel=true
 2d/snap/snap_2d_vertices_to_pixel=true
 
@@ -56,11 +63,11 @@ background_reference_size={
 }
 background_color_a={
 "type": "color",
-"value": Color(0.9686, 0.9647, 0.9529, 1)
+"value": Color(0.968599975, 0.964699984, 0.952899992, 1.000000000)
 }
 background_color_b={
 "type": "color",
-"value": Color(0.31, 0.49, 0.72, 0.16)
+"value": Color(0.310000002, 0.490000010, 0.720000029, 0.159999996)
 }
 background_intensity={
 "type": "float",

@@ -80,13 +80,17 @@ static func resume(game: GameManager, source: StringName) -> void:
 
 
 static func position(game: GameManager) -> void:
+	# Screens is centered inside the expanded canvas in semi-adaptive mode.
+	# Both the popup and the timer clearance must use that parent's coordinates.
+	var parent := game.achievement_popup.get_parent() as Control
+	var to_parent := parent.get_global_transform().affine_inverse()
 	var timer_bottom := 0.0
 	for timer_control: Control in [game.timer_ring, game.run_time_label]:
 		if timer_control.visible:
 			timer_bottom = maxf(
-				timer_bottom, timer_control.get_global_rect().end.y
+				timer_bottom, (to_parent * timer_control.get_global_rect().abs().end).y
 			)
-	var viewport_size := game.get_viewport_rect().size
+	var viewport_size := parent.size
 	game.achievement_popup.position.x = floorf(
 		(viewport_size.x - game.achievement_popup.size.x) * 0.5
 	)

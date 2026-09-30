@@ -163,6 +163,9 @@ static func style_buttons(game: GameManager) -> void:
 	var buttons: Array[Button] = [
 		game.achievement_notifications_button,
 		game.timer_display_button,
+		game.end_seed_button,
+		game.click_to_place_button,
+		game.drag_and_drop_button,
 		game.adaptive_resolution_button,
 		game.true_pixel_art_button,
 		game.dust_effects_button,
@@ -188,7 +191,9 @@ static func style_buttons(game: GameManager) -> void:
 
 
 static func setup_gameplay(game: GameManager) -> void:
+	AccessibilityOptions.setup(game)
 	var config := _load_config(game)
+	game._show_end_seed = bool(config.get_value("gameplay", "show_end_seed", false))
 	game._achievement_notifications_enabled = bool(config.get_value(
 		"gameplay", "achievement_notifications", true
 	))
@@ -213,6 +218,12 @@ static func toggle_timer(game: GameManager) -> void:
 	refresh_gameplay(game)
 
 
+static func toggle_end_seed(game: GameManager) -> void:
+	game._show_end_seed = not game._show_end_seed
+	save_gameplay(game, "show_end_seed", game._show_end_seed)
+	refresh_gameplay(game)
+
+
 static func save_gameplay(game: GameManager, key: String, value: bool) -> void:
 	var config := _load_config(game)
 	config.set_value("gameplay", key, value)
@@ -220,6 +231,9 @@ static func save_gameplay(game: GameManager, key: String, value: bool) -> void:
 
 
 static func refresh_gameplay(game: GameManager) -> void:
+	game.end_seed_button.icon = game.SELECTED_TEXTURE if game._show_end_seed else game.UNCHECKED_TEXTURE
+	game.end_seed_display.visible = game._show_end_seed
+	_refresh_option_text_highlight(game, game.end_seed_button)
 	game.achievement_notifications_button.icon = (
 		game.SELECTED_TEXTURE
 		if game._achievement_notifications_enabled else game.UNCHECKED_TEXTURE
@@ -235,10 +249,7 @@ static func refresh_gameplay(game: GameManager) -> void:
 
 static func setup_graphics(game: GameManager) -> void:
 	var config := _load_config(game)
-	var default_screen_size_mode := SCREEN_SIZE_MODE_SEMI_ADAPTIVE
-	var screen_size := DisplayServer.screen_get_size()
-	if DisplayServer.is_touchscreen_available() and screen_size.y > screen_size.x:
-		default_screen_size_mode = SCREEN_SIZE_MODE_ADAPTIVE
+	var default_screen_size_mode := ScreenSizeOptionsScript.SCREEN_SIZE_MODE_MENU_ADAPTIVE
 	if config.has_section_key("graphics", "adaptive_resolution"):
 		default_screen_size_mode = (
 			SCREEN_SIZE_MODE_ADAPTIVE
@@ -250,7 +261,7 @@ static func setup_graphics(game: GameManager) -> void:
 		default_screen_size_mode
 	))
 	if not SCREEN_SIZE_MODES.has(game._screen_size_mode):
-		game._screen_size_mode = SCREEN_SIZE_MODE_SEMI_ADAPTIVE
+		game._screen_size_mode = ScreenSizeOptionsScript.SCREEN_SIZE_MODE_MENU_ADAPTIVE
 	game._adaptive_resolution = game._screen_size_mode == SCREEN_SIZE_MODE_ADAPTIVE
 	game._true_pixel_art_enabled = bool(config.get_value(
 		"graphics", "true_pixel_art", false
@@ -260,7 +271,7 @@ static func setup_graphics(game: GameManager) -> void:
 		"graphics", "background_enabled", true
 	))
 	if OS.has_feature("editor") and game.start_adaptive_in_editor:
-		game._screen_size_mode = SCREEN_SIZE_MODE_SEMI_ADAPTIVE
+		game._screen_size_mode = ScreenSizeOptionsScript.SCREEN_SIZE_MODE_MENU_ADAPTIVE
 		game._adaptive_resolution = false
 	apply_resolution(game)
 	refresh_dust(game)
@@ -354,7 +365,7 @@ static func toggle_dust(game: GameManager) -> void:
 
 
 static func refresh_dust(game: GameManager) -> void:
-	game.dust_effects_button.modulate = Color.WHITE
+	game.dust_effects_button.modulate = GameColors.WHITE
 	game.dust_effects_button.icon = (
 		game.SELECTED_TEXTURE if game._dust_enabled else game.UNCHECKED_TEXTURE
 	)
@@ -378,7 +389,7 @@ static func toggle_background(game: GameManager) -> void:
 
 
 static func refresh_background(game: GameManager) -> void:
-	game.background_enabled_button.modulate = Color.WHITE
+	game.background_enabled_button.modulate = GameColors.WHITE
 	game.background_enabled_button.icon = (
 		game.SELECTED_TEXTURE
 		if game._background_enabled else game.UNCHECKED_TEXTURE

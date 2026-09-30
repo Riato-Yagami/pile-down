@@ -5,8 +5,6 @@ extends ColorRect
 const FALLBACK_SHADER := preload(
 	"res://resources/shaders/backgrounds/BackgroundStripes.gdshader"
 )
-const STRIPE_ONLY_BACKGROUND_COLOR := Color("e5edf2")
-const STRIPE_ONLY_STRIPE_COLOR := Color(1.0, 1.0, 1.0, 0.58)
 var data: BackgroundThemeData
 var catalog: BackgroundThemeCatalog
 var shader_material: ShaderMaterial

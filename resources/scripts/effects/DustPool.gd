@@ -15,7 +15,7 @@ var particles_visible := true:
 		queue_redraw()
 var debug_visible := false
 var viscosity := 2.2
-var particle_color := Color("77746d")
+var particle_color := GameColors.DUST
 var particles: Array[Dictionary] = []
 var waves: Array[Dictionary] = []
 var _elapsed := 0.0
@@ -26,7 +26,7 @@ func setup(
 	pool_size: int,
 	show_debug: bool,
 	material_viscosity := 2.2,
-	color := Color("77746d")
+	color := GameColors.DUST
 ) -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -153,5 +153,5 @@ func _draw() -> void:
 	if debug_visible:
 		draw_rect(
 			Rect2(Vector2(2, 2), Vector2(12, 4)),
-			Color(1, 0, 1, 0.7), false
+			GameColors.DEBUG_DUST_BOUNDS, false
 		)

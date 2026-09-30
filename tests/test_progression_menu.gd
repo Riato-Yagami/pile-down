@@ -13,7 +13,7 @@ func _run() -> void:
 	var menu := ProgressionMenuScene.instantiate() as ProgressionMenu
 	root.add_child(menu)
 	await process_frame
-	var navigation := menu.get_node("Margin/Layout/Body/Navigation") as VBoxContainer
+	var navigation := menu.get_node("Margin/Layout/Body/Navigation") as BoxContainer
 	assert(navigation.custom_minimum_size.x == 30.0)
 	assert(
 		(menu.content.get_parent() as MarginContainer)

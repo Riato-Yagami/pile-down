@@ -17,7 +17,7 @@ var _conveyor_enabled := false
 		queue_redraw()
 
 @export_category("Screen Edges")
-@export var screen_edge_margins := Vector4(12.0, 8.0, 12.0, 12.0):
+@export var screen_edge_margins := UISettings.SCREEN_MARGINS:
 	set(value):
 		screen_edge_margins = Vector4(
 			maxf(value.x, 0.0),
@@ -80,11 +80,11 @@ func _draw() -> void:
 	draw_dashed_line(
 		Vector2(local_x, 0.0),
 		Vector2(local_x, size.y),
-		Color("e2554f"),
+		GameColors.DANGER,
 		1.0,
 		3.0
 	)
-	draw_circle(Vector2(local_x, size.y * 0.5), 2.0, Color("e2554f"))
+	draw_circle(Vector2(local_x, size.y * 0.5), 2.0, GameColors.DANGER)
 
 
 func _refresh_editor_preview() -> void:

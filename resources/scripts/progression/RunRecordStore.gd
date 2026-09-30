@@ -189,13 +189,13 @@ static func refresh_high_score(host: GameManager) -> void:
 		host.splash_high_score.text = (
 			"[center]HIGHSCORE\nWIN[/center]"
 		)
-		host.splash_high_score_time.text = "in %s" % host._format_duration(host.best_score_time_ms)
+		host.splash_high_score_time.text = TranslationServer.translate("in %s") % host._format_duration(host.best_score_time_ms)
 		host.splash_high_score_time.visible = true
 		return
 	host.splash_high_score.text = (
-		"[center]HIGHSCORE\n%d rounds left[/center]" % host.best_rounds_left
+		TranslationServer.translate("[center]HIGHSCORE\n%d rounds left[/center]") % host.best_rounds_left
 	)
-	host.splash_high_score_time.text = "in %s" % host._format_duration(host.best_score_time_ms)
+	host.splash_high_score_time.text = TranslationServer.translate("in %s") % host._format_duration(host.best_score_time_ms)
 	host.splash_high_score_time.visible = true
 
 
@@ -205,10 +205,10 @@ static func show_endless_high_score(host: GameManager) -> void:
 		host.splash_high_score_time.visible = false
 		return
 	host.splash_high_score.text = (
-		"[center]ENDLESS HIGHSCORE\nround %d[/center]" % host.endless_best_round
+		TranslationServer.translate("[center]ENDLESS HIGHSCORE\nround %d[/center]") % host.endless_best_round
 	)
 	host.splash_high_score_time.text = (
-		"in %s" % host._format_duration(host.endless_best_time_ms)
+		TranslationServer.translate("in %s") % host._format_duration(host.endless_best_time_ms)
 	)
 	host.splash_high_score_time.visible = true
 

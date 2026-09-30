@@ -57,7 +57,7 @@ func present(
 		var button := _bonus_buttons[index]
 		button.visible = index < offered_bonuses.size()
 		button.disabled = not button.visible
-		button.modulate = Color.WHITE
+		button.modulate = GameColors.WHITE
 		if button.visible:
 			button.setup(offered_bonuses[index], levels[index], index)
 	visible = true
@@ -135,7 +135,7 @@ func cancel() -> void:
 	skip_button.visible = false
 	for button in _bonus_buttons:
 		button.disabled = false
-		button.modulate = Color.WHITE
+		button.modulate = GameColors.WHITE
 	for child in rule_choices.get_children():
 		if child is Button:
 			(child as Button).disabled = false
@@ -156,7 +156,7 @@ func _skip() -> void:
 	_animation_tween = null
 	for button in _bonus_buttons:
 		button.disabled = false
-		button.modulate = Color.WHITE
+		button.modulate = GameColors.WHITE
 	visible = false
 	skip_button.visible = false
 	_presentation_mode = 0
@@ -193,7 +193,7 @@ func _choose(index: int) -> void:
 	_animation_tween = null
 	for button in _bonus_buttons:
 		button.disabled = false
-		button.modulate = Color.WHITE
+		button.modulate = GameColors.WHITE
 	bonus_chosen.emit(index)
 
 

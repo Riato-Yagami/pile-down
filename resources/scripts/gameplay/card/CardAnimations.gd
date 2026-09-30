@@ -67,7 +67,28 @@ static func animate_valid_drop(host: PlayingCard, destination: Vector2, duration
 	host.global_position = destination
 
 
+static func play_released_discard(host: PlayingCard) -> Tween:
+	host._materialize_entrance_for_drag()
+	host.disable_wandering()
+	host.finish_drag()
+	host.set_selectable(false)
+	host._cancel_flip_animation()
+	if host._visual_tween != null and host._visual_tween.is_valid():
+		host._visual_tween.kill()
+	if host.discard_tween != null and host.discard_tween.is_valid():
+		host.discard_tween.kill()
+	var tween := host.create_tween().set_parallel().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	host.discard_tween = tween
+	tween.tween_property(host, "global_position", host.global_position + Vector2(0.0, 42.0), 0.24)
+	tween.tween_property(host, "scale", host.scale * 0.65, 0.24)
+	tween.tween_property(host, "rotation", 0.12, 0.24)
+	tween.tween_property(host, "modulate:a", 0.0, 0.24)
+	return tween
+
+
 static func play_draw(host: PlayingCard, delay: float) -> void:
+	if host.is_discarding or host.placement_confirmed:
+		return
 	# Capture the HBox slot before the entrance offset is applied. A press
 	# during the tween must still return to the stable layout position.
 	host.record_hand_position()
@@ -79,6 +100,9 @@ static func play_draw(host: PlayingCard, delay: float) -> void:
 	tween.tween_interval(delay)
 	tween.tween_property(host, "position:y", destination_y, 0.18)
 	tween.parallel().tween_property(host, "modulate:a", 1.0, 0.14)
+	# The first hand is already interactive, but must announce its appearance
+	# for visual feedback just like cards sliding in from the right.
+	tween.tween_callback(host.entrance_became_interactive.emit.bind(host))
 
 
 static func hold_hand_position(host: PlayingCard) -> void:
@@ -123,13 +147,17 @@ static func play_retained_hand_shift(host: PlayingCard, animate: bool, delay: fl
 
 
 static func play_draw_from_right(host: PlayingCard, delay: float) -> void:
-	host.set_selectable(false)
+	# A deferred entrance may start after this hand has already been discarded.
+	# It must not relock the tile or take motion back from its exit/drag.
+	if host.placement_confirmed or (host.is_discarding and (host.discard_claimed or host.discard_tween != null)):
+		return
+	host.set_selectable(host.is_discarding)
 	host._entrance_unlock_pending = true
 	host._entrance_animation_running = true
 	# Wait until the hand container has assigned the final slot. Computing the
 	# entrance offset earlier can use the previous card's layout position.
 	await host.get_tree().process_frame
-	if not host.is_inside_tree():
+	if not host.is_inside_tree() or not host._entrance_animation_running or host.discard_claimed or host.placement_confirmed:
 		return
 	host.record_hand_position()
 	host._entrance_home_positions.clear()
@@ -294,6 +322,7 @@ static func play_wandering_exit(host: PlayingCard, screen_size: Vector2, delay: 
 	var pop_duration := 0.08
 	var exit_duration := 0.34
 	var tween := host.create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	host.discard_tween = tween
 	tween.tween_interval(delay)
 	tween.tween_property(
 		host,
@@ -314,19 +343,29 @@ static func flip_down(host: PlayingCard, animated: bool = true) -> void:
 	if not host.face_up or host._flip_in_progress:
 		return
 	if animated:
+		# Animate the child visual: its local coordinates survive reparenting
+		# of the card when a discard is grabbed mid-flip.
 		host._flip_in_progress = true
-		host._flip_original_y = host.position.y
+		host._flip_original_y = host.visual_root.position.y
 		host._flip_tween = host.create_tween().set_trans(Tween.TRANS_SINE)
 		host._flip_tween.tween_property(host, "scale:x", 0.02, 0.07)
-		host._flip_tween.parallel().tween_property(host, "position:y", host._flip_original_y - 3.0, 0.07)
+		host._flip_tween.parallel().tween_property(host.visual_root, "position:y", host._flip_original_y - 3.0, 0.07)
 		host._flip_tween.tween_callback(func() -> void:
 			host.face_up = false
 			host._update_appearance()
 		)
 		host._flip_tween.tween_property(host, "scale:x", 1.0, 0.07)
-		host._flip_tween.parallel().tween_property(host, "position:y", host._flip_original_y, 0.07)
-		await host._flip_tween.finished
-		host.position.y = host._flip_original_y
+		host._flip_tween.parallel().tween_property(host.visual_root, "position:y", host._flip_original_y, 0.07)
+		var active_flip := host._flip_tween
+		# A grabbed/discarded card kills this tween; killed tweens never emit
+		# finished. Release the coroutine on cancellation as well.
+		while active_flip.is_valid() and active_flip.is_running():
+			await host.get_tree().process_frame
+			if not is_instance_valid(host) or not host.is_inside_tree():
+				return
+		if not host._flip_in_progress or host._flip_tween != active_flip:
+			return
+		host.visual_root.position.y = host._flip_original_y
 		host._flip_in_progress = false
 	else:
 		host.face_up = false
@@ -338,7 +377,7 @@ static func flip_up(host: PlayingCard, animated: bool = true) -> void:
 		return
 	if animated:
 		host._flip_in_progress = true
-		host._flip_original_y = host.position.y
+		host._flip_original_y = host.visual_root.position.y
 		host._flip_tween = host.create_tween().set_trans(Tween.TRANS_SINE)
 		host._flip_tween.tween_property(host, "scale:x", 0.02, 0.07)
 		host._flip_tween.tween_callback(func() -> void:
@@ -346,7 +385,13 @@ static func flip_up(host: PlayingCard, animated: bool = true) -> void:
 			host._update_appearance()
 		)
 		host._flip_tween.tween_property(host, "scale:x", 1.0, 0.07)
-		await host._flip_tween.finished
+		var active_flip := host._flip_tween
+		while active_flip.is_valid() and active_flip.is_running():
+			await host.get_tree().process_frame
+			if not is_instance_valid(host) or not host.is_inside_tree():
+				return
+		if not host._flip_in_progress or host._flip_tween != active_flip:
+			return
 		host._flip_in_progress = false
 	else:
 		host.face_up = true
@@ -357,10 +402,10 @@ static func flash_error(host: PlayingCard) -> void:
 	if host._visual_tween != null and host._visual_tween.is_valid():
 		host._visual_tween.kill()
 	var tween := host.create_tween()
-	tween.tween_property(host.face_sprite, "modulate", Color("#F3B2AA"), 0.08)
-	tween.tween_property(host.face_sprite, "modulate", Color.WHITE, 0.12)
+	tween.tween_property(host.face_sprite, "modulate", GameColors.CARD_ERROR, 0.08)
+	tween.tween_property(host.face_sprite, "modulate", GameColors.WHITE, 0.12)
 	tween.tween_callback(func() -> void:
-		host.face_sprite.modulate = Color.WHITE
+		host.face_sprite.modulate = GameColors.WHITE
 	)
 	await tween.finished
 
@@ -369,12 +414,15 @@ static func cancel_flip_animation(host: PlayingCard) -> void:
 	if host._flip_tween != null and host._flip_tween.is_valid():
 		host._flip_tween.kill()
 	if host._flip_in_progress:
-		host.position.y = host._flip_original_y
+		host.visual_root.position.y = host._flip_original_y
 		host.scale.x = 1.0
 	host._flip_in_progress = false
 
 
 static func animate_pose(host: PlayingCard, target_scale: Vector2, y_offset: float) -> void:
+	if host._selected:
+		target_scale = Vector2.ONE
+		y_offset = 0.0
 	if host._visual_tween != null and host._visual_tween.is_valid():
 		host._visual_tween.kill()
 	host._visual_tween = host.create_tween().set_parallel().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)

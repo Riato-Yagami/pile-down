@@ -15,6 +15,8 @@ static func start_game(
 	seed_rule_ids: Array[StringName] = [],
 	seed_difficulty: Dictionary = {}
 ) -> void:
+	host.first_move_hint.completed = false
+	host.first_move_hint.phase = 0.0
 	host._gameplay_generation += 1
 	var effective_seed := requested_seed.strip_edges()
 	if effective_seed.is_empty() and host.Debug.ENABLED:
@@ -160,6 +162,8 @@ static func restart_current_mode(host: GameManager) -> void:
 	# Invalidate an in-flight round-completion coroutine immediately. The replay
 	# iris is allowed to cover that transition instead of waiting for it to end.
 	host._run_transition_generation += 1
+	host.first_move_hint.completed = false
+	host.first_move_hint.phase = 0.0
 	host._gameplay_generation += 1
 	host._debug_round_wins_queued = 0
 	host.input_locked = true
@@ -224,6 +228,8 @@ static func return_to_menu(host: GameManager) -> void:
 	# Stop a round-completion coroutine that may currently be awaiting a bonus
 	# choice; it must not resume behind the returning menu.
 	host._run_transition_generation += 1
+	host.first_move_hint.completed = false
+	host.first_move_hint.phase = 0.0
 	host._gameplay_generation += 1
 	host._debug_round_wins_queued = 0
 	host.input_locked = true
@@ -326,24 +332,25 @@ static func finish_game(host: GameManager, completed_all_rounds := false) -> voi
 	host.overlay_high_score.visible = not high_score_kind.is_empty()
 	if finite_victory:
 		host.overlay_title.text = (
-			"[center][color=#FFD700][wave amp=35.0 freq=4.0 connected=1]YOU WIN ![/wave][/color][/center]"
+			"[center][color=#%s][wave amp=35.0 freq=4.0 connected=1]%s[/wave][/color][/center]"
+			% [GameColors.VICTORY.to_html(false), TranslationServer.translate("YOU WIN !")]
 		)
-		host.overlay_details.text = "[center]in %s[/center]" % formatted_time
+		host.overlay_details.text = TranslationServer.translate("[center]in %s[/center]") % formatted_time
 	elif host.game_mode == host.GameMode.CHALLENGE and host.challenge_endless:
-		host.overlay_title.text = "[center]%s[/center]" % host.current_challenge.title
-		host.overlay_details.text = "[center]ENDLESS\nROUND %d\nin %s[/center]" % [
+		host.overlay_title.text = "[center]%s[/center]" % TranslationServer.translate(host.current_challenge.title)
+		host.overlay_details.text = TranslationServer.translate("[center]ENDLESS\nROUND %d\nin %s[/center]") % [
 			host.round_number, formatted_time
 		]
 	elif host.game_mode == host.GameMode.CHALLENGE:
-		var challenge_rounds_text := "%d ROUNDS LEFT" % maxi(host.round_number, 0)
-		var challenge_time_text := "in %s" % formatted_time
+		var challenge_rounds_text := TranslationServer.translate("%d ROUNDS LEFT") % maxi(host.round_number, 0)
+		var challenge_time_text := TranslationServer.translate("in %s") % formatted_time
 		if high_score_kind == "ROUND":
 			challenge_rounds_text = (
-				"[color=#4D82C2]%s[/color]" % challenge_rounds_text
+				"[color=#%s]%s[/color]" % [GameColors.ACCENT.to_html(false), challenge_rounds_text]
 			)
 		elif high_score_kind == "TIME":
 			challenge_time_text = (
-				"[color=#4D82C2]%s[/color]" % challenge_time_text
+				"[color=#%s]%s[/color]" % [GameColors.ACCENT.to_html(false), challenge_time_text]
 			)
 		host.overlay_title.text = "[center]%s[/center]" % challenge_rounds_text
 		host.overlay_details.text = "[center]%s[/center]" % challenge_time_text
@@ -352,37 +359,37 @@ static func finish_game(host: GameManager, completed_all_rounds := false) -> voi
 			host._checkpoint_result_text(host.round_number)
 			if host.game_mode == host.GameMode.CHECKPOINT
 			else (
-				"ROUND %d" % host.round_number
+				TranslationServer.translate("ROUND %d") % host.round_number
 				if host.game_mode == host.GameMode.ENDLESS
-				else "%d ROUNDS LEFT" % host.round_number
+				else TranslationServer.translate("%d ROUNDS LEFT") % host.round_number
 			)
 		)
 		var time_text := (
 			"CHECKPOINT RUN"
 			if host.game_mode == host.GameMode.CHECKPOINT
-			else "in %s" % formatted_time
+			else TranslationServer.translate("in %s") % formatted_time
 		)
 		if high_score_kind == "ROUND":
-			rounds_text = "[color=#4D82C2]%s[/color]" % rounds_text
+			rounds_text = "[color=#%s]%s[/color]" % [GameColors.ACCENT.to_html(false), rounds_text]
 		else:
-			time_text = "[color=#4D82C2]%s[/color]" % time_text
+			time_text = "[color=#%s]%s[/color]" % [GameColors.ACCENT.to_html(false), time_text]
 		host.overlay_title.text = "[center]%s[/center]" % rounds_text
 		host.overlay_details.text = "[center]%s[/center]" % time_text
 	elif host.game_mode == host.GameMode.ENDLESS:
-		host.overlay_title.text = "[center]ROUND %d[/center]" % host.round_number
-		host.overlay_details.text = "[center]in %s[/center]" % formatted_time
+		host.overlay_title.text = TranslationServer.translate("[center]ROUND %d[/center]") % host.round_number
+		host.overlay_details.text = TranslationServer.translate("[center]in %s[/center]") % formatted_time
 	elif host.game_mode == host.GameMode.CHECKPOINT:
 		host.overlay_title.text = "[center]%s[/center]" % host._checkpoint_result_text(host.round_number)
 		host.overlay_details.text = "[center]CHECKPOINT RUN[/center]"
 	else:
-		host.overlay_title.text = "[center]%d ROUNDS LEFT[/center]" % host.round_number
-		host.overlay_details.text = "[center]in %s[/center]" % formatted_time
+		host.overlay_title.text = TranslationServer.translate("[center]%d ROUNDS LEFT[/center]") % host.round_number
+		host.overlay_details.text = TranslationServer.translate("[center]in %s[/center]") % formatted_time
 	host._append_new_progression_summary()
 	host.end_seed_display.set_seed(host.run_seed_label)
 	host.end_seed_display.set_copy_enabled(DisplayServer.has_feature(
 		DisplayServer.FEATURE_CLIPBOARD
 	))
-	host.end_seed_display.visible = true
+	host.end_seed_display.visible = host._show_end_seed
 	host.overlay_button.text = "REPLAY"
 	host.overlay_endless_button.visible = (
 		completed_all_rounds
@@ -408,6 +415,8 @@ static func end_gameplay_for_result_screen(host: GameManager) -> void:
 	# gameplay continuation, including accelerated debug wins, before building
 	# the screen so none can start a hand or apply delayed timeout damage behind it.
 	host._run_transition_generation += 1
+	host.first_move_hint.completed = false
+	host.first_move_hint.phase = 0.0
 	host._gameplay_generation += 1
 	host._hand_cycle_generation += 1
 	host._debug_round_wins_queued = 0

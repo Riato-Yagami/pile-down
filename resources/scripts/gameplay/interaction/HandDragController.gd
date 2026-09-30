@@ -147,7 +147,10 @@ static func handle_card_touch_input(host: GameManager, event: InputEvent) -> boo
 	if event is InputEventScreenTouch:
 		var touch := event as InputEventScreenTouch
 		if touch.pressed:
-			if host.selected_card != null and is_instance_valid(host.selected_card):
+			if (
+				is_instance_valid(host.selected_card)
+				and (host.selected_card.dragging or host._card_touch_index >= 0)
+			):
 				if (
 					host.challenge_modifiers.commit_selected_cards
 					and host.selected_card.drag_state == PlayingCard.DragState.LOCKED_OUT
@@ -158,11 +161,13 @@ static func handle_card_touch_input(host: GameManager, event: InputEvent) -> boo
 					host.selected_card.update_touch_drag(touch.position)
 					return true
 				return host._card_touch_index == touch.index
-			if host.input_locked:
-				return false
 			var touched_card := host._card_at_touch_position(touch.position)
 			if touched_card == null:
 				return false
+			if host.input_locked and not DiscardPlayController.can_interact(host, touched_card):
+				return false
+			if not DiscardPlayController.claim_on_press(host, touched_card):
+				return true
 			host._card_touch_index = touch.index
 			touched_card.drag_target = touch.position
 			host._on_card_selected(touched_card)
@@ -173,15 +178,29 @@ static func handle_card_touch_input(host: GameManager, event: InputEvent) -> boo
 			and is_instance_valid(host.selected_card)
 			and host._card_touch_index == touch.index
 		):
+			if touch.canceled and host.selected_card.is_discarding:
+				DiscardPlayController.cancel_claim(host, host.selected_card)
+				return true
 			if host.selected_card.dragging:
 				host.selected_card.update_touch_drag(touch.position)
 				host._on_card_drag_released(host.selected_card, touch.position)
 			else:
+				var tapped_card := host.selected_card
+				var is_tap := (
+					not touch.canceled
+					and tapped_card.touch_origin.distance_to(touch.position) < tapped_card.touch_drag_distance
+				)
 				host.selected_card.update_touch_interaction(touch.position)
 				host.selected_card.finish_touch_tap()
 				host._card_touch_index = -1
-				host.selected_card = null
-				host.hand_manager.clear_selection()
+				if is_tap and host._click_to_place_enabled:
+					CardClickController.select_on_tap(host, tapped_card)
+				else:
+					if tapped_card.is_discarding:
+						DiscardPlayController.cancel_claim(host, tapped_card)
+					else:
+						host.selected_card = null
+						host.hand_manager.clear_selection()
 			return true
 	elif event is InputEventScreenDrag:
 		var drag := event as InputEventScreenDrag
@@ -201,7 +220,8 @@ static func handle_card_touch_input(host: GameManager, event: InputEvent) -> boo
 
 static func try_start_touch_card_drag(host: GameManager) -> void:
 	if (
-		host._card_touch_index < 0
+		not host._drag_and_drop_enabled
+		or host._card_touch_index < 0
 		or host.selected_card == null
 		or not is_instance_valid(host.selected_card)
 		or host.selected_card.dragging
@@ -215,8 +235,9 @@ static func try_start_touch_card_drag(host: GameManager) -> void:
 
 
 static func card_at_touch_position(host: GameManager, touch_position: Vector2) -> PlayingCard:
-	for index in range(host.hand_manager.current_cards.size() - 1, -1, -1):
-		var card := host.hand_manager.current_cards[index]
+	var cards := host.hand_manager.interactive_cards()
+	for index in range(cards.size() - 1, -1, -1):
+		var card := cards[index]
 		if (
 			not is_instance_valid(card)
 			or not card.visible
@@ -225,7 +246,7 @@ static func card_at_touch_position(host: GameManager, touch_position: Vector2) -
 		):
 			continue
 		var local_point := (
-			card.get_global_transform().affine_inverse()
+			card.visual_root.get_global_transform().affine_inverse()
 			* touch_position
 		)
 		if Rect2(Vector2.ZERO, card.size).has_point(local_point):

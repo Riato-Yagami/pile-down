@@ -14,16 +14,18 @@ static func style_seed_input(host: ChallengeSelection, input: LineEdit) -> void:
 	input.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	input.add_theme_font_override("font", host.ENTRY_FONT)
 	input.add_theme_font_size_override("font_size", 16)
-	input.add_theme_color_override("font_color", Color.WHITE)
-	input.add_theme_color_override("font_placeholder_color", Color(1, 1, 1, 0.62))
-	input.add_theme_color_override("caret_color", Color.WHITE)
-	input.add_theme_color_override("selection_color", Color("6da7e5"))
+	input.add_theme_color_override("font_color", GameColors.WHITE)
+	input.add_theme_color_override("font_placeholder_color", GameColors.PLACEHOLDER)
+	input.add_theme_color_override("caret_color", GameColors.WHITE)
+	input.add_theme_color_override("selection_color", GameColors.ACCENT_HOVER)
 	for state in [&"normal", &"focus", &"read_only"]:
 		input.add_theme_stylebox_override(state, host._button_style())
 	host._connect_seed_control_highlight(input)
 
 
 static func style_seed_selector(host: ChallengeSelection, selector: OptionButton) -> void:
+	selector.fit_to_longest_item = false
+	selector.clip_text = true
 	preload("res://resources/scripts/ui/PopupTouchInput.gd").install(selector.get_popup())
 	selector.custom_minimum_size = Vector2(0, host.SEED_MENU_HEIGHT)
 	selector.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -36,7 +38,7 @@ static func style_seed_selector(host: ChallengeSelection, selector: OptionButton
 		&"font_color", &"font_hover_color", &"font_pressed_color",
 		&"font_focus_color",
 	]:
-		selector.add_theme_color_override(color_name, Color.WHITE)
+		selector.add_theme_color_override(color_name, GameColors.WHITE)
 	for state in [&"normal", &"hover", &"pressed", &"focus", &"disabled"]:
 		selector.add_theme_stylebox_override(state, host._button_style(18.0))
 	var popup := selector.get_popup()
@@ -55,7 +57,7 @@ static func style_seed_selector(host: ChallengeSelection, selector: OptionButton
 	popup.add_theme_stylebox_override("hover", empty_style)
 	popup.add_theme_stylebox_override("pressed", empty_style)
 	var popup_panel := StyleBoxFlat.new()
-	popup_panel.bg_color = Color("f7f6f2")
+	popup_panel.bg_color = GameColors.MENU_BACKGROUND
 	popup_panel.border_color = host.SELECTED_COLOR
 	popup_panel.set_border_width_all(2)
 	popup_panel.content_margin_left = 4
@@ -142,7 +144,7 @@ static func create_multi_select_button(host: ChallengeSelection) -> Button:
 		&"font_color", &"font_hover_color", &"font_pressed_color",
 		&"font_focus_color",
 	]:
-		menu.add_theme_color_override(color_name, Color.WHITE)
+		menu.add_theme_color_override(color_name, GameColors.WHITE)
 	for state in [&"normal", &"hover", &"pressed", &"focus", &"disabled"]:
 		menu.add_theme_stylebox_override(state, host._button_style(14.0))
 	host._connect_seed_control_highlight(menu)
@@ -155,7 +157,7 @@ static func attach_multi_select_popup(
 ) -> PopupPanel:
 	var popup := PopupPanel.new()
 	var popup_panel := StyleBoxFlat.new()
-	popup_panel.bg_color = Color("f7f6f2")
+	popup_panel.bg_color = GameColors.MENU_BACKGROUND
 	popup_panel.border_color = host.SELECTED_COLOR
 	popup_panel.set_border_width_all(2)
 	popup_panel.content_margin_left = 4

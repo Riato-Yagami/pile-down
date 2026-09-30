@@ -14,11 +14,11 @@ extends SelectableDataCatalog
 	set(value):
 		reference_size = value
 		emit_changed()
-@export var background_color := Color(0.9686, 0.9647, 0.9529, 1.0):
+@export var background_color := GameColors.BACKGROUND_BASE:
 	set(value):
 		background_color = value
 		emit_changed()
-@export var pattern_color := Color(0.31, 0.49, 0.72, 0.16):
+@export var pattern_color := GameColors.BACKGROUND_PATTERN:
 	set(value):
 		pattern_color = value
 		emit_changed()

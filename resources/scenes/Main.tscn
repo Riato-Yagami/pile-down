@@ -19,7 +19,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.968627, 0.964706, 0.94902, 1)
+color = Color(0.968627453, 0.964705884, 0.949019611, 1.000000000)
 
 [node name="CustomCursor" type="Node" parent="."]
 script = ExtResource("2_cursor")

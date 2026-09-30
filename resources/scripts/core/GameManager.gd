@@ -60,7 +60,7 @@ const HandDragControllerScript := preload(
 const PILE_SCENE := preload("res://resources/scenes/gameplay/Pile.tscn")
 # A replay has no menu transition to let the player settle before memorizing.
 # Keep the opening pile values visible long enough to establish a fresh run.
-const RESTART_PILE_REVEAL_BONUS := 1.0
+const RESTART_PILE_REVEAL_BONUS := 0.25
 const HIGHLIGHT_BUTTON_SCRIPT := preload(
 	"res://resources/scripts/ui/HighlightButton.gd"
 )
@@ -113,8 +113,8 @@ const PROGRESSION_ACHIEVEMENT_ICON := (
 const Debug := preload("res://resources/scripts/settings/debug.gd")
 const MUSIC_BUS_NAME := &"Music"
 const SFX_BUS_NAME := &"SFX"
-const OPTIONS_SELECTED_COLOR := Color("4d82c2")
-const OPTION_TEXT_COLOR := Color("3c3c3c")
+const OPTIONS_SELECTED_COLOR := GameColors.ACCENT
+const OPTION_TEXT_COLOR := GameColors.TEXT
 const OPTION_GAMEPLAY := 0
 const OPTION_SOUND := 1
 const OPTION_GRAPHICS := 2
@@ -207,6 +207,8 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var links_options_button: TextureButton = %LinksOptionsButton
 @onready var options_page_title: Label = %OptionsPageTitle
 @onready var gameplay_options: Control = %GameplayOptions
+@onready var click_to_place_button: Button = %ClickToPlaceButton
+@onready var drag_and_drop_button: Button = %DragAndDropButton
 @onready var sound_options: Control = %SoundOptions
 @onready var graphics_options: Control = %GraphicsOptions
 @onready var save_options: Control = %SaveOptions
@@ -222,6 +224,7 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var pointer_relief_light: PointLight2D = %PointerReliefLight
 @onready var achievement_notifications_button: Button = %AchievementNotificationsButton
 @onready var timer_display_button: Button = %TimerDisplayButton
+@onready var end_seed_button: Button = %EndSeedButton
 @onready var link_button_template: Button = %LinkButtonTemplate
 @onready var export_save_button: Button = %ExportSaveButton
 @onready var import_save_button: Button = %ImportSaveButton
@@ -331,11 +334,15 @@ var mistakes_left := 3
 var maximum_mistakes := 3
 var selected_card: PlayingCard:
 	set(value):
+		if is_instance_valid(selected_card) and selected_card != value:
+			selected_card.set_selected_visual(false)
 		selected_card = value
 		if is_instance_valid(bonus_manager):
 			bonus_manager.set_descriptions_enabled(not is_instance_valid(value))
 var piles: Array[MemoryPile] = []
 var input_locked := true
+var _discard_play_in_progress := false
+var _discard_source_action_active := false
 var run_rng := RunRNGScript.new()
 var rng := RandomNumberGenerator.new()
 var hands_rng := RandomNumberGenerator.new()
@@ -397,8 +404,12 @@ var _regeneration_hand_check_pending := false
 var _music_volume_before_mute := 100.0
 var _sound_volume_before_mute := 100.0
 var _options_page := OPTION_GAMEPLAY
+var _click_to_place_enabled := true
+var _drag_and_drop_enabled := true
+var _card_click_controller := CardClickController.new()
 var _adaptive_resolution := false
-var _screen_size_mode := &"semi_adaptive"
+var _screen_size_mode := &"menu_adaptive"
+var first_move_hint: Control
 var _true_pixel_art_enabled := false
 var _dust_enabled := true
 var _viewport_effects_resize_pending := false
@@ -414,6 +425,7 @@ var _achievement_popup_tween: Tween
 var _important_announcement_sources: Dictionary = {}
 var _achievement_resume_delay_pending := false
 var _timer_display_hidden := false
+var _show_end_seed := false
 var _timer_visibility_tween: Tween
 var _gameplay_back_cursor_update_queued := false
 var _last_reminder_pile: MemoryPile
@@ -439,7 +451,7 @@ var _card_touch_index := -1
 @export_range(0.1, 1.0, 0.05, "suffix:s") var replay_mask_duration := 0.3
 @export_range(0.5, 3.0, 0.1, "suffix:s") var pile_value_hold_duration := 1.0
 @export_category("Screen Edges")
-@export var screen_edge_margins := Vector4(12.0, 8.0, 12.0, 12.0):
+@export var screen_edge_margins := UISettings.SCREEN_MARGINS:
 	set(value):
 		screen_edge_margins = _normalized_edge_margins(value)
 		if is_node_ready():
@@ -459,7 +471,7 @@ var extra_difficulty_hold_duration := 0.45
 		dust_viscosity = maxf(value, 0.0)
 		if is_instance_valid(dust_pool):
 			dust_pool.viscosity = dust_viscosity
-@export var dust_particle_color := Color("77746d"):
+@export var dust_particle_color := GameColors.DUST:
 	set(value):
 		dust_particle_color = value
 		if is_instance_valid(dust_pool):
@@ -477,6 +489,12 @@ var achievement_popup_after_announcements_delay := 0.25
 
 
 func _ready() -> void:
+	# Clear a native keyboard restored by the mobile OS when opening the app.
+	if DisplayServer.has_feature(DisplayServer.FEATURE_VIRTUAL_KEYBOARD):
+		DisplayServer.virtual_keyboard_hide.call_deferred()
+	first_move_hint = preload("res://resources/scripts/ui/FirstMoveHint.gd").new()
+	first_move_hint.game = self
+	gameplay_layer.add_child(first_move_hint)
 	add_child(preload("res://resources/scripts/ui/MenuTouchScroll.gd").new())
 	screens.visible = true
 	_initialize_run_rng(RunRNGScript.generate_run_seed())
@@ -521,6 +539,7 @@ func _ready() -> void:
 	hand_manager.card_forced_return_requested.connect(_on_card_forced_return_requested)
 	lava_rule_controller.card_entered_lava.connect(_on_lava_card_entered)
 	timer_manager.time_updated.connect(_on_time_updated)
+	timer_manager.countdown_restarted.connect(timer_ring.play_reset)
 	timer_manager.time_expired.connect(_on_time_expired)
 	timer_manager.timer_visibility_requested.connect(_on_timer_visibility_requested)
 	overlay_button.pressed.connect(_on_overlay_pressed)
@@ -559,6 +578,7 @@ func _ready() -> void:
 		_toggle_achievement_notifications
 	)
 	timer_display_button.pressed.connect(_toggle_timer_display)
+	end_seed_button.pressed.connect(GameOptionsControllerScript.toggle_end_seed.bind(self))
 	GameMenuPresenterScript.setup_links(self)
 	export_save_button.pressed.connect(_open_export_save_dialog)
 	import_save_button.pressed.connect(_open_import_save_dialog)
@@ -586,6 +606,9 @@ func _ready() -> void:
 	redraw_button.pressed.connect(_on_redraw_pressed)
 	back_button.pressed.connect(_open_quit_popup)
 	quit_continue_button.pressed.connect(_close_quit_popup)
+	quit_panel.get_node("Content").minimum_size_changed.connect(
+		func(): call_deferred("_fit_quit_popup_to_viewport")
+	)
 	quit_restart_button.pressed.connect(_restart_from_quit_popup)
 	quit_run_button.pressed.connect(_return_to_menu)
 	pause_seed_display.seed_copied.connect(soft_audio.play_seed_copy)
@@ -605,6 +628,7 @@ func _ready() -> void:
 	item_rect_changed.connect(_resize_dust_distribution)
 	_setup_gameplay_options()
 	_setup_audio_controls()
+	get_node("/root/LanguageSettings").setup_options(self)
 	_style_option_list_buttons()
 	_setup_graphics_options()
 	_apply_screen_edge_margins()
@@ -881,6 +905,7 @@ func _process(delta: float) -> void:
 		_regeneration_hand_check_pending = false
 		_reroll_unplayable_hand()
 	_try_start_touch_card_drag()
+	DiscardPlayController.discard_covered_selection(self)
 	_process_conveyor(delta)
 	if (
 		moving_pile != null
@@ -961,6 +986,9 @@ func _input(event: InputEvent) -> void:
 	if round_modifiers.flashlight_enabled:
 		if event is InputEventScreenTouch or event is InputEventScreenDrag:
 			flashlight_overlay.follow_touch(event.position)
+	if _card_click_controller.handle_input(self, event):
+		_set_input_as_handled()
+		return
 	if _handle_pile_touch_input(event):
 		_set_input_as_handled()
 		return
@@ -1101,9 +1129,14 @@ func _handle_global_shortcut(event: InputEvent) -> bool:
 				_return_to_menu()
 				return true
 		KEY_R:
-			if quit_popup.visible:
-				_restart_from_quit_popup()
-				return true
+			if (
+				splash.visible or progression_menu.visible or options_menu.visible
+				or challenge_selection.visible or checkpoint_menu.visible
+				or key_event.ctrl_pressed or key_event.alt_pressed or key_event.meta_pressed
+			):
+				return false
+			_restart_current_mode()
+			return true
 		KEY_SPACE:
 			if progression_menu.visible or options_menu.visible or challenge_selection.visible:
 				return false
@@ -1136,6 +1169,7 @@ func _reset_to_menu_state() -> void:
 func _open_quit_popup() -> void:
 	if splash.visible or overlay.visible or quit_popup.visible:
 		return
+	_card_click_controller.reset(self)
 	pause_seed_margin.visible = run_uses_requested_seed
 	pause_seed_display.visible = run_uses_requested_seed
 	quit_panel.custom_minimum_size = (
@@ -1405,6 +1439,8 @@ func _initialize_run_rng(seed_value: int, seed_label := "") -> void:
 	run_rng.initialize(seed_value, seed_label)
 	run_seed_value = run_rng.seed_value
 	run_seed_label = run_rng.seed_label
+	if is_instance_valid(end_seed_display):
+		end_seed_display.set_seed(run_seed_label)
 	rng = run_rng.get_stream(&"difficulty")
 	hands_rng = run_rng.get_stream(&"hands")
 	cosmetic_rng = run_rng.get_stream(&"cosmetic")
@@ -1535,7 +1571,9 @@ func _configure_challenge_hand_tray() -> void:
 
 
 func _on_card_selected(card: PlayingCard) -> void:
-	if input_locked:
+	if _discard_play_in_progress:
+		return
+	if input_locked and not DiscardPlayController.can_interact(self, card):
 		return
 	if (
 		selected_card == card
@@ -1559,8 +1597,11 @@ func _on_card_selected(card: PlayingCard) -> void:
 
 
 func _on_card_entered_screen(card: PlayingCard) -> void:
+	if round_modifiers.flashlight_enabled:
+		flashlight_overlay.illuminate_appearance(card)
 	if (
-		_pending_interactive_generation != _hand_cycle_generation
+		_discard_play_in_progress
+		or _pending_interactive_generation != _hand_cycle_generation
 		or not hand_manager.current_cards.has(card)
 	):
 		return
@@ -1571,14 +1612,19 @@ func _on_card_entered_screen(card: PlayingCard) -> void:
 		):
 			return
 	_pending_interactive_generation = -1
-	selected_card = null
 	input_locked = false
+	if is_instance_valid(selected_card) and selected_card.is_discarding:
+		hand_manager.lock_all_cards_except(selected_card)
+		return
+	selected_card = null
 	hand_manager.unlock_hand()
 	_resolve_pending_shared_clock_timeout()
 
 
 func _on_card_drag_started(card: PlayingCard, tactile := false) -> void:
-	if input_locked:
+	if _discard_play_in_progress:
+		return
+	if input_locked and not DiscardPlayController.can_interact(self, card):
 		return
 	# A single hand may only own one drag transition. Without this guard,
 	# rapid presses can reparent several cards before the first release and
@@ -1613,7 +1659,8 @@ func _on_card_drag_started(card: PlayingCard, tactile := false) -> void:
 		card.flash_error()
 		return
 	selected_card = card
-	if round_modifiers.wandering_hand_cards or challenge_modifiers.conveyor_hand:
+	hand_manager.clear_selection()
+	if (card.is_discarding and card.get_parent() != hand_container) or round_modifiers.wandering_hand_cards or challenge_modifiers.conveyor_hand:
 		drag_home_index = -1
 		_clear_drag_placeholder()
 	else:
@@ -1621,7 +1668,8 @@ func _on_card_drag_started(card: PlayingCard, tactile := false) -> void:
 		drag_home_index = card.get_index()
 		drag_placeholder = _create_hand_slot_placeholder(card)
 	hand_manager.lock_all_cards_except(card)
-	_prepare_drag_companions(card)
+	if not card.is_discarding:
+		_prepare_drag_companions(card)
 	card.prepare_external_drag(tactile)
 	var start_position := card.global_position
 	if card.get_parent() != drag_layer:
@@ -1665,7 +1713,7 @@ func _return_companion_to_hand(card: PlayingCard) -> void:
 
 
 func _on_card_drag_released(card: PlayingCard, release_position: Vector2) -> void:
-	if input_locked or card != selected_card or not card.dragging:
+	if (input_locked and not DiscardPlayController.can_interact(self, card)) or card != selected_card or not card.dragging:
 		return
 	_card_touch_index = -1
 	CustomCursor.set_holding_card(false)
@@ -1673,6 +1721,9 @@ func _on_card_drag_released(card: PlayingCard, release_position: Vector2) -> voi
 	if hovered_pile != null and is_instance_valid(hovered_pile):
 		hovered_pile.set_drop_feedback(false)
 	hovered_pile = null
+	if card.is_discarding:
+		await DiscardPlayController.release(self, card, target)
+		return
 	if target == null:
 		if (
 			round_modifiers.sticky_fingers_enabled
@@ -1700,11 +1751,14 @@ func _on_card_drag_released(card: PlayingCard, release_position: Vector2) -> voi
 		await _place_selected_card(target)
 	else:
 		card.finish_drag()
-		await _return_drag_companions()
 		await _handle_mistake(target)
 
 
 func _on_pile_selected(pile: MemoryPile) -> void:
+	if is_instance_valid(selected_card) and not selected_card.dragging:
+		if not input_locked or DiscardPlayController.can_interact(self, selected_card):
+			CardClickController.place_on_pile(self, pile)
+		return
 	if (
 		input_locked
 		or selected_card == null
@@ -1773,6 +1827,9 @@ func _transformed_control_rect(control: Control) -> Rect2:
 
 
 func _on_card_forced_return_requested(card: PlayingCard, _reason: int) -> void:
+	if is_instance_valid(card) and card.is_discarding and card == selected_card:
+		_on_card_drag_released(card, Vector2(-10000, -10000))
+		return
 	if (
 		input_locked
 		or card != selected_card
@@ -1929,17 +1986,18 @@ func _record_stable_hand_layout() -> void:
 	HandDragControllerScript.record_stable_hand_layout(self)
 
 
-func _discard_current_hand(preserve_unused_jokers := true) -> void:
+func _discard_current_hand(preserve_unused_jokers := true, allow_play := false) -> void:
 	await hand_manager.discard_hand(
 		hand_container,
 		drag_layer,
-		preserve_unused_jokers
+		preserve_unused_jokers,
+		allow_play
 	)
 	_clear_all_hand_slot_placeholders()
 
 
-func _start_discard_current_hand(preserve_unused_jokers := true) -> void:
-	hand_manager.discard_hand(hand_container, drag_layer, preserve_unused_jokers)
+func _start_discard_current_hand(preserve_unused_jokers := true, allow_play := false) -> void:
+	hand_manager.discard_hand(hand_container, drag_layer, preserve_unused_jokers, allow_play)
 	_clear_all_hand_slot_placeholders()
 
 
@@ -1991,6 +2049,11 @@ func _on_redraw_pressed() -> void:
 	if input_locked or (not challenge_reload and not bonus_manager.consume_redraw()):
 		return
 	input_locked = true
+	if is_instance_valid(selected_card) and selected_card.is_discarding:
+		selected_card = null
+		_card_touch_index = -1
+		CustomCursor.set_holding_card(false)
+	hand_manager.clear_discarding_cards()
 	redraw_button.set_remaining(
 		bonus_manager.redraws_left,
 		bonus_manager.level(&"redraw") >= 2
@@ -2012,7 +2075,13 @@ func _on_redraw_pressed() -> void:
 
 
 func cleanup_special_rule_state(animated := true) -> void:
+	_card_click_controller.reset()
 	input_locked = true
+	_discard_play_in_progress = false
+	_discard_source_action_active = false
+	if is_instance_valid(selected_card) and selected_card.is_discarding:
+		selected_card = null
+	hand_manager.clear_discarding_cards()
 	CustomCursor.set_holding_card(false)
 	sticky_fingers_controller.end_round()
 	mirror_match_controller.end_round(self)
@@ -2572,8 +2641,8 @@ func _checkpoint_rounds_left(internal_round: int) -> int:
 
 func _checkpoint_result_text(internal_round: int) -> String:
 	if checkpoint_uses_endless_progression:
-		return "ROUND %d REACHED" % internal_round
-	return "%d ROUNDS LEFT" % _checkpoint_rounds_left(internal_round)
+		return TranslationServer.translate("ROUND %d REACHED") % internal_round
+	return TranslationServer.translate("%d ROUNDS LEFT") % _checkpoint_rounds_left(internal_round)
 
 
 func _capture_checkpoint_candidate() -> void:

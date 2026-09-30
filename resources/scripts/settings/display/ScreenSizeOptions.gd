@@ -4,15 +4,18 @@ extends RefCounted
 const SCREEN_SIZE_MODE_CLASSIC := &"classic"
 const SCREEN_SIZE_MODE_SEMI_ADAPTIVE := &"semi_adaptive"
 const SCREEN_SIZE_MODE_ADAPTIVE := &"adaptive"
+const SCREEN_SIZE_MODE_MENU_ADAPTIVE := &"menu_adaptive"
 const SCREEN_SIZE_MODES: Array[StringName] = [
 	SCREEN_SIZE_MODE_CLASSIC,
 	SCREEN_SIZE_MODE_SEMI_ADAPTIVE,
 	SCREEN_SIZE_MODE_ADAPTIVE,
+	SCREEN_SIZE_MODE_MENU_ADAPTIVE,
 ]
 const SCREEN_SIZE_LABELS: Array[String] = [
 	"CLASSIC",
 	"SEMI ADAPTIVE",
 	"ADAPTIVE",
+	"ADAPTIVE MENUS",
 ]
 const SCREEN_SIZE_SELECTOR_HEIGHT := 31.0
 const SCREEN_SIZE_SELECTOR_CONTENT_RIGHT := 18.0
@@ -82,10 +85,10 @@ static func apply_resolution(game: GameManager) -> void:
 		Window.CONTENT_SCALE_ASPECT_EXPAND
 		if _uses_expanded_canvas(game) else Window.CONTENT_SCALE_ASPECT_KEEP
 	)
-	game.adaptive_resolution_button.modulate = Color.WHITE
+	game.adaptive_resolution_button.modulate = GameColors.WHITE
 	game.adaptive_resolution_button.text = ""
 	_refresh_screen_size_options(game)
-	game.true_pixel_art_button.modulate = Color.WHITE
+	game.true_pixel_art_button.modulate = GameColors.WHITE
 	game.true_pixel_art_button.icon = (
 		game.SELECTED_TEXTURE
 		if game._true_pixel_art_enabled else game.UNCHECKED_TEXTURE
@@ -112,8 +115,15 @@ static func apply_low_resolution_layout(game: GameManager) -> void:
 		if game._true_pixel_art_enabled:
 			offset = offset.round()
 	_apply_canvas_item(game.gameplay_layer, game_size, offset, scale_factor)
-	_apply_control_canvas(game.screens, game_size, offset, scale_factor)
+	# All menus share Screens, including Progression and Challenges which are
+	# siblings of Splash. Expand their common canvas while keeping gameplay centered.
+	if game._screen_size_mode == SCREEN_SIZE_MODE_MENU_ADAPTIVE:
+		_apply_control_canvas(game.screens, canvas_size, Vector2.ZERO, scale_factor)
+	else:
+		_apply_control_canvas(game.screens, game_size, offset, scale_factor)
 	_fit_full_rect_children(game.screens)
+	apply_menu_layout(game)
+	game._position_achievement_popup()
 	if game.has_method("_fit_overlay_to_canvas"):
 		game.call("_fit_overlay_to_canvas")
 	if game.has_method("_fit_splash_background_to_canvas"):
@@ -133,6 +143,16 @@ static func apply_low_resolution_layout(game: GameManager) -> void:
 		game.call("_apply_screen_edge_margins")
 
 
+static func apply_menu_layout(game: GameManager) -> void:
+	if game.splash.get_parent() != game.screens:
+		return
+	game.splash.set_anchors_preset(Control.PRESET_TOP_LEFT, false)
+	var expanded_menu := game._screen_size_mode == SCREEN_SIZE_MODE_MENU_ADAPTIVE
+	game.splash.position = -game.screens.position if expanded_menu else Vector2.ZERO
+	game.splash.size = _logical_layout_size(game) if expanded_menu else game.screens.size
+	_fit_full_rect_children(game.splash)
+
+
 static func _logical_layout_size(game: GameManager) -> Vector2:
 	if _uses_expanded_canvas(game):
 		return _available_layout_size(game)
@@ -146,9 +166,8 @@ static func _true_pixel_layout_size(game: GameManager) -> Vector2:
 
 
 static func _available_layout_size(game: GameManager) -> Vector2:
-	var parent_control := game.get_parent() as Control
-	if parent_control != null and parent_control.size.x > 0.0 and parent_control.size.y > 0.0:
-		return parent_control.size
+	# A container retains its child's previous minimum during a shrink.
+	# The viewport is the source of truth, independent of that feedback loop.
 	return game.get_viewport_rect().size
 
 
@@ -228,8 +247,8 @@ static func _style_screen_size_selector(game: GameManager, selector: OptionButto
 		&"font_color", &"font_hover_color", &"font_pressed_color",
 		&"font_hover_pressed_color", &"font_focus_color",
 	]:
-		selector.add_theme_color_override(color_name, Color.WHITE)
-	selector.add_theme_color_override(&"font_disabled_color", Color.WHITE)
+		selector.add_theme_color_override(color_name, GameColors.WHITE)
+	selector.add_theme_color_override(&"font_disabled_color", GameColors.WHITE)
 	for state in [&"normal", &"hover", &"pressed", &"focus", &"disabled"]:
 		selector.add_theme_stylebox_override(
 			state,
@@ -251,7 +270,7 @@ static func _style_screen_size_selector(game: GameManager, selector: OptionButto
 	popup.add_theme_icon_override(&"checked", game.SELECTED_TEXTURE)
 	popup.add_theme_icon_override(&"unchecked", game.UNCHECKED_TEXTURE)
 	var panel := StyleBoxFlat.new()
-	panel.bg_color = Color("f7f6f2")
+	panel.bg_color = GameColors.MENU_BACKGROUND
 	panel.border_color = game.OPTIONS_SELECTED_COLOR
 	panel.set_border_width_all(2)
 	panel.content_margin_left = 4
@@ -275,6 +294,7 @@ static func _uses_expanded_canvas(game: GameManager) -> bool:
 	return game._screen_size_mode in [
 		SCREEN_SIZE_MODE_SEMI_ADAPTIVE,
 		SCREEN_SIZE_MODE_ADAPTIVE,
+		SCREEN_SIZE_MODE_MENU_ADAPTIVE,
 	]
 
 
@@ -354,6 +374,10 @@ static func _fit_full_rect_children(parent: Control) -> void:
 	for child in parent.get_children():
 		var control := child as Control
 		if control == null:
+			continue
+		# Containers own their contents' layout. Their anchored offsets include
+		# intentional padding, which must survive adaptive viewport changes.
+		if control is Container:
 			continue
 		if (
 			is_zero_approx(control.anchor_left)

@@ -44,7 +44,7 @@ const LOCK_SPECIAL_RULES: Array[StringName] = [
 	#"free_range_cards",
 	#"wavy_baby",
 	#"shaking_piles",
-	#"lights_out",
+	"lights_out",
 	#"shell_game",
 	#"musical_stacks"
 	#"pixelated"

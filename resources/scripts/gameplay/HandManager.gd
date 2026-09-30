@@ -10,6 +10,7 @@ signal card_forced_return_requested(card, reason)
 @export var card_scene: PackedScene
 var rng := RandomNumberGenerator.new()
 var current_cards: Array[PlayingCard] = []
+var discarding_cards: Array[PlayingCard] = []
 var value_font: Font
 var value_font_size := 20
 var value_font_offset := Vector2.ZERO
@@ -352,12 +353,17 @@ func _create_card(
 func discard_hand(
 	container: Control,
 	exit_layer: Control = null,
-	preserve_unused_jokers := true
+	preserve_unused_jokers := true,
+	allow_play := false
 ) -> void:
 	var cards_to_discard: Array[PlayingCard] = []
 	var retained_jokers: Array[PlayingCard] = []
 	for card in current_cards:
 		if is_instance_valid(card) and card.visible:
+			if card.is_discarding and card.discard_claimed:
+				continue
+			# A hover flip must restore its local Y in the original container.
+			card._cancel_flip_animation()
 			if (
 				preserve_unused_jokers
 				and card.is_joker
@@ -387,31 +393,93 @@ func discard_hand(
 		return
 
 	var longest_duration := 0.0
+	var exit_tweens: Dictionary = {}
 	for index in cards_to_discard.size():
 		var card := cards_to_discard[index]
 		card.finish_drag()
-		card.set_selectable(false)
+		# Transfer the entrance offset to the card before the exit owns its motion.
+		card._materialize_entrance_for_drag()
+		if card._draw_tween != null and card._draw_tween.is_valid():
+			card._draw_tween.kill()
+		card.is_discarding = allow_play
+		if allow_play:
+			track_discarding_card(card)
+		card.set_selectable(allow_play)
+		if allow_play:
+			card.modulate.a = 1.0
 		var delay := index * 0.04
 		if card.free_range_card:
 			longest_duration = maxf(
 				longest_duration,
 				card.play_wandering_exit(card.get_viewport_rect().size, delay)
 			)
+			card.set_selectable(allow_play)
+			exit_tweens[card] = card.discard_tween
 			continue
-		longest_duration = delay + 0.26
+		var duration := DifficultySettings.PLAYABLE_DISCARD_DURATION if allow_play else 0.26
+		var fade_duration := DifficultySettings.PLAYABLE_DISCARD_FADE_DURATION if allow_play else 0.2
+		longest_duration = delay + duration
 		var tween := card.create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		card.discard_tween = tween
+		exit_tweens[card] = tween
 		tween.tween_interval(delay)
 		tween.tween_property(
 			card,
 			"global_position:y",
 			card.get_viewport_rect().size.y + card.size.y + 12.0,
-			0.26
+			duration
 		)
-		tween.parallel().tween_property(card, "modulate:a", 0.0, 0.2)
+		# Keep playable tiles readable while they move. Fade only at the end,
+		# with the same lifetime as the hit target and exit motion.
+		tween.parallel().tween_property(card, "modulate:a", 0.0, fade_duration).set_delay(
+			maxf(duration - fade_duration, 0.0) if allow_play else 0.0
+		)
 	await get_tree().create_timer(longest_duration).timeout
 	for card in cards_to_discard:
-		if is_instance_valid(card):
+		if is_instance_valid(card) and not card.discard_claimed and card.discard_tween == exit_tweens[card]:
+			discarding_cards.erase(card)
 			card.queue_free()
+
+
+func interactive_cards() -> Array[PlayingCard]:
+	var cards: Array[PlayingCard] = []
+	cards.assign(current_cards)
+	for card in discarding_cards:
+		if is_instance_valid(card) and not cards.has(card):
+			cards.append(card)
+	return cards
+
+
+func track_discarding_card(card: PlayingCard) -> void:
+	card.is_discarding = true
+	if discarding_cards.has(card):
+		return
+	discarding_cards.append(card)
+	# Reparenting to DragLayer also emits tree_exiting. Remove cards explicitly
+	# when placed, discarded or cleared, not when they change parents.
+
+
+func clear_discarding_cards() -> void:
+	for card in discarding_cards:
+		if is_instance_valid(card):
+			card.set_selectable(false)
+			card.finish_drag()
+			card.queue_free()
+	discarding_cards.clear()
+
+
+func prepare_round_discard() -> void:
+	# Include reserved tiles and the previous hand, which may still be exiting.
+	current_cards = interactive_cards()
+	for card in current_cards:
+		if not is_instance_valid(card):
+			continue
+		card.discard_claimed = false
+		card.is_discarding = false
+		card.set_selectable(false)
+		if card.discard_tween != null and card.discard_tween.is_valid():
+			card.discard_tween.kill()
+	discarding_cards.clear()
 
 
 func clear_hand(container: Control, preserve_unused_jokers := false) -> void:
@@ -448,17 +516,18 @@ func clear_hand(container: Control, preserve_unused_jokers := false) -> void:
 
 
 func lock_hand() -> void:
-	for card in current_cards:
+	for card in interactive_cards():
 		if is_instance_valid(card):
 			card.set_selectable(false)
 
 
 func unlock_hand() -> void:
-	for card in current_cards:
+	for card in interactive_cards():
 		if (
 			is_instance_valid(card)
 			and card.visible
 			and not card._entrance_animation_running
+			and card.drag_state != PlayingCard.DragState.RETURNING
 		):
 			card.set_selectable(true)
 
@@ -470,13 +539,13 @@ func finish_all_card_entrances(except_card: PlayingCard = null) -> void:
 
 
 func lock_all_cards_except(active_card: PlayingCard) -> void:
-	for card in current_cards:
+	for card in interactive_cards():
 		if is_instance_valid(card) and card != active_card:
 			card.set_selectable(false)
 
 
 func clear_selection() -> void:
-	for card in current_cards:
+	for card in interactive_cards():
 		if is_instance_valid(card):
 			card.set_selected_visual(false)
 
@@ -506,7 +575,7 @@ func refresh_all_card_themes(colorblind_enabled: bool) -> void:
 
 
 func select_card(selected_card: PlayingCard) -> void:
-	for card in current_cards:
+	for card in interactive_cards():
 		if is_instance_valid(card):
 			card.set_selected_visual(card == selected_card)
 
@@ -534,13 +603,14 @@ func find_card_with_value(value: int, origin: Vector2 = Vector2.INF) -> PlayingC
 func find_cards_with_value(value: int) -> Array[PlayingCard]:
 	var matches: Array[PlayingCard] = []
 	for card in active_cards():
-		if not card.is_joker and card.card_value == value:
+		if not card.is_joker and not card.discard_claimed and card.card_value == value:
 			matches.append(card)
 	return matches
 
 
 func forget_card(card: PlayingCard) -> void:
 	current_cards.erase(card)
+	discarding_cards.erase(card)
 
 
 func _on_card_selected(card: PlayingCard) -> void:

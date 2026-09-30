@@ -1,7 +1,7 @@
 class_name RuleDeleteButton
 extends HighlightButton
 
-@export var strike_color := Color.WHITE
+@export var strike_color := GameColors.WHITE
 @export var strike_width := 2.0
 @export var strike_padding := 4.0
 

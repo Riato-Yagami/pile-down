@@ -432,6 +432,9 @@ func _refresh_bar() -> void:
 func set_descriptions_enabled(enabled: bool) -> void:
 	_descriptions_enabled = enabled
 	if not enabled:
+		for child in active_bar.get_children():
+			if child is ActiveBonusBadge:
+				child.dismiss_description()
 		active_description.visible = false
 		active_description.remove_meta(&"source_badge")
 
@@ -440,7 +443,7 @@ func _show_active_description(description: String, badge: ActiveBonusBadge) -> v
 	if not _descriptions_enabled:
 		return
 	active_description.set_meta(&"source_badge", badge)
-	active_description_text.text = description
+	active_description_text.text = tr(description)
 	active_description.modulate.a = 0.0
 	active_description.visible = true
 	var desired_size := _size_active_description()

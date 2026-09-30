@@ -28,7 +28,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.04, 0.04, 0.04, 0.88)
+color = Color(0.039999999, 0.039999999, 0.039999999, 0.879999995)
 
 [node name="Center" type="CenterContainer" parent="."]
 layout_mode = 1
@@ -46,7 +46,7 @@ theme_override_constants/separation = 8
 [node name="ComboLabel" type="Label" parent="Center/Content"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
+theme_override_colors/font_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
 theme_override_font_sizes/font_size = 20
 horizontal_alignment = 1
 autowrap_mode = 2
@@ -54,7 +54,7 @@ autowrap_mode = 2
 [node name="RulesLabel" type="Label" parent="Center/Content"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(1.000000000, 1.000000000, 1.000000000, 1.000000000)
 theme_override_font_sizes/font_size = 20
 horizontal_alignment = 1
 autowrap_mode = 2
@@ -62,7 +62,7 @@ autowrap_mode = 2
 [node name="SubtitleLabel" type="Label" parent="Center/Content"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_colors/font_color = Color(0.800000012, 0.800000012, 0.800000012, 1.000000000)
 theme_override_font_sizes/font_size = 20
 horizontal_alignment = 1
 autowrap_mode = 2
@@ -71,7 +71,7 @@ autowrap_mode = 2
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
-theme_override_colors/font_color = Color(0.302, 0.51, 0.761, 1)
+theme_override_colors/font_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
 theme_override_font_sizes/font_size = 16
 text = "DELETE 1"
 horizontal_alignment = 1

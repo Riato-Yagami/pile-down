@@ -1,0 +1,13 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+SCRIPT ERROR: Assertion failed.
+   at: _run (res://tests/test_victory_display.gd:24)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_victory_display.gd:24)
+       [1] _finish_game (res://resources/scripts/core/GameManager.gd:2138)
+       [2] finish_game (res://resources/scripts/core/session/GameSessionController.gd:410)
+       [3] cleanup_special_rule_state (res://resources/scripts/core/GameManager.gd:2113)
+       [4] _return_drag_companions (res://resources/scripts/core/GameManager.gd:1707)
+       [5] return_drag_companions (res://resources/scripts/gameplay/interaction/HandDragController.gd:123)

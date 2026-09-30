@@ -18,15 +18,15 @@ func _update_shader() -> void:
 	var shader_material := material as ShaderMaterial
 	if shader_material == null:
 		return
-	var ring_color := Color("#4D82C2")
+	var ring_color := GameColors.ACCENT
 	if ratio < 0.4:
-		ring_color = Color("#E06455").lerp(
-			Color("#D0A13A"),
+		ring_color = GameColors.TIMER_DANGER.lerp(
+			GameColors.TIMER_WARNING,
 			clampf((ratio - 0.2) / 0.2, 0.0, 1.0)
 		)
 	else:
-		ring_color = Color("#D0A13A").lerp(
-			Color("#4D82C2"),
+		ring_color = GameColors.TIMER_WARNING.lerp(
+			GameColors.ACCENT,
 			clampf((ratio - 0.4) / 0.25, 0.0, 1.0)
 		)
 	shader_material.set_shader_parameter("progress", ratio)

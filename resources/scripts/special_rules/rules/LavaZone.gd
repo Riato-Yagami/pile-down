@@ -1,8 +1,8 @@
 class_name LavaZone
 extends Area2D
 
-const LAVA_FILL := Color(0.914, 0.42, 0.353, 0.28)
-const LAVA_BORDER := Color(0.851, 0.306, 0.247, 0.75)
+const LAVA_FILL := GameColors.LAVA_FILL
+const LAVA_BORDER := GameColors.LAVA_BORDER
 const ANCHOR_COUNT := 7
 const CURVE_STEPS := 5
 

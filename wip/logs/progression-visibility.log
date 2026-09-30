@@ -1,0 +1,8 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+SCRIPT ERROR: Assertion failed: Page 0 horizontal=true window=(1080, 2424) has a collapsed viewport: (232.0, 0.0)
+   at: _run (res://tests/test_shared_menu_orientation.gd:39)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_shared_menu_orientation.gd:39)

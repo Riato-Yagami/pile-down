@@ -16,12 +16,17 @@ static func build_seed_controls(host: ChallengeSelection) -> void:
 	host._style_entry_heading(seed_caption, true)
 	section.add_child(seed_caption)
 	host._seed_input = LineEdit.new()
+	# Open the mobile keyboard on a tap, not on automatic focus changes.
+	host._seed_input.virtual_keyboard_show_on_focus = false
+	preload("res://resources/scripts/ui/LineEditTouchInput.gd").install(host._seed_input)
 	host._seed_input.placeholder_text = "PILE-DOWN"
 	host._seed_input.max_length = 80
 	host._style_seed_input(host._seed_input)
 	section.add_child(host._seed_input)
-	var actions := HBoxContainer.new()
-	actions.add_theme_constant_override("separation", 6)
+	var actions := HFlowContainer.new()
+	actions.name = "Actions"
+	actions.add_theme_constant_override("h_separation", 6)
+	actions.add_theme_constant_override("v_separation", 4)
 	var play := host.REGION_BUTTON_SCENE.instantiate() as RegionButton
 	play.text = "PLAY"
 	play.custom_minimum_size = Vector2(70, 31)
@@ -251,7 +256,7 @@ static func on_seed_rule_check(
 static func refresh_seed_menu_text(
 	host: ChallengeSelection, menu: Button, title: String, count: int
 ) -> void:
-	menu.text = title if count == 0 else "%s  ·  %d" % [title, count]
+	menu.text = title if count == 0 else "%s  ·  %d" % [TranslationServer.translate(title), count]
 
 
 static func roman_level(host: ChallengeSelection, level: int) -> String:
@@ -378,9 +383,9 @@ static func refresh_value_selector_text(host: ChallengeSelection, value_label: L
 	var min_value := int(value_label.get_meta("min_value", value))
 	var max_value := int(value_label.get_meta("max_value", value))
 	if label == "TIMER":
-		value_label.text = "Timer : %ds" % value
+		value_label.text = TranslationServer.translate("Timer : %ds") % value
 	else:
-		value_label.text = "%s : %d/%d" % [label.capitalize(), value, max_value]
+		value_label.text = "%s : %d/%d" % [TranslationServer.translate(label).capitalize(), value, max_value]
 
 
 static func refresh_seed_endless_selection(host: ChallengeSelection, _index := -1) -> void:

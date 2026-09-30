@@ -1,0 +1,12 @@
+// Applied to Godot's generated Android project by configure_android.py.
+// Retain the template's supported AGP/Gradle versions.
+android {
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
+                    file('../../build/android/proguard-rules.pro')
+        }
+    }
+}

@@ -2,7 +2,7 @@ extends SceneTree
 
 ## Rebuild launcher layers from the existing pixel-art mark without resampling it.
 const ICON_DIR := "res://resources/sprites/android/"
-const BACKGROUND := Color("f7f6f2")
+const BACKGROUND := GameColors.MENU_BACKGROUND
 
 
 func _init() -> void:
@@ -18,7 +18,7 @@ func _init() -> void:
 	for y in monochrome.get_height():
 		for x in monochrome.get_width():
 			var alpha := monochrome.get_pixel(x, y).a
-			monochrome.set_pixel(x, y, Color(1, 1, 1, alpha))
+			monochrome.set_pixel(x, y, Color(GameColors.WHITE, alpha))
 	monochrome.save_png(ICON_DIR + "adaptive-monochrome.png")
 	var background := Image.create(432, 432, false, Image.FORMAT_RGBA8)
 	background.fill(BACKGROUND)

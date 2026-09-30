@@ -1,8 +1,8 @@
 class_name SubmenuPageAnimator
 extends RefCounted
 
-var duration := 0.18
-var travel_distance := 18.0
+var duration := UISettings.PAGE_TRANSITION_SECONDS
+var travel_distance := UISettings.PAGE_TRANSITION_DISTANCE
 
 var _active_tween: Tween
 var _active_target: Control

@@ -5,6 +5,7 @@ signal time_updated(time_left)
 signal time_expired()
 signal timer_visibility_requested(visible: bool)
 signal grace_period_finished()
+signal countdown_restarted()
 
 var duration := 5.0
 var time_left := 0.0
@@ -24,6 +25,7 @@ func _process(delta: float) -> void:
 
 func start_countdown(seconds: float, grace_duration := 0.0) -> void:
 	_countdown_generation += 1
+	countdown_restarted.emit()
 	duration = seconds
 	time_left = seconds
 	running = true

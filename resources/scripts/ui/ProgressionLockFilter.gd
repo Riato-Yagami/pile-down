@@ -27,9 +27,9 @@ const HANDLE_BASE_POSITION := Vector2(-2.0, -10.0)
 		text_offset = value
 		_apply_text_offset()
 @export_category("Animation")
-@export var inactive_color := Color(0.42, 0.42, 0.42, 1.0):
+@export var icon_tint := GameColors.LOCK_TINT:
 	set(value):
-		inactive_color = value
+		icon_tint = value
 		_refresh()
 @export_range(1.0, 2.0, 0.05) var hover_brightness := 1.25:
 	set(value):
@@ -141,7 +141,7 @@ func _refresh(animate := true, previous_mode := -1) -> void:
 		and is_instance_valid(handle_flip_anchor)
 	):
 		return
-	var icon_color := Color.WHITE
+	var icon_color := icon_tint
 	if _hovered:
 		icon_color = _brightened(icon_color)
 	lock_main.modulate = icon_color

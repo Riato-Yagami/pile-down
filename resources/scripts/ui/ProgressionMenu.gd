@@ -54,7 +54,7 @@ const SubmenuPageAnimatorScript := preload(
 )
 const PROGRESS_BAR_SHADER := preload("res://resources/shaders/ui/ProgressionFill.gdshader")
 const Settings := preload("res://resources/scripts/settings/settings.gd")
-const SELECTED_COLOR := Color("4d82c2")
+const SELECTED_COLOR := GameColors.ACCENT
 const SELECTION_TEXT_COLOR := SELECTED_COLOR
 const LOCKED_ENTRY_OPACITY := 0.55
 # The main icon is 23x25. Panel buttons are 30x34 and center that same texture,
@@ -96,11 +96,11 @@ var copy_notification_placement_action: Callable = _copy_notification_placement
 	set(value):
 		entry_heading_font = value
 		_refresh_editor_preview()
-@export_range(8, 32, 1) var entry_heading_font_size := 15:
+@export_range(8, 32, 1) var entry_heading_font_size := UISettings.ENTRY_HEADING_FONT_SIZE:
 	set(value):
 		entry_heading_font_size = value
 		_refresh_editor_preview()
-@export var entry_heading_text_offset := Vector2(2.0, 2.0):
+@export var entry_heading_text_offset := UISettings.ENTRY_HEADING_OFFSET:
 	set(value):
 		entry_heading_text_offset = value
 		_refresh_editor_preview()
@@ -108,7 +108,7 @@ var copy_notification_placement_action: Callable = _copy_notification_placement
 	set(value):
 		entry_details_font = value
 		_refresh_editor_preview()
-@export_range(8, 24, 1) var entry_details_font_size := 11:
+@export_range(8, 24, 1) var entry_details_font_size := UISettings.ENTRY_DETAILS_FONT_SIZE:
 	set(value):
 		entry_details_font_size = value
 		_refresh_editor_preview()
@@ -130,8 +130,8 @@ var copy_notification_placement_action: Callable = _copy_notification_placement
 @export_category("Font Preview")
 @export var font_preview_tile_material: ShaderMaterial
 @export_category("Page Transition")
-@export_range(0.05, 0.5, 0.01, "suffix:s") var page_transition_duration := 0.18
-@export_range(4.0, 64.0, 1.0, "suffix:px") var page_transition_distance := 18.0
+@export_range(0.05, 0.5, 0.01, "suffix:s") var page_transition_duration := UISettings.PAGE_TRANSITION_SECONDS
+@export_range(4.0, 64.0, 1.0, "suffix:px") var page_transition_distance := UISettings.PAGE_TRANSITION_DISTANCE
 @export_range(0.05, 0.5, 0.01, "suffix:s") var lock_transition_duration := 0.16
 
 @onready var title_label: Label = %PageTitle
@@ -301,7 +301,7 @@ func _show_page(page: int, animate := false) -> void:
 	cosmetic_lists.visible = _page == Page.FONTS
 	for index in page_buttons.size():
 		page_buttons[index].modulate = (
-			SELECTED_COLOR if index == _page else Color.WHITE
+			SELECTED_COLOR if index == _page else GameColors.WHITE
 		)
 	_clear_content()
 	match _page:
@@ -385,7 +385,7 @@ func _constrain_list_widths() -> void:
 
 
 func _progression_list_width() -> float:
-	return panel_body_width(30.0, 5.0, 10.0)
+	return panel_body_width(UISettings.TAB_SIZE.x, UISettings.BODY_GAP, UISettings.SCROLLBAR_MARGIN)
 
 
 func _constrain_wrap_labels(root: Node, list_width: float) -> void:
@@ -446,10 +446,10 @@ func _populate_achievements() -> void:
 			)
 		var reward_font := StringName(achievement.get("reward_font", &""))
 		if reward_font != &"" and (unlocked or not hidden):
-			description += "\nReward: %s" % _font_display_name(reward_font)
+			description += TranslationServer.translate("\nReward: %s") % _font_display_name(reward_font)
 		var unlock_date := str(achievement.get("date", ""))
 		if unlocked and not unlock_date.is_empty():
-			description += "\nUnlocked: %s" % unlock_date
+			description += TranslationServer.translate("\nUnlocked: %s") % unlock_date
 		_add_entry(
 			title,
 			description,

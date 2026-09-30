@@ -1,0 +1,21 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+SCRIPT ERROR: Invalid access to property or key 'CustomCursor' on a base object of type 'Control (GameManager)'.
+   at: _finish (res://resources/scripts/gameplay/interaction/DiscardPlayController.gd:76)
+   GDScript backtrace (most recent call first):
+       [0] _finish (res://resources/scripts/gameplay/interaction/DiscardPlayController.gd:76)
+       [1] release (res://resources/scripts/gameplay/interaction/DiscardPlayController.gd:67)
+       [2] _finalize_placement_action (res://resources/scripts/core/GameManager.gd:1898)
+       [3] finalize_placement_action (res://resources/scripts/gameplay/interaction/CardPlacementController.gd:200)
+       [4] hide_value (res://resources/scripts/gameplay/Pile.gd:284)
+SCRIPT ERROR: Assertion failed.
+   at: _run (res://tests/test_playable_discard.gd:29)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_playable_discard.gd:29)
+       [1] _on_card_drag_released (res://resources/scripts/core/GameManager.gd:1709)
+       [2] release (res://resources/scripts/gameplay/interaction/DiscardPlayController.gd:68)
+       [3] _finalize_placement_action (res://resources/scripts/core/GameManager.gd:1898)
+       [4] finalize_placement_action (res://resources/scripts/gameplay/interaction/CardPlacementController.gd:200)
+       [5] hide_value (res://resources/scripts/gameplay/Pile.gd:284)

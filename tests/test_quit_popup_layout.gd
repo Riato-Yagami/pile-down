@@ -16,6 +16,7 @@ func _run() -> void:
 	var game := main.get_node("GameCenter/Game") as GameManager
 	game.splash.hide()
 	game.overlay.hide()
+	root.get_node("LanguageSettings").apply_language("fr", false)
 	game._screen_size_mode = Options.SCREEN_SIZE_MODE_SEMI_ADAPTIVE
 	for pixel_art in [true, false]:
 		game._true_pixel_art_enabled = pixel_art
@@ -29,6 +30,8 @@ func _run() -> void:
 				game._open_quit_popup()
 				await _settle_layout()
 				assert(_is_centered(game), "Quit popup must be centered on reopening.")
+				var content := game.quit_panel.get_node("Content") as Control
+				assert(game.quit_panel.size.x >= content.get_combined_minimum_size().x + 34)
 				game._close_quit_popup()
 		# Keep the popup open during another resize.
 		game._open_quit_popup()

@@ -7,9 +7,29 @@ const START_HAND_SIZE := 1
 const START_CARD_VALUE := 3
 const START_TURN_TIME := 5.0
 
+# Lives recovered between cleared rounds. -1 restores all lives (jam behavior).
+# New runs, including checkpoint starts, always begin at full health.
+const ROUND_LIFE_REGEN := 1
+
+
+static func round_start_lives(
+	remaining: int, maximum: int, first_round: bool, regeneration := ROUND_LIFE_REGEN
+) -> int:
+	if first_round or regeneration < 0:
+		return maximum
+	return clampi(remaining + regeneration, 0, maximum)
+
 # Reject this fraction of ordinary draws matching the last player-selected pile.
 # Keep a playable fallback; Lucky Hand and forced Reload Required hands bypass it.
-const LAST_PILE_DRAW_SUPPRESSION := 0.75
+const LAST_PILE_DRAW_SUPPRESSION := 0.4
+
+# Experimental last-chance plays while the previous hand is leaving the screen.
+static var playable_discard_enabled := true
+# Redraw the following hand after a successful last-chance play, if desired.
+static var redraw_after_discard_play := true
+# Keep the normal exit speed; input remains active throughout the animation.
+const PLAYABLE_DISCARD_DURATION := 0.26
+const PLAYABLE_DISCARD_FADE_DURATION := 0.15
 
 # Shared Clock derives its budget from the current round difficulty.
 const SHARED_CLOCK_BASE_MULTIPLIER := 1.0
@@ -37,8 +57,8 @@ const TOTAL_ROUNDS := MAX_ROUNDS
 # A weight of 0 disables an option. The values do not need to add up to 100.
 const ADD_PILE_WEIGHT := 35.0
 const ADD_CARD_WEIGHT := 25.0
-const ADD_START_VALUE_WEIGHT := 15.0
-const REDUCE_TURN_TIME_WEIGHT := 5.0
+const ADD_START_VALUE_WEIGHT := 25.0
+const REDUCE_TURN_TIME_WEIGHT := 10.0
 
 # Early rounds can gain a second stat, making the opening ramp up faster. This
 # chance fades as the run progresses, while the chance of a breather grows.

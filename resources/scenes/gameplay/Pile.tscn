@@ -7,25 +7,25 @@
 [ext_resource type="FontFile" uid="uid://0lls67bvy7ct" path="res://resources/fonts/VCR_OSD_MONO_1.001.ttf" id="5"]
 
 [sub_resource type="StyleBoxFlat" id="GlowStyle"]
-bg_color = Color(0.1, 0.8, 0.3, 0.08)
+bg_color = Color(0.100000001, 0.800000012, 0.300000012, 0.079999998)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.1, 0.9, 0.35, 0.75)
+border_color = Color(0.100000001, 0.899999976, 0.349999994, 0.750000000)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
-shadow_color = Color(0.31, 0.64, 0.63, 0.18)
+shadow_color = Color(0.310000002, 0.639999986, 0.629999995, 0.180000007)
 shadow_size = 18
 
 [sub_resource type="Shader" id="TileColorShader"]
 code = "shader_type canvas_item;
 
-uniform vec4 tile_color : source_color = vec4(0.0, 1.0, 0.0, 1.0);
+uniform vec4 tile_color : source_color = vec4(0.184313729, 0.654901981, 0.788235307, 1.000000000);
 uniform float completion_morph : hint_range(0.0, 1.0) = 0.0;
-uniform vec4 morph_edge_color : source_color = vec4(0.31, 0.64, 0.63, 1.0);
+uniform vec4 morph_edge_color : source_color = vec4(0.310000002, 0.639999986, 0.629999995, 1.000000000);
 uniform sampler2D screen_texture : hint_screen_texture, repeat_disable, filter_linear;
 
 float pixel_noise(vec2 pixel) {
@@ -60,15 +60,15 @@ void fragment() {
 [sub_resource type="ShaderMaterial" id="TileColorMaterial"]
 resource_local_to_scene = true
 shader = SubResource("TileColorShader")
-shader_parameter/tile_color = Color(0, 1, 0, 1)
+shader_parameter/tile_color = Color(0.184313729, 0.654901981, 0.788235307, 1.000000000)
 shader_parameter/completion_morph = 0.0
-shader_parameter/morph_edge_color = Color(0.31, 0.64, 0.63, 1)
+shader_parameter/morph_edge_color = Color(0.310000002, 0.639999986, 0.629999995, 1.000000000)
 
 [sub_resource type="Shader" id="RegenProgressShader"]
 code = "shader_type canvas_item;
 
 uniform float progress : hint_range(0.0, 1.0) = 1.0;
-uniform vec4 progress_color : source_color = vec4(0.816, 0.631, 0.227, 1.0);
+uniform vec4 progress_color : source_color = vec4(0.815686285, 0.631372571, 0.227450982, 1.000000000);
 
 void fragment() {
 	vec4 source = texture(TEXTURE, UV);
@@ -86,7 +86,7 @@ void fragment() {
 resource_local_to_scene = true
 shader = SubResource("RegenProgressShader")
 shader_parameter/progress = 1.0
-shader_parameter/progress_color = Color(0.816, 0.631, 0.227, 1)
+shader_parameter/progress_color = Color(0.815686285, 0.631372571, 0.227450982, 1.000000000)
 
 [node name="Pile" type="Control" unique_id=243529465]
 custom_minimum_size = Vector2(34, 37)
@@ -160,7 +160,7 @@ anchor_bottom = 1.0
 offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_colors/font_color = Color(0.05, 0.05, 0.05, 1)
+theme_override_colors/font_color = Color(0.050000001, 0.050000001, 0.050000001, 1.000000000)
 theme_override_fonts/font = ExtResource("5")
 theme_override_font_sizes/font_size = 20
 text = "5"

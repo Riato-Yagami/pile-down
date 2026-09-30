@@ -3,7 +3,7 @@ extends Node
 
 signal theme_changed(theme: ThemePaletteData)
 
-const SELECTED_TEXT_COLOR := Color("4d82c2")
+const SELECTED_TEXT_COLOR := GameColors.ACCENT
 
 var definitions: Array[ThemePaletteData] = []
 var active_theme_id: StringName = &"arcade"
@@ -56,6 +56,12 @@ func _apply_to_control_recursive(node: Control, theme: ThemePaletteData) -> void
 		var label := node as Label
 		if not label.has_theme_color_override(&"font_color"):
 			label.add_theme_color_override(&"font_color", theme.ui_text_color)
+	elif node is OptionButton:
+		for color_name in [
+			&"font_color", &"font_disabled_color", &"font_hover_color",
+			&"font_pressed_color", &"font_hover_pressed_color", &"font_focus_color",
+		]:
+			node.add_theme_color_override(color_name, GameColors.WHITE)
 	elif node is Button:
 		var button := node as Button
 		for color_name in [&"font_color", &"font_disabled_color"]:

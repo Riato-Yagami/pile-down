@@ -10,12 +10,13 @@ uniform vec2 viewport_size = vec2(256.0, 320.0);
 uniform float radius = 54.0;
 uniform float softness = 14.0;
 uniform float darkness_alpha = 0.985;
+uniform vec4 darkness_color : source_color = vec4(0.000000000, 0.000000000, 0.000000000, 1.000000000);
 
 void fragment() {
 	vec2 pixel_position = UV * viewport_size;
 	float distance_to_light = distance(pixel_position, light_position);
 	float alpha = smoothstep(radius, radius + softness, distance_to_light) * darkness_alpha;
-	COLOR = vec4(0.0, 0.0, 0.0, alpha);
+	COLOR = vec4(darkness_color.rgb, alpha * darkness_color.a);
 }"
 
 [sub_resource type="ShaderMaterial" id="FlashlightMaterial"]

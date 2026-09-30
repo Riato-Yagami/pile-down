@@ -108,11 +108,11 @@ static func add_cosmetic_choice(
 	button.flat = true
 	var displayed_title := title if unlocked else "???"
 	button.text = displayed_title
-	button.add_theme_color_override("font_color", Color("3c3c3c"))
+	button.add_theme_color_override("font_color", GameColors.TEXT)
 	for color_name in [&"font_hover_color", &"font_pressed_color", &"font_focus_color"]:
 		button.add_theme_color_override(color_name, host.SELECTION_TEXT_COLOR)
-	button.add_theme_color_override("font_disabled_color", Color("3c3c3c"))
-	button.modulate = Color.WHITE
+	button.add_theme_color_override("font_disabled_color", GameColors.TEXT)
+	button.modulate = GameColors.WHITE
 	button.disabled = not unlocked
 	host.PixelUiScript.set_interactive_cursor(button, unlocked)
 	if selected:
@@ -159,7 +159,7 @@ static func add_font_title(
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.add_theme_font_override("font", font)
 	label.add_theme_font_size_override("font_size", font_size)
-	label.add_theme_color_override("font_color", Color("3c3c3c"))
+	label.add_theme_color_override("font_color", GameColors.TEXT)
 	button.add_child(label)
 	button.resized.connect(host._resize_font_choice.bind(button, label, font_offset))
 	host._connect_choice_title_highlight(button, label)
@@ -170,6 +170,7 @@ static func add_palette_title(
 	host: ProgressionMenu,
 	button: Button, title: String, colors: Array, font: Font
 ) -> void:
+	title = host.tr(title)
 	button.text = ""
 	if button is SelectableText:
 		(button as SelectableText).text_label.visible = false
@@ -215,7 +216,7 @@ static func set_choice_title_highlight(
 		return
 	if label is Label:
 		(label as Label).add_theme_color_override(
-			"font_color", host.SELECTION_TEXT_COLOR if highlighted else Color("3c3c3c")
+			"font_color", host.SELECTION_TEXT_COLOR if highlighted else GameColors.TEXT
 		)
 	elif label is RichTextLabel:
 		var rich_label := label as RichTextLabel
@@ -305,7 +306,7 @@ static func update_font_preview(host: ProgressionMenu, font_data: Dictionary) ->
 		var tile_material := host.font_preview_tile_material.duplicate() as ShaderMaterial
 		var color_index := int(value) if not is_hidden_tile else 0
 		var tile_color: Color = (
-			Color("b8b8b8")
+			GameColors.HIDDEN_TILE
 			if is_hidden_tile
 			else colors[color_index % colors.size()]
 			if not colors.is_empty()
@@ -325,7 +326,7 @@ static func update_font_preview(host: ProgressionMenu, font_data: Dictionary) ->
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		label.add_theme_color_override(
-			"font_color", tile_color if is_hidden_tile else tile_color.darkened(0.35)
+			"font_color", tile_color if is_hidden_tile else GameColors.tile_text_color(tile_color)
 		)
 		label.add_theme_font_size_override("font_size", font_size)
 		if font != null:

@@ -7,6 +7,8 @@ signal description_hidden()
 @export var highlight_material: ShaderMaterial
 
 var _description := ""
+var _touch_open := false
+var _touch_index := -1
 
 
 func _ready() -> void:
@@ -27,7 +29,38 @@ func setup(
 	]
 	_description = data.description
 	tooltip_text = ""
-	modulate = Color(0.55, 0.55, 0.55, 0.7) if consumed else Color.WHITE
+	modulate = GameColors.BONUS_CONSUMED if consumed else GameColors.WHITE
+
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		if event.pressed:
+			_touch_index = event.index
+		elif event.index == _touch_index:
+			_touch_index = -1
+			if not event.canceled and Rect2(Vector2.ZERO, size).has_point(event.position):
+				if _touch_open:
+					dismiss_description()
+				else:
+					_touch_open = true
+					_on_mouse_entered()
+		accept_event()
+	elif event is InputEventScreenDrag:
+		_touch_index = -1
+
+
+func _input(event: InputEvent) -> void:
+	if _touch_open and event is InputEventScreenTouch and event.pressed:
+		var local: Vector2 = get_global_transform_with_canvas().affine_inverse() * event.position
+		if not Rect2(Vector2.ZERO, size).has_point(local):
+			dismiss_description()
+
+
+func dismiss_description() -> void:
+	_touch_open = false
+	_touch_index = -1
+	material = null
+	description_hidden.emit()
 
 
 func _on_mouse_entered() -> void:
@@ -36,6 +69,8 @@ func _on_mouse_entered() -> void:
 
 
 func _on_mouse_exited() -> void:
+	if _touch_open:
+		return
 	material = null
 	description_hidden.emit()
 

@@ -144,6 +144,17 @@ echo "Configuring Godot Android SDK and Java paths..."
 "${PILE_DOWN_GODOT_BIN}" --headless --path . \
 	--script res://resources/scripts/tools/ConfigureAndroidExport.gd
 
+pile_down_require_packager
+if [[ "${PILE_DOWN_ANDROID_FORMAT}" == aab ]]; then
+	if (( ${#PILE_DOWN_ANDROID_FLAGS[@]} > 0 )); then
+		"${PILE_DOWN_GODOT_BIN}" --headless --path . --editor --install-android-build-template --quit
+		PILE_DOWN_ANDROID_FLAGS=()
+	fi
+	"${PILE_DOWN_PYTHON_BIN}" "${PILE_DOWN_SCRIPT_DIR}/configure_android.py" --prepare-gradle
+else
+	"${PILE_DOWN_PYTHON_BIN}" "${PILE_DOWN_SCRIPT_DIR}/configure_android.py"
+fi
+
 echo "Exporting Android ${PILE_DOWN_ANDROID_EXPORT_MODE} ${PILE_DOWN_ANDROID_FORMAT} to ${PILE_DOWN_ANDROID_OUTPUT}..."
 XDG_DATA_HOME="${PILE_DOWN_DATA_HOME}" \
 XDG_CONFIG_HOME="${PILE_DOWN_CONFIG_HOME}" \

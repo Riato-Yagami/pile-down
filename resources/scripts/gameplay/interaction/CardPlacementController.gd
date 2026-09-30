@@ -25,6 +25,8 @@ static func place_selected_card(host: GameManager, pile: MemoryPile) -> void:
 	combo_summary.root_action_id = context.root_action_id
 	combo_summary.bonus_levels = host.bonus_manager.active_levels()
 	var affected_piles: Array[MemoryPile] = []
+	if host.Difficulty.playable_discard_enabled and not host.challenge_modifiers.conveyor_hand:
+		DiscardPlayController.open_window(host, card)
 	await host._stack_card(card, pile, context)
 	affected_piles.append(pile)
 	combo_summary.bring_a_friend_total_companions = host.drag_companions.size()
@@ -55,6 +57,7 @@ static func place_selected_card(host: GameManager, pile: MemoryPile) -> void:
 	await host._finalize_placement_action(affected_piles)
 	host.achievement_manager.hand_combo_resolved.emit(combo_summary)
 	if host._all_piles_complete():
+		host._discard_source_action_active = false
 		await host._finish_round()
 		return
 	if host.challenge_modifiers.conveyor_hand:
@@ -63,9 +66,15 @@ static func place_selected_card(host: GameManager, pile: MemoryPile) -> void:
 		host.hand_manager.unlock_hand()
 		host._start_turn_countdown(host.bonus_manager.next_hand_time(host.turn_time))
 		return
-	await host._discard_current_hand()
+	if host.Difficulty.playable_discard_enabled:
+		host._start_discard_current_hand(true, true)
+		if is_instance_valid(host.selected_card) and host.selected_card.is_discarding:
+			host.hand_manager.lock_all_cards_except(host.selected_card)
+	else:
+		await host._discard_current_hand()
 	if placement_generation == host._hand_cycle_generation:
 		await host._begin_turn(false, true)
+	host._discard_source_action_active = false
 
 
 static func stack_card(
@@ -76,6 +85,12 @@ static func stack_card(
 ) -> void:
 	if not is_instance_valid(card) or not is_instance_valid(pile) or pile.completed:
 		return
+	card.set_selectable(false)
+	card.is_discarding = false
+	# Clicks and automatic bonus placements can interrupt a hover flip too.
+	card._cancel_flip_animation()
+	if card._draw_tween != null and card._draw_tween.is_valid():
+		card._draw_tween.kill()
 	if card.get_parent() != host.drag_layer:
 		var previous_global_position := card.global_position
 		if card.get_parent() == host.hand_container:
@@ -135,6 +150,10 @@ static func resolve_deja_vu(
 	root_action_id: int
 ) -> Array[MemoryPile]:
 	var matching_cards := host.hand_manager.find_cards_with_value(played_value)
+	# Reserve the automatic copies before their first animation can yield.
+	for matching_card in matching_cards:
+		matching_card.set_selectable(false)
+		matching_card.is_discarding = false
 	var compatible_piles := host.pile_manager.find_piles_accepting_value(played_value)
 	compatible_piles.erase(original_pile)
 	matching_cards.sort_custom(
@@ -215,8 +234,10 @@ static func complete_pile(host: GameManager, pile: MemoryPile) -> void:
 		host.maximum_mistakes
 	)
 	if recovered != host.mistakes_left:
+		var previous_lives := host.mistakes_left
 		host.mistakes_left = recovered
 		host._update_hud()
+		host.mistakes_dots.play_recovery(previous_lives)
 
 
 static func after_valid_card_played(host: GameManager) -> void:
@@ -273,6 +294,9 @@ static func handle_mistake(
 		host.soft_audio.play_timeout_error()
 	else:
 		host.soft_audio.play_error()
+	if host.mistakes_left > 0 and not caused_by_timeout:
+		_resume_after_mistake(host, pile, protected_by_safety_net, shared_clock_time)
+		return
 	if host.mistakes_left <= 0:
 		host.music_manager.set_low_pass_enabled(true)
 	if protected_by_safety_net:
@@ -286,7 +310,12 @@ static func handle_mistake(
 	if not is_instance_valid(host) or gameplay_generation != host._gameplay_generation:
 		return
 	if host.selected_card != null and is_instance_valid(host.selected_card) and host.selected_card.get_parent() == host.drag_layer:
-		if host.challenge_modifiers.conveyor_hand and not caused_by_timeout:
+		if host.selected_card.is_discarding:
+			host.selected_card.finish_drag()
+			host.hand_manager.forget_card(host.selected_card)
+			host.selected_card.queue_free()
+			host.selected_card = null
+		elif host.challenge_modifiers.conveyor_hand and not caused_by_timeout:
 			await host._discard_rejected_conveyor_card(host.selected_card)
 		else:
 			await host._return_card_to_hand(host.selected_card, 0.14)
@@ -345,6 +374,97 @@ static func handle_mistake(
 			and not pile.completed
 		):
 			host._reveal_mistake_pile(pile)
+
+
+static func _resume_after_mistake(
+	host: GameManager, pile: MemoryPile, protected: bool, shared_clock_time: float
+) -> void:
+	# Resolve damage and detach the previous selection before feedback can yield.
+	var rejected := host.selected_card
+	host.selected_card = null
+	host._card_touch_index = -1
+	CustomCursor.set_holding_card(false)
+	var returning := host.drag_companions.duplicate()
+	host.drag_companions.clear()
+	host._companion_offsets.clear()
+	host._companion_home_positions.clear()
+	if is_instance_valid(rejected):
+		returning.append(rejected)
+	for card in returning:
+		if is_instance_valid(card):
+			_return_rejected_card(host, card)
+	host.hand_manager.clear_selection()
+	host.input_locked = false
+	host.hand_manager.unlock_hand()
+	if host.challenge_modifiers.shared_round_clock:
+		host.timer_manager.time_left = maxf(
+			shared_clock_time - host.Difficulty.SHARED_CLOCK_LIFE_PENALTY, 0.0
+		)
+		host._shared_clock_mistake_feedback_active = is_instance_valid(pile) and not pile.completed
+	host._start_turn_countdown()
+	_damage_feedback(host, protected)
+	if host.bonus_manager.has_bonus(&"mistake_reveal"):
+		host._run_bonus_pile_flash(host.Difficulty.MISTAKE_REVEAL_DURATIONS[
+			host.bonus_manager.level(&"mistake_reveal")
+		])
+	if is_instance_valid(pile) and not pile.completed:
+		if host.challenge_modifiers.shared_round_clock:
+			_resume_shared_clock_after_feedback(host, pile)
+		else:
+			host._reveal_mistake_pile(pile)
+
+
+static func _resume_shared_clock_after_feedback(host: GameManager, pile: MemoryPile) -> void:
+	var generation := host._gameplay_generation
+	var mistake_count := host.run_mistake_count
+	await host._reveal_mistake_pile(pile)
+	if (
+		not is_instance_valid(host) or generation != host._gameplay_generation
+		or mistake_count != host.run_mistake_count
+	):
+		return
+	host._shared_clock_mistake_feedback_active = false
+	if not host.input_locked and not host.overlay.visible and host.mistakes_left > 0:
+		host._start_turn_countdown()
+
+
+static func _damage_feedback(host: GameManager, protected: bool) -> void:
+	var generation := host._gameplay_generation
+	if protected:
+		await host.mistakes_dots.play_safety_net_break()
+	else:
+		await host.mistakes_dots.play_damage(host.mistakes_left)
+	if is_instance_valid(host) and generation == host._gameplay_generation:
+		host._update_hud()
+
+
+static func _return_rejected_card(host: GameManager, card: PlayingCard) -> void:
+	card.finish_drag()
+	card.set_selectable(false)
+	if card.is_discarding or host.challenge_modifiers.conveyor_hand:
+		host._remove_hand_slot_placeholder(card)
+		host.hand_manager.forget_card(card)
+		await card.play_released_discard().finished
+		if is_instance_valid(card):
+			card.queue_free()
+		return
+	if card.get_parent() != host.drag_layer:
+		return
+	var generation := host._gameplay_generation
+	# Use the card's own slot: another drag may create a new placeholder meanwhile.
+	await card.animate_return(card.hand_return_position(), 0.14)
+	if not is_instance_valid(card) or generation != host._gameplay_generation:
+		return
+	if card.is_discarding or card.placement_confirmed:
+		return
+	host._remove_hand_slot_placeholder(card)
+	if not host.round_modifiers.wandering_hand_cards:
+		card.reparent(host.hand_container, false)
+		host._restore_hand_child_order()
+	card.reset_hand_pose()
+	if host.round_modifiers.wandering_hand_cards:
+		card.enable_wandering(maxi(host.hand_manager.current_cards.find(card), 0), true)
+	card.set_selectable(not host.input_locked and host.selected_card == null)
 
 
 static func reveal_mistake_pile(host: GameManager, pile: MemoryPile) -> void:

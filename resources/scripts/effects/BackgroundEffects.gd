@@ -8,8 +8,8 @@ const BACKGROUND_SHADER := preload(
 	"res://resources/shaders/backgrounds/DeformableBackground.gdshader"
 )
 const Debug := preload("res://resources/scripts/settings/debug.gd")
-const STRIPE_ONLY_BACKGROUND_COLOR := Color("f7f6f2")
-const STRIPE_ONLY_STRIPE_COLOR := Color(1.0, 1.0, 1.0, 0.58)
+const STRIPE_ONLY_BACKGROUND_COLOR := GameColors.MENU_BACKGROUND
+const STRIPE_ONLY_STRIPE_COLOR := GameColors.STRIPES_LIGHT
 const EDITOR_PREVIEW_SIZE := Vector2(256.0, 320.0)
 
 @export_group("Deformation Timing")

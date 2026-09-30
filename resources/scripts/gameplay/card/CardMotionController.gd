@@ -20,7 +20,7 @@ static func _update_joker(card: PlayingCard, delta: float) -> void:
 	)
 	var joker_material := card.face_sprite.material as ShaderMaterial
 	joker_material.set_shader_parameter("tile_color", joker_color)
-	card.value_label.add_theme_color_override("font_color", joker_color)
+	card.value_label.add_theme_color_override("font_color", GameColors.tile_text_color(joker_color, true))
 
 
 static func _update_wandering(card: PlayingCard, delta: float) -> void:

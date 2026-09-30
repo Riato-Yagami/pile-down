@@ -14,6 +14,8 @@ var remaining := 3
 var maximum := 3
 var reinforced_count := 0
 var safety_net_active := false
+var _recovery_tween: Tween
+var _recovering_points: Array[TextureRect] = []
 
 @onready var life_points: Array[TextureRect] = [
 	%LifePoint1,
@@ -29,12 +31,17 @@ func _ready() -> void:
 
 
 func set_remaining(value: int) -> void:
-	remaining = clampi(value, 0, maximum)
+	var next_remaining := clampi(value, 0, maximum)
+	if remaining == next_remaining:
+		return
+	_stop_recovery()
+	remaining = next_remaining
 	if is_node_ready():
 		_update_life_points()
 
 
 func set_maximum(value: int) -> void:
+	_stop_recovery()
 	maximum = clampi(value, 1, 6)
 	remaining = mini(remaining, maximum)
 	if is_node_ready():
@@ -42,18 +49,21 @@ func set_maximum(value: int) -> void:
 
 
 func set_reinforced_count(value: int) -> void:
+	_stop_recovery()
 	reinforced_count = clampi(value, 0, 3)
 	if is_node_ready():
 		_update_life_points()
 
 
 func set_safety_net_active(active: bool) -> void:
+	_stop_recovery()
 	safety_net_active = active
 	if is_node_ready():
 		_update_life_points()
 
 
 func play_safety_net_break() -> void:
+	_stop_recovery()
 	if not is_node_ready():
 		return
 	var tween := create_tween().set_parallel().set_trans(Tween.TRANS_BACK)
@@ -63,7 +73,7 @@ func play_safety_net_break() -> void:
 		tween.tween_property(
 			point,
 			"modulate",
-			Color(1.35, 1.35, 1.35, 1.0),
+			GameColors.HIGHLIGHT_TINT,
 			0.08
 		)
 	await tween.finished
@@ -73,11 +83,12 @@ func play_safety_net_break() -> void:
 	for index in mini(maximum, life_points.size()):
 		var point := life_points[index]
 		recovery.tween_property(point, "scale", Vector2.ONE, 0.16)
-		recovery.tween_property(point, "modulate", Color.WHITE, 0.12)
+		recovery.tween_property(point, "modulate", GameColors.WHITE, 0.12)
 	await recovery.finished
 
 
 func play_damage(remaining_after_hit: int) -> void:
+	_stop_recovery()
 	if not is_node_ready():
 		return
 	var reinforced_hit := maximum > 3 and remaining_after_hit >= 3
@@ -96,7 +107,7 @@ func play_damage(remaining_after_hit: int) -> void:
 	life_point.texture = FULL_TEXTURE
 	life_point.visible = true
 	life_point.pivot_offset = life_point.size * 0.5
-	life_point.modulate = Color.WHITE
+	life_point.modulate = GameColors.WHITE
 	life_point.scale = Vector2.ONE
 	if reinforced_hit:
 		var reinforcement_tween := (
@@ -128,14 +139,44 @@ func play_damage(remaining_after_hit: int) -> void:
 	tween.parallel().tween_property(
 		life_point,
 		"modulate",
-		Color("#E2554F"),
+		GameColors.DANGER,
 		0.12
 	)
 	tween.tween_property(life_point, "scale", Vector2.ZERO, 0.24)
 	tween.parallel().tween_property(life_point, "modulate:a", 0.0, 0.2)
 	await tween.finished
 	life_point.scale = Vector2.ONE
-	life_point.modulate = Color.WHITE
+	life_point.modulate = GameColors.WHITE
+
+
+func play_recovery(previous_remaining: int) -> void:
+	_stop_recovery()
+	if not is_node_ready() or remaining <= previous_remaining:
+		return
+	_recovery_tween = create_tween().set_parallel()
+	for life in range(maxi(previous_remaining, 0) + 1, remaining + 1):
+		# Extra lives reinforce the three existing dots, from bottom to top.
+		var index := life - 1 if life <= 3 else mini(maximum, life_points.size()) - (life - 3)
+		var point := life_points[clampi(index, 0, life_points.size() - 1)]
+		if _recovering_points.has(point):
+			continue
+		_recovering_points.append(point)
+		point.pivot_offset = point.size * 0.5
+		point.scale = Vector2(0.55, 0.55)
+		point.modulate = GameColors.LIFE_RECOVERY
+		_recovery_tween.tween_property(point, "scale", Vector2(1.35, 1.35), 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		_recovery_tween.tween_property(point, "scale", Vector2.ONE, 0.24).set_delay(0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		_recovery_tween.tween_property(point, "modulate", GameColors.WHITE, 0.4)
+	_recovery_tween.finished.connect(func(): _recovering_points.clear())
+
+
+func _stop_recovery() -> void:
+	if _recovery_tween != null and _recovery_tween.is_valid():
+		_recovery_tween.kill()
+	for point in _recovering_points:
+		point.scale = Vector2.ONE
+		point.modulate = GameColors.WHITE
+	_recovering_points.clear()
 
 
 func _update_life_points() -> void:
@@ -146,7 +187,7 @@ func _update_life_points() -> void:
 		var point := life_points[index]
 		point.visible = index < visible_maximum
 		point.texture = FULL_TEXTURE if index < visible_remaining else EMPTY_TEXTURE
-		point.modulate = Color.WHITE
+		point.modulate = GameColors.WHITE
 		if safety_net_active:
 			var safety_material := ShaderMaterial.new()
 			var safety_shader: Shader = SAFETY_NET_SHADER

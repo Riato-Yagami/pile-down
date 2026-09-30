@@ -209,7 +209,7 @@ static func fit_splash_background_to_local_rect(host: GameManager) -> void:
 	if splash_background == null:
 		return
 	splash_background.set_anchors_preset(Control.PRESET_TOP_LEFT, false)
-	splash_background.position = -host.screens.position
+	splash_background.position = Vector2.ZERO if host._screen_size_mode == &"menu_adaptive" else -host.screens.position
 	splash_background.size = host._canvas_size()
 
 
@@ -222,11 +222,16 @@ static func restore_splash_screen_layout(host: GameManager) -> void:
 	host.splash.set_anchors_preset(Control.PRESET_FULL_RECT, false)
 	host.splash.position = Vector2.ZERO
 	host.splash.size = host.screens.size
+	host.GameOptionsControllerScript.ScreenSizeOptionsScript.apply_menu_layout(host)
 	host._fit_splash_background_to_canvas()
 	host._apply_screen_edge_margins()
 
 
 static func fit_quit_popup_to_viewport(host: GameManager) -> void:
+	var content := host.quit_panel.get_node("Content") as VBoxContainer
+	var minimum := content.get_combined_minimum_size() + Vector2(34, 112)
+	var base := Vector2(252, 252) if host.run_uses_requested_seed else Vector2(180, 220)
+	host.quit_panel.custom_minimum_size = base.max(minimum)
 	# CanvasLayer controls follow the viewport, not the game container whose
 	# size may still be stale when the window's resize signal is emitted.
 	host.quit_popup.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

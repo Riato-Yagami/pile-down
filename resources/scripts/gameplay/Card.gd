@@ -53,9 +53,13 @@ const CardAppearanceScript := preload(
 @onready var drag_timer: Timer = %DragTimer
 @onready var drag_timer_ring: RegenerationRing = %DragTimerRing
 @onready var drag_collision_area: Area2D = %DragCollisionArea
+@onready var selection_outline: TextureRect = %SelectionOutline
 
 var face_up := true
 var selectable := true
+var is_discarding := false
+var discard_claimed := false
+var discard_tween: Tween
 var dragging := false
 var home_global_position := Vector2.ZERO
 var stable_hand_global_position := Vector2.ZERO
@@ -209,6 +213,11 @@ func set_selectable(can_select: bool) -> void:
 
 func set_selected_visual(is_selected: bool) -> void:
 	_selected = is_selected
+	selection_outline.visible = is_selected
+	if is_selected and not dragging and not _entrance_animation_running:
+		# The hover zoom uses a fractional scale and lifts only the sprites.
+		# A resting selection keeps the sprite and its outline on the same grid.
+		reset_hand_pose()
 
 
 func refresh_pointer_hover() -> bool:
@@ -286,16 +295,30 @@ func begin_external_drag(pointer_position: Vector2, preserve_touch_face := false
 		drag_timer_ring.visible = true
 
 
+func claim_discard() -> void:
+	if not is_discarding:
+		return
+	discard_claimed = true
+	# The bonus window can be claimed before the exit animation starts.
+	# Stop hand-local motion before claim_on_press reparents this card.
+	_cancel_flip_animation()
+	if discard_tween != null and discard_tween.is_valid():
+		discard_tween.kill()
+	_materialize_entrance_for_drag()
+	if _draw_tween != null and _draw_tween.is_valid():
+		_draw_tween.kill()
+	modulate.a = 1.0
+
+
 func prepare_external_drag(preserve_touch_face := false) -> void:
+	claim_discard()
 	_drag_starting = true
 	# The initial hand's Y tween must not keep writing hand-local coordinates
 	# after the card is moved into DragLayer.
 	if _draw_tween != null and _draw_tween.is_valid():
 		_draw_tween.kill()
 		modulate.a = 1.0
-	# A hover flip animates this Control's local Y position. It must finish
-	# before reparenting, otherwise its cleanup writes the old hand-local Y
-	# into DragLayer and makes the card jump across a mirrored board.
+	# Finish the visual flip before computing the grab point.
 	_cancel_flip_animation()
 	if (
 		round_modifiers != null
@@ -469,6 +492,10 @@ func hand_return_position() -> Vector2:
 
 func animate_valid_drop(destination: Vector2, duration := 0.14) -> void:
 	await CardAnimationsScript.animate_valid_drop(self, destination, duration)
+
+
+func play_released_discard() -> Tween:
+	return CardAnimationsScript.play_released_discard(self)
 
 
 func play_draw(delay: float) -> void:

@@ -80,7 +80,7 @@ func _refresh_panel_size() -> void:
 		64.0,
 		max_panel_width - CONTENT_HORIZONTAL_MARGIN - SEED_WIDGET_CHROME_WIDTH
 	)
-	if not is_equal_approx(seed_display.expanded_label_width, seed_label_width):
+	if seed_display.get_parent() == content and not is_equal_approx(seed_display.expanded_label_width, seed_label_width):
 		seed_display.expanded_label_width = seed_label_width
 	var content_size := content.get_combined_minimum_size()
 	panel.custom_minimum_size = Vector2(

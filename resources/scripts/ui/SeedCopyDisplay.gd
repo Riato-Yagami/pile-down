@@ -3,8 +3,8 @@ extends HBoxContainer
 
 signal seed_copied
 
-const BASE_BLUE := Color("4d82c2")
-const HIGHLIGHT_BLUE := Color("6da7e5")
+const BASE_BLUE := GameColors.ACCENT
+const HIGHLIGHT_BLUE := GameColors.ACCENT_HOVER
 
 @export_range(1, 80, 1) var collapsed_character_count := 5:
 	set(value):
@@ -113,7 +113,7 @@ func _refresh_pointer_highlight() -> void:
 func _set_highlight(highlighted: bool) -> void:
 	_highlighted = highlighted
 	var color := HIGHLIGHT_BLUE if highlighted else BASE_BLUE
-	var icon_tint := Color(1.35, 1.35, 1.35, 1.0) if highlighted else Color.WHITE
+	var icon_tint := GameColors.HIGHLIGHT_TINT if highlighted else GameColors.WHITE
 	seed_icon.self_modulate = icon_tint
 	if not _copy_feedback_active:
 		value_label.add_theme_color_override("font_color", color)
@@ -136,7 +136,7 @@ func _play_copy_feedback() -> void:
 		_copy_feedback_tween.kill()
 	_copy_feedback_active = true
 	value_label.text = copy_feedback_text
-	value_label.modulate = Color(1.35, 1.35, 1.35, 1.0)
+	value_label.modulate = GameColors.HIGHLIGHT_TINT
 	value_label.add_theme_color_override("font_color", HIGHLIGHT_BLUE)
 	_apply_value_label_width(copy_feedback_text, false)
 	value_label.pivot_offset = value_label.size * 0.5
@@ -145,7 +145,7 @@ func _play_copy_feedback() -> void:
 	_copy_feedback_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_copy_feedback_tween.tween_property(value_label, "scale", Vector2.ONE, 0.12)
 	_copy_feedback_tween.parallel().tween_property(
-		value_label, "modulate", Color.WHITE, 0.18
+		value_label, "modulate", GameColors.WHITE, 0.18
 	)
 	_copy_feedback_tween.tween_interval(maxf(copy_feedback_duration - 0.18, 0.02))
 	_copy_feedback_tween.tween_callback(_finish_copy_feedback)
@@ -154,7 +154,7 @@ func _play_copy_feedback() -> void:
 func _finish_copy_feedback() -> void:
 	_copy_feedback_active = false
 	value_label.scale = Vector2.ONE
-	value_label.modulate = Color.WHITE
+	value_label.modulate = GameColors.WHITE
 	value_label.add_theme_color_override(
 		"font_color", HIGHLIGHT_BLUE if _highlighted else BASE_BLUE
 	)

@@ -3,7 +3,7 @@ extends RefCounted
 
 const TINY_REGULAR_FONT := preload("res://resources/fonts/Tiny5-Regular.ttf")
 const Settings := preload("res://resources/scripts/settings/settings.gd")
-const HIDDEN_TILE_COLOR := Color("b8b8b8")
+const HIDDEN_TILE_COLOR := GameColors.HIDDEN_TILE
 
 
 static func update(card: PlayingCard) -> void:
@@ -12,13 +12,20 @@ static func update(card: PlayingCard) -> void:
 	var color: Color = card._tile_colors[
 		card.card_value % card._tile_colors.size()
 	]
-	var visual_color := Color("#8B8B8B") if card.colorblind_enabled else color
+	var visual_color := GameColors.COLORBLIND_TILE if card.colorblind_enabled else color
 	var custom_hidden_tile := (
 		not card.face_up and card._override_hidden_tile_with_font
 	)
 	card.face_sprite.visible = card.face_up or custom_hidden_tile
 	card.back_sprite.visible = not card.face_up and not custom_hidden_tile
-	card.back_sprite.modulate = Color.WHITE
+	card.selection_outline.texture = (
+		card.face_sprite.texture if card.face_sprite.visible else card.back_sprite.texture
+	)
+	# Read settings at runtime as well: F6/F5 does not run the export sync tool.
+	var selection_material := card.selection_outline.material as ShaderMaterial
+	selection_material.set_shader_parameter("highlight_color", GameColors.SELECTION_HIGHLIGHT)
+	selection_material.set_shader_parameter("rim_color", GameColors.SELECTION_RIM)
+	card.back_sprite.modulate = GameColors.WHITE
 	var tile_material := card.face_sprite.material as ShaderMaterial
 	tile_material.set_shader_parameter(
 		"tile_color", HIDDEN_TILE_COLOR if custom_hidden_tile else visual_color
@@ -60,5 +67,5 @@ static func update(card: PlayingCard) -> void:
 		"font_color",
 		HIDDEN_TILE_COLOR if custom_hidden_tile
 		else Settings.COLORBLIND_VALUE_COLOR if card.colorblind_enabled
-		else color.darkened(0.35)
+		else GameColors.tile_text_color(color)
 	)

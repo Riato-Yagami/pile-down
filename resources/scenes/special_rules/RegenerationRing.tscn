@@ -7,7 +7,7 @@
 code = "shader_type canvas_item;
 
 uniform float progress : hint_range(0.0, 1.0) = 1.0;
-uniform vec4 progress_color : source_color = vec4(0.816, 0.631, 0.227, 1.0);
+uniform vec4 progress_color : source_color = vec4(0.815686285, 0.631372571, 0.227450982, 1.000000000);
 
 void fragment() {
 	vec4 source = texture(TEXTURE, UV);
@@ -25,7 +25,7 @@ void fragment() {
 resource_local_to_scene = true
 shader = SubResource("RegenProgressShader")
 shader_parameter/progress = 1.0
-shader_parameter/progress_color = Color(0.816, 0.631, 0.227, 1)
+shader_parameter/progress_color = Color(0.815686285, 0.631372571, 0.227450982, 1.000000000)
 
 [node name="RegenerationRing" type="TextureRect"]
 custom_minimum_size = Vector2(9, 9)

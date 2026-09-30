@@ -30,11 +30,11 @@ extends Button
 		content_min_height = maxf(value, 0.0)
 		_last_content_size = Vector2.ZERO
 		_refresh_style()
-@export var normal_text_color := Color("3c3c3c"):
+@export var normal_text_color := GameColors.TEXT:
 	set(value):
 		normal_text_color = value
 		_refresh_style()
-@export var selected_text_color := Color("4d82c2"):
+@export var selected_text_color := GameColors.ACCENT:
 	set(value):
 		selected_text_color = value
 		_refresh_style()
@@ -42,7 +42,7 @@ extends Button
 	set(value):
 		checked_uses_selected_text_color = value
 		_refresh_style()
-@export var disabled_text_color := Color("8a8882"):
+@export var disabled_text_color := GameColors.TEXT_MUTED:
 	set(value):
 		disabled_text_color = value
 		_refresh_style()
@@ -155,7 +155,7 @@ func _refresh_style() -> void:
 
 
 func _hide_native_button_content() -> void:
-	var transparent := Color(1.0, 1.0, 1.0, 0.0)
+	var transparent := GameColors.TRANSPARENT_WHITE
 	for color_name in [
 		&"font_color", &"font_hover_color", &"font_pressed_color",
 		&"font_hover_pressed_color", &"font_focus_color",
@@ -167,7 +167,7 @@ func _hide_native_button_content() -> void:
 func _get_empty_texture() -> Texture2D:
 	if _empty_texture == null:
 		var image := Image.create(1, 1, false, Image.FORMAT_RGBA8)
-		image.fill(Color.TRANSPARENT)
+		image.fill(GameColors.TRANSPARENT)
 		_empty_texture = ImageTexture.create_from_image(image)
 	return _empty_texture
 
@@ -256,7 +256,7 @@ func _text_natural_width() -> float:
 	if font == null:
 		return text_label.get_combined_minimum_size().x
 	return ceilf(font.get_string_size(
-		text_label.text,
+		tr(text_label.text),
 		HORIZONTAL_ALIGNMENT_LEFT,
 		-1.0,
 		text_label.get_theme_font_size("font_size")
@@ -315,12 +315,20 @@ func _refresh_content_size() -> void:
 	if not has_bounds:
 		return
 	var content_size := Vector2(bounds.end.x, maxf(bounds.end.y, _content_row_height())).ceil()
+	var expands := (size_flags_horizontal & Control.SIZE_EXPAND) != 0
+	# A container-assigned width is not a minimum. Retaining it prevents the
+	# row (and its entire menu) from shrinking after an orientation change.
+	if expands:
+		content_size.x = _base_minimum_size.x
 	if content_size == _last_content_size:
 		return
 	_last_content_size = content_size
 	_resizing_content = true
 	custom_minimum_size = content_size
-	size = content_size
+	if expands:
+		size.y = content_size.y
+	else:
+		size = content_size
 	_resizing_content = false
 	if (size_flags_horizontal & Control.SIZE_EXPAND) == 0:
 		size_flags_horizontal = Control.SIZE_SHRINK_BEGIN

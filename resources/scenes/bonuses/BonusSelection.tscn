@@ -9,8 +9,8 @@
 [sub_resource type="Shader" id="ButtonHighlightShader"]
 code = "shader_type canvas_item;
 
-uniform vec4 base_color : source_color = vec4(0.302, 0.51, 0.761, 1.0);
-uniform vec4 highlight_color : source_color = vec4(0.427, 0.655, 0.898, 1.0);
+uniform vec4 base_color : source_color = vec4(0.301960796, 0.509803951, 0.760784328, 1.000000000);
+uniform vec4 highlight_color : source_color = vec4(0.427450985, 0.654901981, 0.898039222, 1.000000000);
 
 void fragment() {
 	vec4 texture_color = texture(TEXTURE, UV);
@@ -28,8 +28,8 @@ void fragment() {
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_thxoa"]
 resource_local_to_scene = true
 shader = SubResource("ButtonHighlightShader")
-shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
-shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
 
 [node name="BonusSelection" type="Control" unique_id=955636250]
 unique_name_in_owner = true
@@ -48,7 +48,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.965, 0.957, 0.94, 0.88)
+color = Color(0.964999974, 0.957000017, 0.939999998, 0.879999995)
 
 [node name="Title" type="RichTextLabel" parent="." unique_id=1196632029]
 layout_mode = 1
@@ -58,7 +58,7 @@ offset_top = 64.0
 offset_bottom = 96.0
 grow_horizontal = 2
 mouse_filter = 2
-theme_override_colors/default_color = Color(0, 0, 0, 1)
+theme_override_colors/default_color = Color(0.000000000, 0.000000000, 0.000000000, 1.000000000)
 theme_override_font_sizes/normal_font_size = 32
 bbcode_enabled = true
 text = "[center][wave amp=10 freq=4]BONUS[/wave][/center]"

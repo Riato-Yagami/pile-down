@@ -7,7 +7,7 @@ var choice_index := 0
 func setup(data: BonusData, level: int, index: int) -> void:
 	choice_index = index
 	text = "%s%s" % [
-		data.title,
+		TranslationServer.translate(data.title),
 		" %s" % _roman(level) if level > 1 else "",
 	]
 

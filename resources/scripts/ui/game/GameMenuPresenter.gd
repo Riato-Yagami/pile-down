@@ -11,8 +11,8 @@ static func open_progression_menu(host: GameManager) -> void:
 
 
 static func submenu_travel_distance(host: GameManager) -> float:
-	if is_instance_valid(host.screens) and host.screens.size.x > 0.0:
-		return host.screens.size.x
+	if is_instance_valid(host.splash) and host.splash.size.x > 0.0:
+		return host.splash.size.x
 	return host.get_viewport_rect().size.x
 
 
@@ -61,19 +61,19 @@ static func show_options_page(host: GameManager, page: int, animate := false) ->
 		host.OPTION_LINKS:
 			host.options_page_title.text = "LINKS"
 	host.gameplay_options_button.modulate = (
-		host.OPTIONS_SELECTED_COLOR if host._options_page == host.OPTION_GAMEPLAY else Color.WHITE
+		host.OPTIONS_SELECTED_COLOR if host._options_page == host.OPTION_GAMEPLAY else GameColors.WHITE
 	)
 	host.sound_options_button.modulate = (
-		host.OPTIONS_SELECTED_COLOR if host._options_page == host.OPTION_SOUND else Color.WHITE
+		host.OPTIONS_SELECTED_COLOR if host._options_page == host.OPTION_SOUND else GameColors.WHITE
 	)
 	host.graphics_options_button.modulate = (
-		host.OPTIONS_SELECTED_COLOR if host._options_page == host.OPTION_GRAPHICS else Color.WHITE
+		host.OPTIONS_SELECTED_COLOR if host._options_page == host.OPTION_GRAPHICS else GameColors.WHITE
 	)
 	host.save_options_button.modulate = (
-		host.OPTIONS_SELECTED_COLOR if host._options_page == host.OPTION_SAVE else Color.WHITE
+		host.OPTIONS_SELECTED_COLOR if host._options_page == host.OPTION_SAVE else GameColors.WHITE
 	)
 	host.links_options_button.modulate = (
-		host.OPTIONS_SELECTED_COLOR if host._options_page == host.OPTION_LINKS else Color.WHITE
+		host.OPTIONS_SELECTED_COLOR if host._options_page == host.OPTION_LINKS else GameColors.WHITE
 	)
 	host.GameOptionsControllerScript.refresh_screen_size_options(host)
 	if animate and previous_page != host._options_page:
@@ -197,9 +197,9 @@ static func apply_global_theme(host: GameManager) -> void:
 	host.theme_manager.apply_theme_to_control(host.options_menu)
 	host.theme_manager.apply_theme_to_control(host.progression_menu)
 	if is_instance_valid(host.overlay_scrim):
-		host.overlay_scrim.color = Color(0.969, 0.965, 0.949, 0.92)
+		host.overlay_scrim.color = GameColors.OVERLAY_SCRIM
 	if is_instance_valid(host.replay_transition_mask):
-		host.replay_transition_mask.color = Color(0.969, 0.965, 0.949, 1.0)
+		host.replay_transition_mask.color = GameColors.MENU_BACKGROUND
 
 
 static func sync_shader_background_visibility(host: GameManager) -> void:
@@ -278,8 +278,8 @@ static func new_bonus_titles(host: GameManager) -> PackedStringArray:
 	var titles := PackedStringArray()
 	for bonus_id in host.newly_discovered_bonuses:
 		for data in host.bonus_manager.definitions:
-			if data.id == bonus_id and not titles.has(data.title):
-				titles.append(data.title)
+			if data.id == bonus_id and not titles.has(TranslationServer.translate(data.title)):
+				titles.append(TranslationServer.translate(data.title))
 				break
 	return titles
 
@@ -288,8 +288,8 @@ static func new_rule_titles(host: GameManager) -> PackedStringArray:
 	var titles := PackedStringArray()
 	for rule_id in host.newly_encountered_rules:
 		for data in SpecialRuleRegistry.create_all_rules():
-			if data.id == rule_id and not titles.has(data.title):
-				titles.append(data.title)
+			if data.id == rule_id and not titles.has(TranslationServer.translate(data.title)):
+				titles.append(TranslationServer.translate(data.title))
 				break
 	return titles
 
@@ -298,6 +298,6 @@ static func new_achievement_titles(host: GameManager) -> PackedStringArray:
 	var titles := PackedStringArray()
 	for achievement_id in host.newly_unlocked_achievements:
 		var data := host.achievement_manager.find(achievement_id)
-		if data != null and not titles.has(data.title):
-			titles.append(data.title)
+		if data != null and not titles.has(TranslationServer.translate(data.title)):
+			titles.append(TranslationServer.translate(data.title))
 	return titles

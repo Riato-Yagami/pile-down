@@ -18,12 +18,12 @@ texture_margin_bottom = 5.0
 [sub_resource type="Shader" id="BadgeHighlightShader"]
 code = "shader_type canvas_item;
 
-uniform vec4 base_color : source_color = vec4(0.302, 0.51, 0.761, 1.0);
-uniform vec4 highlight_color : source_color = vec4(0.427, 0.655, 0.898, 1.0);
+uniform vec4 base_color : source_color = vec4(0.301960796, 0.509803951, 0.760784328, 1.000000000);
+uniform vec4 highlight_color : source_color = vec4(0.427450985, 0.654901981, 0.898039222, 1.000000000);
 
 void fragment() {
 	vec4 texture_color = texture(TEXTURE, UV);
-	vec4 source = texture_color * COLOR;
+	vec4 source = COLOR;
 	bool base_fill_pixel = (
 		texture_color.a > 0.0
 		&& distance(texture_color.rgb, base_color.rgb) < 0.01
@@ -37,13 +37,13 @@ void fragment() {
 [sub_resource type="ShaderMaterial" id="BadgeHighlightMaterial"]
 resource_local_to_scene = true
 shader = SubResource("BadgeHighlightShader")
-shader_parameter/base_color = Color(0.302, 0.51, 0.761, 1)
-shader_parameter/highlight_color = Color(0.427, 0.655, 0.898, 1)
+shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
 
 [node name="ActiveBonusBadge" type="Label" unique_id=1443630549]
 custom_minimum_size = Vector2(20, 16)
 mouse_filter = 1
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(1.000000000, 1.000000000, 1.000000000, 1.000000000)
 theme_override_fonts/font = ExtResource("1_d61n3")
 theme_override_font_sizes/font_size = 8
 theme_override_styles/normal = SubResource("BadgeBox")
