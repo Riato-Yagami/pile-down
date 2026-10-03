@@ -167,24 +167,6 @@ texture_margin_top = 6.0
 texture_margin_right = 8.0
 texture_margin_bottom = 6.0
 
-[sub_resource type="Shader" id="PixelationShader"]
-code = "shader_type canvas_item;
-
-uniform sampler2D screen_texture : hint_screen_texture, filter_nearest;
-uniform float pixel_size : hint_range(1.0, 32.0, 1.0) = 4.0;
-
-void fragment() {
-	vec2 screen_size = 1.0 / SCREEN_PIXEL_SIZE;
-	vec2 block_uv = vec2(pixel_size) / screen_size;
-	vec2 pixel_uv = floor(SCREEN_UV / block_uv) * block_uv + block_uv * 0.5;
-	COLOR = textureLod(screen_texture, pixel_uv, 0.0);
-}"
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_f4jyj"]
-resource_local_to_scene = true
-shader = SubResource("PixelationShader")
-shader_parameter/pixel_size = 4.0
-
 [sub_resource type="Shader" id="ReplayIrisShader"]
 code = "shader_type canvas_item;
 
@@ -943,7 +925,6 @@ layer = 15
 
 [node name="PixelationOverlay" parent="PresentationLayers/PixelationLayer" unique_id=659575838 instance=ExtResource("17_pixelation")]
 unique_name_in_owner = true
-material = SubResource("ShaderMaterial_f4jyj")
 layout_mode = 3
 
 [node name="TransitionLayer" type="CanvasLayer" parent="PresentationLayers" unique_id=1957222345]
@@ -1999,6 +1980,36 @@ size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "TRUE PIXEL ART"
+flat = true
+alignment = 0
+autowrap_mode = 3
+script = ExtResource("22_highlight")
+highlight_material = SubResource("ShaderMaterial_65kn7")
+
+[node name="SystemBarsButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GraphicsOptions/Content"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 16
+text = "SHOW SYSTEM BARS"
+flat = true
+alignment = 0
+autowrap_mode = 3
+script = ExtResource("22_highlight")
+highlight_material = SubResource("ShaderMaterial_65kn7")
+
+[node name="IgnoreNotchButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GraphicsOptions/Content"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 16
+text = "EXTEND INTO NOTCH AREA"
 flat = true
 alignment = 0
 autowrap_mode = 3

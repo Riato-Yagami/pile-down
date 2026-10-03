@@ -168,6 +168,8 @@ static func style_buttons(game: GameManager) -> void:
 		game.drag_and_drop_button,
 		game.adaptive_resolution_button,
 		game.true_pixel_art_button,
+		game.system_bars_button,
+		game.ignore_notch_button,
 		game.dust_effects_button,
 		game.background_enabled_button,
 		game.export_save_button,
@@ -248,6 +250,15 @@ static func refresh_gameplay(game: GameManager) -> void:
 
 
 static func setup_graphics(game: GameManager) -> void:
+	MobileDisplayController.instance.reload_settings()
+	game.system_bars_button.visible = MobileDisplayController.instance.supports_system_bars()
+	var toggle_bars := _toggle_system_bars.bind(game)
+	if not game.system_bars_button.pressed.is_connected(toggle_bars):
+		game.system_bars_button.pressed.connect(toggle_bars)
+	var toggle_notch := _toggle_ignore_notch.bind(game)
+	if not game.ignore_notch_button.pressed.is_connected(toggle_notch):
+		game.ignore_notch_button.pressed.connect(toggle_notch)
+	_refresh_system_bars(game)
 	var config := _load_config(game)
 	var default_screen_size_mode := ScreenSizeOptionsScript.SCREEN_SIZE_MODE_MENU_ADAPTIVE
 	if config.has_section_key("graphics", "adaptive_resolution"):
@@ -277,6 +288,27 @@ static func setup_graphics(game: GameManager) -> void:
 	refresh_dust(game)
 	refresh_background(game)
 	game.relief_lighting.set_enabled(false)
+
+
+static func _toggle_system_bars(game: GameManager) -> void:
+	MobileDisplayController.instance.set_system_bars_visible(not MobileDisplayController.instance.show_system_bars)
+	_refresh_system_bars(game)
+
+
+static func _refresh_system_bars(game: GameManager) -> void:
+	var mobile := MobileDisplayController.instance
+	game.ignore_notch_button.visible = mobile.supports_system_bars() and not mobile.show_system_bars
+	game.ignore_notch_button.disabled = not game.ignore_notch_button.visible
+	game.ignore_notch_button.icon = game.SELECTED_TEXTURE if mobile.ignore_notch else game.UNCHECKED_TEXTURE
+	game.system_bars_button.icon = (
+		game.SELECTED_TEXTURE if MobileDisplayController.instance.show_system_bars else game.UNCHECKED_TEXTURE
+	)
+
+
+static func _toggle_ignore_notch(game: GameManager) -> void:
+	var mobile := MobileDisplayController.instance
+	mobile.set_ignore_notch(not mobile.ignore_notch)
+	_refresh_system_bars(game)
 
 
 static func setup_dust_pool(game: GameManager) -> void:

@@ -85,6 +85,7 @@ static func apply_resolution(game: GameManager) -> void:
 		Window.CONTENT_SCALE_ASPECT_EXPAND
 		if _uses_expanded_canvas(game) else Window.CONTENT_SCALE_ASPECT_KEEP
 	)
+	MobileDisplayController.instance.configure_window()
 	game.adaptive_resolution_button.modulate = GameColors.WHITE
 	game.adaptive_resolution_button.text = ""
 	_refresh_screen_size_options(game)
@@ -98,6 +99,13 @@ static func apply_resolution(game: GameManager) -> void:
 
 
 static func apply_low_resolution_layout(game: GameManager) -> void:
+	if MobileDisplayController.instance.is_mobile():
+		var center := game.get_parent() as CenterContainer
+		if center != null:
+			var safe := MobileDisplayController.instance.safe_rect(game.get_viewport())
+			center.set_anchors_preset(Control.PRESET_TOP_LEFT, false)
+			center.position = safe.position
+			center.size = safe.size
 	var scale_factor := 1.0
 	var offset := Vector2.ZERO
 	var canvas_layer_offset := Vector2.ZERO
@@ -108,6 +116,8 @@ static func apply_low_resolution_layout(game: GameManager) -> void:
 		canvas_size = _true_pixel_layout_size(game)
 	if _uses_expanded_canvas(game):
 		game.custom_minimum_size = canvas_size
+	if MobileDisplayController.instance.is_mobile():
+		canvas_layer_offset = game.get_global_rect().position
 	if game._screen_size_mode == SCREEN_SIZE_MODE_ADAPTIVE:
 		game_size = canvas_size
 	elif _uses_expanded_canvas(game):
@@ -168,7 +178,7 @@ static func _true_pixel_layout_size(game: GameManager) -> Vector2:
 static func _available_layout_size(game: GameManager) -> Vector2:
 	# A container retains its child's previous minimum during a shrink.
 	# The viewport is the source of truth, independent of that feedback loop.
-	return game.get_viewport_rect().size
+	return MobileDisplayController.instance.safe_rect(game.get_viewport()).size
 
 
 static func _setup_screen_size_options(game: GameManager) -> void:
@@ -366,6 +376,14 @@ static func _apply_canvas_layer_scale(
 			layer_control.set_anchors_preset(Control.PRESET_TOP_LEFT, false)
 			layer_control.position = Vector2.ZERO
 			layer_control.size = logical_size
+			if MobileDisplayController.instance.is_mobile():
+				var scrim := layer_control.get_node_or_null("Scrim") as Control
+				if scrim != null:
+					# Only the backdrop extends under system bars; content stays safe.
+					var full_rect := layer_control.get_global_transform_with_canvas().affine_inverse() * layer_control.get_viewport_rect()
+					scrim.set_anchors_preset(Control.PRESET_TOP_LEFT, false)
+					scrim.position = full_rect.position
+					scrim.size = full_rect.size
 
 
 static func _fit_full_rect_children(parent: Control) -> void:

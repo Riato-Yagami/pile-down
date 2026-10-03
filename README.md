@@ -450,6 +450,8 @@ mécanique expérimentale :
   Les cartes de cette main sortante restent saisissables pendant leur défausse,
   permettant d'enchaîner plusieurs coups supplémentaires. Les poses attendent
   la fin du renouvellement précédent avant de modifier les piles.
+  La saisie suivante s'ouvre dès la pose bonus, avant même le départ de la main ;
+  une animation d'entrée différée ne peut pas reverrouiller une carte en défausse.
   Avec `false`, la main suivante et son décompte sont conservés ; attention,
   le coup supplémentaire peut alors rendre cette main injouable.
 
@@ -1033,6 +1035,10 @@ liserés d'un pixel, jaune lumineux et ambre, sans flou ni lissage.
 Désactiver le dernier mode actif réactive automatiquement l'autre. Ces choix
 sont sauvegardés dans `accessibility/click_to_place` et
 `accessibility/drag_and_drop`.
+L'ouverture des Options place le focus clavier sur l'onglet actif, sans
+surligner automatiquement le premier réglage. Le survol et la navigation
+clavier continuent de mettre en évidence le contrôle visé.
+
 Les onglets Options, Progression et Challenges sont horizontaux par défaut,
 alignés à gauche et rapprochés du titre. Dans
 `resources/scripts/settings/UISettings.gd`, mettre `TABS_HORIZONTAL`
@@ -1059,6 +1065,8 @@ Relancer le jeu après modification de `colors.gd` suffit : l'autoload
 `RuntimeColors` applique les réglages aux scènes, thèmes, dégradés, matériaux
 locaux et shaders avant leur initialisation. Les palettes restent ensuite
 prioritaires pour les faces des tuiles et l'habillage du thème sélectionné.
+Cette initialisation ne se répète pas lors d'un changement de parent : les
+chiffres gardent leur couleur pendant le glissement, le retour et la défausse.
 Les constantes `MONO_*` et `VAPOR_*` concernent les thèmes correspondants.
 
 Pour actualiser aussi les aperçus dans l'éditeur et le fond du splash natif
@@ -1087,14 +1095,53 @@ Passer ce réglage à `false` applique la couleur fixe `TILE_TEXT`.
 Le mode daltonien garde
 ses couleurs dédiées. `LOCK_TINT` règle la modulation du cadenas.
 
+Sur téléphone et tablette, `MobileDisplay.gd` réserve la zone utilisable fournie
+par Godot pour les barres système et les encoches. Le chargement, les menus, le
+jeu et les fenêtres superposées respectent cette zone, dans les quatre modes
+d'affichage et avec ou sans rendu pixel art. Les changements de zone sont suivis
+lors des redimensionnements et toutes les 0,2 seconde. Le bureau reste inchangé.
+Sur Android, **Options → Graphismes → Afficher les barres système** permet de
+basculer en mode immersif. Les barres sont visibles par défaut ; le choix est
+mémorisé dans `graphics/show_system_bars`. Les indicateurs système utilisent
+une apparence sombre pour rester lisibles sur le fond clair. Le fond des menus
+couvre tout l'écran, y compris derrière les barres, tandis que leurs commandes
+restent dans la zone utilisable. Masquer les barres conserve par défaut la
+protection de l'encoche. L'option **Étendre en ignorant l'encoche** apparaît
+uniquement lorsque les barres sont masquées. Elle est désactivée par défaut et
+mémorisée dans `graphics/ignore_notch` ; réafficher les barres rétablit toujours
+la zone protégée. Les exports Android utilisent `screen/edge_to_edge=true`
+et `screen/immersive_mode=false` au démarrage. Sur iOS, la zone sûre est respectée,
+mais cette option Android n'est pas présentée.
+
 Le point d'entrée est maintenant `resources/scenes/Loading.tscn`. Il affiche
 des tuiles qui s'empilent, un fond assorti aux menus, l'icône Godot et le crédit
 « by Juels », puis charge `Main.tscn`. Le pourcentage provient du chargement
 de ressources Godot ; l'empilement est une animation d'activité. La compilation
-initiale du graphe de scripts et l'instanciation restent sur le thread principal
-et peuvent brièvement suspendre l'animation. Le fond natif avant la première
+initiale du graphe de scripts s'effectue sur un thread dédié, puis la scène
+est chargée en arrière-plan. Ces étapes sont séquentielles pour éviter les
+chargements concurrents des scripts à dépendances circulaires ; l'animation
+continue sur le thread principal pendant ces deux étapes. Seules l'instanciation
+finale et l'entrée dans l'arbre de scène restent sur le thread principal et
+peuvent encore causer une courte pause. Le fond natif avant la première
 image utilise la même couleur. Les paramètres `LOADING_*` règlent l'animation.
 Le nœud `Stack` de `Loading.tscn` expose ses réglages dans l'inspecteur.
+Une fois le chargement et la mise en page terminés, le titre et les boutons du
+menu principal apparaissent en cascade avec un fondu et un léger zoom. Le menu
+devient interactif à la fin de cette ouverture, qui dure environ une demi-seconde.
+`animation_speed` multiplie la vitesse (`0` = pause, `1` = normale, `2` = double) ;
+`drop_seconds` règle la durée de chaque arrivée à vitesse normale.
+`show_face_up_tiles` affiche des faces numérotées et colorées. Au lancement,
+le petit fichier de sauvegarde fournit `progression/max_discovered_tile_value`
+avant le chargement du jeu : cette valeur fixe `first_value` et le plafond de
+toute la pile. Sans progression enregistrée, la boucle est `3 → 2 → 1 → 0 → 3`.
+Avec une tuile maximale découverte de 6, elle va de 6 à 0 puis revient à 6 ;
+aucune couche de la pile n'affiche de valeur supérieure. Dans l'éditeur,
+`first_value` et `LOADING_FIRST_VALUE` restent des réglages d'aperçu. La police,
+sa taille et les dix couleurs sont modifiables dans le groupe « Face Up Tiles ».
+Ces faces utilisent uniquement les petits sprites mis en cache, sans charger
+les scènes de gameplay sur le thread de l'animation. Les valeurs par défaut
+de vitesse et d'affichage se trouvent aussi dans `UISettings.gd` :
+`LOADING_ANIMATION_SPEED`, `LOADING_FACE_UP_TILES` et `LOADING_FIRST_VALUE`.
 Les tuiles conservent leur ratio natif `34 × 37` dans la taille définie.
 Une arrivée dure par défaut 0,6 seconde, avec accélération et décélération
 douces. La pile descend d'un cran et sa couche inférieure s'efface à chaque
@@ -1495,7 +1542,7 @@ const FIRST_SPECIAL_RULE_ROUND := 4
 const EXTRA_SPECIAL_RULE_CHANCE := 0.75
 const MAX_COMBINED_RULES := 5
 const LIGHTS_OUT_RADIUS := 60.0
-const PIXELATION_PIXEL_SIZE := 4.0
+const PIXELATION_PIXEL_SIZE := 2.0
 const HOT_POTATO_DURATION := 1.0
 const STICKY_HOT_POTATO_DURATION := 2.0
 const GRACE_PERIOD_REVEAL_TIME := 1.25
@@ -1635,7 +1682,10 @@ Les règles disponibles sont :
   par une palette grise, sans supprimer les feedbacks temporaires ;
 - `PIXELATED` : toute la zone de jeu est regroupée en blocs dont la taille se
   règle avec `PIXELATION_PIXEL_SIZE`. Les blocs grandissent progressivement à
-  l'activation puis retrouvent doucement leur taille normale en fin de round.
+  partir d'un pixel jusqu'à 2 × 2 pixels par défaut pour préserver la lisibilité,
+  puis retrouvent doucement leur taille normale en fin de round.
+  Leur taille suit les pixels logiques du jeu, avec ou sans True Pixel Art,
+  y compris après un redimensionnement ou un changement de mode d'affichage.
   La fenêtre de sortie reste rendue au-dessus du filtre et demeure nette ;
 - `THE FLOOR IS LAVA` : une grande masse corail part des bords de l'écran et
   entoure une baie centrale sûre ouverte vers la main, comme une île de jeu.

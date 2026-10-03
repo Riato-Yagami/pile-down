@@ -217,6 +217,8 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var screen_size_down_button: TextureHighlightButton = %ScreenSizeDownButton
 @onready var adaptive_resolution_button: Button = %AdaptiveResolutionButton
 @onready var true_pixel_art_button: Button = %TruePixelArtButton
+@onready var system_bars_button: Button = %SystemBarsButton
+@onready var ignore_notch_button: Button = %IgnoreNotchButton
 @onready var dust_effects_button: Button = %DustEffectsButton
 @onready var background_enabled_button: Button = %BackgroundEnabledButton
 @onready var relief_lighting: ReliefLighting = %ReliefLighting
@@ -623,6 +625,7 @@ func _ready() -> void:
 	# The game control stays at 256x320 in adaptive mode, so its `resized`
 	# signal does not track changes to the expanded viewport.
 	get_viewport().size_changed.connect(_resize_dust_distribution)
+	MobileDisplayController.instance.safe_area_changed.connect(_resize_dust_distribution)
 	# CenterContainer can reposition the fixed game after the background setup.
 	# Track that layout pass as well so Artwork remains in viewport space.
 	item_rect_changed.connect(_resize_dust_distribution)
@@ -1214,6 +1217,10 @@ func _unmask_replay_transition() -> void:
 
 func _maximum_iris_radius(center_uv: Vector2, aspect_ratio: float) -> float:
 	return GameTransitionsScript.maximum_iris_radius(self, center_uv, aspect_ratio)
+
+
+func play_menu_opening() -> void:
+	await GameTransitionsScript.play_menu_opening(self)
 
 
 func _play_return_to_menu_transition() -> void:

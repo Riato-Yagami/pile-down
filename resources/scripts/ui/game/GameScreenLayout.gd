@@ -202,6 +202,10 @@ static func fit_splash_background_to_canvas(host: GameManager) -> void:
 	var splash_background := host.splash.get_node_or_null("Background") as ColorRect
 	if splash_background != null:
 		host._fit_control_to_canvas_space(splash_background, host.splash)
+		if MobileDisplayController.instance.is_mobile():
+			var full_rect := host.splash.get_global_transform_with_canvas().affine_inverse() * host.get_viewport_rect()
+			splash_background.position = full_rect.position
+			splash_background.size = full_rect.size
 
 
 static func fit_splash_background_to_local_rect(host: GameManager) -> void:
@@ -211,6 +215,10 @@ static func fit_splash_background_to_local_rect(host: GameManager) -> void:
 	splash_background.set_anchors_preset(Control.PRESET_TOP_LEFT, false)
 	splash_background.position = Vector2.ZERO if host._screen_size_mode == &"menu_adaptive" else -host.screens.position
 	splash_background.size = host._canvas_size()
+	if MobileDisplayController.instance.is_mobile():
+		# Extend the backdrop beyond the safe content while preserving the swipe.
+		splash_background.position -= host._canvas_origin()
+		splash_background.size = host.get_viewport_rect().size
 
 
 static func prepare_splash_transition_layout(host: GameManager) -> void:
@@ -235,6 +243,10 @@ static func fit_quit_popup_to_viewport(host: GameManager) -> void:
 	# CanvasLayer controls follow the viewport, not the game container whose
 	# size may still be stale when the window's resize signal is emitted.
 	host.quit_popup.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	if MobileDisplayController.instance.is_mobile():
+		host.quit_popup.set_anchors_preset(Control.PRESET_TOP_LEFT, false)
+		host.quit_popup.position = Vector2.ZERO
+		host.quit_popup.size = host._canvas_size()
 	var center := host.quit_popup.get_node("Center") as CenterContainer
 	host._apply_screen_margin_control(center, host._normalized_edge_margins(host.screen_edge_margins))
 	center.queue_sort()

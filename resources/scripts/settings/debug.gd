@@ -44,7 +44,7 @@ const LOCK_SPECIAL_RULES: Array[StringName] = [
 	#"free_range_cards",
 	#"wavy_baby",
 	#"shaking_piles",
-	"lights_out",
+	#"lights_out",
 	#"shell_game",
 	#"musical_stacks"
 	#"pixelated"
@@ -59,7 +59,7 @@ const LOCK_SPECIAL_RULES: Array[StringName] = [
 # lucky_hand, time_bank, slow_start, spare_life, safety_net, clean_slate,
 # bring_a_friend, pile_mover, double_down, deja_vu, rule_breaker, adaptation.
 const LOCK_BONUSES: Dictionary = {
-	#&"lucky_hand": 1,
+	&"safety_net": 1,
 	#&"wild_card": 3,
 	#&"pile_mover":1,
 	#&"double_down": 1,

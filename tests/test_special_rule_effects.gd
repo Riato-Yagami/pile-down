@@ -185,6 +185,11 @@ func _run() -> void:
 	flashlight.visible = false
 
 	var pixelation := PixelationScene.instantiate()
+	var game_state := preload("res://resources/scenes/Game.tscn").get_state()
+	for node_index in game_state.get_node_count():
+		if game_state.get_node_name(node_index) == &"PixelationOverlay":
+			for property_index in game_state.get_node_property_count(node_index):
+				assert(game_state.get_node_property_name(node_index, property_index) != &"material", "The game must inherit the reusable pixelation material")
 	stage.add_child(pixelation)
 	pixelation.transition_duration = 0.05
 	pixelation.show_pixelation(DifficultySettings.PIXELATION_PIXEL_SIZE)

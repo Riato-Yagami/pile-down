@@ -21,6 +21,7 @@ config/icon="res://resources/sprites/branding/game-icon.png"
 
 RuntimeColors="*res://resources/scripts/settings/RuntimeColors.gd"
 LanguageSettings="*res://resources/scripts/settings/LanguageSettings.gd"
+MobileDisplay="*res://resources/scripts/settings/display/MobileDisplay.gd"
 
 [display]
 

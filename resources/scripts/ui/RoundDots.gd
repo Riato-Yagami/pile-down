@@ -67,7 +67,7 @@ func play_safety_net_break() -> void:
 	if not is_node_ready():
 		return
 	var tween := create_tween().set_parallel().set_trans(Tween.TRANS_BACK)
-	for index in mini(maximum, life_points.size()):
+	for index in mini(remaining, life_points.size()):
 		var point := life_points[index]
 		tween.tween_property(point, "scale", Vector2(1.3, 0.72), 0.11)
 		tween.tween_property(
@@ -80,7 +80,7 @@ func play_safety_net_break() -> void:
 	safety_net_active = false
 	_update_life_points()
 	var recovery := create_tween().set_parallel().set_trans(Tween.TRANS_BACK)
-	for index in mini(maximum, life_points.size()):
+	for index in mini(remaining, life_points.size()):
 		var point := life_points[index]
 		recovery.tween_property(point, "scale", Vector2.ONE, 0.16)
 		recovery.tween_property(point, "modulate", GameColors.WHITE, 0.12)
@@ -188,7 +188,7 @@ func _update_life_points() -> void:
 		point.visible = index < visible_maximum
 		point.texture = FULL_TEXTURE if index < visible_remaining else EMPTY_TEXTURE
 		point.modulate = GameColors.WHITE
-		if safety_net_active:
+		if safety_net_active and index < visible_remaining:
 			var safety_material := ShaderMaterial.new()
 			var safety_shader: Shader = SAFETY_NET_SHADER
 			safety_material.shader = safety_shader

@@ -20,25 +20,17 @@ static func open_options_menu(host: GameManager) -> void:
 	host.options_menu.visible = true
 	host._show_options_page(host._options_page)
 	host._submenu_swipe_controller.open(host.options_menu, host._submenu_travel_distance())
-	match host._options_page:
-		host.OPTION_GAMEPLAY:
-			host.achievement_notifications_button.grab_focus()
-		host.OPTION_SOUND:
-			host.music_volume_slider.grab_focus()
-		host.OPTION_GRAPHICS:
-			var screen_size_selector := (
-				host.adaptive_resolution_button.get_parent().get_node_or_null(
-					"ScreenSizeModeSelector"
-				) as Control
-			)
-			if screen_size_selector != null:
-				screen_size_selector.grab_focus()
-			else:
-				host.adaptive_resolution_button.grab_focus()
-		host.OPTION_SAVE:
-			host.save_options_button.grab_focus()
-		host.OPTION_LINKS:
-			host.link_button_template.grab_focus()
+	_focus_options_tab(host)
+
+
+static func _focus_options_tab(host: GameManager) -> void:
+	# Keep keyboard navigation on the active tab, not the first setting.
+	var tabs: Array[BaseButton] = [
+		host.gameplay_options_button, host.sound_options_button,
+		host.graphics_options_button, host.save_options_button, host.links_options_button,
+	]
+	tabs[host._options_page].grab_focus()
+
 
 
 static func show_options_page(host: GameManager, page: int, animate := false) -> void:
@@ -76,6 +68,8 @@ static func show_options_page(host: GameManager, page: int, animate := false) ->
 		host.OPTIONS_SELECTED_COLOR if host._options_page == host.OPTION_LINKS else GameColors.WHITE
 	)
 	host.GameOptionsControllerScript.refresh_screen_size_options(host)
+	if host.options_menu.visible and previous_page != host._options_page:
+		_focus_options_tab(host)
 	if animate and previous_page != host._options_page:
 		host._submenu_page_animator.play(
 			host.options_page_title.get_parent() as Control,

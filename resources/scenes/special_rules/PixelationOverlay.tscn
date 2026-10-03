@@ -6,19 +6,28 @@
 code = "shader_type canvas_item;
 
 uniform sampler2D screen_texture : hint_screen_texture, filter_nearest;
-uniform float pixel_size : hint_range(1.0, 32.0, 1.0) = 4.0;
+uniform float pixel_size : hint_range(1.0, 32.0, 1.0) = 2.0;
+varying vec2 logical_position;
+
+void vertex() {
+	logical_position = VERTEX;
+}
 
 void fragment() {
-	vec2 screen_size = 1.0 / SCREEN_PIXEL_SIZE;
-	vec2 block_uv = vec2(pixel_size) / screen_size;
-	vec2 pixel_uv = floor(SCREEN_UV / block_uv) * block_uv + block_uv * 0.5;
+	// Sample a native pixel center, never the boundary between two pixels.
+	vec2 block_center = floor(floor(logical_position / pixel_size) * pixel_size + pixel_size * 0.5) + 0.5;
+	vec2 logical_delta = block_center - logical_position;
+	// Derivatives include the actual canvas stretch in the render target.
+	vec2 pixel_uv = SCREEN_UV
+		+ dFdx(SCREEN_UV) * logical_delta.x / dFdx(logical_position.x)
+		+ dFdy(SCREEN_UV) * logical_delta.y / dFdy(logical_position.y);
 	COLOR = textureLod(screen_texture, pixel_uv, 0.0);
 }"
 
 [sub_resource type="ShaderMaterial" id="PixelationMaterial"]
 resource_local_to_scene = true
 shader = SubResource("PixelationShader")
-shader_parameter/pixel_size = 4.0
+shader_parameter/pixel_size = 2.0
 
 [node name="PixelationOverlay" type="ColorRect"]
 visible = false

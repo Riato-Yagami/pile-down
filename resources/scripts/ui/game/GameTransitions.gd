@@ -54,6 +54,36 @@ static func maximum_iris_radius(
 	)
 
 
+static func play_menu_opening(host: GameManager) -> void:
+	if not host.splash.visible or host._screen_transition_active:
+		return
+	var elements: Array[Control] = []
+	for child in host.splash.get_node("Center/Content").get_children():
+		if child is Control and child.visible:
+			elements.append(child)
+	elements.append_array([
+		host.progression_button, host.challenge_button, host.options_button,
+	])
+	# The loading overlay has already covered the initial container layout.
+	# Animate scale instead of position so adaptive anchors remain authoritative.
+	var previous_process_mode := host.process_mode
+	host.process_mode = Node.PROCESS_MODE_DISABLED
+	var tween := host.create_tween().set_parallel()
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	for index in elements.size():
+		var element := elements[index]
+		element.pivot_offset = element.size * 0.5
+		element.modulate.a = 0.0
+		element.scale = Vector2.ONE * 0.94
+		var delay := index * 0.045
+		tween.tween_property(element, "modulate:a", 1.0, 0.22).set_delay(delay)
+		tween.tween_property(element, "scale", Vector2.ONE, 0.32).set_delay(delay).set_trans(
+			Tween.TRANS_CUBIC
+		).set_ease(Tween.EASE_OUT)
+	await tween.finished
+	host.process_mode = previous_process_mode
+
+
 static func play_return_to_menu_transition(host: GameManager) -> void:
 	# Screens also inherits the game container's offset after a window resize.
 	# Convert its origin into the transition layer instead of losing that offset.

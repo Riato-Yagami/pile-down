@@ -41,8 +41,16 @@ func _enter_tree() -> void:
 
 
 func _on_node_added(node: Node) -> void:
-	if not node.scene_file_path.is_empty():
-		apply_scene(node)
+	if node.scene_file_path.is_empty():
+		return
+	# Reparenting emits node_added again, after gameplay has applied a palette.
+	# Initialize once per instance so drag/discard cannot restore fixed defaults.
+	# An instance ID also distinguishes duplicates, which inherit metadata.
+	var instance_id := node.get_instance_id()
+	if node.get_meta(&"_runtime_colors_instance", 0) == instance_id:
+		return
+	node.set_meta(&"_runtime_colors_instance", instance_id)
+	apply_scene(node)
 
 
 func apply_scene(root: Node) -> void:
