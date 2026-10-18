@@ -40,6 +40,7 @@ static func reset_hand_pose(host: PlayingCard) -> void:
 	host.rotation = 0.0
 	host.face_sprite.position.y = 0.0
 	host.back_sprite.position.y = 0.0
+	host.selection_outline.position.y = -2.0
 	host._apply_value_label_offset()
 	host.drag_timer_ring.visible = false
 	host.z_index = 0
@@ -429,6 +430,7 @@ static func animate_pose(host: PlayingCard, target_scale: Vector2, y_offset: flo
 	host._visual_tween.tween_property(host, "scale", target_scale, 0.12)
 	host._visual_tween.tween_property(host.face_sprite, "position:y", y_offset, 0.12)
 	host._visual_tween.tween_property(host.back_sprite, "position:y", y_offset, 0.12)
+	host._visual_tween.tween_property(host.selection_outline, "position:y", y_offset - 2.0, 0.12)
 	host._visual_tween.tween_property(
 		host.value_label, "position:y", host._value_font_offset.y + y_offset, 0.12
 	)

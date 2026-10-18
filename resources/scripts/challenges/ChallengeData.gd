@@ -36,6 +36,9 @@ var unlock_achievement: StringName
 @export var forced_special_rule_count := 0
 @export var commit_selected_cards := false
 @export var hide_selected_card_value := false
+@export_category("Achievements")
+## Individual AchievementData mode permissions still apply when enabled.
+@export var allow_achievement_unlocks := true
 @export_category("Bonuses and Special Rules")
 @export var forced_bonuses: Dictionary = {}
 @export var disabled_bonuses: Array[StringName] = []

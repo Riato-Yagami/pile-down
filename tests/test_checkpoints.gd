@@ -40,15 +40,10 @@ func _run() -> void:
 		&"pile": 1, &"hand": 2, &"start_value": 3, &"time": 4,
 	}
 	snapshot.unlocked_endless = false
-	var premature := CheckpointSnapshot.from_dictionary(snapshot.to_dictionary())
-	premature.checkpoint_id = 2
-	premature.start_round = DifficultySettings.CHECKPOINT_INTERVAL * 2
-	game._pending_checkpoint_snapshot = premature
-	assert(not game._unlock_completed_checkpoint(premature.start_round))
-	assert(not game.unlocked_checkpoints.has(2))
-	game._pending_checkpoint_snapshot = snapshot
-	assert(not game._unlock_completed_checkpoint(DifficultySettings.CHECKPOINT_INTERVAL - 1))
-	assert(game.unlocked_checkpoints.is_empty())
+	game._checkpoint_candidates[1] = snapshot.to_dictionary()
+	for completed_round in range(1, DifficultySettings.CHECKPOINT_INTERVAL):
+		assert(not game._unlock_completed_checkpoint(completed_round))
+		assert(game.unlocked_checkpoints.is_empty())
 	assert(game._unlock_completed_checkpoint(DifficultySettings.CHECKPOINT_INTERVAL))
 	assert(game.unlocked_checkpoints.has(1))
 	var saved: Dictionary = game._checkpoint_value(game.checkpoint_snapshots, 1, {})
@@ -58,21 +53,21 @@ func _run() -> void:
 	var damaged_snapshot := CheckpointSnapshot.from_dictionary(snapshot.to_dictionary())
 	damaged_snapshot.checkpoint_id = 2
 	damaged_snapshot.start_round = DifficultySettings.CHECKPOINT_INTERVAL * 2
-	game._pending_checkpoint_snapshot = damaged_snapshot
+	game._checkpoint_candidates[2] = damaged_snapshot.to_dictionary()
 	game.checkpoint_segment_damage_count = 1
-	assert(not game._unlock_completed_checkpoint(damaged_snapshot.start_round))
+	assert(not game._unlock_completed_checkpoint(6))
 	assert(not game.unlocked_checkpoints.has(2))
-	# Passing the previously unlocked checkpoint resets the flawless section.
-	assert(not game._unlock_completed_checkpoint(snapshot.start_round))
+	assert(game.checkpoint_flawless_rounds == 0)
 	assert(game.checkpoint_segment_damage_count == 0)
-	game._pending_checkpoint_snapshot = damaged_snapshot
-	assert(game._unlock_completed_checkpoint(damaged_snapshot.start_round))
+	for completed_round in range(7, 11):
+		assert(not game._unlock_completed_checkpoint(completed_round))
+	assert(game._unlock_completed_checkpoint(11))
 	assert(game.unlocked_checkpoints.has(2))
 
 	var replacement := snapshot.to_dictionary()
 	replacement.pile_count = 4
-	game._pending_checkpoint_snapshot = CheckpointSnapshot.from_dictionary(replacement)
-	assert(not game._unlock_completed_checkpoint(DifficultySettings.CHECKPOINT_INTERVAL))
+	game._checkpoint_candidates[1] = replacement
+	assert(not game._unlock_completed_checkpoint(12))
 	var preserved: Dictionary = game._checkpoint_value(game.checkpoint_snapshots, 1, {})
 	assert(int(preserved.pile_count) == 2)
 

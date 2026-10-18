@@ -81,6 +81,12 @@ static func start_game(
 		if host.current_challenge != null
 		else (host.GameMode.ENDLESS if endless_mode else host.GameMode.STANDARD)
 	)
+	host.achievement_manager.configure_run(
+		RunSummary.Mode.CHALLENGE if host.current_challenge != null
+		else RunSummary.Mode.ENDLESS if endless_mode else RunSummary.Mode.NORMAL,
+		host.run_uses_requested_seed,
+		host.current_challenge.allow_achievement_unlocks if host.current_challenge != null else true
+	)
 	host.soft_audio.play_start()
 	host.music_manager.set_low_pass_enabled(false, true)
 	host._hand_cycle_generation += 1
@@ -97,6 +103,8 @@ static func start_game(
 	host.flawless_since_last_bonus = true
 	host.started_from_checkpoint = false
 	host.checkpoint_segment_damage_count = 0
+	host.checkpoint_flawless_rounds = 0
+	host._checkpoint_candidates.clear()
 	host.newly_discovered_bonuses.clear()
 	host.newly_encountered_rules.clear()
 	host.newly_unlocked_achievements.clear()
@@ -116,10 +124,15 @@ static func start_game(
 		host._apply_debug_progression(host.current_challenge.start_round)
 		host._apply_challenge_starting_difficulty(host.current_challenge)
 	elif host.game_mode == host.GameMode.ENDLESS:
-		host.round_number = 1
-		host.run_start_round = 1
+		host.run_start_round = int(sanitized_seed_difficulty.get("start_round", 1))
+		host.round_number = host.run_start_round
+		host._apply_debug_progression(host.run_start_round)
 	else:
-		var debug_start_round := host.Debug.get_start_round(host.Difficulty.TOTAL_ROUNDS)
+		var debug_start_round := (
+			int(sanitized_seed_difficulty.get("start_round", 1))
+			if host.run_uses_requested_seed
+			else host.Debug.get_start_round(host.Difficulty.TOTAL_ROUNDS)
+		)
 		host.started_from_checkpoint = debug_start_round > 1
 		host.run_start_round = debug_start_round
 		host.round_number = host.Difficulty.TOTAL_ROUNDS - debug_start_round + 1
@@ -162,6 +175,8 @@ static func restart_current_mode(host: GameManager) -> void:
 	# Invalidate an in-flight round-completion coroutine immediately. The replay
 	# iris is allowed to cover that transition instead of waiting for it to end.
 	host._run_transition_generation += 1
+	if host.skippable_sequence.waiting_for_continue:
+		host.skippable_sequence.finish()
 	host.first_move_hint.completed = false
 	host.first_move_hint.phase = 0.0
 	host._gameplay_generation += 1
@@ -228,6 +243,8 @@ static func return_to_menu(host: GameManager) -> void:
 	# Stop a round-completion coroutine that may currently be awaiting a bonus
 	# choice; it must not resume behind the returning menu.
 	host._run_transition_generation += 1
+	if host.skippable_sequence.waiting_for_continue:
+		host.skippable_sequence.finish()
 	host.first_move_hint.completed = false
 	host.first_move_hint.phase = 0.0
 	host._gameplay_generation += 1
@@ -415,6 +432,8 @@ static func end_gameplay_for_result_screen(host: GameManager) -> void:
 	# gameplay continuation, including accelerated debug wins, before building
 	# the screen so none can start a hand or apply delayed timeout damage behind it.
 	host._run_transition_generation += 1
+	if host.skippable_sequence.waiting_for_continue:
+		host.skippable_sequence.finish()
 	host.first_move_hint.completed = false
 	host.first_move_hint.phase = 0.0
 	host._gameplay_generation += 1

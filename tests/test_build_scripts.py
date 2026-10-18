@@ -97,6 +97,10 @@ class BuildScriptsTest(unittest.TestCase):
         self.assertIn("Unrecognized Godot version", result.stderr)
 
     def prepare_android(self, version="17.0.12"):
+        (self.project / "build/android").mkdir(parents=True)
+        shutil.copy2(PROJECT / "build/android/version-codes.json",
+                     self.project / "build/android/version-codes.json")
+        shutil.copy2(PROJECT / "export_presets.cfg", self.project / "export_presets.cfg")
         jdk = self.project / "Java SDK"
         sdk = self.project / "Android SDK"
         for path, output in (
@@ -124,6 +128,8 @@ class BuildScriptsTest(unittest.TestCase):
             '#!/usr/bin/env bash\nset -eu\n'
             'if [[ "$1" == "--version" ]]; then\n'
             '  echo "4.7.2.stable.official.fixture"\n'
+            'elif [[ "$*" == *"--editor"* || "$*" == *"--script"* ]]; then\n'
+            '  exit 0\n'
             'else\n'
             '  test -f "$JAVA_HOME/bin/javac"\n'
             '  test -f "$ANDROID_HOME/platform-tools/adb"\n'
@@ -152,6 +158,18 @@ class BuildScriptsTest(unittest.TestCase):
         self.assertIn("OpenJDK 17 or newer is required", result.stderr)
         self.assertNotIn("Downloading", result.stdout)
 
+    def test_color_sync_failure_stops_before_android_export(self):
+        self.prepare_aab()
+        self.fake_godot.write_text(
+            '#!/usr/bin/env bash\n'
+            'if [[ "$*" == *"SyncColors.gd"* ]]; then exit 1; fi\n'
+            'exit 0\n', encoding="utf-8", newline="\n",
+        )
+        result = self.run_aab()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("color synchronization failed", result.stderr)
+        self.assertNotIn("Exporting Android", result.stdout)
+
     def prepare_aab(self):
         self.prepare_android()
         archive = self.seed_archive("4.7.2-stable")
@@ -165,6 +183,12 @@ class BuildScriptsTest(unittest.TestCase):
             '#!/usr/bin/env bash\nset -eu\n'
             'if [[ "$1" == "--version" ]]; then\n'
             '  echo "4.7.2.stable.official.fixture"\n'
+            'elif [[ "$*" == *"--install-android-build-template"* ]]; then\n'
+            '  mkdir -p android/build\n'
+            '  printf fixture > android/build/build.gradle\n'
+            '  touch template-installed\n'
+            'elif [[ "$*" == *"--editor"* ]]; then\n'
+            '  exit 0\n'
             'elif [[ "$*" == *"--script"* ]]; then\n'
             '  exit 0\n'
             'else\n'
@@ -186,13 +210,13 @@ class BuildScriptsTest(unittest.TestCase):
         self.prepare_aab()
         for existing in (False, True):
             if existing:
-                (self.project / "android/build").mkdir(parents=True)
+                (self.project / "template-installed").unlink()
             result = self.run_aab()
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             args = (self.project / "export-args.txt").read_text().splitlines()
             self.assertIn("--export-release", args)
             self.assertIn("Android AAB", args)
-            self.assertEqual("--install-android-build-template" in args, not existing)
+            self.assertEqual((self.project / "template-installed").exists(), not existing)
             self.assertTrue(list((self.project / "build/.cache").rglob("android_source.zip")))
             output = self.project / "build/platforms/android/pile-down-android-v2.0.aab"
             self.assertEqual(output.read_text(), "bundle")
@@ -300,6 +324,8 @@ class BuildScriptsTest(unittest.TestCase):
             '#!/usr/bin/env bash\nset -eu\n'
             'if [[ "$1" == "--version" ]]; then\n'
             '  echo "4.7.2.stable.official.ed1daf0bf"\n'
+            'elif [[ "$*" == *"--editor"* || "$*" == *"--script"* ]]; then\n'
+            '  exit 0\n'
             'else\n'
             '  printf "%s" "$PILE_DOWN_TEST_CONTENT" > "${@: -1}"\n'
             'fi\n', encoding="utf-8", newline="\n",

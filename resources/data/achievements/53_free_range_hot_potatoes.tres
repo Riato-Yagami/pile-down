@@ -10,3 +10,5 @@ category = &"BONUSES & RULES"
 difficulty = 5
 reward_rationale = "La manipulation sous pression prépare au tapis roulant."
 id = &"free_range_hot_potatoes"
+allow_challenges = true
+allow_checkpoints = true

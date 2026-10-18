@@ -10,3 +10,4 @@ category = &"CHALLENGES"
 difficulty = 8
 reward_rationale = "Le réconfort après le défi sans seconde chance."
 id = &"complete_one_shot"
+allow_challenges = true

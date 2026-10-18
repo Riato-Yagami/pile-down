@@ -16,6 +16,7 @@ signal special_rule_round_completed(
 )
 signal hand_combo_resolved(summary: HandComboSummary)
 signal life_lost()
+signal external_link_opened(link_id: StringName)
 signal run_completed(summary: RunSummary)
 signal pile_round_started(pile_count: int, descending: bool)
 signal pile_placement_resolved(pile_index: int, values: Array[int], complete: bool)
@@ -28,6 +29,13 @@ var unlocked: Array[StringName] = []
 var unlock_dates: Dictionary = {}
 var bonuses_maxed_once: Dictionary = {}
 var bonus_highest_levels: Dictionary = {}
+var qualified_bonus_ids: Array[StringName] = []
+var qualified_rule_ids: Array[StringName] = []
+var qualified_protection_levels: Dictionary = {}
+var qualified_checkpoint_ids: Array[int] = []
+var _run_mode := RunSummary.Mode.NORMAL
+var _run_is_seeded := false
+var _run_allows_achievements := true
 var _round_pile_count := 0
 var _round_descending := true
 var _touched_piles: Dictionary = {}
@@ -44,11 +52,13 @@ func _ready() -> void:
 	run_completed.connect(_on_run_completed)
 	pile_round_started.connect(_on_pile_round_started)
 	pile_placement_resolved.connect(_on_pile_placement_resolved)
+	external_link_opened.connect(_on_external_link_opened)
 
 
 func load_progress() -> void:
 	var config := ConfigFile.new()
 	if config.load(SAVE_PATH) != OK:
+		_save()
 		return
 	var saved: Array = config.get_value(
 		"progression", "unlocked_achievements", []
@@ -68,14 +78,32 @@ func load_progress() -> void:
 	bonus_highest_levels = config.get_value(
 		"progression", "bonus_highest_levels", {}
 	)
+	qualified_bonus_ids.assign(config.get_value(
+		"progression", "achievement_bonus_ids",
+		config.get_value("progression", "discovered_bonuses", [])
+	))
+	qualified_rule_ids.assign(config.get_value(
+		"progression", "achievement_rule_ids",
+		config.get_value("progression", "beaten_special_rules", [])
+	))
+	qualified_protection_levels = config.get_value(
+		"progression", "achievement_protection_levels", bonus_highest_levels.duplicate()
+	)
+	qualified_checkpoint_ids.assign(config.get_value(
+		"progression", "achievement_checkpoint_ids",
+		config.get_value("checkpoints", "unlocked", [])
+	))
+	# Persist the legacy baseline once, before non-qualifying runs can add new
+	# discoveries to the shared collection and have them reimported on reload.
+	_save()
 	check_all_achievements()
 
 
-func unlock(id: StringName, persist := true) -> bool:
+func unlock(id: StringName, persist := true, from_menu := false) -> bool:
 	if unlocked.has(id):
 		return false
 	var data := find(id)
-	if data == null:
+	if data == null or not can_unlock(id, from_menu):
 		return false
 	unlocked.append(id)
 	unlock_dates[id] = Time.get_datetime_string_from_system(false, true)
@@ -83,17 +111,38 @@ func unlock(id: StringName, persist := true) -> bool:
 		_save()
 	achievement_unlocked.emit(data)
 	if id != &"all_achievements":
-		check_all_achievements(persist)
+		check_all_achievements(persist, from_menu)
 	return true
 
 
-func check_all_achievements(persist := true) -> void:
+func configure_run(mode: RunSummary.Mode, seeded := false, allowed := true) -> void:
+	_run_mode = mode
+	_run_is_seeded = seeded
+	_run_allows_achievements = allowed
+
+
+func can_unlock(id: StringName, from_menu := false) -> bool:
+	var data := find(id)
+	if from_menu:
+		return data != null and data.allow_menu
+	return (
+		_run_allows_achievements and data != null
+		and data.allows_run(_run_mode, _run_is_seeded)
+	)
+
+
+func check_all_achievements(persist := true, from_menu := false) -> void:
 	if find(&"all_achievements") == null or unlocked.has(&"all_achievements"):
 		return
 	for data in definitions:
 		if data.id != &"all_achievements" and not unlocked.has(data.id):
 			return
-	unlock(&"all_achievements", persist)
+	unlock(&"all_achievements", persist, from_menu)
+
+
+func _on_external_link_opened(link_id: StringName) -> void:
+	if link_id == &"kofi":
+		unlock(&"coffee_break", true, true)
 
 
 func _on_pile_round_started(pile_count: int, descending: bool) -> void:
@@ -150,6 +199,7 @@ func _on_round_completed(
 	completed_round: int,
 	rule_ids: Array[StringName]
 ) -> void:
+	configure_run(summary.mode, summary.is_seeded, summary.allow_achievement_unlocks)
 	var half_rounds := half_round_target(Difficulty.MAX_ROUNDS)
 	var normal_progression := (
 		summary.mode == RunSummary.Mode.NORMAL
@@ -197,7 +247,7 @@ func _on_round_completed(
 
 func record_challenge_completion(
 	challenge_id: StringName,
-	completed_ids: Array[StringName],
+	_completed_ids: Array[StringName],
 	challenge_definitions: Array[ChallengeData]
 ) -> void:
 	var completion_ids := {
@@ -212,17 +262,21 @@ func record_challenge_completion(
 	if completion_ids.has(challenge_id):
 		unlock(completion_ids[challenge_id])
 	if challenge_definitions.all(
-		func(data: ChallengeData) -> bool: return completed_ids.has(data.id)
+		func(data: ChallengeData) -> bool:
+			return unlocked.has(completion_ids.get(data.id, &""))
 	):
 		unlock(&"challenge_accepted")
 
 
-func _on_checkpoint_unlocked(_checkpoint_id: int, unlocked_ids: Array[int]) -> void:
-	if not unlocked_ids.is_empty():
+func _on_checkpoint_unlocked(checkpoint_id: int, _unlocked_ids: Array[int]) -> void:
+	if can_unlock(&"all_checkpoints") and not qualified_checkpoint_ids.has(checkpoint_id):
+		qualified_checkpoint_ids.append(checkpoint_id)
+		_save()
+	if checkpoint_id > 0:
 		unlock(&"first_checkpoint")
 	var expected := normal_checkpoint_ids()
 	if not expected.is_empty() and expected.all(
-		func(id: int) -> bool: return unlocked_ids.has(id)
+		func(id: int) -> bool: return qualified_checkpoint_ids.has(id)
 	):
 		unlock(&"all_checkpoints")
 
@@ -231,7 +285,7 @@ func _on_bonus_acquired(
 	bonus_id: StringName,
 	level: int,
 	active_levels: Dictionary,
-	discovered_ids: Array[StringName]
+	_discovered_ids: Array[StringName]
 ) -> void:
 	register_bonus_level(bonus_id, level)
 	var data := _find_bonus(bonus_id)
@@ -240,13 +294,16 @@ func _on_bonus_acquired(
 	if bonus_id == &"redraw" and level >= 3:
 		unlock(&"full_magazine")
 	if (
-		int(bonus_highest_levels.get(&"safety_net", 0)) >= 3
-		and int(bonus_highest_levels.get(&"spare_life", 0)) >= 3
+		int(qualified_protection_levels.get(&"safety_net", 0)) >= 3
+		and int(qualified_protection_levels.get(&"spare_life", 0)) >= 3
 	):
 		unlock(&"overprotected")
 	if active_levels.size() >= _required_count(&"five_different_bonuses", 5):
 		unlock(&"five_different_bonuses")
-	if _contains_all_enabled(discovered_ids, Difficulty.ENABLED_BONUSES):
+	if can_unlock(&"all_bonuses_discovered") and not qualified_bonus_ids.has(bonus_id):
+		qualified_bonus_ids.append(bonus_id)
+		_save()
+	if _contains_all_enabled(qualified_bonus_ids, Difficulty.ENABLED_BONUSES):
 		unlock(&"all_bonuses_discovered")
 
 
@@ -257,13 +314,15 @@ func register_bonus_level(bonus_id: StringName, current_level: int) -> void:
 	var previous_best := int(bonus_highest_levels.get(bonus_id, 0))
 	if current_level > previous_best:
 		bonus_highest_levels[bonus_id] = current_level
-	if current_level < bonus_data.max_level:
-		if current_level > previous_best:
-			_save()
-		return
-	if not bool(bonuses_maxed_once.get(bonus_id, false)):
+	if can_unlock(&"overprotected"):
+		qualified_protection_levels[bonus_id] = maxi(
+			int(qualified_protection_levels.get(bonus_id, 0)), current_level
+		)
+	# Discovery and seed customization still track every acquired level. Only
+	# qualifying runs contribute to the cumulative maximum-level achievement.
+	if can_unlock(&"all_bonuses_maxed_once") and current_level >= bonus_data.max_level:
 		bonuses_maxed_once[bonus_id] = true
-		_save()
+	_save()
 	check_maximum_build_achievement()
 
 
@@ -275,9 +334,14 @@ func check_maximum_build_achievement() -> void:
 
 
 func _on_special_rule_round_completed(
-	rule_ids: Array[StringName], beaten_ids: Array[StringName]
+	rule_ids: Array[StringName], _beaten_ids: Array[StringName]
 ) -> void:
-	if _contains_all_enabled(beaten_ids, Difficulty.ENABLED_SPECIAL_RULES):
+	if can_unlock(&"beat_all_special_rules"):
+		for rule_id in rule_ids:
+			if not qualified_rule_ids.has(rule_id):
+				qualified_rule_ids.append(rule_id)
+		_save()
+	if _contains_all_enabled(qualified_rule_ids, Difficulty.ENABLED_SPECIAL_RULES):
 		unlock(&"beat_all_special_rules")
 	if rule_ids.has(&"colorblind") and rule_ids.size() >= 3:
 		unlock(&"colorblind_expert")
@@ -318,6 +382,7 @@ func _on_hand_combo_resolved(summary: HandComboSummary) -> void:
 
 
 func _on_run_completed(summary: RunSummary) -> void:
+	configure_run(summary.mode, summary.is_seeded, summary.allow_achievement_unlocks)
 	if not summary.normal_game_completed:
 		return
 	unlock(&"complete_normal_game")
@@ -407,4 +472,8 @@ func _save() -> void:
 	config.set_value("progression", "achievement_unlock_dates", unlock_dates)
 	config.set_value("progression", "bonuses_maxed_once", bonuses_maxed_once)
 	config.set_value("progression", "bonus_highest_levels", bonus_highest_levels)
+	config.set_value("progression", "achievement_bonus_ids", qualified_bonus_ids)
+	config.set_value("progression", "achievement_rule_ids", qualified_rule_ids)
+	config.set_value("progression", "achievement_protection_levels", qualified_protection_levels)
+	config.set_value("progression", "achievement_checkpoint_ids", qualified_checkpoint_ids)
 	config.save(SAVE_PATH)

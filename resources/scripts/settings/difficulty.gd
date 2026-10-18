@@ -11,6 +11,9 @@ const START_TURN_TIME := 5.0
 # New runs, including checkpoint starts, always begin at full health.
 const ROUND_LIFE_REGEN := 1
 
+# Brief countdown freeze after a surviving mistake. Zero disables the respite.
+const MISTAKE_TIMER_FREEZE_DURATION := 0.5
+
 
 static func round_start_lives(
 	remaining: int, maximum: int, first_round: bool, regeneration := ROUND_LIFE_REGEN
@@ -19,9 +22,16 @@ static func round_start_lives(
 		return maximum
 	return clampi(remaining + regeneration, 0, maximum)
 
-# Reject this fraction of ordinary draws matching the last player-selected pile.
-# Keep a playable fallback; Lucky Hand and forced Reload Required hands bypass it.
+# With both biases active, these are relative weight reductions, not final odds.
+# A hand can offer a penalized value in any slot, including its playable fallback.
+# Lucky Hand overrides its bonus slots; forced Reload Required hands bypass both.
 const LAST_PILE_DRAW_SUPPRESSION := 0.4
+# Reduce alignment with the value just placed, without encouraging long solo chains.
+const LAST_PLAYED_VALUE_DRAW_SUPPRESSION := 0.6
+# Prefer moderate board gaps after a move. Zero disables the board bias.
+const PILE_SPREAD_DRAW_STRENGTH := 0.3
+# Keep every legal value available, including on unusually uneven boards.
+const PILE_SPREAD_MIN_DRAW_WEIGHT := 0.05
 
 # Experimental last-chance plays while the previous hand is leaving the screen.
 static var playable_discard_enabled := true
@@ -53,10 +63,11 @@ const MAX_ROUNDS := 30
 # Compatibility alias for scenes and saves created before MAX_ROUNDS was named.
 const TOTAL_ROUNDS := MAX_ROUNDS
 
-# Relative weights used after the first cleared round.
+# Base relative weights used after the first cleared round.
+# Each weight decreases linearly with the remaining distance to its stat limit.
 # A weight of 0 disables an option. The values do not need to add up to 100.
 const ADD_PILE_WEIGHT := 35.0
-const ADD_CARD_WEIGHT := 25.0
+const ADD_CARD_WEIGHT := 12.0
 const ADD_START_VALUE_WEIGHT := 25.0
 const REDUCE_TURN_TIME_WEIGHT := 10.0
 
@@ -112,12 +123,6 @@ const FIRST_SPECIAL_RULE_ROUND := 4
 const EXTRA_SPECIAL_RULE_CHANCE := 0.75
 const MAX_COMBINED_RULES := 5
 const BOSS_RUSH_REPEAT_WEIGHT := 0.35
-const BOSS_RUSH_RULE_PROGRESSION := [
-	{"progress": 0.00, "rules": 2},
-	{"progress": 0.25, "rules": 3},
-	{"progress": 0.50, "rules": 4},
-	{"progress": 0.75, "rules": MAX_COMBINED_RULES},
-]
 
 const CONVEYOR_RANDOM_DIRECTION := false
 const CONVEYOR_BASE_SPEED := 22.0
@@ -164,23 +169,17 @@ static func get_conveyor_speed(
 
 
 static func boss_rush_rule_count(
-	current_round: int, start_round: int, target_round: int, endless: bool
+	current_round: int, start_round: int, _target_round: int, _endless: bool
 ) -> int:
-	if endless:
-		return MAX_COMBINED_RULES
-	var span := maxi(target_round - start_round, 1)
-	var progress := clampf(float(current_round - start_round) / span, 0.0, 1.0)
-	var result := 1
-	for tier in BOSS_RUSH_RULE_PROGRESSION:
-		if progress >= float(tier.progress):
-			result = int(tier.rules)
-	return clampi(result, 1, MAX_COMBINED_RULES)
+	# Challenge rounds are counted from the starting round, including Endless.
+	return clampi(1 + maxi(current_round - start_round, 0) / 3, 1, MAX_COMBINED_RULES)
+
 const THREE_PILE_SHELL_GAME_ROUND := 30
 const REGENERATING_PILE_RATIO := 0.35
 const REGENERATION_DURATION := 8.0
 const LIGHTS_OUT_RADIUS := 60.0
 # Size, in native viewport pixels, of each block created by PIXELATED.
-const PIXELATION_PIXEL_SIZE := 4.0
+const PIXELATION_PIXEL_SIZE := 3.0
 const HOT_POTATO_DURATION := 1
 const STICKY_HOT_POTATO_DURATION := 2
 # During Grace Period, reveal the running clock this many seconds before expiry.

@@ -220,6 +220,8 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var system_bars_button: Button = %SystemBarsButton
 @onready var ignore_notch_button: Button = %IgnoreNotchButton
 @onready var dust_effects_button: Button = %DustEffectsButton
+@onready var fixed_background_button: Button = %FixedBackgroundButton
+@onready var pause_between_rounds_button: Button = %PauseBetweenRoundsButton
 @onready var background_enabled_button: Button = %BackgroundEnabledButton
 @onready var relief_lighting: ReliefLighting = %ReliefLighting
 @onready var uniform_relief_light: DirectionalLight2D = %UniformReliefLight
@@ -308,8 +310,10 @@ var current_checkpoint_id := 0
 var selected_checkpoint_id := 0
 var checkpoint_uses_endless_progression := false
 var checkpoint_segment_damage_count := 0
+var checkpoint_flawless_rounds := 0
 var checkpoint_bonus_backlog := 0
 var _pending_checkpoint_snapshot: CheckpointSnapshot
+var _checkpoint_candidates: Dictionary = {}
 var _quick_peek_pending := false
 var discovered_bonuses: Array[StringName] = []
 var seen_bonuses: Array[StringName] = []
@@ -415,6 +419,8 @@ var first_move_hint: Control
 var _true_pixel_art_enabled := false
 var _dust_enabled := true
 var _viewport_effects_resize_pending := false
+var _fixed_background := false
+var _pause_between_rounds := false
 var _background_enabled := true
 var dust_pool: DustPool
 var background_effects
@@ -576,6 +582,8 @@ func _ready() -> void:
 	true_pixel_art_button.pressed.connect(_toggle_true_pixel_art)
 	dust_effects_button.pressed.connect(_toggle_dust_effects)
 	background_enabled_button.pressed.connect(_toggle_background)
+	fixed_background_button.pressed.connect(GameOptionsController.toggle_fixed_background.bind(self))
+	pause_between_rounds_button.pressed.connect(GameOptionsController.toggle_pause_between_rounds.bind(self))
 	achievement_notifications_button.pressed.connect(
 		_toggle_achievement_notifications
 	)
@@ -640,7 +648,7 @@ func _ready() -> void:
 	_load_high_score()
 	_apply_debug_unlock_everything()
 	_apply_debug_checkpoints()
-	_refresh_checkpoint_button()
+	_refresh_checkpoint_button(true)
 	splash_debug_mode.visible = Debug.is_enabled()
 	input_locked = true
 	splash.visible = true
@@ -1275,8 +1283,8 @@ func _show_options_page(page: int, animate := false) -> void:
 	GameMenuPresenterScript.show_options_page(self, page, animate)
 
 
-func _open_external_link(url: String) -> void:
-	GameMenuPresenterScript.open_external_link(self, url)
+func _open_external_link(url: String, link_id: StringName = &"") -> void:
+	GameMenuPresenterScript.open_external_link(self, url, link_id)
 
 
 func _close_options_menu() -> void:
@@ -1592,15 +1600,19 @@ func _on_card_selected(card: PlayingCard) -> void:
 		and is_instance_valid(selected_card)
 		and selected_card != card
 		and (
-			selected_card.drag_state == PlayingCard.DragState.LOCKED_OUT
+			selected_card.sticky_committed
+			or selected_card.drag_state == PlayingCard.DragState.LOCKED_OUT
 			or selected_card.dragging
 			or selected_card._drag_starting
-			or selected_card.get_parent() == drag_layer
+			or (selected_card.get_parent() == drag_layer and not selected_card._selected)
 		)
 	):
 		hand_manager.select_card(selected_card)
 		return
 	selected_card = card
+	if round_modifiers.sticky_fingers_enabled:
+		card.sticky_committed = true
+		card.set_selected_visual(card._selected)
 
 
 func _on_card_entered_screen(card: PlayingCard) -> void:
@@ -1645,7 +1657,7 @@ func _on_card_drag_started(card: PlayingCard, tactile := false) -> void:
 		and (
 			selected_card.dragging
 			or selected_card._drag_starting
-			or selected_card.get_parent() == drag_layer
+			or (selected_card.get_parent() == drag_layer and not selected_card._selected)
 		)
 	):
 		card.flash_error()
@@ -1665,6 +1677,17 @@ func _on_card_drag_started(card: PlayingCard, tactile := false) -> void:
 	):
 		card.flash_error()
 		return
+	if is_instance_valid(selected_card) and selected_card != card and selected_card.sticky_committed:
+		return
+	if selected_card == card and card.sticky_committed and card.get_parent() == drag_layer:
+		var remaining_drag_time := card.drag_timer.time_left
+		card.begin_external_drag(card.drag_target, tactile)
+		if remaining_drag_time > 0.0:
+			card.drag_timer.start(remaining_drag_time)
+		card.set_selected_visual(false)
+		CustomCursor.set_holding_card(true)
+		return
+	var selection_time_left := card.drag_timer.time_left if card._selected else -1.0
 	selected_card = card
 	hand_manager.clear_selection()
 	if (card.is_discarding and card.get_parent() != hand_container) or round_modifiers.wandering_hand_cards or challenge_modifiers.conveyor_hand:
@@ -1683,6 +1706,11 @@ func _on_card_drag_started(card: PlayingCard, tactile := false) -> void:
 		card.reparent(drag_layer, false)
 	card.global_position = start_position
 	card.begin_external_drag(card.drag_target, tactile)
+	if round_modifiers.sticky_fingers_enabled:
+		card.sticky_committed = true
+		card.set_selected_visual(false)
+	if selection_time_left > 0.0:
+		card.drag_timer.start(selection_time_left)
 	CustomCursor.set_holding_card(true)
 	if challenge_modifiers.commit_selected_cards:
 		card.begin_commit()
@@ -1722,6 +1750,7 @@ func _return_companion_to_hand(card: PlayingCard) -> void:
 func _on_card_drag_released(card: PlayingCard, release_position: Vector2) -> void:
 	if (input_locked and not DiscardPlayController.can_interact(self, card)) or card != selected_card or not card.dragging:
 		return
+	var tactile_release := card.touch_index >= 0
 	_card_touch_index = -1
 	CustomCursor.set_holding_card(false)
 	var target := _pile_at(release_position)
@@ -1736,7 +1765,10 @@ func _on_card_drag_released(card: PlayingCard, release_position: Vector2) -> voi
 			round_modifiers.sticky_fingers_enabled
 			or challenge_modifiers.commit_selected_cards
 		):
-			card.keep_attached_to_pointer()
+			if round_modifiers.sticky_fingers_enabled and tactile_release and not challenge_modifiers.commit_selected_cards:
+				card.park_sticky_touch()
+			else:
+				card.keep_attached_to_pointer()
 			hand_manager.finish_all_card_entrances(card)
 			hand_manager.lock_all_cards_except(card)
 			return
@@ -1775,7 +1807,7 @@ func _on_pile_selected(pile: MemoryPile) -> void:
 		return
 	_on_card_drag_released(
 		selected_card,
-		pile.global_position + pile.size * 0.5
+		pile.get_global_transform() * (pile.size * 0.5)
 	)
 
 
@@ -1843,6 +1875,11 @@ func _on_card_forced_return_requested(card: PlayingCard, _reason: int) -> void:
 		or not is_instance_valid(card)
 		or card.placement_confirmed
 	):
+		return
+	if card._selected and not card.dragging:
+		selected_card = null
+		hand_manager.clear_selection()
+		card.complete_forced_return()
 		return
 	input_locked = true
 	_card_touch_index = -1
@@ -2291,37 +2328,31 @@ func _start_seeded_run(
 func _sanitized_seed_difficulty(seed_difficulty: Dictionary) -> Dictionary:
 	if seed_difficulty.is_empty():
 		return {}
-	return {
-		"pile_count": clampi(
-			int(seed_difficulty.get("pile_count", Difficulty.START_PILES)),
-			Difficulty.START_PILES,
-			4
-		),
-		"hand_size": clampi(
-			int(seed_difficulty.get("hand_size", Difficulty.START_HAND_SIZE)),
-			Difficulty.START_HAND_SIZE,
-			Difficulty.MAX_HAND_SIZE
-		),
-		"start_value": clampi(
-			int(seed_difficulty.get("start_value", Difficulty.START_CARD_VALUE)),
-			1,
-			Difficulty.MAX_CARD_VALUE
-		),
-		"turn_time": clampf(
-			float(seed_difficulty.get("turn_time", Difficulty.START_TURN_TIME)),
-			Difficulty.MIN_TURN_TIME,
-			Difficulty.START_TURN_TIME
-		),
+	var result := {
+		"start_round": clampi(int(seed_difficulty.get("start_round", 1)), 1, int(_seed_difficulty_limits()["max_start_round"])),
 	}
+	var bounds := {
+		"pile_count": [Difficulty.START_PILES, 4],
+		"hand_size": [Difficulty.START_HAND_SIZE, Difficulty.MAX_HAND_SIZE],
+		"start_value": [1, Difficulty.MAX_CARD_VALUE],
+		"turn_time": [Difficulty.MIN_TURN_TIME, Difficulty.START_TURN_TIME],
+	}
+	for stat: String in bounds:
+		var value := float(seed_difficulty.get(stat, 0.0))
+		result[stat] = clampf(value, bounds[stat][0], bounds[stat][1]) if value > 0.0 else 0.0
+	return result
 
 
 func _apply_seed_difficulty(seed_difficulty: Dictionary) -> void:
-	if seed_difficulty.is_empty():
-		return
-	pile_count = int(seed_difficulty.get("pile_count", pile_count))
-	hand_size = int(seed_difficulty.get("hand_size", hand_size))
-	start_value = int(seed_difficulty.get("start_value", start_value))
-	turn_time = float(seed_difficulty.get("turn_time", turn_time))
+	# Zero leaves the simulator's result untouched; explicit values override it.
+	if float(seed_difficulty.get("pile_count", 0)) > 0.0:
+		pile_count = int(seed_difficulty["pile_count"])
+	if float(seed_difficulty.get("hand_size", 0)) > 0.0:
+		hand_size = int(seed_difficulty["hand_size"])
+	if float(seed_difficulty.get("start_value", 0)) > 0.0:
+		start_value = int(seed_difficulty["start_value"])
+	if float(seed_difficulty.get("turn_time", 0)) > 0.0:
+		turn_time = float(seed_difficulty["turn_time"])
 
 
 func _open_checkpoint_menu() -> void:
@@ -2338,8 +2369,8 @@ func _close_checkpoint_menu() -> void:
 	CheckpointMenuControllerScript.close(self)
 
 
-func _refresh_checkpoint_button() -> void:
-	CheckpointMenuControllerScript.refresh_button(self)
+func _refresh_checkpoint_button(select_highest := false) -> void:
+	CheckpointMenuControllerScript.refresh_button(self, select_highest)
 
 
 func _refresh_checkpoint_list() -> void:
@@ -2348,11 +2379,14 @@ func _refresh_checkpoint_list() -> void:
 
 func _on_checkpoint_selected(checkpoint_id: int) -> void:
 	checkpoint_menu.visible = false
-	start_from_checkpoint(checkpoint_id)
+	selected_checkpoint_id = checkpoint_id
+	_start_selected_checkpoint()
 
 
 func _start_selected_checkpoint() -> void:
-	if selected_checkpoint_id > 0:
+	if selected_checkpoint_id == 0:
+		start_game()
+	elif unlocked_checkpoints.has(selected_checkpoint_id):
 		start_from_checkpoint(selected_checkpoint_id)
 
 
@@ -2794,6 +2828,7 @@ func _refresh_discovered_difficulty_limits_from_progression() -> void:
 
 func _seed_difficulty_limits() -> Dictionary:
 	return {
+		"max_start_round": clampi(Difficulty.TOTAL_ROUNDS - best_rounds_left + 1, 1, Difficulty.TOTAL_ROUNDS) if best_rounds_left >= 0 else 1,
 		"max_pile_count": max_discovered_pile_count,
 		"max_hand_size": max_discovered_hand_size,
 		"max_start_value": max_discovered_tile_value,
@@ -2835,6 +2870,10 @@ func _build_run_summary(normal_game_completed: bool) -> RunSummary:
 		_:
 			summary.mode = RunSummary.Mode.NORMAL
 	summary.started_from_checkpoint = started_from_checkpoint
+	summary.is_seeded = run_uses_requested_seed
+	summary.allow_achievement_unlocks = (
+		current_challenge.allow_achievement_unlocks if current_challenge != null else true
+	)
 	summary.start_round = run_start_round
 	summary.completed_rounds = run_completed_rounds
 	summary.highest_round = _progression_round()

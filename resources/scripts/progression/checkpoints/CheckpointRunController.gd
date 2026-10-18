@@ -40,33 +40,48 @@ static func capture_checkpoint_candidate(host: GameManager) -> void:
 	snapshot.difficulty_droughts = host.difficulty_droughts.duplicate(true)
 	snapshot.unlocked_endless = host.endless_unlocked
 	host._pending_checkpoint_snapshot = snapshot
+	# Keep missed milestones for later rolling-window qualification in this run.
+	if not host._checkpoint_candidates.has(checkpoint_id):
+		host._checkpoint_candidates[checkpoint_id] = snapshot.to_dictionary()
 
 
 static func unlock_completed_checkpoint(host: GameManager, completed_round: int) -> bool:
 	if (
 		not host.Difficulty.ENABLE_CHECKPOINTS
-		or completed_round % host.Difficulty.CHECKPOINT_INTERVAL != 0
+		or host.game_mode == host.GameMode.CHALLENGE
+		or completed_round <= 0
 	):
 		return false
-	var checkpoint_id := int(completed_round / host.Difficulty.CHECKPOINT_INTERVAL)
-	if host.unlocked_checkpoints.has(checkpoint_id):
-		# Crossing an already unlocked milestone starts a fresh flawless section.
-		host.checkpoint_segment_damage_count = 0
-		host._pending_checkpoint_snapshot = null
-		return false
-	if checkpoint_id > 1 and not host.unlocked_checkpoints.has(checkpoint_id - 1):
-		# Checkpoints form a strict chain. A later milestone cannot fill a gap,
-		# even after a flawless section.
-		return false
-	if host.checkpoint_segment_damage_count > 0 or host._pending_checkpoint_snapshot == null:
-		return false
-	host.unlocked_checkpoints.append(checkpoint_id)
-	host.unlocked_checkpoints.sort()
-	host.checkpoint_snapshots[checkpoint_id] = host._pending_checkpoint_snapshot.to_dictionary()
-	host.newly_unlocked_checkpoints.append(checkpoint_id)
-	host._save_checkpoint_progress()
-	host._pending_checkpoint_snapshot = null
+	if host.checkpoint_segment_damage_count > 0:
+		host.checkpoint_flawless_rounds = 0
+	else:
+		host.checkpoint_flawless_rounds = mini(
+			host.checkpoint_flawless_rounds + 1, host.Difficulty.CHECKPOINT_INTERVAL
+		)
 	host.checkpoint_segment_damage_count = 0
+	host._pending_checkpoint_snapshot = null
+	if host.checkpoint_flawless_rounds < host.Difficulty.CHECKPOINT_INTERVAL:
+		return false
+	var unlocked := false
+	var last_checkpoint := int(completed_round / host.Difficulty.CHECKPOINT_INTERVAL)
+	# A clean rolling window can catch up every previously reached milestone.
+	for checkpoint_id in range(1, last_checkpoint + 1):
+		if host.unlocked_checkpoints.has(checkpoint_id):
+			continue
+		var value: Variant = host._checkpoint_value(host._checkpoint_candidates, checkpoint_id, null)
+		var snapshot := (
+			CheckpointSnapshot.from_dictionary(value) if value is Dictionary
+			else host.CheckpointProgressStoreScript.create_fallback_snapshot(host, checkpoint_id)
+		)
+		host.unlocked_checkpoints.append(checkpoint_id)
+		host.checkpoint_snapshots[checkpoint_id] = snapshot.to_dictionary()
+		host._checkpoint_candidates.erase(checkpoint_id)
+		host.newly_unlocked_checkpoints.append(checkpoint_id)
+		unlocked = true
+	if not unlocked:
+		return false
+	host.unlocked_checkpoints.sort()
+	host._save_checkpoint_progress()
 	host._refresh_checkpoint_button()
 	return true
 
@@ -98,6 +113,7 @@ static func start_from_checkpoint(
 	host._hand_cycle_generation += 1
 	host._pending_interactive_generation = -1
 	host.game_mode = host.GameMode.CHECKPOINT
+	host.achievement_manager.configure_run(RunSummary.Mode.CHECKPOINT, host.run_uses_requested_seed)
 	host.current_challenge = null
 	host.challenge_endless = false
 	host.challenge_modifiers = ChallengeModifiers.new()
@@ -129,6 +145,9 @@ static func start_from_checkpoint(
 	host.run_start_round = snapshot.start_round
 	host.started_from_checkpoint = true
 	host.checkpoint_segment_damage_count = 0
+	host.checkpoint_flawless_rounds = 0
+	host._checkpoint_candidates.clear()
+	host._pending_checkpoint_snapshot = null
 	host.newly_discovered_bonuses.clear()
 	host.newly_encountered_rules.clear()
 	host.newly_unlocked_achievements.clear()

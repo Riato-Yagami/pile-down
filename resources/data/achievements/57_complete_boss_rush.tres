@@ -11,3 +11,4 @@ difficulty = 8
 reward_rationale = "Une écriture gothique pour le vainqueur des boss."
 reward_font = &"gothic_pixels"
 id = &"complete_boss_rush"
+allow_challenges = true

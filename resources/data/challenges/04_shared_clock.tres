@@ -10,5 +10,6 @@ description = "Every second counts."
 required_achievement = ExtResource("progression_reward")
 shared_round_clock = true
 shared_clock_seconds_per_hand = 5.5
+disabled_bonuses = Array[StringName]([&"time_bank", &"slow_start"])
 disabled_rules = Array[StringName]([&"stack_attack"])
 id = &"shared_clock"

@@ -73,6 +73,24 @@ func _run() -> void:
 	assert(game.bonus_manager.has_bonus(&"redraw"))
 	assert(game.bonus_manager.level(&"redraw") == 2)
 	assert(game.special_rule_manager.forced_rule_ids.has(&"shell_game"))
+
+	game.best_rounds_left = game.Difficulty.TOTAL_ROUNDS - 7 + 1
+	assert(game._seed_difficulty_limits()["max_start_round"] == 7)
+	game._open_challenge_selection()
+	await process_frame
+	assert(game.challenge_selection._seed_round.get_meta("max_value") == 7)
+	game.challenge_selection._step_value_selector(game.challenge_selection._seed_round, 1)
+	assert(game.challenge_selection._seed_difficulty_overrides()["start_round"] == 2)
+	game.challenge_selection.visible = false
+	assert(game._sanitized_seed_difficulty({"start_round": 999})["start_round"] == 7)
+	game.start_game(false, null, false, "LATE-ROUND-SEED", {}, [], {"start_round": 7})
+	await _wait_for_hand(game)
+	assert(game.run_start_round == 7 and game._progression_round() == 7)
+	assert(game.round_number == game.Difficulty.TOTAL_ROUNDS - 7 + 1)
+	var late_hand := _hand_values(game)
+	await game._restart_current_mode()
+	await _wait_for_hand(game)
+	assert(game.run_start_round == 7 and _hand_values(game) == late_hand)
 	print("Seed replay tests passed.")
 	game.queue_free()
 	quit()

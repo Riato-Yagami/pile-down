@@ -4,6 +4,8 @@ extends RefCounted
 enum Mode { NORMAL, CHECKPOINT, ENDLESS, CHALLENGE }
 
 var mode := Mode.NORMAL
+var is_seeded := false
+var allow_achievement_unlocks := true
 var started_from_checkpoint := false
 var start_round := 1
 var completed_rounds := 0

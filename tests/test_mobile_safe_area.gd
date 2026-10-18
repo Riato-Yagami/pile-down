@@ -71,12 +71,15 @@ func _run() -> void:
 					for control: Control in [game.splash, game.gameplay_layer, game.quit_popup, game.bonus_selection, game.overlay]:
 						var physical := root.get_screen_transform() * control.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, control.size)
 						assert(mobile.reported_safe.grow(1.0).encloses(physical), "%s escapes safe area in %s: %s vs %s" % [control.name, mode, physical, mobile.reported_safe])
+					var darkness := game.flashlight_overlay
+					var darkness_rect := darkness.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, darkness.size)
+					assert(darkness_rect.grow(0.01).encloses(root.get_visible_rect()))
 					assert(game.gameplay_layer.size.x >= 256 and game.gameplay_layer.size.y >= 320)
 					var background := game.splash.get_node("Background") as Control
 					var backdrop := background.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, background.size)
 					assert(backdrop.grow(0.01).encloses(root.get_visible_rect()), "The menu backdrop must cover the whole viewport")
-					for overlay: Control in [game.bonus_selection, game.get_node("PresentationLayers/SpecialRuleAnnouncementLayer/SpecialRuleAnnouncement")]:
-						var scrim := overlay.get_node("Scrim") as Control
+					for overlay: Control in [game.overlay, game.quit_popup, game.bonus_selection, game.get_node("PresentationLayers/SpecialRuleAnnouncementLayer/SpecialRuleAnnouncement")]:
+						var scrim := overlay.get_node("Shade" if overlay == game.quit_popup else "Scrim") as Control
 						var scrim_rect := scrim.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, scrim.size)
 						assert(scrim_rect.grow(0.01).encloses(root.get_visible_rect()), "%s backdrop must cover system bar insets in %s" % [overlay.name, mode])
 	game.system_bars_button.pressed.emit()

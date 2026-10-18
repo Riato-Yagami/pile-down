@@ -69,6 +69,6 @@ func _capture(file_name: String) -> void:
 	var image := root.get_viewport().get_texture().get_image()
 	image.resize(512, 640, Image.INTERPOLATE_NEAREST)
 	var error := image.save_png(
-		ProjectSettings.globalize_path("res://publishing/%s" % file_name)
+		ProjectSettings.globalize_path("res://publishing/screenshots/%s" % file_name)
 	)
 	assert(error == OK)

@@ -1,0 +1,52 @@
+{
+  "input_csv": "history/historique.csv",
+  "input_archive": "history/old.md",
+  "output": "history/historique.xlsx",
+  "codex_home": "~/.codex",
+  "filters": {
+    "exclude_ids": [1],
+    "include_ids": [],
+    "date_from": null,
+    "date_to": null,
+    "contains": [],
+    "only_with_summary": false,
+    "order": "ascending"
+  },
+  "columns": [
+    {"key": "id", "label": "N°", "width": 7},
+    {"key": "date", "label": "Date", "width": 21},
+    {"key": "prompt", "label": "Demande", "width": 64},
+    {"key": "summary", "label": "Résumé des changements", "width": 64},
+    {"key": "images", "label": "Images", "width": 48},
+    {"key": "active_file", "label": "Fichier actif", "width": 34},
+    {"key": "open_tabs", "label": "Onglets ouverts", "width": 42},
+    {"key": "files", "label": "Fichiers joints ou mentionnés", "width": 44}
+  ],
+  "text": {
+    "max_prompt_chars": 1400,
+    "read_pasted_files": true
+  },
+  "images": {
+    "enabled": true,
+    "preview_in_table": true,
+    "preview_width_px": 310,
+    "preview_height_px": 190,
+    "gallery_width_px": 960,
+    "gallery_height_px": 450,
+    "fail_on_missing": true
+  },
+  "style": {
+    "font": "Calibri",
+    "font_size": 11,
+    "header_background": "17365D",
+    "header_text": "FFFFFF",
+    "stripe_background": "EDF3FA",
+    "warning_background": "FFF2CC",
+    "link_color": "0563C1",
+    "table_style": "TableStyleMedium2",
+    "row_min_height": 54,
+    "row_max_height": 280,
+    "context_row_height": 100,
+    "zoom": 80
+  }
+}

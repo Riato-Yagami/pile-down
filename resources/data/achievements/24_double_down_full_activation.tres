@@ -11,3 +11,5 @@ difficulty = 6
 reward_rationale = "Une cascade de gouttes pour la chaîne descendante complète."
 required_count = 3
 id = &"double_down_full_activation"
+allow_challenges = true
+allow_checkpoints = true

@@ -11,3 +11,5 @@ difficulty = 7
 reward_rationale = "Un jardin foisonnant pour réunir les trois bonus."
 hidden = true
 id = &"three_bonus_combo"
+allow_challenges = true
+allow_checkpoints = true

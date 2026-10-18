@@ -118,8 +118,6 @@ func begin_round(round_number: int) -> RoundModifiers:
 					challenge_endless
 				)
 			)
-			if challenge_endless:
-				requested_count = Difficulty.MAX_COMBINED_RULES
 		elif (
 			_last_special_rule_round != round_number - 1
 			and not _round_precedes_guaranteed_combo(round_number)

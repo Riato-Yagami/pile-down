@@ -10,3 +10,4 @@ category = &"CHALLENGES"
 difficulty = 7
 reward_rationale = "Des couleurs arcade après un défi où seules les couleurs guident."
 id = &"complete_true_colors"
+allow_challenges = true

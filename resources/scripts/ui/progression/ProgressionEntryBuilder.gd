@@ -134,8 +134,8 @@ static func add_progress_bar(
 	bar.patch_margin_top = 2
 	bar.patch_margin_right = 2
 	bar.patch_margin_bottom = 2
-	bar.mouse_default_cursor_shape = Control.CURSOR_HELP
-	bar.tooltip_text = progress_tooltip
+	# Menu hover feedback stays visual, without a popup covering nearby entries.
+	bar.tooltip_text = ""
 	bar.set("progress_hint", progress_tooltip)
 	var shader: Shader = host.PROGRESS_BAR_SHADER
 	var material := ShaderMaterial.new()

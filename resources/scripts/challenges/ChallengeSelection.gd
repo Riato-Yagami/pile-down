@@ -125,6 +125,7 @@ var _seed_endless: Button
 var _seed_piles: Label
 var _seed_hand: Label
 var _seed_value: Label
+var _seed_round: Label
 var _seed_timer: Label
 var _seed_mode_ids: Array[StringName] = []
 var _seed_mode_endless: Array[bool] = []

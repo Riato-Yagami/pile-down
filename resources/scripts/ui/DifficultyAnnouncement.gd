@@ -4,7 +4,8 @@ const REVEAL_DURATION := 0.24
 
 
 static func animate(
-	host: Label, changes: PackedStringArray, reveal_delay: float, extra_hold: float
+	host: Label, changes: PackedStringArray, reveal_delay: float, extra_hold: float,
+	keep_visible := false
 ) -> Tween:
 	host.text = ""
 	host.visible = true
@@ -50,6 +51,8 @@ static func animate(
 		tween.parallel().tween_property(incoming, "scale", Vector2.ONE, REVEAL_DURATION
 		).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_interval(0.75 + extra_hold if lines.size() > 1 else 0.75)
+	if keep_visible:
+		return tween
 	tween.tween_property(host, "modulate:a", 0.0, 0.2)
 	tween.tween_callback(func() -> void:
 		for line in lines:

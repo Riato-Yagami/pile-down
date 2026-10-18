@@ -68,6 +68,8 @@ var drag_target := Vector2.ZERO
 var _pointer_offset := Vector2.ZERO
 var _last_target := Vector2.ZERO
 var _selected := false
+var sticky_committed := false
+var _selection_face_generation := 0
 var _visual_tween: Tween
 var hover_reveal_enabled := false
 var roman_numerals_enabled := false
@@ -212,12 +214,52 @@ func set_selectable(can_select: bool) -> void:
 
 
 func set_selected_visual(is_selected: bool) -> void:
+	var selection_changed := _selected != is_selected
 	_selected = is_selected
-	selection_outline.visible = is_selected
+	if selection_changed:
+		_update_selection_face()
+	selection_outline.visible = is_selected or sticky_committed
+	selection_outline.modulate = Color(0.3, 1.0, 0.4) if sticky_committed else Color.WHITE
 	if is_selected and not dragging and not _entrance_animation_running:
 		# The hover zoom uses a fractional scale and lifts only the sprites.
 		# A resting selection keeps the sprite and its outline on the same grid.
 		reset_hand_pose()
+		z_index = 1
+	elif not is_selected and not dragging:
+		z_index = 0
+	if selection_changed:
+		if is_selected and round_modifiers != null and round_modifiers.hot_potatoes_enabled:
+			if round_modifiers.hot_potato_drag_duration > 0.0:
+				drag_timer.start(round_modifiers.hot_potato_drag_duration)
+				drag_timer_ring.ratio = 1.0
+				drag_timer_ring.visible = true
+		elif not dragging:
+			cancel_drag_timers()
+	if is_selected and not drag_timer.is_stopped():
+		drag_timer_ring.visible = true
+
+
+func _update_selection_face() -> void:
+	_selection_face_generation += 1
+	if hidden_by_commit or dragging or _entrance_animation_running:
+		return
+	_cancel_flip_animation()
+	if _selected:
+		_hide_generation += 1
+		face_up = hover_reveal_enabled or not _blind_delivery_enabled()
+		hidden_by_blind_delivery = _blind_delivery_enabled() and not hover_reveal_enabled
+		_update_appearance()
+		if hover_reveal_enabled and _blind_delivery_enabled():
+			var generation := _selection_face_generation
+			get_tree().create_timer(touch_drag_face_hold).timeout.connect(func() -> void:
+				if generation == _selection_face_generation and _selected and not dragging:
+					hidden_by_blind_delivery = true
+					flip_down(true)
+			)
+	else:
+		hidden_by_blind_delivery = _blind_delivery_enabled() and pointer_inside
+		face_up = pointer_inside if hover_reveal_enabled else not hidden_by_blind_delivery
+		_update_appearance()
 
 
 func refresh_pointer_hover() -> bool:
@@ -386,6 +428,7 @@ func finish_touch_tap() -> void:
 			generation == _touch_generation
 			and not dragging
 			and touch_state == TouchState.IDLE
+			and (not _selected or _blind_delivery_enabled())
 		):
 			flip_down(true)
 	)
@@ -426,6 +469,15 @@ func finish_drag() -> void:
 	cancel_drag_timers()
 	z_index = 0
 	rotation = 0.0
+
+
+func park_sticky_touch() -> void:
+	dragging = false
+	drag_state = DragState.IDLE
+	drag_collision_area.monitorable = false
+	reset_touch_interaction()
+	set_selected_visual(true)
+	z_index = 100
 
 
 func keep_attached_to_pointer() -> void:
@@ -589,7 +641,7 @@ func _on_mouse_entered() -> void:
 	if pointer_inside:
 		return
 	pointer_inside = true
-	if selectable and not dragging:
+	if selectable and not dragging and not _selected:
 		_hide_generation += 1
 		if hover_reveal_enabled and not hidden_by_commit:
 			flip_up(true)
@@ -606,7 +658,7 @@ func _on_mouse_exited() -> void:
 	if not pointer_inside:
 		return
 	pointer_inside = false
-	if selectable and not dragging and not _drag_starting:
+	if selectable and not dragging and not _drag_starting and not _selected:
 		if hover_reveal_enabled:
 			_hide_generation += 1
 			var generation := _hide_generation
@@ -655,6 +707,6 @@ func reveal_for_cleanup() -> void:
 
 
 func _on_drag_timer_timeout() -> void:
-	if placement_confirmed or not dragging:
+	if placement_confirmed or (not dragging and not _selected):
 		return
 	request_forced_return(ForcedReturnReason.HOT_POTATO)

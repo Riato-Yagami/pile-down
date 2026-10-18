@@ -9,3 +9,4 @@ description = "Complete No Looking Back."
 category = &"CHALLENGES"
 difficulty = 7
 id = &"complete_no_looking_back"
+allow_challenges = true

@@ -31,7 +31,18 @@ func _run() -> void:
 	game._on_card_drag_started(card)
 	card.finish_drag()
 	await game._handle_mistake(pile)
+	var frozen_time := game.timer_manager.time_left
+	assert(not game.input_locked)
+	assert(game.timer_manager.running)
+	await create_timer(0.3).timeout
+	assert(game.timer_manager.time_left == frozen_time,
+		"The timer must remain frozen while the rejected card returns")
 
+	# Input unlocks before the rejected card finishes its return animation.
+	var return_deadline := Time.get_ticks_msec() + 2000
+	while card.get_parent() != game.hand_container and Time.get_ticks_msec() < return_deadline:
+		await process_frame
+	await process_frame
 	assert(game.mistakes_left == original_mistakes - 1)
 	assert(game.hand_manager.current_cards == original_hand)
 	assert(card.get_parent() == game.hand_container)
@@ -42,6 +53,7 @@ func _run() -> void:
 	assert(game.timer_manager.running)
 
 	await create_timer(1.0).timeout
+	assert(game.timer_manager.time_left < frozen_time, "The timer must resume after the respite")
 
 	var timed_out_card := game.hand_manager.current_cards[0] as PlayingCard
 	var mistakes_before_timeout := game.mistakes_left
@@ -52,6 +64,10 @@ func _run() -> void:
 	assert(not timed_out_card.dragging)
 	assert(timed_out_card.selectable)
 	assert(not game.input_locked)
+	frozen_time = game.timer_manager.time_left
+	await create_timer(0.3).timeout
+	assert(game.timer_manager.time_left == frozen_time,
+		"Surviving a timeout must also freeze the restarted countdown")
 
 	assert(game.mistakes_left == 1)
 	game._handle_mistake(game.piles[0])

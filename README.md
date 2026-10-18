@@ -1,8 +1,11 @@
 # Pile Down
 
-Le devlog itch.io des nouveautés depuis la version jam 1.2 se trouve dans
-[`publish/devlog-1.2-vers-2.2-fr.md`](publish/devlog-1.2-vers-2.2-fr.md), avec une
-[version anglaise](publish/devlog-1.2-to-2.2-en.html).
+Les devlogs itch.io se trouvent dans `publishing/devlog/` :
+
+- **2.2 → 2.4** : [français](publishing/devlog/devlog-2.2-vers-2.4-fr.md) et
+  [anglais](publishing/devlog/devlog-2.2-to-2.4-en.html).
+- **Version jam 1.2 → 2.2** : [français](publishing/devlog/devlog-1.2-vers-2.2-fr.md)
+  et [anglais](publishing/devlog/devlog-1.2-to-2.2-en.html).
 
 L’audit de performances et ses limites sont documentés dans
 [`PERFORMANCE_AUDIT.md`](PERFORMANCE_AUDIT.md). Les benchmarks reproductibles
@@ -273,6 +276,10 @@ le projet Gradle au premier export si `android/build/` n'existe pas. Un projet
 Gradle déjà présent est conservé ; après un changement de version Godot, mettre
 à jour son modèle via **Projet → Installer le modèle de compilation Android**.
 Le premier build Gradle peut télécharger ses dépendances et nécessite un accès réseau.
+Le script affiche les étapes d'import Godot, de synchronisation des couleurs
+et d'export. Une erreur de `SyncColors.gd` arrête le build avant Gradle ; après
+suppression ou modification d'un matériau de scène, mettre à jour ses entrées
+dans `resources/scripts/tools/color_bindings.json`.
 
 Les presets **Android** et **Android AAB** utilisent le nom de package
 `dev.juels.piledown`, attendu par la fiche Google Play. Renommer le fichier `.aab`
@@ -324,6 +331,11 @@ les futurs profils de tests doivent aussi rester sous `tmp/`. Les caches et
 `tmp/` sont ignorés par Git. Le contenu de `.cache/` est régénérable ; supprimer
 les templates oblige toutefois à les télécharger de nouveau.
 Les logs de travail produits dans `wip/` sont regroupés dans `wip/logs/`.
+Les logs générés et les caches Python sont ignorés par Git ; les scripts de
+diagnostic restent versionnés. L'historique local des prompts et ses exports
+sont rangés dans `wip/prompt/history/`, également ignoré. Le générateur, sa
+configuration et ses instructions restent dans
+[`wip/prompt/`](wip/prompt/README.md).
 
 Les tests hors ligne des scripts vérifient les versions officielles, Mono et
 prérelease, les chemins Windows, la réutilisation des templates, les erreurs
@@ -339,8 +351,30 @@ Ces tests utilisent des fixtures ; la validation des exports réels reste
 `./build/scripts/build_all.sh`.
 
 La description HTML prête à intégrer à la page itch.io se trouve dans
-`publishing/itch-description.html`, avec les images de publication. Les cinq
-screenshots itch.io couvrent le menu, le plateau, une combinaison de règles,
+`publishing/itch/description.html`, avec les images itch.io. Le dossier
+[`publishing/`](publishing/README.md) sépare les livrables par plateforme,
+les sources et les scripts. La bannière Ko-fi est générée en 1200 × 400
+avec les sprites, la palette et la police du jeu via
+`python publishing/scripts/create_kofi_banner.py` (Python avec Pillow).
+Le [trailer](publishing/trailer/README.md) alterne textes animés et jeu en plein écran,
+avec accroches génériques sans sous-titres, transitions dynamiques et musique continue.
+Les cartes des titres varient et une cascade animée de cartes clôture le montage.
+Le titre du jeu apparaît sous la cascade pendant que l'accroche finale remonte.
+Ses quatre plateaux varient avec la progression réelle : jeu classique,
+Bring a Friend au niveau 1, Shell Game et défi avec tapis roulant, en portrait et paysage,
+français et anglais,
+avec `python publishing/scripts/create_trailer.py` (Godot, Pillow et FFmpeg).
+Les textes, leurs placements par écran et orientation, les animations et les
+transitions (fondu ou balayage, direction, style, durée) se règlent dans
+[`publishing/scripts/trailer_config.py`](publishing/scripts/trailer_config.py).
+Après un ajustement, `python publishing/scripts/create_trailer.py --reuse-capture`
+régénère les vidéos à partir des captures existantes.
+Les vidéos, aperçus et brouillons de `publishing/trailer/`, ainsi que les
+captures intermédiaires de `wip/trailer/`, sont conservés localement et
+ignorés par Git. Les générateurs, leur configuration et la documentation
+restent versionnés. Ces dossiers de génération sont exclus de l'import Godot
+par `.gdignore`.
+Les cinq screenshots itch.io couvrent le menu, le plateau, une combinaison de règles,
 la sélection d'un bonus et l'écran de fin. Ils peuvent être régénérés en
 512 × 640, sans lissage, avec :
 
@@ -382,6 +416,8 @@ second appui sur `Échap` la ferme. Dans cette popup, `Entrée` quitte la run et
 `R` la redémarre. La touche `R` fonctionne aussi directement en jeu et depuis
 les écrans de résultat, même hors du mode debug. Elle utilise la même transition
 et le même délai de lecture des valeurs initiales que le bouton Replay.
+Sur écran tactile, le masque circulaire du replay se referme au centre de
+l'écran ; à la souris, il reste centré sur le pointeur.
 Depuis les écrans de résultat, `ESC` revient à l'écran
 d'accueil. Le bouton fournit notamment ce contrôle aux écrans
 tactiles. Sur l'écran d'accueil, `Échap` ferme l'application desktop et reste
@@ -680,15 +716,60 @@ ou modifiée, et les options de déblocage du mode debug sont ignorées.
 
 Tous les réglages sont centralisés dans `resources/scripts/settings/difficulty.gd` :
 
-`LAST_PILE_DRAW_SUPPRESSION` vaut `0.75` par défaut. Il retire cette proportion
-des tirages ordinaires correspondant à la prochaine valeur de la dernière pile
-choisie par le joueur, puis les remplace par une autre valeur. À `0`, le tirage
-et sa séquence aléatoire sont inchangés ; à `1`, cette valeur est exclue lorsqu'une
-autre valeur jouable existe. Si toutes les piles attendent la même valeur, la
-main reste jouable. Les piles terminées et le début de chaque round annulent
-la cible. Le tapis roulant utilise également ce réglage. Lucky Hand et les
+`LAST_PILE_DRAW_SUPPRESSION` vaut `0.4` et freine la prochaine valeur attendue
+par la dernière pile jouée. `LAST_PLAYED_VALUE_DRAW_SUPPRESSION` vaut `0.6` et
+réduit le poids de la valeur qui vient d'être posée, pour limiter l'alignement
+des autres piles. Avec ce second réglage actif, les poids relatifs sont `0.6`
+pour continuer la dernière pile, `0.4` pour l'aligner et `1` pour les autres
+valeurs. Les doublons de valeurs jouables conservent leur multiplicité.
+Ces deux freins se combinent avec le biais de plateau décrit ci-dessous.
+Les préférences favorisent des écarts sans imposer une stratégie ni garantir
+qu'ils augmentent à chaque coup. À `1`, une valeur est exclue si le tirage
+dispose encore d'une alternative ; une carte jouable reste garantie même
+si tous les poids jouables sont nuls. Avec les deux réglages et
+`PILE_SPREAD_DRAW_STRENGTH` à `0`, le tirage habituel est conservé.
+Le début de chaque round annule les cibles ; une pile
+terminée annule seulement le frein à sa prochaine valeur. Le tapis roulant
+utilise également ces réglages. Lucky Hand et les
 jokers conservent leurs effets ; Reload Required garde ses mains aléatoires
 sans solution garantie et sa première main volontairement injouable.
+
+`PILE_SPREAD_DRAW_STRENGTH` vaut `0.3`. Pour chaque valeur jouable, le
+gestionnaire estime l'écart entre la pile la plus avancée et la moins avancée
+après un coup simple. Il préfère un écart modéré : `min(0.4 × S, 2.5)`.
+Un plateau presque aligné favorise ainsi un peu de séparation ; une pile
+très en avance favorise le rattrapage des autres. Les piles terminées sont
+incluses dans l'écart. À `0`, ce biais est désactivé. Il reste également
+désactivé pour `S <= 3`, une seule pile restante ou une seule valeur jouable :
+les simulations sur les petits rounds ne montraient pas de bénéfice.
+
+Le facteur vaut `exp(score - meilleur_score)`, avec
+`score = -force × (écart_après_coup - cible)²`. Son plancher relatif
+`PILE_SPREAD_MIN_DRAW_WEIGHT` vaut `0.05` avant application des deux freins
+précédents. Aucune valeur n'est interdite par ce biais. Il s'applique à
+chaque nouvelle carte, y compris la carte jouable garantie, en main normale
+et sur le tapis roulant ; les cartes déjà conservées ne sont pas remplacées.
+Lucky Hand conserve ses cartes bonus, les jokers restent prioritaires et
+Reload Required contourne entièrement ce biais de plateau. Les cartes hautes
+volontairement inutiles du tapis roulant conservent leur règle propre.
+
+Ces constantes réduisent des poids relatifs, pas directement la probabilité
+qu'une valeur apparaisse quelque part dans la main. Une main plus grande
+peut donc contourner une préférence faible. L'analyse reproductible de
+97 800 rounds exploratoires et 36 000 rounds de comparaison de la version
+intégrée, avec différentes tailles de main et Lucky Hand, est dans
+[`tests/hand_balance_report.md`](tests/hand_balance_report.md). Son banc
+`tests/analyze_hand_balance.gd` compare aussi des prototypes de biais suivant
+les écarts du plateau. La commande suivante mesure le vrai générateur avec
+les forces `0`, `0.2`, `0.3` et `0.4` :
+
+```sh
+godot --headless --path . --script tests/analyze_hand_balance.gd -- --production
+```
+
+Elle écrit `tests/hand_balance_production_results.json`. Les contrôles de
+jouabilité, Lucky Hand, Reload Required et symétrie Pile Up sont dans
+`tests/test_pile_draw_bias.gd`.
 
 La montée en difficulté est plus rapide au début : après une hausse normale,
 un second attribut peut augmenter avec une probabilité qui diminue à chaque
@@ -889,7 +970,22 @@ droite sans déplacer les icônes.
 Les bonus obtenus sur plusieurs niveaux inscrivent leur meilleur niveau
 dans le carré ; le carré devient doré au niveau maximal. Les états binaires
 utilisent les sprites `ui/check/checked.png` et `ui/check/unchecked.png`.
-Les achievements permanents sont décrits individuellement dans
+`AchievementData` expose les permissions `allow_normal`, `allow_endless`,
+`allow_challenges`, `allow_checkpoints` et `allow_seeded`. Les parties seedées
+doivent aussi être autorisées dans leur mode sous-jacent. Par défaut, les succès
+de progression, statistiques, collections de bonus et speedruns sont réservés
+aux parties normales ou Endless sans seed. Les exploits de placement, combos
+et règles vaincues restent disponibles en challenge et depuis un checkpoint ;
+les succès de complétion restent disponibles dans leur challenge sans seed.
+`LA TOTALE` peut finaliser une collection déjà acquise dans tous les modes.
+Chaque `ChallengeData` possède aussi `allow_achievement_unlocks` : le désactiver
+bloque tous les succès de ce challenge, même ceux autorisés individuellement.
+Les compteurs cumulés et leurs barres de progression utilisent uniquement les
+événements des modes autorisés. Les découvertes générales restent enregistrées
+pour la collection et la configuration des seeds. Les anciennes sauvegardes
+conservent leurs succès et leur progression déjà acquise.
+
+Les ressources des achievements se trouvent dans
 `resources/data/achievements/`. `AchievementRegistry` charge les entrées
 activées de `resources/data/achievements.tres`, regroupées par catégorie puis
 triées par `difficulty` croissante. Ils sont évalués uniquement
@@ -1017,6 +1113,11 @@ La page `LINKS` ouvre `JUELS.DEV`, `ITCH.IO` et `KO-FI` dans le navigateur du
 système. Les titres, URL et leur ordre viennent du catalogue
 `resources/data/links.tres` : ajouter une ressource `LinkData` à `enabled_data`
 ajoute automatiquement son bouton. Seules les adresses HTTPS sont acceptées.
+Ouvrir Ko-fi depuis ce menu débloque `COFFEE BREAK` (`PAUSE CAFÉ` en français)
+dès que le navigateur accepte l'ouverture. Le succès est conservé une seule
+fois, indépendamment du mode et de la seed de la partie précédente. Les succès
+de menu utilisent la permission `AchievementData.allow_menu` ; `LA TOTALE` peut
+aussi être finalisé par cette action lorsque tous les autres succès sont acquis.
 Les menus défilants, y compris les listes de sélection de seed, acceptent le
 swipe tactile. Glisser sur un bouton fait défiler sans l'activer ; toucher hors
 d'une liste déroulante la referme. Le glissement d'une tuile conserve le point
@@ -1078,6 +1179,9 @@ godot --headless --path . --script resources/scripts/tools/SyncColors.gd -- --ch
 ```
 
 Les scripts de build exécutent cette synchronisation avant les exports.
+Le synchroniseur accepte les fins de ligne Windows (CRLF) et Unix (LF),
+et les conserve. Une liaison manquante indique le fichier, la section et
+la propriété concernés dans le message d'erreur.
 `resources/scripts/tools/color_bindings.json`, inclus dans les exports, associe
 chaque propriété à son nom de couleur central sans toucher aux palettes.
 Mettre à jour ces liaisons lors du déplacement d'un nœud ou de l'ajout d'une
@@ -1345,10 +1449,11 @@ En affichage adaptatif, le fond de la main utilise un découpage nine-patch qui
 préserve ses extrémités sur 18 pixels pendant que seul son centre s'étire. Le
 bouton Échap du gameplay est ancré au bord supérieur droit et suit donc la
 largeur réelle du viewport étendu.
-La propriété `Editor Display > Start Adaptive In Editor` du nœud `Game` force
-le mode adaptatif dès un lancement depuis l'éditeur. Elle est activée dans la
-scène principale et n'affecte ni les builds exportés ni la préférence graphique
-sauvegardée du joueur.
+La propriété `Editor Display > Start Adaptive In Editor` du nœud `Game` choisit
+le mode adaptatif au premier lancement depuis l'éditeur lorsqu'aucun mode
+d'affichage n'est sauvegardé. Elle est activée dans la scène principale. Les
+ouvertures suivantes restaurent le dernier mode choisi et l'option pixel art,
+y compris depuis l'éditeur et pour l'ancien réglage `adaptive_resolution`.
 Dans le menu de progression, la navigation de catégories occupe une colonne
 compacte de 30 pixels près du bord gauche. Les listes réservent une marge de
 10 pixels devant leur barre de défilement afin que textes et indicateurs de
@@ -1463,13 +1568,14 @@ Quatre variantes supplémentaires sont chargées par le même registre :
   dans chaque `ChallengeData` le temps accordé par main estimée ; `-1` utilise
   le timer normal courant.
   Son expiration termine immédiatement la run, quelles que soient les vies ou
-  protections restantes. Les bonus `TIME BANK` et `WARM-UP` alimentent
-  directement ce budget. Une erreur suspend le décompte jusqu'à la fin de son
+  protections restantes. Les bonus `TIME BANK` et `WARM-UP` sont exclus de ce
+  challenge. Une erreur suspend le décompte jusqu'à la fin de son
   animation complète, mais la main est déverrouillée pendant le feedback afin
   de permettre immédiatement un nouveau drag. Utiliser `REDRAW` ajoute
   `SHARED_CLOCK_RELOAD_TIME_BONUS` (3 secondes par défaut) au timer global.
-- `BOSS RUSH` demande des règles à chaque round. Leur nombre suit
-  `BOSS_RUSH_RULE_PROGRESSION`, puis reste à `MAX_COMBINED_RULES` en Endless,
+- `BOSS RUSH` demande des règles à chaque round. Le challenge utilise
+  une règle pour les trois premiers rounds du challenge, puis une règle de plus
+  tous les trois rounds jusqu'à `MAX_COMBINED_RULES`, y compris en Endless,
   sans contourner les incompatibilités ni `RULE BREAKER`.
 - `NO LOOKING BACK` masque une carte dès son drag et conserve son engagement
   après un relâchement dans le vide. Un retour forcé Hot Potatoes ou Lava annule
@@ -1480,8 +1586,8 @@ Quatre variantes supplémentaires sont chargées par le même registre :
   au niveau de la branche gauche du tapis et sortent par le bas. Le point de
   virage et son aperçu sont configurables sur le nœud `HandTray` dans l'éditeur.
   Les slots conservent un petit espace de quatre pixels. Lorsqu'une carte est
-  prise, une nouvelle tuile reprend immédiatement sa position afin qu'aucun
-  slot vide ne traverse le tapis. La vitesse de descente reste identique afin
+  prise, les autres cartes poursuivent leur trajet et le flux continue de
+  produire de nouvelles tuiles à intervalle régulier. La vitesse de descente reste identique afin
   de conserver la même cadence dans la branche. Chaque tirage non garanti possède aussi
   `CONVEYOR_HIGH_TILE_CHANCE` de produire une valeur supérieure à la valeur de
   départ, sans dépasser `MAX_CARD_VALUE`. Le tray utilise
@@ -1671,7 +1777,9 @@ Les règles disponibles sont :
 - `BLIND DELIVERY` : une carte visible se retourne dès son survol ou son
   premier contact tactile et reste cachée pendant le drag ;
 - `MIRROR MATCH` : toute l'image du jeu est retournée horizontalement,
-  verticalement ou sur les deux axes. Les probabilités relatives des trois
+  verticalement ou sur les deux axes. En mode Select, cliquer ou toucher une
+  pile dépose la carte sur cette pile à sa position retournée. Les probabilités
+  relatives des trois
   variantes se règlent avec `MIRROR_HORIZONTAL_WEIGHT`,
   `MIRROR_VERTICAL_WEIGHT` et `MIRROR_BOTH_AXES_WEIGHT` ;
 - `SUDDEN DEATH` : le round ne possède qu'un seul indicateur d'erreur ;
@@ -1797,14 +1905,22 @@ des orbites prévisibles, `SHAKING PILES` conserve l'ancien mouvement local
 irrégulier et `WAVY BABY` applique une onde verticale. Leurs amplitudes et
 vitesses sont centralisées dans `difficulty.gd`.
 
-Après la première victoire d'un round correspondant à `CHECKPOINT_INTERVAL`,
-ou à l'un de ses multiples, son checkpoint est
-conservé dans `user://pile_down.cfg` uniquement si aucune vie n'a été perdue
-depuis le dernier checkpoint franchi (ou depuis le début de la run pour le
-premier). Une erreur absorbée sans dégât ne bloque pas le déblocage. Le bouton
+Après `CHECKPOINT_INTERVAL` manches consécutives réussies sans perte de vie
+(5 par défaut), tous les checkpoints déjà atteints et encore verrouillés sont
+conservés dans `user://pile_down.cfg`. Cette fenêtre est glissante : réussir les
+manches 7 à 11 débloque les paliers 5 et 10 s'ils manquent. Une vie perdue remet
+la série à zéro ; une erreur absorbée sans dégât ne la brise pas. Le bouton
 `FROM <round>`, placé à droite
-de `PLAY`, lance le palier sélectionné. Les petites flèches, la molette ou les
-touches haut/bas changent ce palier ; ses
+de `PLAY`, lance le palier sélectionné. Les flèches, avec une zone tactile
+élargie, la molette ou les touches haut/bas changent ce palier, du départ
+`FROM 0` au dernier checkpoint débloqué, sans boucler aux extrémités.
+Au lancement du jeu, le plus haut checkpoint débloqué est présélectionné.
+Les boutons `PLAY` et `FROM` gardent leur hauteur compacte. Les deux flèches
+tiennent dans cette même hauteur avec des zones cliquables séparées, élargies
+horizontalement. Le record d'un checkpoint porte le titre
+`CHECKPOINT HIGHSCORE` (`RECORD CHECKPOINT` en français).
+`FROM 0` réaffiche le highscore Classic avec son temps et lance une partie
+normale avec les valeurs initiales. Pour un checkpoint, ses
 statistiques permanentes sont restaurées et
 les choix de bonus dus avant ce round alimentent la réserve distribuée aux fins
 de rounds suivantes. Un départ inférieur ou égal à `TOTAL_ROUNDS` conserve le compteur visuel
@@ -1820,9 +1936,19 @@ et un seul choix supplémentaire est proposé après chaque round gagné jusqu'�
 cette réserve, rétablit la main standard et applique les règles du round sans
 rejouer leur annonce.
 
-Les checkpoints sont séquentiels : le checkpoint `N` exige que `N - 1` soit
-déjà débloqué. Plusieurs checkpoints peuvent néanmoins être obtenus pendant
-une même run si chaque section qui les sépare est terminée sans perdre de vie.
+Le déblocage glissant fonctionne en Classic, Endless et dans les parties
+lancées depuis un checkpoint, avec une nouvelle série à chaque départ ou replay.
+Les challenges ne débloquent pas de checkpoints. Une série valide rattrape aussi
+les paliers précédents manquants ; un checkpoint déjà débloqué conserve ses
+statistiques d'origine. Un record Classic, même plus avancé, ne débloque pas à
+lui seul ces paliers.
+
+Après une erreur non fatale, le compte à rebours est figé pendant
+`MISTAKE_TIMER_FREEZE_DURATION` secondes (0,5 par défaut, `0` pour désactiver),
+réglable dans `resources/scripts/settings/difficulty.gd`. La main reste
+interactive pendant ce répit. Le gel est annulé à l'arrêt ou au remplacement
+du compte à rebours ; il ne se reporte pas sur la main ou le round suivant.
+
 Tant que `SAFETY NET` est disponible, tous les points de vie utilisent un
 shader métallique argenté. Sa consommation joue une rupture visuelle et un
 son métallique propres avant de restaurer les couleurs normales.
@@ -1942,3 +2068,70 @@ Le catalogue `resources/data/localization/fr.json` utilise les textes anglais
 comme clés et contient les traductions des menus, bonus, règles, défis et succès.
 Les presets d'export incluent ce fichier ; les identifiants de sauvegarde et les
 graines restent indépendants de la langue.
+
+
+Le mode sélection respecte la visibilité des règles : `BLIND DELIVERY` masque
+la carte sélectionnée, le survol requis la révèle pendant la sélection, et
+leur combinaison la révèle brièvement avant de la masquer. Une sélection sur
+le tapis roulant continue d'avancer et disparaît lorsqu'elle sort de l'écran.
+La branche basse du tapis utilise `resources/sprites/hand/conveyer-bottom.png` ;
+son emplacement se règle sur `HandTray/ConveyorBottom` dans `Game.tscn` et son
+bord inférieur s'étend automatiquement jusqu'au bas de l'écran en jeu.
+Les fonds de pause, de game over et de `LIGHTS OUT` couvrent tout le viewport,
+tandis que les commandes restent dans la zone sûre. Une erreur de dépôt fait
+trembler les visuels de la pile sans déplacer son emplacement, puis révèle
+temporairement sa valeur pour permettre de retrouver la carte attendue.
+Le fond en True Pixel Art utilise des blocs d'un pixel logique, sans seconde
+pixellisation ajoutée au rendu natif du viewport.
+
+Dans les parties seedées en mode normal, le sélecteur `ROUND` permet de choisir
+le round de départ jusqu'au plus haut round déjà atteint en partie normale.
+Ce choix est conservé au redémarrage de la même seed. Un clic ou un tap dans
+le vide annule la sélection. `HOT POTATOES` limite aussi la durée de sélection :
+à expiration, la carte est désélectionnée sans perte de vie. Passer au drag
+conserve le temps restant de cette sélection.
+
+
+Les options **FOND FIXE** (graphismes) et **PAUSE ENTRE LES ROUNDS** (gameplay)
+sont désactivées par défaut et conservées dans la configuration utilisateur.
+Les menus n'affichent pas d'infobulles au survol des options ou des barres
+de progression ; les effets visuels de survol restent actifs.
+FOND FIXE arrête le défilement de tous les motifs de fond, y compris les
+rayures classiques ; les effets de déformation et les transitions restent actifs.
+L'option est masquée lorsque le fond est désactivé.
+PAUSE ENTRE LES ROUNDS conserve l'annonce de difficulté à l'écran jusqu'à
+un clic, un toucher ou une touche du clavier, sans lancer le compte à rebours
+du round suivant. Si la difficulté ne change pas, le numéro du prochain round
+est affiché. Les choix de bonus restent présentés avant cette attente.
+
+Avec **STICKY FINGERS / MAIN COLLANTE**, sélectionner une tuile ou commencer
+son déplacement engage ce choix jusqu'à son jeu et affiche un contour vert.
+Une autre tuile ne peut plus être sélectionnée. En tactile, un lâcher hors
+pile laisse la tuile sur place : elle peut être reprise ou posée au toucher
+sur une pile avec le mode de sélection. À la souris, le comportement attaché
+au pointeur est conservé. Reprendre une tuile ne crée pas de second emplacement
+vide dans la main et ne réinitialise pas son délai HOT POTATOES.
+
+Les poids `ADD_PILE_WEIGHT`, `ADD_CARD_WEIGHT`, `ADD_START_VALUE_WEIGHT` et
+`REDUCE_TURN_TIME_WEIGHT` sont désormais des poids de départ. Après la première
+hausse, chaque poids est multiplié par la proportion de distance restante
+entre sa valeur initiale et sa limite : 100 % au départ, 50 % à mi-chemin,
+0 % à la limite. Pour le temps, cette limite est `MIN_TURN_TIME`.
+Les poids spéciaux de la première hausse, le multiplicateur des attributs à 1
+et la compensation des longues attentes restent actifs. Le panneau de debug
+utilise les mêmes poids que le tirage réel. Les probabilités finales dépendent
+également des poids des autres attributs encore disponibles.
+Le contour de MAIN COLLANTE suit aussi le léger décalage vertical des sprites
+pendant le déplacement et revient avec eux à la position de repos.
+
+Un dépôt invalide avec MAIN COLLANTE libère le choix de la tuile et retire
+son contour vert : une autre tuile peut être sélectionnée, au clic comme au toucher.
+
+Dans une partie seedée, chaque réglage de difficulté propose `AUTO` (valeur interne `0`) par
+défaut. Cette valeur conserve le résultat de la simulation des transitions
+jusqu'à la manche de départ : hausses normales et supplémentaires, pauses de
+difficulté, compensation des attentes et allègements de palier. Une valeur
+non nulle impose cet attribut après la simulation, sans modifier les autres.
+Les valeurs de temps proposées restent valides : `0`, puis les durées autorisées.
+Ce comportement vaut en mode normal et sans fin ; relancer la même seed avec
+les mêmes réglages reproduit la simulation et les valeurs imposées.

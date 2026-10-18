@@ -11,3 +11,5 @@ difficulty = 4
 reward_rationale = "Un mélange toxique pour deux règles combinées."
 required_count = 2
 id = &"beat_two_special_rules"
+allow_challenges = true
+allow_checkpoints = true

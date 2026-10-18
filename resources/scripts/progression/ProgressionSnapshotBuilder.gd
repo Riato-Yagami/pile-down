@@ -58,13 +58,13 @@ static func achievements(game: GameManager) -> Array[Dictionary]:
 		var progress_target := 0
 		match data.id:
 			&"all_checkpoints":
-				progress_current = game.unlocked_checkpoints.size()
+				progress_current = game.achievement_manager.qualified_checkpoint_ids.size()
 				progress_target = AchievementManager.normal_checkpoint_ids().size()
 				progress = TranslationServer.translate("Checkpoints unlocked: %d / %d") % [
 					progress_current, progress_target,
 				]
 			&"all_bonuses_discovered":
-				progress_current = game.discovered_bonuses.filter(
+				progress_current = game.achievement_manager.qualified_bonus_ids.filter(
 					func(id: StringName) -> bool:
 						return Difficulty.ENABLED_BONUSES.has(id)
 				).size()
@@ -83,7 +83,7 @@ static func achievements(game: GameManager) -> Array[Dictionary]:
 					progress_current, progress_target,
 				]
 			&"beat_all_special_rules":
-				progress_current = game.beaten_special_rules.filter(
+				progress_current = game.achievement_manager.qualified_rule_ids.filter(
 					func(id: StringName) -> bool:
 						return Difficulty.ENABLED_SPECIAL_RULES.has(id)
 				).size()

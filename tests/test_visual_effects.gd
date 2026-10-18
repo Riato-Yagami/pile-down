@@ -102,7 +102,7 @@ func _run() -> void:
 	)
 	stripe_background.setup()
 	stripe_background.set_pixelated_background(true)
-	var catalog_pixel_size := BackgroundThemeRegistry.catalog().pixel_size
+	var catalog_pixel_size := 1.0
 	assert(is_equal_approx(float(
 		(background_texture.material as ShaderMaterial).get_shader_parameter(
 			"pixel_size"
@@ -216,6 +216,18 @@ func _run() -> void:
 	var pile := PileScene.instantiate() as MemoryPile
 	root.add_child(pile)
 	pile.setup(0, 1)
+	var original_position := pile.position
+	var original_face := pile.face_sprite.position
+	pile.face_up = false
+	pile._refresh()
+	var shake := pile.play_error_shake()
+	shake.pause()
+	shake.custom_step(0.025)
+	assert(pile.position == original_position and not pile.face_up)
+	assert(pile.back_sprite.position.x != original_face.x)
+	shake.custom_step(1.0)
+	assert(pile.face_sprite.position == original_face and not pile.face_up)
+
 	var pile_material := pile.face_sprite.material as ShaderMaterial
 	assert(is_zero_approx(float(
 		pile_material.get_shader_parameter("completion_morph")

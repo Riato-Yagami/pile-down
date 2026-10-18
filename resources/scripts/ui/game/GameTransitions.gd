@@ -10,8 +10,9 @@ static func mask_replay_transition(host: GameManager) -> void:
 	host.replay_transition_mask.mouse_filter = Control.MOUSE_FILTER_STOP
 	host.replay_transition_mask.modulate.a = 1.0
 	var mask_size := host.replay_transition_mask.size
-	var center := host.replay_transition_mask.get_local_mouse_position().clamp(
-		Vector2.ZERO, mask_size
+	var center := (
+		mask_size * 0.5 if DisplayServer.is_touchscreen_available()
+		else host.replay_transition_mask.get_local_mouse_position().clamp(Vector2.ZERO, mask_size)
 	)
 	var material := host.replay_transition_mask.material as ShaderMaterial
 	var center_uv := Vector2(center.x / mask_size.x, center.y / mask_size.y)

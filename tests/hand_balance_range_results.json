@@ -1,0 +1,131 @@
+{
+  "probe_samples": 20000,
+  "probes": [
+    {
+      "alignment_available": 0.66455,
+      "chain_available": 0.33545,
+      "config": "current",
+      "hand": 1,
+      "maximum": 2
+    },
+    {
+      "alignment_available": 0.79585,
+      "chain_available": 0.7366,
+      "config": "current",
+      "hand": 2,
+      "maximum": 2
+    },
+    {
+      "alignment_available": 0.92525,
+      "chain_available": 0.95825,
+      "config": "current",
+      "hand": 4,
+      "maximum": 2
+    },
+    {
+      "alignment_available": 0.66455,
+      "chain_available": 0.33545,
+      "config": "current",
+      "hand": 1,
+      "maximum": 3
+    },
+    {
+      "alignment_available": 0.72965,
+      "chain_available": 0.5365,
+      "config": "current",
+      "hand": 2,
+      "maximum": 3
+    },
+    {
+      "alignment_available": 0.834,
+      "chain_available": 0.7696,
+      "config": "current",
+      "hand": 4,
+      "maximum": 3
+    },
+    {
+      "alignment_available": 0.66455,
+      "chain_available": 0.33545,
+      "config": "current",
+      "hand": 1,
+      "maximum": 9
+    },
+    {
+      "alignment_available": 0.67925,
+      "chain_available": 0.38805,
+      "config": "current",
+      "hand": 2,
+      "maximum": 9
+    },
+    {
+      "alignment_available": 0.71415,
+      "chain_available": 0.47075,
+      "config": "current",
+      "hand": 4,
+      "maximum": 9
+    },
+    {
+      "alignment_available": 0.66455,
+      "chain_available": 0.33545,
+      "config": "hand_scaled",
+      "hand": 1,
+      "maximum": 2
+    },
+    {
+      "alignment_available": 0.79585,
+      "chain_available": 0.7366,
+      "config": "hand_scaled",
+      "hand": 2,
+      "maximum": 2
+    },
+    {
+      "alignment_available": 0.92525,
+      "chain_available": 0.95825,
+      "config": "hand_scaled",
+      "hand": 4,
+      "maximum": 2
+    },
+    {
+      "alignment_available": 0.66455,
+      "chain_available": 0.33545,
+      "config": "hand_scaled",
+      "hand": 1,
+      "maximum": 3
+    },
+    {
+      "alignment_available": 0.71815,
+      "chain_available": 0.50175,
+      "config": "hand_scaled",
+      "hand": 2,
+      "maximum": 3
+    },
+    {
+      "alignment_available": 0.78395,
+      "chain_available": 0.66155,
+      "config": "hand_scaled",
+      "hand": 4,
+      "maximum": 3
+    },
+    {
+      "alignment_available": 0.66455,
+      "chain_available": 0.33545,
+      "config": "hand_scaled",
+      "hand": 1,
+      "maximum": 9
+    },
+    {
+      "alignment_available": 0.67445,
+      "chain_available": 0.3751,
+      "config": "hand_scaled",
+      "hand": 2,
+      "maximum": 9
+    },
+    {
+      "alignment_available": 0.6928,
+      "chain_available": 0.40695,
+      "config": "hand_scaled",
+      "hand": 4,
+      "maximum": 9
+    }
+  ]
+}

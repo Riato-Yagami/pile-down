@@ -7,6 +7,7 @@ global uniform vec4 background_color_a;
 global uniform vec4 background_color_b;
 global uniform float background_intensity;
 uniform vec2 speed = vec2(0.008, -0.006);
+global uniform bool background_fixed;
 uniform float time = 0.0;
 global uniform float background_pixelated;
 global uniform float background_pixel_size;
@@ -58,7 +59,7 @@ float transition_reveal(vec2 pixel) {
 }
 
 void fragment() {
-	float effective_time = TIME + time;
+	float effective_time = background_fixed ? 0.0 : TIME + time;
 	vec2 pixel = UV * background_viewport_size;
 	if (background_pixelated > 0.5) {
 		float block_size = max(background_pixel_size, 1.0);

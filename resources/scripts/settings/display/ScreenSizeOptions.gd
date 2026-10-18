@@ -148,6 +148,7 @@ static func apply_low_resolution_layout(game: GameManager) -> void:
 		scale_factor,
 		game.splash
 	)
+	GameScreenLayout.fit_backdrop_to_viewport(game.flashlight_overlay)
 	game._fit_quit_popup_to_viewport()
 	if game.has_method("_apply_screen_edge_margins"):
 		game.call("_apply_screen_edge_margins")

@@ -268,6 +268,11 @@ static func handle_mistake(
 	if host.input_locked:
 		return
 	var gameplay_generation := host._gameplay_generation
+	if is_instance_valid(pile) and not caused_by_timeout:
+		if is_instance_valid(host.selected_card):
+			host.selected_card.sticky_committed = false
+			host.selected_card.set_selected_visual(false)
+		pile.play_error_shake()
 	host.input_locked = true
 	var shared_clock_time := host.timer_manager.time_left
 	host.timer_manager.stop_countdown()
@@ -286,6 +291,7 @@ static func handle_mistake(
 		host.mistakes_left = 0 if instant_death else host.mistakes_left - 1
 		host.run_lives_lost += 1
 		host.checkpoint_segment_damage_count += 1
+		host.checkpoint_flawless_rounds = 0
 		host.achievement_manager.life_lost.emit()
 	host.mistake_made.emit()
 	if protected_by_safety_net:
@@ -367,6 +373,7 @@ static func handle_mistake(
 				host._start_turn_countdown()
 		else:
 			host._start_turn_countdown()
+		host.timer_manager.freeze_countdown(host.Difficulty.MISTAKE_TIMER_FREEZE_DURATION)
 		if (
 			not host.challenge_modifiers.shared_round_clock
 			and pile != null
@@ -402,6 +409,7 @@ static func _resume_after_mistake(
 		)
 		host._shared_clock_mistake_feedback_active = is_instance_valid(pile) and not pile.completed
 	host._start_turn_countdown()
+	host.timer_manager.freeze_countdown(host.Difficulty.MISTAKE_TIMER_FREEZE_DURATION)
 	_damage_feedback(host, protected)
 	if host.bonus_manager.has_bonus(&"mistake_reveal"):
 		host._run_bonus_pile_flash(host.Difficulty.MISTAKE_REVEAL_DURATIONS[

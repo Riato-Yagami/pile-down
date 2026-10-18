@@ -193,6 +193,7 @@ static func fit_control_to_canvas_space(
 
 static func fit_overlay_to_canvas(host: GameManager) -> void:
 	host._fit_control_to_canvas_space(host.overlay, host.screens)
+	fit_backdrop_to_viewport(host.overlay.get_node("Scrim") as Control)
 
 
 static func fit_splash_background_to_canvas(host: GameManager) -> void:
@@ -250,3 +251,19 @@ static func fit_quit_popup_to_viewport(host: GameManager) -> void:
 	var center := host.quit_popup.get_node("Center") as CenterContainer
 	host._apply_screen_margin_control(center, host._normalized_edge_margins(host.screen_edge_margins))
 	center.queue_sort()
+	fit_backdrop_to_viewport(host.quit_popup.get_node("Shade") as Control)
+
+
+static func fit_backdrop_to_viewport(control: Control) -> void:
+	if not is_instance_valid(control):
+		return
+	# Use the parent's canvas transform so a previous backdrop offset is not
+	# applied twice on repeated safe-area or window-size updates.
+	var parent := control.get_parent() as CanvasItem
+	var transform := parent.get_global_transform_with_canvas() if parent != null else Transform2D.IDENTITY
+	if control.get_parent() is CanvasLayer:
+		transform = (control.get_parent() as CanvasLayer).get_final_transform()
+	var rect := transform.affine_inverse() * control.get_viewport_rect()
+	control.set_anchors_preset(Control.PRESET_TOP_LEFT, false)
+	control.position = rect.position
+	control.size = rect.size

@@ -11,3 +11,5 @@ difficulty = 3
 reward_rationale = "Une feuille après l'autre, comme les piles terminées chacune à leur tour."
 reward_font = &"birch_leaf"
 id = &"one_at_a_time"
+allow_challenges = true
+allow_checkpoints = true

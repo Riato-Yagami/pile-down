@@ -1,4 +1,5 @@
 shader_type canvas_item;
+global uniform bool background_fixed;
 render_mode unshaded;
 
 uniform float effect_enabled : hint_range(0.0, 1.0, 1.0) = 1.0;
@@ -24,7 +25,7 @@ void fragment() {
 	vec2 pattern_uv = pixel / max(reference_size, vec2(1.0));
 	float stripe_phase = fract(
 		(pattern_uv.x + pattern_uv.y * stripe_slope) * stripe_count
-		+ TIME * stripe_scroll_speed
+		+ (background_fixed ? 0.0 : TIME) * stripe_scroll_speed
 	);
 	float stripe_edge = stripe_core + stripe_softness;
 	float stripe = 1.0 - smoothstep(

@@ -11,6 +11,8 @@ signal card_forced_return_requested(card, reason)
 var rng := RandomNumberGenerator.new()
 var current_cards: Array[PlayingCard] = []
 var discarding_cards: Array[PlayingCard] = []
+var _selection_companion_tween: Tween
+var _selection_companion_positions: Dictionary = {}
 var value_font: Font
 var value_font_size := 20
 var value_font_offset := Vector2.ZERO
@@ -44,7 +46,10 @@ func generate_hand(
 	guarantee_playable_card := true,
 	force_unplayable_hand := false,
 	last_played_pile: MemoryPile = null,
-	last_pile_suppression := 0.0
+	last_pile_suppression := 0.0,
+	last_value_suppression := 0.0,
+	spread_strength := 0.0,
+	spread_minimum_weight := 0.05
 ) -> void:
 	if clear_existing:
 		clear_hand(container, true)
@@ -85,8 +90,15 @@ func generate_hand(
 	var active_suppression := 0.0 if force_unplayable_hand else last_pile_suppression
 	if is_instance_valid(last_played_pile) and not last_played_pile.completed:
 		avoided_value = last_played_pile.expected_value()
-	var guaranteed_value := _draw_with_suppression(
-		playable_values, avoided_value, active_suppression
+	var repeated_value := last_played_pile.current_value if is_instance_valid(last_played_pile) else -1
+	var repeat_suppression := 0.0 if force_unplayable_hand else last_value_suppression
+	var spread_weights := (
+		PileDrawBias.build_weights(active_piles, start_value, pile_up, spread_strength, spread_minimum_weight)
+		if guarantee_playable_card and not force_unplayable_hand else {}
+	)
+	var guaranteed_value := draw_spaced_value(
+		playable_values, avoided_value, active_suppression, repeated_value, repeat_suppression,
+		spread_weights
 	)
 	var ordinary_values: Array[int] = []
 	for value in range(1 if pile_up else 0, start_value + (1 if pile_up else 0)):
@@ -99,7 +111,7 @@ func generate_hand(
 		if force_unplayable_hand:
 			values.append(unplayable_values[rng.randi_range(0, unplayable_values.size() - 1)])
 		else:
-			values.append(_draw_with_suppression(ordinary_values, avoided_value, suppression))
+			values.append(draw_spaced_value(ordinary_values, avoided_value, suppression, repeated_value, repeat_suppression, spread_weights))
 	var regular_slots: Array[int] = []
 	for index in cards_to_create:
 		if index != joker_position:
@@ -138,6 +150,35 @@ func generate_hand(
 			hover_reveal, use_roman_numerals,
 			modifiers, animate_draw, enter_from_right
 		)
+
+
+func draw_spaced_value(
+	pool: Array[int], avoided_value: int, suppression: float,
+	repeated_value: int, repeat_suppression: float, value_weights: Dictionary = {}
+) -> int:
+	if value_weights.is_empty() and (avoided_value < 0 or suppression <= 0.0) and (repeated_value < 0 or repeat_suppression <= 0.0):
+		return pool[rng.randi_range(0, pool.size() - 1)]
+	# Combine both biases in one draw so one replacement cannot undo the other.
+	# Duplicates retain their weight: several piles may require the same value.
+	var weights: Array[float] = []
+	var total := 0.0
+	for candidate in pool:
+		var weight := float(value_weights.get(candidate, 1.0))
+		if candidate == avoided_value:
+			weight *= 1.0 - clampf(suppression, 0.0, 1.0)
+		if candidate == repeated_value:
+			weight *= 1.0 - clampf(repeat_suppression, 0.0, 1.0)
+		weights.append(weight)
+		total += weight
+	# Never remove the only playable choice, even with both settings at 1.
+	if total <= 0.0:
+		return pool[rng.randi_range(0, pool.size() - 1)]
+	var draw := rng.randf() * total
+	for index in pool.size():
+		draw -= weights[index]
+		if draw < 0.0:
+			return pool[index]
+	return pool[pool.size() - 1]
 
 
 func _draw_with_suppression(pool: Array[int], avoided_value: int, suppression: float) -> int:
@@ -483,6 +524,7 @@ func prepare_round_discard() -> void:
 
 
 func clear_hand(container: Control, preserve_unused_jokers := false) -> void:
+	clear_companion_preview()
 	var retained_jokers: Array[PlayingCard] = []
 	if preserve_unused_jokers:
 		for card in current_cards:
@@ -545,6 +587,7 @@ func lock_all_cards_except(active_card: PlayingCard) -> void:
 
 
 func clear_selection() -> void:
+	clear_companion_preview()
 	for card in interactive_cards():
 		if is_instance_valid(card):
 			card.set_selected_visual(false)
@@ -575,9 +618,38 @@ func refresh_all_card_themes(colorblind_enabled: bool) -> void:
 
 
 func select_card(selected_card: PlayingCard) -> void:
+	clear_companion_preview()
 	for card in interactive_cards():
 		if is_instance_valid(card):
 			card.set_selected_visual(card == selected_card)
+
+
+func clear_companion_preview() -> void:
+	if _selection_companion_tween != null:
+		_selection_companion_tween.kill()
+	for card in _selection_companion_positions:
+		if is_instance_valid(card):
+			card.visual_root.position = _selection_companion_positions[card]
+	_selection_companion_positions.clear()
+
+
+func preview_companions(selected_card: PlayingCard, companions: Array[PlayingCard]) -> void:
+	clear_companion_preview()
+	if companions.is_empty():
+		return
+	_selection_companion_tween = create_tween().set_parallel(true)
+	for index in companions.size():
+		var card := companions[index]
+		_selection_companion_positions[card] = card.visual_root.position
+		# Keep the hand slots stable while the sprites gather behind the selection.
+		var centered_x := (float(index) - float(companions.size() - 1) * 0.5) * 23.0
+		var destination := selected_card.visual_root.global_position + Vector2(
+			centered_x, 16.0 + absf(centered_x) * 0.08
+		)
+		_selection_companion_tween.tween_property(
+			card.visual_root, "position",
+			card.get_global_transform().affine_inverse() * destination, 0.18
+		).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 
 func active_cards() -> Array[PlayingCard]:

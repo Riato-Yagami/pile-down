@@ -91,15 +91,19 @@ static func setup_links(host: GameManager) -> void:
 	for index in buttons.size():
 		var link := catalog.enabled_data[index] as LinkData
 		buttons[index].text = link.title
-		buttons[index].pressed.connect(host._open_external_link.bind(link.url))
+		buttons[index].pressed.connect(host._open_external_link.bind(link.url, link.id))
 	template.visible = not buttons.is_empty()
 
 
-static func open_external_link(host: GameManager, url: String) -> void:
+static func open_external_link(
+	host: GameManager, url: String, link_id: StringName = &"", open_url: Callable = Callable()
+) -> void:
 	if not url.begins_with("https://"):
 		push_warning("Refusing to open a non-HTTPS external link.")
 		return
-	OS.shell_open(url)
+	var error: int = open_url.call(url) if open_url.is_valid() else OS.shell_open(url)
+	if error == OK:
+		host.achievement_manager.external_link_opened.emit(link_id)
 
 
 static func close_options_menu(host: GameManager) -> void:

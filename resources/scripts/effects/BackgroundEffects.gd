@@ -185,11 +185,10 @@ func _apply_legacy_stripe_colors() -> void:
 	_stripe_material.set_shader_parameter("stripe_color", STRIPE_ONLY_STRIPE_COLOR)
 
 
-func set_pixelated_background(pixelated: bool) -> void:
-	var catalog := BackgroundThemeRegistry.catalog()
+func set_pixelated_background(_pixelated: bool) -> void:
+	# The viewport already supplies the native pixel grid in True Pixel Art.
+	# A second quantization enlarged each background pixel into several blocks.
 	var pixel_size := 1.0
-	if pixelated and catalog != null:
-		pixel_size = maxf(catalog.pixel_size, 1.0)
 	if is_instance_valid(_shader_material):
 		_shader_material.set_shader_parameter("pixel_size", pixel_size)
 	if is_instance_valid(_stripe_material):

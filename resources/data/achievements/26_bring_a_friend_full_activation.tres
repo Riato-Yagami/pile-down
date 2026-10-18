@@ -12,3 +12,5 @@ reward_rationale = "Monster Friend accompagne toute la bande."
 reward_font = &"monster_friend"
 required_count = 3
 id = &"bring_a_friend_full_activation"
+allow_challenges = true
+allow_checkpoints = true

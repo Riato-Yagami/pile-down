@@ -14,6 +14,30 @@ extends Data
 @export var required_count := 0
 ## Duree maximale stricte, en secondes. Zero desactive la contrainte de temps.
 @export var time_limit_seconds := 0.0
+@export_category("Unlock Modes")
+## Menu actions are evaluated independently of the previous gameplay run.
+@export var allow_menu := false
+@export var allow_normal := true
+@export var allow_endless := true
+@export var allow_challenges := false
+@export var allow_checkpoints := false
+## Seeded runs must also be permitted by their underlying mode.
+@export var allow_seeded := false
+
+
+func allows_run(mode: RunSummary.Mode, seeded: bool) -> bool:
+	if seeded and not allow_seeded:
+		return false
+	match mode:
+		RunSummary.Mode.NORMAL:
+			return allow_normal
+		RunSummary.Mode.ENDLESS:
+			return allow_endless
+		RunSummary.Mode.CHALLENGE:
+			return allow_challenges
+		RunSummary.Mode.CHECKPOINT:
+			return allow_checkpoints
+	return false
 
 
 func _init(

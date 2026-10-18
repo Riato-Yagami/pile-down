@@ -29,6 +29,9 @@ func handle_input(host: GameManager, event: InputEvent) -> bool:
 			if pile != null:
 				host._on_pile_selected(pile)
 				return true
+			if not host.input_locked and not card.sticky_committed and host._card_at_touch_position(event.position) == null:
+				host.selected_card = null
+				host.hand_manager.clear_selection()
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			if is_instance_valid(host.selected_card) and host.selected_card.dragging:
@@ -73,6 +76,9 @@ static func select_on_tap(host: GameManager, card: PlayingCard) -> void:
 	host._on_card_selected(card)
 	if host.selected_card == card:
 		host.hand_manager.select_card(card)
+		host.hand_manager.preview_companions(
+			card, HandDragController.selection_companions(host, card)
+		)
 
 
 static func place_on_pile(host: GameManager, pile: MemoryPile) -> void:
@@ -80,7 +86,8 @@ static func place_on_pile(host: GameManager, pile: MemoryPile) -> void:
 	if not host._click_to_place_enabled or not is_instance_valid(card) or not card._selected:
 		return
 	# Reuse the drag placement path, including companions, discards and mistakes.
-	card.drag_target = card.get_global_rect().get_center()
+	card.drag_target = card.get_global_transform() * (card.size * 0.5)
 	host._on_card_drag_started(card)
 	if card.dragging:
-		host._on_card_drag_released(card, pile.get_global_rect().get_center())
+		# Transform the local center so mirrored axes keep the drop on this pile.
+		host._on_card_drag_released(card, pile.get_global_transform() * (pile.size * 0.5))

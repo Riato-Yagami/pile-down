@@ -2,6 +2,9 @@ class_name SkippableSequence
 extends Control
 
 signal skipped()
+signal wait_finished()
+
+var waiting_for_continue := false
 
 var can_skip := false
 var is_skipping := false
@@ -20,7 +23,15 @@ func begin(tween: Tween) -> void:
 	visible = true
 
 
+func begin_wait() -> void:
+	begin(null)
+	waiting_for_continue = true
+
+
 func finish() -> void:
+	if waiting_for_continue:
+		waiting_for_continue = false
+		wait_finished.emit()
 	can_skip = false
 	is_skipping = false
 	active_tween = null
@@ -51,6 +62,9 @@ func skip_to_end() -> void:
 	if active_tween != null and active_tween.is_valid():
 		active_tween.custom_step(1000000.0)
 	skipped.emit()
+	if waiting_for_continue:
+		waiting_for_continue = false
+		wait_finished.emit()
 
 
 func _is_skip_event(event: InputEvent) -> bool:
@@ -62,6 +76,6 @@ func _is_skip_event(event: InputEvent) -> bool:
 		return (
 			event.pressed
 			and not event.echo
-			and event.keycode in [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]
+			and (waiting_for_continue or event.keycode in [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER])
 		)
 	return false

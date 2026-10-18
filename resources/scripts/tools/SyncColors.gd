@@ -39,11 +39,13 @@ func _run() -> void:
 		var matched: Dictionary = {}
 		for index in lines.size():
 			var line := lines[index]
-			if line.begins_with("["):
+			# Parse without Windows CRLF or indentation, retaining the original text.
+			var parsed_line := line.strip_edges()
+			if parsed_line.begins_with("["):
 				var header := RegEx.create_from_string(" unique_id=[0-9]+")
-				section = header.sub(line.strip_edges(), "", true)
-			elif section.begins_with("[shader_globals]") and line.ends_with("={"):
-				section = "[shader_globals]/" + line.get_slice("=", 0)
+				section = header.sub(parsed_line, "", true)
+			elif section.begins_with("[shader_globals]") and parsed_line.ends_with("={"):
+				section = "[shader_globals]/" + parsed_line.get_slice("=", 0).strip_edges()
 			var key := line.get_slice("=" if line.contains("=") else ":", 0).strip_edges()
 			for binding: Dictionary in grouped[path]:
 				if section != binding.section or key != binding.key:
@@ -85,7 +87,10 @@ func _run() -> void:
 				matched[id] = true
 				break
 		if matched.size() != grouped[path].size():
-			push_error("Missing color bindings in " + path + "; update color_bindings.json after moving nodes/properties.")
+			for id in grouped[path].size():
+				if not matched.has(id):
+					var missing: Dictionary = grouped[path][id]
+					push_error("Missing color binding: %s %s %s; update color_bindings.json after moving nodes/properties." % [path, missing.section, missing.key])
 			quit(1)
 			return
 		var updated := "\n".join(lines)

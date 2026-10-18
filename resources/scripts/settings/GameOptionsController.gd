@@ -172,6 +172,8 @@ static func style_buttons(game: GameManager) -> void:
 		game.ignore_notch_button,
 		game.dust_effects_button,
 		game.background_enabled_button,
+		game.fixed_background_button,
+		game.pause_between_rounds_button,
 		game.export_save_button,
 		game.import_save_button,
 		game.delete_save_button,
@@ -195,6 +197,7 @@ static func style_buttons(game: GameManager) -> void:
 static func setup_gameplay(game: GameManager) -> void:
 	AccessibilityOptions.setup(game)
 	var config := _load_config(game)
+	game._pause_between_rounds = bool(config.get_value("gameplay", "pause_between_rounds", false))
 	game._show_end_seed = bool(config.get_value("gameplay", "show_end_seed", false))
 	game._achievement_notifications_enabled = bool(config.get_value(
 		"gameplay", "achievement_notifications", true
@@ -220,6 +223,12 @@ static func toggle_timer(game: GameManager) -> void:
 	refresh_gameplay(game)
 
 
+static func toggle_pause_between_rounds(game: GameManager) -> void:
+	game._pause_between_rounds = not game._pause_between_rounds
+	save_gameplay(game, "pause_between_rounds", game._pause_between_rounds)
+	refresh_gameplay(game)
+
+
 static func toggle_end_seed(game: GameManager) -> void:
 	game._show_end_seed = not game._show_end_seed
 	save_gameplay(game, "show_end_seed", game._show_end_seed)
@@ -233,6 +242,7 @@ static func save_gameplay(game: GameManager, key: String, value: bool) -> void:
 
 
 static func refresh_gameplay(game: GameManager) -> void:
+	game.pause_between_rounds_button.icon = game.SELECTED_TEXTURE if game._pause_between_rounds else game.UNCHECKED_TEXTURE
 	game.end_seed_button.icon = game.SELECTED_TEXTURE if game._show_end_seed else game.UNCHECKED_TEXTURE
 	game.end_seed_display.visible = game._show_end_seed
 	_refresh_option_text_highlight(game, game.end_seed_button)
@@ -277,11 +287,18 @@ static func setup_graphics(game: GameManager) -> void:
 	game._true_pixel_art_enabled = bool(config.get_value(
 		"graphics", "true_pixel_art", false
 	))
+	game._fixed_background = bool(config.get_value("graphics", "fixed_background", false))
+	RenderingServer.global_shader_parameter_set(&"background_fixed", game._fixed_background)
 	game._dust_enabled = bool(config.get_value("graphics", "dust_effects", true))
 	game._background_enabled = bool(config.get_value(
 		"graphics", "background_enabled", true
 	))
-	if OS.has_feature("editor") and game.start_adaptive_in_editor:
+	var has_saved_screen_size := (
+		config.has_section_key("graphics", "screen_size_mode")
+		or config.has_section_key("graphics", "adaptive_resolution")
+	)
+	# The editor preference is only an initial default; saved player choices win.
+	if OS.has_feature("editor") and game.start_adaptive_in_editor and not has_saved_screen_size:
 		game._screen_size_mode = ScreenSizeOptionsScript.SCREEN_SIZE_MODE_MENU_ADAPTIVE
 		game._adaptive_resolution = false
 	apply_resolution(game)
@@ -403,6 +420,15 @@ static func refresh_dust(game: GameManager) -> void:
 	)
 
 
+static func toggle_fixed_background(game: GameManager) -> void:
+	game._fixed_background = not game._fixed_background
+	var config := _load_config(game)
+	config.set_value("graphics", "fixed_background", game._fixed_background)
+	config.save(game.AUDIO_CONFIG_PATH)
+	RenderingServer.global_shader_parameter_set(&"background_fixed", game._fixed_background)
+	refresh_background(game)
+
+
 static func toggle_background(game: GameManager) -> void:
 	game._background_enabled = not game._background_enabled
 	var config := _load_config(game)
@@ -421,6 +447,8 @@ static func toggle_background(game: GameManager) -> void:
 
 
 static func refresh_background(game: GameManager) -> void:
+	game.fixed_background_button.visible = game._background_enabled
+	game.fixed_background_button.icon = game.SELECTED_TEXTURE if game._fixed_background else game.UNCHECKED_TEXTURE
 	game.background_enabled_button.modulate = GameColors.WHITE
 	game.background_enabled_button.icon = (
 		game.SELECTED_TEXTURE

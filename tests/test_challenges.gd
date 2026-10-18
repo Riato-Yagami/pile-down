@@ -59,6 +59,7 @@ func _run() -> void:
 		&"full_magazine", &"overprotected",
 		&"bring_a_friend_full_activation", &"colorblind_expert",
 	])
+	game.discovered_bonuses.append(&"pile_mover")
 	game._open_challenge_selection()
 	await process_frame
 	assert(game.challenge_selection.visible)
@@ -166,15 +167,12 @@ func _run() -> void:
 	assert(game.timer_manager.running)
 	assert(game.timer_manager.time_left <= 2.4)
 	assert(game.timer_manager.time_left > 2.1)
-	var debug_win := InputEventKey.new()
-	debug_win.keycode = KEY_E
-	debug_win.pressed = true
 	var rounds_before_spam := game.round_number
 	var lives_lost_before_spam := game.run_lives_lost
 	var mistakes_before_spam := game.run_mistake_count
-	assert(game._handle_debug_shortcut(debug_win))
-	assert(game._handle_debug_shortcut(debug_win))
-	assert(game._handle_debug_shortcut(debug_win))
+	game._debug_win_round()
+	game._debug_win_round()
+	game._debug_win_round()
 	# A timeout delivered during accelerated debug transitions belongs to the
 	# superseded round and must never become delayed damage.
 	game._shared_clock_timeout_pending = true
@@ -206,4 +204,5 @@ func _run() -> void:
 	game.queue_free()
 	await process_frame
 	print("Challenge tests passed.")
+	manager.free()
 	quit()

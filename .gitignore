@@ -13,3 +13,27 @@ build/export.local.sh
 
 build/keystore/
 .env
+
+# Python bytecode and office lock files
+__pycache__/
+*.pyc
+*.pyo
+.~lock.*#
+~$*.xlsx
+
+# Generated trailers; keep the instructions and the Godot import guard
+/publishing/trailer/*
+!/publishing/trailer/README.md
+!/publishing/trailer/.gdignore
+/wip/trailer/
+/wip/kofi-banner/
+
+# Local prompt history, source exports and generated workbooks
+/wip/prompt/history/
+/wip/prompt/historique.*
+/wip/prompt/old.md
+
+# Generated working logs; diagnostic scripts remain versioned
+/wip/logs/*.log
+/wip/logs/*.json
+/wip/logs/*.txt

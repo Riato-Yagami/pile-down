@@ -92,7 +92,7 @@ func _apply_shared_data() -> void:
 		1.0 if catalog.pixelated and _pixelated_override else 0.0
 	)
 	RenderingServer.global_shader_parameter_set(
-		&"background_pixel_size", catalog.pixel_size
+		&"background_pixel_size", 1.0 if _pixelated_override else catalog.pixel_size
 	)
 
 

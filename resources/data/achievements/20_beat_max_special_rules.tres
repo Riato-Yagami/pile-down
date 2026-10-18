@@ -10,3 +10,5 @@ category = &"BONUSES & RULES"
 difficulty = 6
 reward_rationale = "La maîtrise du chaos ouvre le défi qui multiplie les règles."
 id = &"beat_max_special_rules"
+allow_challenges = true
+allow_checkpoints = true

@@ -159,15 +159,7 @@ static func normalise_checkpoint_ids(host: GameManager) -> bool:
 		for checkpoint_id in range(1, highest_id + 1):
 			if migrated_snapshots.has(checkpoint_id):
 				continue
-			var fallback := CheckpointSnapshot.new()
-			fallback.checkpoint_id = checkpoint_id
-			fallback.start_round = checkpoint_id * host.Difficulty.CHECKPOINT_INTERVAL
-			fallback.pile_count = host.Difficulty.START_PILES
-			fallback.hand_size = host.Difficulty.START_HAND_SIZE
-			fallback.start_value = host.Difficulty.START_CARD_VALUE
-			fallback.turn_time = host.Difficulty.START_TURN_TIME
-			fallback.difficulty_droughts = host._new_difficulty_droughts()
-			fallback.unlocked_endless = host.endless_unlocked
+			var fallback := create_fallback_snapshot(host, checkpoint_id)
 			migrated_snapshots[checkpoint_id] = fallback.to_dictionary()
 			migrated_unlocked.append(checkpoint_id)
 			changed = true
@@ -177,6 +169,20 @@ static func normalise_checkpoint_ids(host: GameManager) -> bool:
 	host.checkpoint_snapshots = migrated_snapshots
 	host.unlocked_checkpoints = migrated_unlocked
 	return changed
+
+
+static func create_fallback_snapshot(host: GameManager, checkpoint_id: int) -> CheckpointSnapshot:
+	# Legacy saves and seeded/debug starts can skip capturing an earlier milestone.
+	var snapshot := CheckpointSnapshot.new()
+	snapshot.checkpoint_id = checkpoint_id
+	snapshot.start_round = checkpoint_id * host.Difficulty.CHECKPOINT_INTERVAL
+	snapshot.pile_count = host.Difficulty.START_PILES
+	snapshot.hand_size = host.Difficulty.START_HAND_SIZE
+	snapshot.start_value = host.Difficulty.START_CARD_VALUE
+	snapshot.turn_time = host.Difficulty.START_TURN_TIME
+	snapshot.difficulty_droughts = host._new_difficulty_droughts()
+	snapshot.unlocked_endless = host.endless_unlocked
+	return snapshot
 
 
 static func checkpoint_value(

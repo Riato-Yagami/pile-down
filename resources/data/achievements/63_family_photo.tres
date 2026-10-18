@@ -10,3 +10,5 @@ category = &"ROUNDS"
 difficulty = 4
 reward_rationale = "Des fleurs réunies au même stade, comme les piles à 1."
 id = &"family_photo"
+allow_challenges = true
+allow_checkpoints = true

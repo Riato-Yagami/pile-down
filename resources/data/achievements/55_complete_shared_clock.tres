@@ -10,3 +10,4 @@ category = &"CHALLENGES"
 difficulty = 6
 reward_rationale = "Une pause rafraîchissante après la pression du chronomètre."
 id = &"complete_shared_clock"
+allow_challenges = true

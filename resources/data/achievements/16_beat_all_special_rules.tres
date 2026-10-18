@@ -10,3 +10,5 @@ category = &"BONUSES & RULES"
 difficulty = 7
 reward_rationale = "Une collection de types pour toutes les règles maîtrisées."
 id = &"beat_all_special_rules"
+allow_challenges = true
+allow_checkpoints = true

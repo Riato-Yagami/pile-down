@@ -9,13 +9,30 @@ static func prepare_drag_companions(host: GameManager, main_card: PlayingCard) -
 	host.drag_companions.clear()
 	host._companion_offsets.clear()
 	host._companion_home_positions.clear()
+	var candidates := selection_companions(host, main_card)
+	for index in candidates.size():
+		var companion := candidates[index]
+		host._companion_home_positions[companion] = companion.hand_return_position()
+		host._create_hand_slot_placeholder(companion)
+		companion.set_selectable(false)
+		companion.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var start_position := companion.global_position
+		companion.reparent(host.drag_layer, false)
+		companion.global_position = start_position
+		host.drag_layer.move_child(companion, 0)
+		host.drag_companions.append(companion)
+		var centered_x := (float(index) - float(candidates.size() - 1) * 0.5) * 23.0
+		host._companion_offsets[companion] = Vector2(centered_x, 16.0 + absf(centered_x) * 0.08)
+
+
+static func selection_companions(host: GameManager, main_card: PlayingCard) -> Array[PlayingCard]:
 	var level := host.bonus_manager.level(&"bring_a_friend")
 	if level <= 0 or host.round_modifiers.wandering_hand_cards:
-		return
+		return []
 	var cards := host.hand_manager.active_cards()
 	var main_index := cards.find(main_card)
 	if main_index < 0:
-		return
+		return []
 	var candidates: Array[PlayingCard] = []
 	if level == 1:
 		if main_index + 1 < cards.size():
@@ -31,19 +48,7 @@ static func prepare_drag_companions(host: GameManager, main_card: PlayingCard) -
 		for card in cards:
 			if card != main_card:
 				candidates.append(card)
-	for index in candidates.size():
-		var companion := candidates[index]
-		host._companion_home_positions[companion] = companion.hand_return_position()
-		host._create_hand_slot_placeholder(companion)
-		companion.set_selectable(false)
-		companion.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var start_position := companion.global_position
-		companion.reparent(host.drag_layer, false)
-		companion.global_position = start_position
-		host.drag_layer.move_child(companion, 0)
-		host.drag_companions.append(companion)
-		var centered_x := (float(index) - float(candidates.size() - 1) * 0.5) * 23.0
-		host._companion_offsets[companion] = Vector2(centered_x, 16.0 + absf(centered_x) * 0.08)
+	return candidates
 
 
 static func resolve_companion_drops(
@@ -162,6 +167,8 @@ static func handle_card_touch_input(host: GameManager, event: InputEvent) -> boo
 					return true
 				return host._card_touch_index == touch.index
 			var touched_card := host._card_at_touch_position(touch.position)
+			if is_instance_valid(host.selected_card) and host.selected_card.sticky_committed and touched_card != host.selected_card:
+				return true
 			if touched_card == null:
 				return false
 			if host.input_locked and not DiscardPlayController.can_interact(host, touched_card):
@@ -199,6 +206,9 @@ static func handle_card_touch_input(host: GameManager, event: InputEvent) -> boo
 					if tapped_card.is_discarding:
 						DiscardPlayController.cancel_claim(host, tapped_card)
 					else:
+						if tapped_card.sticky_committed:
+							tapped_card.set_selected_visual(true)
+							return true
 						host.selected_card = null
 						host.hand_manager.clear_selection()
 			return true

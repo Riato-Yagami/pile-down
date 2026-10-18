@@ -11,3 +11,5 @@ difficulty = 4
 reward_rationale = "Edit et Undo font écho aux répétitions du combo."
 reward_font = &"edit_undo_dot"
 id = &"double_down_deja_vu_combo"
+allow_challenges = true
+allow_checkpoints = true

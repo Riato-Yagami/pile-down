@@ -11,12 +11,19 @@ var duration := 5.0
 var time_left := 0.0
 var running := false
 var _countdown_generation := 0
+var _freeze_time_left := 0.0
 
 
 func _process(delta: float) -> void:
+	# Consume the freeze even during longer feedback pauses, without callbacks
+	# that could restart a stopped timer or affect the next hand.
+	var frozen_delta := minf(delta, _freeze_time_left)
+	_freeze_time_left -= frozen_delta
 	if not running:
 		return
-	time_left = maxf(0.0, time_left - delta)
+	if frozen_delta >= delta:
+		return
+	time_left = maxf(0.0, time_left - (delta - frozen_delta))
 	time_updated.emit(time_left)
 	if time_left <= 0.0:
 		running = false
@@ -25,6 +32,7 @@ func _process(delta: float) -> void:
 
 func start_countdown(seconds: float, grace_duration := 0.0) -> void:
 	_countdown_generation += 1
+	_freeze_time_left = 0.0
 	countdown_restarted.emit()
 	duration = seconds
 	time_left = seconds
@@ -39,7 +47,12 @@ func start_countdown(seconds: float, grace_duration := 0.0) -> void:
 
 func stop_countdown() -> void:
 	_countdown_generation += 1
+	_freeze_time_left = 0.0
 	running = false
+
+
+func freeze_countdown(seconds: float) -> void:
+	_freeze_time_left = maxf(_freeze_time_left, maxf(seconds, 0.0))
 
 
 func resume_countdown() -> void:

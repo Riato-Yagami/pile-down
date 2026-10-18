@@ -32,6 +32,8 @@ var regeneration_timer: Timer
 var regeneration_enabled := false
 var _hovered_for_drop := false
 var _visual_tween: Tween
+var _error_shake_tween: Tween
+var _error_shake_origins: Dictionary = {}
 var colorblind_enabled := false
 var hide_tile_numbers := false
 var keep_face_up := false
@@ -43,6 +45,29 @@ var _value_font_size := 20
 var _value_font_offset := Vector2.ZERO
 var _override_hidden_tile_with_font := false
 var _tile_colors: Array[Color] = Settings.TILE_COLORS.slice(0, 10)
+
+
+func play_error_shake() -> Tween:
+	if _error_shake_tween != null:
+		_error_shake_tween.kill()
+	for visual in _error_shake_origins:
+		visual.position.x = _error_shake_origins[visual]
+	_error_shake_origins.clear()
+	# Animate only visual children; the pile's slot and hitbox remain stable.
+	var visuals: Array[Control] = [face_sprite, back_sprite, value_label, glow]
+	var origins := _error_shake_origins
+	for visual in visuals:
+		origins[visual] = visual.position.x
+	var tween := create_tween()
+	_error_shake_tween = tween
+	for offset in [3.0, -3.0, 2.0, -2.0, 0.0]:
+		var first := true
+		for visual in visuals:
+			if not first:
+				tween.parallel()
+			tween.tween_property(visual, "position:x", float(origins[visual]) + offset, 0.045)
+			first = false
+	return tween
 
 
 func _ready() -> void:
@@ -362,11 +387,7 @@ func set_drop_feedback(active: bool) -> void:
 
 func flash_invalid() -> void:
 	set_drop_feedback(false)
-	var original_y := position.y
-	var tween := create_tween()
-	tween.tween_property(self, "position:y", original_y + 4.0, 0.06)
-	tween.tween_property(self, "position:y", original_y, 0.1)
-	await tween.finished
+	await get_tree().create_timer(0.225).timeout
 
 
 func impact() -> void:

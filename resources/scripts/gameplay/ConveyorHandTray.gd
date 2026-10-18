@@ -6,6 +6,7 @@ const DEFAULT_OFFSETS := Rect2(18.0, -55.0, -36.0, 46.0)
 const CONVEYOR_OFFSETS := Rect2(18.0, -55.0, -18.0, 55.0)
 
 @onready var regular_background: NinePatchRect = %RegularHandBackground
+@onready var conveyor_bottom: TextureRect = %ConveyorBottom
 @onready var conveyor_background: NinePatchRect = %ConveyorBackground
 
 var _conveyor_enabled := false
@@ -38,7 +39,9 @@ var _conveyor_enabled := false
 
 
 func _ready() -> void:
+	resized.connect(_fit_conveyor_bottom)
 	_conveyor_enabled = preview_conveyor_belt if Engine.is_editor_hint() else false
+	set_conveyor_enabled(_conveyor_enabled)
 	_refresh_editor_preview()
 
 
@@ -46,6 +49,7 @@ func set_conveyor_enabled(enabled: bool) -> void:
 	_conveyor_enabled = enabled
 	regular_background.visible = not enabled
 	conveyor_background.visible = enabled
+	conveyor_bottom.visible = enabled
 	_apply_offsets()
 
 
@@ -71,6 +75,7 @@ func _apply_offsets() -> void:
 	var viewport_size := get_viewport_rect().size
 	offset_left = screen_edge_margins.x - parent_rect.position.x
 	offset_right = viewport_size.x + conveyor_right_bleed - parent_rect.end.x
+	_fit_conveyor_bottom()
 
 
 func _draw() -> void:
@@ -92,3 +97,11 @@ func _refresh_editor_preview() -> void:
 		return
 	set_conveyor_enabled(preview_conveyor_belt)
 	queue_redraw()
+
+
+func _fit_conveyor_bottom() -> void:
+	if not is_node_ready() or Engine.is_editor_hint():
+		return
+	# The authored top and horizontal placement remain editable in the scene.
+	var bottom := get_global_transform_with_canvas().affine_inverse() * get_viewport_rect().end
+	conveyor_bottom.offset_bottom = maxf(bottom.y, conveyor_bottom.offset_top)

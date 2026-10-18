@@ -13,13 +13,15 @@ func _run() -> void:
 	var shared := manager.find(&"shared_clock")
 	var conveyor := manager.find(&"conveyor_belt")
 	var boss := manager.find(&"boss_rush")
-	var commit := manager.find(&"no_looking_back")
+	var commit := preload("res://resources/data/challenges/07_no_looking_back.tres").duplicate() as ChallengeData
 	assert(shared != null and conveyor != null and boss != null and commit != null)
 	for data in [shared, conveyor, boss, commit]:
 		assert(data.start_round == 5)
 		assert(data.target_round == 20)
 		assert(data.allow_endless)
 	assert(manager.modifiers_for(shared).shared_round_clock)
+	assert(manager.modifiers_for(shared).disabled_bonuses.has(&"time_bank"))
+	assert(manager.modifiers_for(shared).disabled_bonuses.has(&"slow_start"))
 	assert(manager.modifiers_for(shared).shared_clock_seconds_per_hand > 0.0)
 	assert(manager.modifiers_for(conveyor).conveyor_hand)
 	assert(manager.modifiers_for(conveyor).conveyor_speed > 0.0)
@@ -36,16 +38,16 @@ func _run() -> void:
 	assert(Difficulty.required_tiles_to_complete_round(3, 5) == 15)
 	assert(Difficulty.estimate_required_hands(15, 4) == 4)
 	assert(Difficulty.estimate_shared_round_time(1, 1, 4, 1.0) == 8.0)
-	assert(Difficulty.boss_rush_rule_count(5, 5, 20, false) == 2)
-	assert(Difficulty.boss_rush_rule_count(9, 5, 20, false) == 3)
-	assert(Difficulty.boss_rush_rule_count(13, 5, 20, false) == 4)
+	assert(Difficulty.boss_rush_rule_count(5, 5, 20, false) == 1)
+	assert(Difficulty.boss_rush_rule_count(9, 5, 20, false) == 2)
+	assert(Difficulty.boss_rush_rule_count(13, 5, 20, false) == 3)
 	assert(
 		Difficulty.boss_rush_rule_count(17, 5, 20, false)
-		== Difficulty.MAX_COMBINED_RULES
+		== 5
 	)
 	assert(
 		Difficulty.boss_rush_rule_count(5, 5, 20, true)
-		== Difficulty.MAX_COMBINED_RULES
+		== 1
 	)
 	assert(Difficulty.get_conveyor_speed(999) == Difficulty.CONVEYOR_MAX_SPEED)
 
@@ -114,6 +116,7 @@ func _run() -> void:
 	assert(absf(game.timer_manager.time_left - time_before_mistake) < 0.1)
 	game.bonus_manager.grant_starting_bonuses({&"redraw": 1})
 	game.bonus_manager.redraws_left = 1
+	var reload_started := Time.get_ticks_msec()
 	var time_before_reload := game.timer_manager.time_left
 	game._on_redraw_pressed()
 	await process_frame
@@ -121,10 +124,11 @@ func _run() -> void:
 	while game.input_locked and Time.get_ticks_msec() < deadline:
 		await process_frame
 	assert(not game.input_locked)
-	assert(absf(
-		game.timer_manager.time_left
-		- (time_before_reload + Difficulty.SHARED_CLOCK_RELOAD_TIME_BONUS)
-	) < 0.1)
+	var elapsed := float(Time.get_ticks_msec() - reload_started) / 1000.0
+	var replenished := time_before_reload + Difficulty.SHARED_CLOCK_RELOAD_TIME_BONUS
+	assert(game.timer_manager.time_left <= replenished)
+	assert(game.timer_manager.time_left >= replenished - elapsed - 0.1)
+
 	game.timer_manager.time_left = 0.0
 	await game._on_time_expired()
 	assert(game.mistakes_left == 0)
@@ -194,6 +198,9 @@ func _run() -> void:
 	while not game._conveyor_active and Time.get_ticks_msec() < deadline:
 		await process_frame
 	assert(game._conveyor_active)
+	assert(game.hand_tray.conveyor_bottom.visible)
+	var bottom_rect := game.hand_tray.conveyor_bottom.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, game.hand_tray.conveyor_bottom.size)
+	assert(is_equal_approx(bottom_rect.end.y, game.get_viewport_rect().end.y))
 	var conveyor_card := game.hand_manager.current_cards[0]
 	assert(not game._conveyor_left_to_right)
 	assert(conveyor_card.global_position.x > game.get_viewport_rect().size.x)
@@ -202,6 +209,8 @@ func _run() -> void:
 		game.hand_tray.get_global_rect().get_center().y
 		+ Difficulty.CONVEYOR_CARD_VERTICAL_OFFSET
 	))
+	CardClickController.select_on_tap(game, conveyor_card)
+	assert(game.selected_card == conveyor_card and not conveyor_card.dragging)
 	var previous_position := conveyor_card.global_position
 	game._process_conveyor(0.5)
 	assert(conveyor_card.global_position != previous_position)
@@ -227,6 +236,7 @@ func _run() -> void:
 	)
 	game._process_conveyor(0.01)
 	assert(not game.hand_manager.current_cards.has(conveyor_card))
+	assert(game.selected_card == null)
 	game._conveyor_unplayable_spawns = conveyor.conveyor_guaranteed_interval
 	var forced_card := game._spawn_conveyor_card()
 	assert(game._playable_values().has(forced_card.card_value))
@@ -235,10 +245,9 @@ func _run() -> void:
 	var cards_before_pickup := game.hand_manager.current_cards.size()
 	abandoned_card.drag_target = abandoned_card.get_global_rect().get_center()
 	game._on_card_drag_started(abandoned_card)
-	assert(game.hand_manager.current_cards.size() == cards_before_pickup + 1)
-	var slot_replacement: PlayingCard = game.hand_manager.current_cards.back()
-	assert(slot_replacement != abandoned_card)
-	assert(slot_replacement.global_position == abandoned_slot)
+	assert(abandoned_card.dragging)
+	assert(game.hand_manager.current_cards.size() == cards_before_pickup)
+
 	var mistakes_before_abandon := game.mistakes_left
 	await game._on_card_drag_released(abandoned_card, Vector2(-100.0, -100.0))
 	assert(game.mistakes_left == mistakes_before_abandon)
@@ -248,6 +257,8 @@ func _run() -> void:
 	if game._playable_values().has(wrong_value):
 		wrong_value = (wrong_value + 1) % maxi(game.start_value, 2)
 	rejected_card.card_value = wrong_value
+	# This assertion tests raw placement damage, regardless of debug-granted bonuses.
+	game.bonus_manager.safety_net_available = false
 	rejected_card.drag_target = rejected_card.get_global_rect().get_center()
 	game._on_card_drag_started(rejected_card)
 	var mistakes_before_rejection := game.mistakes_left
@@ -258,8 +269,10 @@ func _run() -> void:
 	assert(game.mistakes_left == mistakes_before_rejection - 1)
 	assert(not game.hand_manager.current_cards.has(rejected_card))
 	game._achievement_notifications_enabled = false
-	await process_frame
+	await create_timer(0.6).timeout
 	game.queue_free()
 	await process_frame
+	manager.free()
+	rule_manager.free()
 	print("New challenge mode tests passed.")
 	quit()

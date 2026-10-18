@@ -37,7 +37,7 @@ static func _update_wandering(card: PlayingCard, delta: float) -> void:
 
 
 static func _update_drag(card: PlayingCard, delta: float) -> void:
-	if not card.dragging:
+	if not card.dragging and not card._selected:
 		if not card.drag_timer.is_stopped():
 			card.drag_timer.stop()
 			card.drag_timer_ring.visible = false
@@ -46,6 +46,8 @@ static func _update_drag(card: PlayingCard, delta: float) -> void:
 		card.drag_timer_ring.ratio = (
 			card.drag_timer.time_left / maxf(card.drag_timer.wait_time, 0.001)
 		)
+	if not card.dragging:
+		return
 	var previous := card.global_position
 	if card.touch_index >= 0:
 		card.update_touch_drag(card.drag_target)

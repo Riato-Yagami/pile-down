@@ -37,6 +37,17 @@ func _run() -> void:
 	for card in cards:
 		original_positions[card] = card.global_position
 
+	var selected := cards[1] as PlayingCard
+	CardClickController.select_on_tap(game, selected)
+	await create_timer(0.25).timeout
+	for companion in HandDragController.selection_companions(game, selected):
+		assert(companion.get_parent() == game.hand_container)
+		assert(selected.z_index > companion.z_index)
+		assert(companion.visual_root.global_position.distance_to(selected.visual_root.global_position) < 30.0)
+	game.hand_manager.clear_selection()
+	for card in cards:
+		assert(card.visual_root.position.is_equal_approx(Vector2.ZERO))
+
 	for attempt in 4:
 		var main_card := cards[1] as PlayingCard
 		game._on_card_drag_started(main_card)

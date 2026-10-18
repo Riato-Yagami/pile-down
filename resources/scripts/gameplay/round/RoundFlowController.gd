@@ -285,7 +285,10 @@ static func generate_next_hand(
 		host.challenge_modifiers.guarantee_playable_hand,
 		force_reload_tutorial_hand,
 		host._last_played_pile,
-		host.Difficulty.LAST_PILE_DRAW_SUPPRESSION
+		host.Difficulty.LAST_PILE_DRAW_SUPPRESSION,
+		host.Difficulty.LAST_PLAYED_VALUE_DRAW_SUPPRESSION,
+		host.Difficulty.PILE_SPREAD_DRAW_STRENGTH,
+		host.Difficulty.PILE_SPREAD_MIN_DRAW_WEIGHT
 	)
 	if wandering_cards:
 		host._draw_wandering_hand()
@@ -381,19 +384,23 @@ static func finish_round(host: GameManager) -> void:
 	host.achievement_manager.round_completed.emit(
 		host._build_run_summary(false), completed_round_number, completed_rule_ids
 	)
-	var checkpoint_unlocked := (
-		false
-		if host.game_mode == host.GameMode.CHALLENGE
-		else host._unlock_completed_checkpoint(completed_round_number)
-	)
-	if checkpoint_unlocked:
-		host.achievement_manager.checkpoint_unlocked.emit(
-			int(completed_round_number / host.Difficulty.CHECKPOINT_INTERVAL),
-			host.unlocked_checkpoints
-		)
-		await host._show_checkpoint_unlocked(
-			int(completed_round_number / host.Difficulty.CHECKPOINT_INTERVAL)
-		)
+	var previous_unlock_count := host.newly_unlocked_checkpoints.size()
+	host._unlock_completed_checkpoint(completed_round_number)
+	if (
+		host.Difficulty.ENABLE_CHECKPOINTS
+		and host.game_mode != host.GameMode.CHALLENGE
+		and host.checkpoint_flawless_rounds >= host.Difficulty.CHECKPOINT_INTERVAL
+	):
+		for checkpoint_id in host.unlocked_checkpoints:
+			if (
+				checkpoint_id * host.Difficulty.CHECKPOINT_INTERVAL <= completed_round_number
+				and not host.achievement_manager.qualified_checkpoint_ids.has(checkpoint_id)
+			):
+				# A replay can qualify an existing checkpoint first earned in a seed.
+				host.achievement_manager.checkpoint_unlocked.emit(checkpoint_id, host.unlocked_checkpoints)
+	var unlocked_ids := host.newly_unlocked_checkpoints.slice(previous_unlock_count)
+	for checkpoint_id in unlocked_ids:
+		await host._show_checkpoint_unlocked(checkpoint_id)
 		if transition_generation != host._run_transition_generation:
 			return
 	host.soft_audio.play_tone(680.0, 0.16, 0.055)
@@ -457,6 +464,9 @@ static func finish_round(host: GameManager) -> void:
 		else:
 			host.background_manager.transition_to_next(host.cosmetic_rng)
 			host.background_manager.skip_transition()
+	var wait_for_player := host._pause_between_rounds and host._debug_round_wins_queued <= 0
+	if change.is_empty() and wait_for_player:
+		change = "ROUND %d" % host.round_number
 	if change.is_empty():
 		if host._debug_round_wins_queued > 0:
 			return
@@ -466,7 +476,7 @@ static func finish_round(host: GameManager) -> void:
 	var change_lines := change.split("\n", false)
 	var tween := host.DifficultyAnnouncementScript.animate(
 		host.transient_label, change_lines,
-		host.extra_difficulty_reveal_delay, host.extra_difficulty_hold_duration
+		host.extra_difficulty_reveal_delay, host.extra_difficulty_hold_duration, wait_for_player
 	)
 	host.skippable_sequence.begin(tween)
 	if not host.skippable_sequence.skipped.is_connected(host.background_manager.skip_transition):
@@ -480,6 +490,16 @@ static func finish_round(host: GameManager) -> void:
 		host._resume_achievement_notifications(&"difficulty")
 		return
 	host.skippable_sequence.finish()
+	if wait_for_player:
+		host.skippable_sequence.begin_wait()
+		await host.skippable_sequence.wait_finished
+		host.skippable_sequence.finish()
+		for line in host.transient_label.get_children():
+			line.queue_free()
+		host.transient_label.visible = false
+		host._resume_achievement_notifications(&"difficulty")
+		if transition_generation != host._run_transition_generation:
+			return
 	host.transient_label.visible = false
 	host._resume_achievement_notifications(&"difficulty")
 	if host._debug_round_wins_queued > 0:

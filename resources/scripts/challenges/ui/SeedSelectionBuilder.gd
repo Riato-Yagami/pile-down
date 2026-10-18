@@ -57,11 +57,15 @@ static func build_seed_controls(host: ChallengeSelection) -> void:
 	host._seed_endless = host.SELECTABLE_TEXT_SCENE.instantiate() as SelectableText
 	host._seed_endless.text = "ENDLESS"
 	host._style_seed_check(host._seed_endless)
+	host._seed_endless.toggled.connect(func(_enabled: bool) -> void: host._refresh_seed_endless_selection())
 	section.add_child(host._seed_endless)
 	var difficulty_caption := Label.new()
 	difficulty_caption.text = "DIFFICULTY"
 	host._style_entry_heading(difficulty_caption, true)
 	section.add_child(difficulty_caption)
+	host._seed_round = host._create_value_selector(
+		section, "ROUND", 1, 1, 1
+	)
 	host._seed_piles = host._create_value_selector(
 		section, "PILES", host.DifficultySettings.START_PILES,
 		host.SEEDED_MAX_PILES, host.DifficultySettings.START_PILES
@@ -346,6 +350,13 @@ static func configure_value_selector(
 	host: ChallengeSelection,
 	value_label: Label, label: String, first: int, last: int, default_value: int
 ) -> void:
+	if label != "ROUND":
+		var choices: Array[int] = [0]
+		for value in range(first, maxi(first, last) + 1):
+			choices.append(value)
+		value_label.set_meta("choices", choices)
+		first = 0
+		default_value = 0
 	value_label.set_meta("label", label)
 	value_label.set_meta("min_value", first)
 	value_label.set_meta("max_value", maxi(first, last))
@@ -373,7 +384,11 @@ static func step_value_selector(
 	var value := int(value_label.get_meta("value", 0))
 	var min_value := int(value_label.get_meta("min_value", value))
 	var max_value := int(value_label.get_meta("max_value", value))
-	value_label.set_meta("value", wrapi(value + direction, min_value, max_value + 1))
+	if value_label.has_meta("choices"):
+		var choices: Array = value_label.get_meta("choices")
+		value_label.set_meta("value", choices[wrapi(choices.find(value) + direction, 0, choices.size())])
+	else:
+		value_label.set_meta("value", wrapi(value + direction, min_value, max_value + 1))
 	host._refresh_value_selector_text(value_label)
 
 
@@ -382,7 +397,9 @@ static func refresh_value_selector_text(host: ChallengeSelection, value_label: L
 	var value := int(value_label.get_meta("value", 0))
 	var min_value := int(value_label.get_meta("min_value", value))
 	var max_value := int(value_label.get_meta("max_value", value))
-	if label == "TIMER":
+	if value == 0 and label != "ROUND":
+		value_label.text = "%s : AUTO" % TranslationServer.translate(label).capitalize()
+	elif label == "TIMER":
 		value_label.text = TranslationServer.translate("Timer : %ds") % value
 	else:
 		value_label.text = "%s : %d/%d" % [TranslationServer.translate(label).capitalize(), value, max_value]
@@ -400,11 +417,17 @@ static func refresh_seed_endless_selection(host: ChallengeSelection, _index := -
 	host._seed_endless.disabled = not can_endless
 	if not can_endless:
 		host._seed_endless.set_pressed_no_signal(false)
+	if host._seed_round != null:
+		host._seed_round.get_parent().visible = host._seed_mode_ids[mode_index] == &"" and not host._seed_endless.button_pressed
 
 
 static func refresh_seed_difficulty_limits(host: ChallengeSelection) -> void:
 	if host._seed_piles == null:
 		return
+	host._configure_value_selector(
+		host._seed_round, "ROUND", 1,
+		int(host._seed_difficulty_limits.get("max_start_round", 1)), 1
+	)
 	host._configure_value_selector(
 		host._seed_piles, "PILES",
 		host.DifficultySettings.START_PILES,
@@ -433,6 +456,7 @@ static func refresh_seed_difficulty_limits(host: ChallengeSelection) -> void:
 
 static func seed_difficulty_overrides(host: ChallengeSelection) -> Dictionary:
 	return {
+		"start_round": host._selected_option_number(host._seed_round),
 		"pile_count": host._selected_option_number(host._seed_piles),
 		"hand_size": host._selected_option_number(host._seed_hand),
 		"start_value": host._selected_option_number(host._seed_value),

@@ -30,7 +30,7 @@ static func process_conveyor(host: GameManager, delta: float) -> void:
 		if not is_instance_valid(card) or not card.has_meta(&"conveyor_card"):
 			continue
 		if (
-			card == host.selected_card
+			(card == host.selected_card and not card._selected)
 			or card.dragging
 			or card.drag_state != PlayingCard.DragState.IDLE
 		):
@@ -56,6 +56,9 @@ static func process_conveyor(host: GameManager, delta: float) -> void:
 			else card.global_position.x > host.get_viewport_rect().size.x + card.size.x
 		)
 		if outside:
+			if card == host.selected_card:
+				host.selected_card = null
+				host.hand_manager.clear_selection()
 			host.hand_manager.forget_card(card)
 			card.queue_free()
 	host._conveyor_spawn_distance += speed * delta
@@ -152,17 +155,30 @@ static func spawn_conveyor_card(host: GameManager) -> PlayingCard:
 			playable_values,
 			host.round_modifiers.stack_direction == RoundModifiers.StackDirection.UP
 		)
-	if not lucky_queued and is_instance_valid(host._last_played_pile) and not host._last_played_pile.completed:
-		var avoided_value := host._last_played_pile.expected_value()
-		if playable_values.any(func(candidate: int) -> bool: return candidate != avoided_value):
+	var spread_weights := PileDrawBias.build_weights(
+		host.piles, host.start_value,
+		host.round_modifiers.stack_direction == RoundModifiers.StackDirection.UP,
+		host.Difficulty.PILE_SPREAD_DRAW_STRENGTH,
+		host.Difficulty.PILE_SPREAD_MIN_DRAW_WEIGHT
+	) if host.challenge_modifiers.guarantee_playable_hand else {}
+	if not lucky_queued and not spawn_high_tile:
+		var last_pile := host._last_played_pile
+		var avoided_value := last_pile.expected_value() if is_instance_valid(last_pile) and not last_pile.completed else -1
+		var repeated_value := last_pile.current_value if is_instance_valid(last_pile) else -1
+		var suppression := host.Difficulty.LAST_PILE_DRAW_SUPPRESSION if avoided_value >= 0 else 0.0
+		var repeat_suppression := host.Difficulty.LAST_PLAYED_VALUE_DRAW_SUPPRESSION if repeated_value >= 0 else 0.0
+		if not playable_values.any(func(candidate: int) -> bool: return candidate != avoided_value):
+			suppression = 0.0
+		if repeat_suppression > 0.0 or suppression > 0.0 or not spread_weights.is_empty():
 			var pool: Array[int] = playable_values.duplicate()
 			if not force_playable:
 				pool.assign(range(
 					1 if host.round_modifiers.stack_direction == RoundModifiers.StackDirection.UP else 0,
 					host.start_value + (1 if host.round_modifiers.stack_direction == RoundModifiers.StackDirection.UP else 0)
 				))
-			value = host.hand_manager.suppress_draw(
-				value, pool, avoided_value, host.Difficulty.LAST_PILE_DRAW_SUPPRESSION
+			value = host.hand_manager.draw_spaced_value(
+				pool, avoided_value, suppression,
+				repeated_value, repeat_suppression, spread_weights
 			)
 	if playable_values.has(value):
 		host._conveyor_unplayable_spawns = 0

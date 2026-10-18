@@ -1,0 +1,72 @@
+<h1>Pile Down 2.4: more choices, a new rhythm</h1>
+
+<p>Since the previous devlog, Pile Down has mainly evolved in how you play: placing a tile without dragging it, catching a card just before it disappears, setting up a custom run, or taking a break between rounds.</p>
+
+<p>This post covers the changes <strong>since 2.2, through 2.4</strong>. Memory remains at the heart of the game, with reworked draws and several fixes to make controls more reliable, especially on phones.</p>
+
+<h2>Place cards with a click or tap</h2>
+
+<p>You can now <strong>select a tile, then click or tap the target stack</strong> to place it. A yellow outline marks your selection. Clicking an empty area clears it, and you can still switch to dragging.</p>
+
+<p>The accessibility options let you enable <strong>Click to Place</strong> and <strong>Drag and Drop</strong> separately. Both are on by default, so you can choose the gesture that suits you.</p>
+
+<p>Special rules also work with this control mode. <strong>Blind Delivery</strong> hides the selected tile, while <strong>Hot Potatoes</strong> limits how long you can keep it selected. Cards carried by <strong>Bring a Friend</strong> are also highlighted before placement.</p>
+
+<h2>One last chance before the discard</h2>
+
+<p>After a successful move, the other tiles in your hand remain playable during their brief exit animation. If you spot a second solution, you can <strong>catch a tile before it disappears</strong> and play it too.</p>
+
+<p>Grabbing it stops its exit, whether you click or drag. A valid extra move refreshes the hand and restarts the timer; tiles leaving that new hand can also be caught. This makes it possible to chain several quick moves.</p>
+
+<p>This mechanic is still experimental. A wrong value still costs a life. It applies to discards after valid moves; manual reloads, round endings, and game overs keep their usual behavior.</p>
+
+<p>After a nonfatal mistake, you can also grab another tile during the return and damage animations to get moving again sooner.</p>
+
+<h2>Draws that keep stacks apart</h2>
+
+<p>Hand generation has been reworked to reduce two habits that made memorization much easier: always working down the same stack, or keeping every stack at the same value.</p>
+
+<p>The new preferences aim for a <strong>moderate gap between stacks</strong>. When the board is nearly aligned, they favor some separation. When one stack gets far ahead, they favor the others catching up. They influence draw chances without forcing a single path.</p>
+
+<p>Hands still contain at least one playable card in modes that guarantee one. <strong>Lucky Hand</strong> and jokers retain their benefits, and <strong>Reload Required</strong> keeps its separate draw rules. The preference based on stack gaps stays disabled in rounds with small starting values.</p>
+
+<p>Difficulty progression has also been adjusted: the closer a stat gets to its limit, the less weight it has in the next difficulty draw. Winning a round now restores <strong>one life</strong>, up to your available maximum, instead of restoring all lives. A new run still starts with full lives.</p>
+
+<h2>Choose your pace</h2>
+
+<p>Two new options let you adjust the experience:</p>
+
+<ul>
+  <li><strong>Pause Between Rounds</strong>, in the gameplay options, keeps the difficulty announcement on screen until you click, tap, or press a key. The next round’s timer waits for your input.</li>
+  <li><strong>Fixed Background</strong>, in the graphics options, stops the patterns from scrolling. Transitions and distortions remain active.</li>
+</ul>
+
+<p>Both options are off by default, and your choices are saved.</p>
+
+<h2>Set up a seeded run</h2>
+
+<p>The Seeds page now lets you adjust the <strong>stack count, hand size, starting value, and time per turn</strong>, within the limits already reached in your progression.</p>
+
+<p>In normal mode, you can also choose a starting round up to the highest one you have reached. Each difficulty setting offers <strong>AUTO</strong>, letting the game reconstruct the difficulty for that starting point. You can fix just one stat and leave the others automatic.</p>
+
+<p>Replaying the same seed preserves the setup. You can practice a particular situation or share the same starting point with someone else.</p>
+
+<h2>Clearer challenge and achievement rules</h2>
+
+<p><strong>Boss Rush</strong> now starts with one rule from the very first round, then adds another every three rounds, up to five where compatibility allows. This progression also applies in Endless Mode.</p>
+
+<p><strong>Conveyor Belt</strong> has a new exit path: tiles arrive from the right, turn at the left, and leave through the bottom of the screen. The flow continues while you grab a card.</p>
+
+<p>In <strong>Shared Clock</strong>, the countdown pauses during mistake recovery, and a reload adds three seconds. <strong>Reload Required</strong> preserves the remaining time while replacing the hand and grants a small extra allowance when less than one second remains.</p>
+
+<p>Achievements now respect the modes in which their goals must be completed. Progression and speed goals remain tied to normal or Endless runs without an entered seed; some placement, combo, and special-rule feats remain available in challenges or from checkpoints. Existing saves keep their earned achievements and progression.</p>
+
+<h2>More comfortable mobile play</h2>
+
+<p>With <strong>Sticky Fingers</strong>, a green outline now marks the tile you are committed to playing. On touchscreens, a tile released outside a stack stays in place and can be picked up again. An invalid placement releases the selection so you can choose another card.</p>
+
+<p>Menus and the board account for notches and system bars. On Android, you can show or hide those bars in the graphics options. Scrollable lists, selections, and several French texts have also been adjusted.</p>
+
+<p>A new animated loading screen now greets you at startup, with a stack of tiles whose values follow your progression.</p>
+
+<p>Thanks for your feedback! I’m particularly curious about how you play this version: do you prefer dragging or tapping to place cards? And do the new hands encourage you to switch stacks more often?</p>

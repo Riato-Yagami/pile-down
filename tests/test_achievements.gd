@@ -94,7 +94,7 @@ func _test_rounds_lives_checkpoints_and_speedruns() -> void:
 	summary.mode = RunSummary.Mode.CHECKPOINT
 	summary.lives_lost = 0
 	manager.round_completed.emit(summary, half, no_rules)
-	assert(manager.unlocked.has(&"complete_half_game"))
+	assert(not manager.unlocked.has(&"complete_half_game"))
 	assert(not manager.unlocked.has(&"half_without_checkpoint"))
 	assert(not manager.unlocked.has(&"speedrun_10_rounds"))
 
@@ -158,7 +158,8 @@ func _test_rounds_lives_checkpoints_and_speedruns() -> void:
 	manager.checkpoint_unlocked.emit(checkpoint_ids[0], first_checkpoint_ids)
 	assert(manager.unlocked.has(&"first_checkpoint"))
 	assert(not manager.unlocked.has(&"all_checkpoints"))
-	manager.checkpoint_unlocked.emit(checkpoint_ids.back(), checkpoint_ids)
+	for checkpoint_id in checkpoint_ids:
+		manager.checkpoint_unlocked.emit(checkpoint_id, checkpoint_ids)
 	assert(manager.unlocked.has(&"all_checkpoints"))
 	manager.queue_free()
 
@@ -168,10 +169,11 @@ func _test_cumulative_progression() -> void:
 	var no_rules: Array[StringName] = []
 	var no_ids: Array[StringName] = []
 	var discovered: Array[StringName] = Difficulty.ENABLED_BONUSES.duplicate()
-	manager.bonus_acquired.emit(&"open_book", 1, {&"open_book": 1}, discovered)
+	for bonus_id in discovered:
+		manager.bonus_acquired.emit(bonus_id, 1, {bonus_id: 1}, discovered)
 	assert(manager.unlocked.has(&"all_bonuses_discovered"))
 	var beaten: Array[StringName] = Difficulty.ENABLED_SPECIAL_RULES.duplicate()
-	manager.special_rule_round_completed.emit(no_rules, beaten)
+	manager.special_rule_round_completed.emit(beaten, beaten)
 	assert(manager.unlocked.has(&"beat_all_special_rules"))
 	manager.unlocked.clear()
 	manager.bonus_acquired.emit(&"pile_mover", 1, {&"pile_mover": 1}, no_ids)

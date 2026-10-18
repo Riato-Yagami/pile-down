@@ -10,3 +10,5 @@ category = &"BONUSES & RULES"
 difficulty = 5
 reward_rationale = "Des tons rosés évoquant les doigts collants du duo de règles."
 id = &"blind_delivery_sticky_fingers"
+allow_challenges = true
+allow_checkpoints = true

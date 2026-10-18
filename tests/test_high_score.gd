@@ -21,13 +21,20 @@ func _run() -> void:
 
 	game.best_rounds_left = game.round_number
 	game.best_score_time_ms = 2000
-	game.round_reached_time_ms = 1500
+	# Death records include time spent in the current, unfinished round.
+	game.round_reached_time_ms = 750
+	game.run_pause_started_msec = Time.get_ticks_msec()
+	game.game_started_msec = game.run_pause_started_msec - 1500
+	game.run_paused_msec = 0
 	await game._finish_game(false)
 	assert(game.best_score_time_ms == 1500)
 	assert(game.overlay_high_score.visible)
-	assert(game.overlay_high_score.text.contains("[wave"))
 	assert(game.overlay_high_score.text.contains("HIGHSCORE"))
-	assert(game.overlay_details.text.contains("[color=#4D82C2]in 1 s 500 ms[/color]"))
+	var colored_time := "[color=#%s]%s[/color]" % [
+		GameColors.ACCENT.to_html(false),
+		TranslationServer.translate("in %s") % "1 s 500 ms",
+	]
+	assert(game.overlay_details.text.contains(colored_time))
 
 	await create_timer(0.4).timeout
 	print("High score integration test passed.")

@@ -167,6 +167,10 @@ static func debug_reset_progression(host: GameManager) -> void:
 	host.current_checkpoint_id = 0
 	host.checkpoint_bonus_backlog = 0
 	host.selected_checkpoint_id = 0
+	host.checkpoint_flawless_rounds = 0
+	host.checkpoint_segment_damage_count = 0
+	host._checkpoint_candidates.clear()
+	host._pending_checkpoint_snapshot = null
 	host.discovered_bonuses.clear()
 	host.max_discovered_tile_value = host.Difficulty.START_CARD_VALUE
 	host.max_discovered_pile_count = host.Difficulty.START_PILES
@@ -184,6 +188,10 @@ static func debug_reset_progression(host: GameManager) -> void:
 	host.achievement_manager.unlock_dates.clear()
 	host.achievement_manager.bonuses_maxed_once.clear()
 	host.achievement_manager.bonus_highest_levels.clear()
+	host.achievement_manager.qualified_bonus_ids.clear()
+	host.achievement_manager.qualified_rule_ids.clear()
+	host.achievement_manager.qualified_protection_levels.clear()
+	host.achievement_manager.qualified_checkpoint_ids.clear()
 	host.font_manager.unlocked.clear()
 	for font_data in host.font_manager.definitions:
 		if font_data.default_unlocked:

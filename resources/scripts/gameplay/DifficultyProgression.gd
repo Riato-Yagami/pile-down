@@ -23,8 +23,8 @@ func reset() -> void:
 func increase(rng: RandomNumberGenerator, first_upgrade: bool) -> String:
 	var options: Array[StringName] = []
 	var weights: Array[float] = []
-	var pile_weight := Difficulty.FIRST_ADD_PILE_WEIGHT if first_upgrade else Difficulty.ADD_PILE_WEIGHT
-	var card_weight := Difficulty.FIRST_ADD_CARD_WEIGHT if first_upgrade else Difficulty.ADD_CARD_WEIGHT
+	var pile_weight := Difficulty.FIRST_ADD_PILE_WEIGHT if first_upgrade else proximity_weight(Difficulty.ADD_PILE_WEIGHT, pile_count, Difficulty.START_PILES, Difficulty.MAX_PILES)
+	var card_weight := Difficulty.FIRST_ADD_CARD_WEIGHT if first_upgrade else proximity_weight(Difficulty.ADD_CARD_WEIGHT, hand_size, Difficulty.START_HAND_SIZE, Difficulty.MAX_HAND_SIZE)
 	if pile_count < Difficulty.MAX_PILES and (first_upgrade or pile_weight > 0.0):
 		options.append(&"pile")
 		if pile_count == 1:
@@ -37,10 +37,10 @@ func increase(rng: RandomNumberGenerator, first_upgrade: bool) -> String:
 		weights.append(directed_weight(card_weight, droughts[&"hand"]))
 	if not first_upgrade and start_value < Difficulty.MAX_CARD_VALUE and Difficulty.ADD_START_VALUE_WEIGHT > 0.0:
 		options.append(&"start_value")
-		weights.append(directed_weight(Difficulty.ADD_START_VALUE_WEIGHT, droughts[&"start_value"]))
+		weights.append(directed_weight(proximity_weight(Difficulty.ADD_START_VALUE_WEIGHT, start_value, Difficulty.START_CARD_VALUE, Difficulty.MAX_CARD_VALUE), droughts[&"start_value"]))
 	if not first_upgrade and turn_time > Difficulty.MIN_TURN_TIME and Difficulty.REDUCE_TURN_TIME_WEIGHT > 0.0:
 		options.append(&"time")
-		weights.append(directed_weight(Difficulty.REDUCE_TURN_TIME_WEIGHT, droughts[&"time"]))
+		weights.append(directed_weight(proximity_weight(Difficulty.REDUCE_TURN_TIME_WEIGHT, turn_time, Difficulty.START_TURN_TIME, Difficulty.MIN_TURN_TIME), droughts[&"time"]))
 	var all_eligible_options := options.duplicate()
 	var guaranteed_options: Array[StringName] = []
 	var guaranteed_weights: Array[float] = []
@@ -123,8 +123,8 @@ func probability_debug_text(progression_round: int) -> String:
 	var labels: Array[StringName] = []
 	var ids: Array[StringName] = []
 	var weights: Array[float] = []
-	var pile_weight := Difficulty.FIRST_ADD_PILE_WEIGHT if first_upgrade else Difficulty.ADD_PILE_WEIGHT
-	var hand_weight := Difficulty.FIRST_ADD_CARD_WEIGHT if first_upgrade else Difficulty.ADD_CARD_WEIGHT
+	var pile_weight := Difficulty.FIRST_ADD_PILE_WEIGHT if first_upgrade else proximity_weight(Difficulty.ADD_PILE_WEIGHT, pile_count, Difficulty.START_PILES, Difficulty.MAX_PILES)
+	var hand_weight := Difficulty.FIRST_ADD_CARD_WEIGHT if first_upgrade else proximity_weight(Difficulty.ADD_CARD_WEIGHT, hand_size, Difficulty.START_HAND_SIZE, Difficulty.MAX_HAND_SIZE)
 	if pile_count < Difficulty.MAX_PILES:
 		labels.append(&"PILE")
 		ids.append(&"pile")
@@ -136,11 +136,11 @@ func probability_debug_text(progression_round: int) -> String:
 	if not first_upgrade and start_value < Difficulty.MAX_CARD_VALUE:
 		labels.append(&"START VALUE")
 		ids.append(&"start_value")
-		weights.append(directed_weight(Difficulty.ADD_START_VALUE_WEIGHT, droughts[&"start_value"]))
+		weights.append(directed_weight(proximity_weight(Difficulty.ADD_START_VALUE_WEIGHT, start_value, Difficulty.START_CARD_VALUE, Difficulty.MAX_CARD_VALUE), droughts[&"start_value"]))
 	if not first_upgrade and turn_time > Difficulty.MIN_TURN_TIME:
 		labels.append(&"TIME")
 		ids.append(&"time")
-		weights.append(directed_weight(Difficulty.REDUCE_TURN_TIME_WEIGHT, droughts[&"time"]))
+		weights.append(directed_weight(proximity_weight(Difficulty.REDUCE_TURN_TIME_WEIGHT, turn_time, Difficulty.START_TURN_TIME, Difficulty.MIN_TURN_TIME), droughts[&"time"]))
 	var guaranteed: Array[int] = []
 	for index in ids.size():
 		if int(droughts.get(ids[index], 0)) >= Difficulty.MAX_STAT_DROUGHT:
@@ -182,6 +182,14 @@ func apply_tier_relief(rng: RandomNumberGenerator) -> void:
 			&"value": start_value = maxi(start_value - 1, Difficulty.START_CARD_VALUE)
 			&"time": turn_time = minf(turn_time + 1.0, Difficulty.START_TURN_TIME)
 	tier_reliefs_applied += 1
+
+
+# Scale by remaining distance, including descending limits such as turn time.
+# Apply pity afterwards so late upgrades remain possible and droughts stay bounded.
+static func proximity_weight(base_weight: float, current: float, initial: float, limit: float) -> float:
+	if is_equal_approx(initial, limit):
+		return 0.0
+	return maxf(base_weight, 0.0) * clampf((limit - current) / (limit - initial), 0.0, 1.0)
 
 
 static func directed_weight(base_weight: float, drought_count: int) -> float:

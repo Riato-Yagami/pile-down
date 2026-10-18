@@ -10,3 +10,4 @@ category = &"CHALLENGES"
 difficulty = 9
 reward_rationale = "Toutes les couleurs pour tous les challenges terminés."
 id = &"challenge_accepted"
+allow_challenges = true

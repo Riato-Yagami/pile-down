@@ -18,7 +18,7 @@ static func close(game: GameManager) -> void:
 	game.checkpoint_button.grab_focus()
 
 
-static func refresh_button(game: GameManager) -> void:
+static func refresh_button(game: GameManager, select_highest := false) -> void:
 	var available := (
 		DifficultySettings.ENABLE_CHECKPOINTS
 		and not game.unlocked_checkpoints.is_empty()
@@ -26,14 +26,25 @@ static func refresh_button(game: GameManager) -> void:
 	game.checkpoint_button.get_parent().visible = available
 	game.checkpoint_button.visible = available
 	game.checkpoint_up_button.get_parent().visible = available
-	if available and not game.unlocked_checkpoints.has(game.selected_checkpoint_id):
-		game.selected_checkpoint_id = game.unlocked_checkpoints.front()
+	if available and select_highest:
+		game.selected_checkpoint_id = game.unlocked_checkpoints.back()
+	elif not available or (
+		game.selected_checkpoint_id != 0
+		and not game.unlocked_checkpoints.has(game.selected_checkpoint_id)
+	):
+		game.selected_checkpoint_id = 0
 	update_button_text(game)
 
 
 static func refresh_list(game: GameManager) -> void:
 	for child in game.checkpoint_list.get_children():
 		child.queue_free()
+	var normal_button := Button.new()
+	normal_button.set_script(game.HIGHLIGHT_BUTTON_SCRIPT)
+	normal_button.custom_minimum_size = Vector2(210, 43)
+	normal_button.text = TranslationServer.translate("FROM %d") % 0
+	normal_button.pressed.connect(game._on_checkpoint_selected.bind(0))
+	game.checkpoint_list.add_child(normal_button)
 	for checkpoint_id in game.unlocked_checkpoints:
 		var value: Variant = game._checkpoint_value(
 			game.checkpoint_snapshots, checkpoint_id, {}
@@ -57,16 +68,27 @@ static func refresh_list(game: GameManager) -> void:
 static func select_next(game: GameManager, direction: int) -> void:
 	if game.unlocked_checkpoints.is_empty():
 		return
-	var index := game.unlocked_checkpoints.find(game.selected_checkpoint_id)
+	# Zero is the normal start, not a saved checkpoint or a separate leaderboard.
+	var choices: Array[int] = [0]
+	choices.append_array(game.unlocked_checkpoints)
+	var index := choices.find(game.selected_checkpoint_id)
 	if index < 0:
 		index = 0
-	index = posmod(index + direction, game.unlocked_checkpoints.size())
-	game.selected_checkpoint_id = game.unlocked_checkpoints[index]
+	index = clampi(index + direction, 0, choices.size() - 1)
+	game.selected_checkpoint_id = choices[index]
 	update_button_text(game)
 	show_selected(game)
 
 
 static func update_button_text(game: GameManager) -> void:
+	game.checkpoint_down_button.disabled = game.selected_checkpoint_id == 0
+	game.checkpoint_up_button.disabled = (
+		game.unlocked_checkpoints.is_empty()
+		or game.selected_checkpoint_id == game.unlocked_checkpoints.back()
+	)
+	if game.selected_checkpoint_id == 0:
+		game.checkpoint_button.text = TranslationServer.translate("FROM %d") % 0
+		return
 	var value: Variant = game._checkpoint_value(
 		game.checkpoint_snapshots, game.selected_checkpoint_id, null
 	)
@@ -95,6 +117,9 @@ static func handle_button_input(game: GameManager, event: InputEvent) -> void:
 
 
 static func show_selected(game: GameManager) -> void:
+	if game.selected_checkpoint_id == 0:
+		game._refresh_high_score()
+		return
 	var value: Variant = game._checkpoint_value(
 		game.checkpoint_snapshots, game.selected_checkpoint_id, null
 	)
@@ -103,15 +128,15 @@ static func show_selected(game: GameManager) -> void:
 	var snapshot := CheckpointSnapshot.from_dictionary(value)
 	if snapshot.start_round <= DifficultySettings.TOTAL_ROUNDS:
 		game.splash_high_score.text = (
-			"[center]HIGHSCORE\n--[/center]"
+			TranslationServer.translate("[center]CHECKPOINT HIGHSCORE\n--[/center]")
 			if game.checkpoint_best_rounds_left < 0
-			else TranslationServer.translate("[center]HIGHSCORE\n%d rounds left[/center]")
+			else TranslationServer.translate("[center]CHECKPOINT HIGHSCORE\n%d rounds left[/center]")
 			% game.checkpoint_best_rounds_left
 		)
 		game.splash_high_score_time.visible = false
 		return
 	game.splash_high_score.text = (
-		"[center]CHECKPOINT HIGHSCORE\nROUND REACHED[/center]"
+		TranslationServer.translate("[center]CHECKPOINT HIGHSCORE\nROUND REACHED[/center]")
 	)
 	game.splash_high_score_time.text = TranslationServer.translate("BEST: %s") % (
 		str(game.checkpoint_endless_best_round)
