@@ -24,10 +24,16 @@ Les résumés reflètent les réponses historiques de Codex, sans nouvel audit d
 
 Depuis la racine du projet :
 
-```powershell
-python -m pip install -r wip/prompt/requirements.txt
-python wip/prompt/generate_table.py
+```sh
+python -m venv wip/prompt/.venv
+wip/prompt/.venv/bin/python -m pip install -r wip/prompt/requirements.txt
+wip/prompt/.venv/bin/python wip/prompt/generate_table.py
 ```
+
+L'environnement virtuel évite de modifier le Python système, notamment sur
+Arch Linux où `pip` bloque les installations globales. Sous PowerShell, utiliser
+`wip/prompt/.venv/Scripts/python.exe` à la place de
+`wip/prompt/.venv/bin/python`.
 
 Le script lit `history/historique.csv` pour les textes, dates et résumés, et `history/old.md`
 pour les références aux messages originaux. Les captures sont récupérées en

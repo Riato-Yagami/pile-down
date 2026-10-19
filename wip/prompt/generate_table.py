@@ -31,8 +31,10 @@ try:
     from PIL import Image, ImageOps
 except ImportError as error:
     raise SystemExit(
-        "Dépendance manquante. Exécuter : python -m pip install -r "
-        "wip/prompt/requirements.txt"
+        "Dépendance manquante. Depuis la racine du projet, exécuter :\n"
+        "  python -m venv wip/prompt/.venv\n"
+        "  wip/prompt/.venv/bin/python -m pip install -r wip/prompt/requirements.txt\n"
+        "  wip/prompt/.venv/bin/python wip/prompt/generate_table.py"
     ) from error
 
 

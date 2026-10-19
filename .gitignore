@@ -16,6 +16,7 @@ build/keystore/
 
 # Python bytecode and office lock files
 __pycache__/
+.venv/
 *.pyc
 *.pyo
 .~lock.*#
