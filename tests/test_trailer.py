@@ -1,6 +1,7 @@
 """Trailer layout and timing checks: python -m unittest discover -s tests -p test_trailer.py."""
 
 from copy import deepcopy
+from argparse import Namespace
 from pathlib import Path
 import shutil
 import subprocess
@@ -12,6 +13,34 @@ from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "publishing/scripts"))
 import create_trailer as trailer
+
+
+class TrailerGenerationTest(unittest.TestCase):
+    def test_exact_versions_and_filters(self):
+        args = Namespace(versions=["portrait-fr", "landscape-en", "portrait-fr"],
+                         format="both", language="both")
+        self.assertEqual(trailer.selected_versions(args), [("portrait", "fr"), ("landscape", "en")])
+        args.language = "en"
+        self.assertEqual(trailer.selected_versions(args), [("landscape", "en")])
+
+    def test_config_defaults_and_empty_selection(self):
+        args = Namespace(versions=None, format="both", language="both")
+        with patch.dict(trailer.config.GENERATION, versions=["landscape-fr"]):
+            self.assertEqual(trailer.selected_versions(args), [("landscape", "fr")])
+        args.versions = []
+        with self.assertRaises(ValueError):
+            trailer.selected_versions(args)
+
+    def test_reuse_checks_display_mode_and_accepts_old_adaptive_capture(self):
+        metadata = {"format": "portrait", "language": "fr"}
+        with patch.object(trailer, "validate_capture"):
+            trailer.validate_capture_selection(metadata, "portrait", "fr", "adaptive")
+            with self.assertRaises(RuntimeError):
+                trailer.validate_capture_selection(metadata, "portrait", "fr", "classic")
+            metadata["display_mode"] = "semi_adaptive"
+            trailer.validate_capture_selection(metadata, "portrait", "fr", "semi_adaptive")
+        self.assertEqual(trailer.display_suffix("adaptive"), "")
+        self.assertEqual(trailer.display_suffix("classic"), "-classic")
 
 
 class TrailerSettingsTest(unittest.TestCase):

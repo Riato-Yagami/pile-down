@@ -180,11 +180,14 @@ static func debug_reset_progression(host: GameManager) -> void:
 	host.encountered_special_rules.clear()
 	host.beaten_special_rules.clear()
 	host.challenge_manager.debug_unlock_all = false
+	host.challenge_manager.started.clear()
 	host.challenge_manager.completed.clear()
 	host.challenge_manager.highscores.clear()
 	host.challenge_manager.endless_highscores.clear()
 	host.challenge_manager.best_times_ms.clear()
 	host.achievement_manager.unlocked.clear()
+	host.value_style_manager.achievements.clear()
+	host.value_style_manager.select(&"numbers")
 	host.achievement_manager.unlock_dates.clear()
 	host.achievement_manager.bonuses_maxed_once.clear()
 	host.achievement_manager.bonus_highest_levels.clear()
@@ -312,6 +315,7 @@ static func apply_debug_unlock_everything(host: GameManager) -> void:
 	host.achievement_manager.unlocked.clear()
 	for achievement in host.achievement_manager.definitions:
 		host.achievement_manager.unlocked.append(achievement.id)
+	host.value_style_manager.achievements.assign(host.achievement_manager.unlocked)
 	host.font_manager.unlocked.clear()
 	for font_data in host.font_manager.definitions:
 		host.font_manager.unlocked.append(font_data.id)
@@ -330,6 +334,8 @@ static func apply_debug_unlock_everything(host: GameManager) -> void:
 	for rule_data in SpecialRuleRegistry.create_all_rules():
 		host.encountered_special_rules.append(rule_data.id)
 		host.beaten_special_rules.append(rule_data.id)
+	host.challenge_manager.started.clear()
 	host.challenge_manager.completed.clear()
 	for challenge_data in host.challenge_manager.definitions:
 		host.challenge_manager.completed.append(challenge_data.id)
+		host.challenge_manager.started.append(challenge_data.id)

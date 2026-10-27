@@ -1,0 +1,26 @@
+[
+  {
+    "test": "test_result_share.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.arch_linux.ed1daf0bf (2026-08-17 01:18:38 UTC) - https://godotengine.org\n\nResult sharing tests passed: result/time/links, copy feedback, snapshot and footer layout.\n"
+  },
+  {
+    "test": "test_result_share_hand.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.arch_linux.ed1daf0bf (2026-08-17 01:18:38 UTC) - https://godotengine.org\n\nShare snapshot passed: board only, timeout, checkpoint loss, discarded selection and reset.\n"
+  },
+  {
+    "test": "test_result_share_layout.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.arch_linux.ed1daf0bf (2026-08-17 01:18:38 UTC) - https://godotengine.org\n\nSpatial share grid passed: triangle, regular grid, bent snake, mirror, gaps and 25 crowded/scattered piles.\n"
+  },
+  {
+    "test": "test_share_movement_audit.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.arch_linux.ed1daf0bf (2026-08-17 01:18:38 UTC) - https://godotengine.org\n\nShare movement checked: baseline / 3\nShare movement checked: orbit / 3\nShare movement checked: wave / 3\nShare movement checked: snake / 3\nShare movement checked: mover / 3\nShare movement checked: baseline / 13\nShare movement checked: shell / 13\nShare movement checked: musical / 13\nShare movement checked: orbit / 13\nShare movement checked: shake / 13\nShare movement checked: wave / 13\nShare movement checked: snake / 13\nShare movement checked: snake_shell / 13\nShare movement checked: mover / 13\nShare movement checked: mover_orbit / 13\nShare movement checked: mover_shake / 13\nShare movement checked: mover_wave / 13\nShare movement checked: mirror_orbit / 13\nShare movement checked: baseline / 25\nShare movement checked: orbit / 25\nShare movement checked: wave / 25\nShare movement checked: snake / 25\nShare movement checked: mover / 25\nMovement share audit passed: 23 scenarios, 162 snapshots.\n"
+  }
+]

@@ -186,7 +186,13 @@ Le build Windows x86_64 produit `pile-down.exe` et une archive versionnée dans
 ./build/scripts/build_windows.sh
 ```
 
-Le preset `Android` produit un APK ARM64 en mode portrait. Le build par défaut
+Le preset `Android` produit un APK ARM64 avec rotation automatique en portrait
+ou paysage (`display/window/handheld/orientation=6`). Au démarrage, la préférence
+utilisateur verrouille le portrait par défaut. **Options → Graphismes → Orientation**
+permet de passer au paysage verrouillé ou à la rotation automatique sur Android
+et iOS ; le choix est mémorisé dans `graphics/orientation_mode`. Ce réglage est
+indépendant du mode classique, semi-adaptatif ou adaptatif. Les fenêtres restent
+redimensionnables pour les tablettes et le mode multifenêtre. Le build par défaut
 utilise les templates APK standards, sans compilation Gradle. Le script transmet
 les chemins validés du JDK et du SDK Android aux paramètres Godot du build,
 puis vérifie que l'APK a bien été créé avant d'annoncer la réussite. Le build
@@ -304,6 +310,20 @@ avec chaque release pour interpréter les traces obfusquées. L'APK exporté san
 Gradle utilise le template précompilé. Le score DEX de Google Play reste à
 vérifier sur le nouveau bundle téléversé.
 
+La recommandation Google Play « AGP 9.0 ou ultérieur » est distincte de
+l'activation de R8. Le template Android local utilise AGP 8.6.1 / Gradle 8.11.1
+et `applicationVariants`, une API supprimée avec AGP 9. Ne pas changer uniquement
+le numéro de version : migrer le template Godot, ses scripts et Gradle ensemble,
+puis valider un AAB release signé avant publication. AGP 9 exige au minimum
+Gradle 9.1 et modifie aussi l'intégration Kotlin : voir les
+[notes de migration officielles](https://developer.android.com/build/releases/agp-9-0-0-release-notes).
+
+Avant publication, vérifier sur Android 15 ou ultérieur : barres visibles puis
+masquées, navigation gestuelle et à trois boutons, encoche, rotation pendant une
+partie et redimensionnement en écran partagé sur tablette. Le test
+`tests/test_mobile_safe_area.gd` simule les encarts en portrait, paysage et sur
+tablette ; il ne remplace pas cette validation sur appareil.
+
 Les clés et mots de passe doivent
 rester hors du dépôt. Voir aussi la
 [documentation d'export Android Godot](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_android.html).
@@ -369,6 +389,12 @@ transitions (fondu ou balayage, direction, style, durée) se règlent dans
 [`publishing/scripts/trailer_config.py`](publishing/scripts/trailer_config.py).
 Après un ajustement, `python publishing/scripts/create_trailer.py --reuse-capture`
 régénère les vidéos à partir des captures existantes.
+Le bloc `GENERATION` de `trailer_config.py` choisit les versions format/langue
+et le mode d'affichage. Exemple ponctuel :
+`python publishing/scripts/create_trailer.py --versions portrait-fr landscape-en --display-mode semi_adaptive`.
+Les modes disponibles sont `classic`, `semi_adaptive`, `adaptive` et
+`menu_adaptive`. Les variantes non adaptatives ont des fichiers et captures
+suffixés par leur mode ; `--reuse-capture` vérifie la correspondance du mode.
 Les vidéos, aperçus et brouillons de `publishing/trailer/`, ainsi que les
 captures intermédiaires de `wip/trailer/`, sont conservés localement et
 ignorés par Git. Les générateurs, leur configuration et la documentation
@@ -1622,6 +1648,7 @@ progression. Les réglages se trouvent également dans `resources/scripts/settin
 
 ```gdscript
 const ENABLED_SPECIAL_RULES: Array[StringName] = [
+    &"snake",
     &"shell_game",
     &"merry_go_stack",
     &"shaking_piles",
@@ -1788,6 +1815,45 @@ Les règles disponibles sont :
   `GRACE_PERIOD_REVEAL_TIME` secondes avant la fin, avec une transition animée ;
 - `COLORBLIND` : les couleurs permanentes des cartes et piles sont remplacées
   par une palette grise, sans supprimer les feedbacks temporaires ;
+- `SNAKE` (à partir du round 8) : les piles forment un serpent sur une grille
+  invisible et cherchent les tuiles de la main, elles aussi réparties sur la
+  grille. Chaque déplacement avance d’une case, toutes les 1,1 seconde
+  (`SNAKE_STEP_DURATION`), avec un glissement lissé de 0,65 seconde
+  (`SNAKE_SLIDE_DURATION`). Les deux durées sont modulées par ADAPTATION. Une tuile
+  mangée rétrécit de moitié autour de son centre, rejoint le centre de la tête en mouvement
+  et s’efface, puis réapparaît sur une autre case libre, sans changer de
+  valeur. Le timer est gelé au moins une seconde (`SNAKE_MEAL_PAUSE_DURATION`) après chaque
+  repas pour repérer la nouvelle tuile, même si la main doit être renouvelée.
+  Chaque repas a 50 % de chances de rendre un point au serpent
+  (`SNAKE_MEAL_HEAL_CHANCE = 0.5` dans `difficulty.gd`). Le soin cherche depuis
+  le bout de la queue la première pile active qui peut encore regagner un point,
+  en sautant les piles déjà au maximum. Un repas soigne au plus une pile, sans
+  dépasser sa valeur initiale du round. Une pile terminée ne ressuscite jamais.
+  Les tuiles sélectionnées, glissées ou en cours de retour sont protégées.
+  Si aucune tuile n’est disponible, le serpent poursuit leur dernière case
+  connue puis patrouille en boucle autour. La tête ne peut entrer dans aucune
+  case du corps, y compris la case de la queue encore en cours de libération ;
+  sans sortie libre, le serpent attend. Un dépôt valide reste un placement
+  normal, et un dépôt invalide sur une pile déclenche l’animation d’erreur
+  et la perte de vie habituelles. Une perte de vie due au timer ne suspend pas
+  le serpent. Après un dépôt invalide, le serpent suspend son glissement et ses
+  repas pendant 1,3 seconde (`SNAKE_MISTAKE_PAUSE_DURATION`), puis reprend
+  depuis sa position interrompue. Les contrôles restent réactifs. Une tuile
+  relâchée au-dessus du corps hors d’une hitbox de pile reste une proie sur
+  la grille : la tête passe au-dessus pour la manger.
+  Le signal de régénération réutilise la réparation de main existante si plus
+  aucune tuile n’est jouable. Les nouvelles tuiles sur grille signalent leur
+  disponibilité sans attendre une animation d’entrée, afin de libérer les
+  contrôles et reprendre le déplacement après un repas. Les positions de retour après un dépôt refusé
+  restent sur la grille. La grille s’étend jusqu’à 6 × 6 cases pour 25 piles.
+  Snake est incompatible avec MERRY-GO-STACK, SHAKING PILES,
+  WAVY BABY, FREE-RANGE CARDS, MUSICAL STACKS, PILE UP et THE FLOOR IS LAVA.
+  Elle est désactivée dans POOL PARTY, CONVEYOR BELT et RELOAD REQUIRED. PILE MOVER et les
+  compagnons BRING A FRIEND ne déplacent pas les éléments du serpent.
+  Son contrôleur dédié est `SnakeRuleController.gd` ; sa définition est
+  `resources/data/special_rules/20_snake.tres`. Test :
+  `godot --headless --path . --script tests/test_snake_rule.gd` et
+  `godot --headless --path . --script tests/test_snake_sliding.gd` ;
 - `PIXELATED` : toute la zone de jeu est regroupée en blocs dont la taille se
   règle avec `PIXELATION_PIXEL_SIZE`. Les blocs grandissent progressivement à
   partir d'un pixel jusqu'à 2 × 2 pixels par défaut pour préserver la lisibilité,
@@ -2135,3 +2201,234 @@ non nulle impose cet attribut après la simulation, sans modifier les autres.
 Les valeurs de temps proposées restent valides : `0`, puis les durées autorisées.
 Ce comportement vaut en mode normal et sans fin ; relancer la même seed avec
 les mêmes réglages reproduit la simulation et les valeurs imposées.
+
+### Codes secrets et polices HD
+
+Les codes se saisissent dans le champ de seed puis se valident avec PLAY. Un code
+reconnu affiche un popup sans lancer de partie, même si ses conditions échouent
+ou si sa récompense est déjà débloquée. Les autres seeds gardent leur comportement.
+Les récompenses secrètes restent absentes de PROGRESSION tant qu'elles sont verrouillées.
+
+- `piledown-beta` : Comic Relief (tracé Bold de l’ancienne variante « Pixel »), avec au moins un achievement daté strictement
+  avant le 21 octobre 2026 à 00:00 UTC. Une date absente ne prouve pas l'éligibilité.
+- `earlybird` : Liberation Sans (rendu HD, alternative libre proche d’Arial), disponible jusqu'au 31 décembre 2026 inclus (UTC).
+
+Les définitions sont dans `resources/data/secrets/` et leur catalogue dans
+`resources/data/secrets.tres`. `SecretCodeData` permet une expiration et/ou une
+condition sur l'historique des achievements. Les récompenses utilisent la
+sauvegarde des polices existante. Le champ `FontData.hd` active le rendu lissé
+MSDF pour les polices vectorielles, dans les tuiles et leurs aperçus.
+Comic Relief et Liberation Sans sont sous SIL OFL 1.1 ; leur licence et leur
+provenance sont incluses dans leurs dossiers sous `resources/fonts/extra/`.
+Comic Relief utilise le tracé Bold de l’ancienne variante nommée « Pixel ».
+Les anciens déblocages et la sélection `comic_relief_pixel` sont repris sous
+`liberation_sans`, pour conserver la récompense earlybird déjà obtenue.
+
+Validation dédiée : `godot --headless --path . --script tests/test_secret_codes.gd`
+(utiliser des dossiers XDG temporaires pour isoler la sauvegarde de test).
+Les licences Comic Relief et Liberation Sans `OFL.txt` sont incluses par les filtres de tous les presets
+d’export.
+
+### Onglets de customisation
+
+La page de progression CUSTOMISATION regroupe les sous-onglets POLICES,
+PALETTES et CHIFFRES. Les changements de sélection conservent les lignes et leur
+défilement ; le premier affichage des polices et palettes est construit par lots
+avec un budget de 4 ms par image. Une seule liste occupe la zone disponible ; le passage entre onglets
+utilise un fondu et conserve l’aperçu commun des tuiles, la sélection et le
+filtre de progression. Les contrôles TabBar prennent en charge souris, clavier
+et tactile. `CustomisationTabs.gd` permet d’ajouter d’autres pages avec
+`tab_titles` et `tab_pages` dans la scène.
+
+Une expiration non fatale du timer conserve la tuile saisie et ses éventuelles
+compagnes en main ; le compteur repart sans interrompre le glissement.
+
+Avec FREE RANGE CARDS ou SNAKE, le fond de main se replie vers la gauche en
+0,45 seconde pour utiliser `resources/sprites/hand/reduced.png`, limité aux vies.
+Il se redéploie en douceur quand les cartes reviennent dans la main classique.
+
+Les tuiles au repos sur le plateau passent sous les piles ; elles passent au-dessus
+pendant un drag. Le snake réserve aussi les cases traversées par son corps pendant
+un glissement pour empêcher une réapparition sous une pile en mouvement.
+
+Lors d’un repas du snake, la tuile rétrécit autour de son centre et rejoint
+le centre de la tête en 0,28 seconde. Ensuite, une légère vague de grossissement
+parcourt les piles depuis la tête, espacée de 0,07 seconde par segment,
+sans déplacer les piles ni modifier leurs hitboxes.
+
+En règle Snake, les tuiles apparaissent sur place avec un grossissement centré
+et un fondu de 0,28 seconde. Le tirage privilégie les cases libres à au moins
+70 % de la distance de la case libre la plus éloignée de la tête. À la fin
+du round, les tuiles restantes rétrécissent et disparaissent en fondu sur place
+en 0,26 seconde, avec un décalage de 0,04 seconde entre les tuiles.
+
+Si un repas Snake déclenche un soin, la vague s’arrête à la pile ciblée.
+Le point est rendu au sommet de son grossissement, après le passage de la vague
+dans les segments précédents. Sans soin, la vague continue jusqu’à la queue.
+La pause du repas couvre au minimum toute cette animation.
+Un nouveau repas attend la fin de cette pause pour ne pas interrompre un soin en cours.
+
+Avec SNAKE + SHELL GAME (Bonneteau), les piles échangées prennent leur nouvelle
+place dans l’ordre du serpent. Le tracé reste continu et les déplacements suivants
+partent des positions échangées, sans retour aux anciennes cases.
+
+Compatibilité Snake vérifiée par `tests/test_snake_compatibility.gd` :
+
+| Règles associées | État et raison |
+| --- | --- |
+| SHELL GAME, LIGHTS OUT, PEEK-A-CARD, STACK ATTACK, ROMAN HOLIDAY | Compatibles ; repas, soin différé, dépôt valide et nettoyage testés. |
+| STICKY FINGERS, HOT POTATOES, BLIND DELIVERY, MIRROR MATCH | Compatibles ; les trois miroirs conservent les collisions, dépôts et cases de réapparition. |
+| SUDDEN DEATH, GRACE PERIOD, COLORBLIND, PIXELATED | Compatibles ; les effets de round sont conservés. |
+| MERRY-GO-STACK, SHAKING PILES, WAVY BABY, MUSICAL STACKS | Exclus : ces règles déplacent les piles indépendamment du tracé Snake. |
+| FREE-RANGE CARDS | Exclu : déplacement libre de la main en conflit avec les cases de nourriture. |
+| PILE UP | Exclu du tirage : Snake conserve sa progression descendante. |
+| FLOOR IS LAVA | Exclu : la réapparition sur grille ne tient pas compte de la lave ; règle désactivée dans le catalogue actuel. |
+
+L’audit couvre les 20 associations deux à deux, les 13 paires autorisées en jeu
+et deux combinaisons de six règles autour de MIRROR MATCH. Les rectangles Snake
+sont calculés depuis les transformations réelles des tuiles, et la position de
+grille des piles reste indépendante du retournement visuel pendant un soin.
+Les verrous de debug continuent à autoriser les associations normalement exclues.
+
+La fin de partie utilise `resources/sprites/ui/icons/links.png` comme icône de
+partage en bas à droite, indépendante de
+l’affichage optionnel de la seed. Un clic copie, dans cet ordre, `.Pile Down.`,
+la grille des piles, le score et le temps dans la langue du jeu, puis les liens
+`https://juel-s.itch.io/pile-down` et
+`https://play.google.com/store/apps/details?id=dev.juels.piledown`.
+La texture `resources/sprites/ui/check/checked.png` confirme la copie pendant 0,9 seconde. Le message reste celui de la
+partie terminée et peut être collé sur le réseau social choisi. La copie utilise
+le presse-papier de la plateforme ; les tests headless injectent un récepteur
+pour vérifier le même message sans dépendre d’un presse-papier graphique.
+
+Le détail de l’audit et les échecs rencontrés dans les tests généraux figurent
+dans `tests/snake_compatibility_report.md`.
+
+Sous MIRROR MATCH, l’animation Quitter calcule la destination du menu sans
+la réflexion du plateau. Le menu glisse à sa position normale, sans décalage
+horizontal ni saut vertical au retour dans Screens ; le plateau conserve son
+miroir jusqu’au nettoyage de la partie. Le test `test_mirror_quit_transition.gd`
+couvre les trois axes de miroir en dispositions semi-adaptative et menu-adaptative.
+
+L’icône de partage garde une marge de 8 pixels à droite dans le popup et
+n’affiche aucune infobulle, y compris après la copie (confirmée par la coche).
+
+Le partage ne contient ni la main, ni les titres PLATEAU/MAIN, ni les libellés des
+liens. Il affiche les piles avec des chiffres emoji de 0 à 9 et des espaces
+insécables pour les piles terminées et les trous. La grille suit les positions
+réelles des piles de haut en bas et de gauche à droite, y compris après Pile
+Mover, Snake ou les autres déplacements. Une demi-espace de tuile permet de
+centrer une pile au-dessus de deux autres. La projection est limitée à 10 × 12
+cases ; une collision d’approximation utilise la plus proche case libre pour
+conserver toutes les piles. Un plateau absent est indiqué par « — ».
+L’instantané est produit avant le nettoyage et ne change pas après la partie.
+Le temps est inclus aussi pour les parties par étapes.
+
+Les parties seedées respectent le nombre de piles choisi jusqu’à
+`DifficultySettings.MAX_PILES` (25), au lancement comme au rejeu. Le menu limite
+les choix aux nombres de piles déjà découverts ; AUTO conserve la difficulté
+calculée pour la manche de départ. La validation des paramètres n’applique
+plus l’ancienne limite de quatre piles.
+
+À la défaite, le partage enregistre le plateau dès la perte de la dernière vie,
+avant les retours, révélations et défausses de fin de partie. Un nouvel essai
+efface cet instantané.
+
+Pour un cercle presque régulier d’au moins six piles, le partage utilise une
+projection symétrique de l’anneau, éventuellement avec une pile centrale.
+L’ordre angulaire des piles est conservé ; l’orientation peut être légèrement
+arrondie pour aligner les paires de gauche/droite et de haut/bas. Les plateaux
+irréguliers conservent la projection spatiale générale et les espaces insécables.
+
+L’audit `test_share_movement_audit.gd` exerce les déplacements réels de SHELL GAME,
+MUSICAL STACKS, MERRY-GO-STACK, SHAKING PILES, WAVY BABY, SNAKE, PILE MOVER et
+plusieurs combinaisons, dont Adaptation III, sur 3, 13 et 25 piles. Il capture les glissements et
+échanges en cours, les miroirs et les piles terminées. Les petites oscillations
+ne changent plus artificiellement l’espacement entre les rangées. Les anneaux
+privilégient des paires symétriques ; un anneau de 24 piles avec une pile centrale
+utilise 11 lignes pour éviter les collisions d’arrondi.
+
+Les captures et la comparaison visuelle sont dans `wip/reports/share-movement/`.
+Le rapport HTML se régénère avec :
+
+```sh
+python3 tests/render_share_movement_report.py \
+  wip/reports/share-movement/snapshots.json \
+  wip/reports/share-movement/index.html
+```
+
+L’audit final couvre 28 scénarios et 198 instantanés ; son bilan et les aperçus
+avant/après sont dans `wip/reports/share-movement/README.md`.
+
+La page CUSTOMISATION propose les sous-onglets POLICES, PALETTES et CHIFFRES.
+CHIFFRES permet de choisir NOMBRES (rendu habituel), LETTRES (0 → A, …, 9 → J),
+POINTS (0 sans point, 1 à 9 points répartis sur une grille 3 × 3 inspirée de
+Punto) ou CHIFFRES ROMAINS (O, I, II, …, IX). Les lettres, points et chiffres romains
+sont des récompenses de succès décrites ci-dessous. L’aperçu des tuiles
+se met à jour lors de la sélection, avec la police et la palette choisies.
+Les titres des sous-onglets adaptent leur taille pour rester accessibles sur
+petit écran et après un changement de langue.
+
+Le choix est mémorisé dans `settings/selected_value_style`. Il ne modifie pas
+les valeurs du gameplay, les couleurs, les règles de placement ni les chiffres
+du HUD. Les valeurs masquées restent masquées, les jokers gardent J, et ROMAN
+HOLIDAY affiche ses chiffres romains, sauf si le style romain est déjà choisi :
+dans ce cas, la règle affiche les chiffres classiques pendant son activation. Les points
+sont dessinés sans ressource externe, y compris dans les animations Snake et la
+rémanence de LIGHTS OUT. La grille textuelle de partage garde ses chiffres emoji.
+
+Les points de CHIFFRES utilisent le glyphe « . » de la police choisie, centré
+par ses métriques et répété dans le motif. Si ce glyphe manque dans la police
+principale ou a une taille vide, VCR, la police de base, fournit le point. Le moteur gère
+la texture du glyphe et son rendu pixel/HD ; ses métriques sont mises en cache
+par police et taille. Les motifs restent teintés par la palette active.
+
+CUSTOMISATION conserve désormais les listes et les tuiles d’aperçu. Le changement
+du style de chiffres actualise uniquement la sélection et les glyphes existants,
+sans reconstruire les listes ni recalculer tout le snapshot de progression.
+Les listes POLICES/PALETTES se construisent progressivement au premier accès
+à leur onglet, puis sont réutilisées. Une construction interrompue reprend à
+l’ouverture suivante ; les caches sont invalidés quand les choix, déblocages,
+filtres ou la langue changent. Les onglets masqués ne traitent plus leurs boutons.
+Le benchmark reproductible et les mesures avant/après figurent dans
+`wip/reports/customisation/README.md`.
+
+Les points du mode POINTS sont dimensionnés selon la taille de la tuile, même
+si le point de la police choisie est naturellement petit.
+
+Les styles de chiffres sont définis dans `resources/data/value_styles.tres`,
+avec une ressource par style dans `resources/data/value_styles/` : nombres,
+lettres, points et chiffres romains. Les symboles et les conditions de déblocage
+sont éditables dans ces ressources. Les nombres sont disponibles au départ.
+Le succès **CIRCUS MAXIMUS** débloque les chiffres romains en terminant une même
+manche avec **When in Rome / Roman Holiday** et **Manège de piles** actifs.
+Le succès **DE A À Z** débloque les lettres après avoir lancé chaque défi du
+catalogue actif au moins une fois, sans obligation de victoire. Les lancements
+sont sauvegardés ; les résultats de défis déjà enregistrés comptent également.
+Les nouveaux styles conservent l’aperçu en direct et la règle Roman Holiday
+inverse le style romain vers les chiffres classiques pendant son activation.
+
+Le mode POINTS recadre désormais la texture du point sur l’encre visible et
+adapte sa taille à sa densité, puis centre le motif sur la tuile indépendamment
+des décalages optiques des chiffres. Le bitmap et les métriques restent en cache.
+L’audit des 27 polices et les planches 0 à 9 sont dans
+`wip/reports/pip-fonts/index.html` (images composées sur CPU à partir des glyphes
+et des rectangles de dessin du jeu).
+
+Chaque `FontData` expose les réglages de points `pip_shape` (0 : cercle pixel,
+1 : glyphe du point de la police) et `pip_scale` (taille relative). Les polices
+aux points carrés simples utilisent des cercles dessinés sur une grille entière,
+sans anticrénelage et avec filtrage nearest. Les formes distinctives sont
+conservées pour Edit Undo Dot, Upheaval, Digitalix, Gothic Pixels, Pixelated Pusab,
+Comic Relief et Liberation. Ces choix sont enregistrés dans chaque `.tres` de
+`resources/data/fonts/` et s’appliquent au jeu comme à l’aperçu.
+
+Les cercles pixel utilisent `pip_scale = 0.85` : diamètre de 5 pixels dans
+l’aperçu standard, sans changement de taille des glyphes distinctifs.
+
+Le succès **BRELAN DE JOKERS** (`joker_trio`) débloque le style POINTS en
+réunissant au moins trois jokers simultanément dans la main. Les jokers déjà
+posés ou défaussés ne comptent pas ; les jokers conservés entre deux mains
+comptent tant qu’ils sont encore en main. Les restrictions habituelles de
+succès selon le mode et les graines s’appliquent. Le seuil de trois et le lien
+vers la récompense sont définis dans les ressources du succès et du style.

@@ -13,3 +13,5 @@ tile_font_offset = Vector2(0, 1)
 title_font_offset = Vector2(0, 1)
 required_achievement = ExtResource("progression_reward")
 id = &"gothic_pixels"
+pip_shape = 1
+pip_scale = 1.0

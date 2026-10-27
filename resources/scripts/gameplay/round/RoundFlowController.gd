@@ -47,8 +47,12 @@ static func start_round(host: GameManager) -> void:
 	host._last_played_pile = null
 	host.bonus_manager.begin_round()
 	host.round_modifiers = await host.special_rule_manager.begin_round(host._progression_round())
+	host.round_modifiers.value_style = host.value_style_manager.selected_style
 	if gameplay_generation != host._gameplay_generation:
 		return
+	host.hand_tray.set_reduced_enabled(
+		host.round_modifiers.wandering_hand_cards or host.round_modifiers.snake_enabled
+	)
 	host.round_modifiers.hide_tile_numbers = host.challenge_modifiers.hide_tile_numbers
 	var rule_intensity := host.bonus_manager.adaptation_multiplier()
 	if host.round_modifiers.hot_potatoes_enabled:
@@ -90,7 +94,7 @@ static func start_round(host: GameManager) -> void:
 		var selected_font_data := host.font_manager.find(host.font_manager.selected_font)
 		if selected_font_data != null:
 			pile.set_value_font(
-				selected_font_data.font,
+				selected_font_data.get_render_font(),
 				selected_font_data.tile_font_size,
 				selected_font_data.tile_font_offset,
 				selected_font_data.override_hidden_tile_with_font
@@ -103,7 +107,8 @@ static func start_round(host: GameManager) -> void:
 			host.round_modifiers.colorblind_enabled,
 			host.round_modifiers.hide_tile_numbers
 		)
-		pile.set_movable(host.bonus_manager.has_bonus(&"pile_mover"))
+		pile.set_value_style(host.value_style_manager.selected_style)
+		pile.set_movable(host.bonus_manager.has_bonus(&"pile_mover") and not host.round_modifiers.snake_enabled)
 		pile.pile_selected.connect(host._on_pile_selected)
 		pile.drag_requested.connect(host._on_pile_drag_requested)
 		pile.drag_released.connect(host._on_pile_drag_released)
@@ -251,7 +256,7 @@ static func generate_next_hand(
 ) -> void:
 	if requested_generation != host._hand_cycle_generation or host._all_piles_complete():
 		return
-	var wandering_cards := host.round_modifiers.wandering_hand_cards
+	var wandering_cards := host.round_modifiers.wandering_hand_cards or host.round_modifiers.snake_enabled
 	if clear_existing:
 		host._clear_all_hand_slot_placeholders()
 	if host.challenge_modifiers.conveyor_hand:
@@ -290,7 +295,9 @@ static func generate_next_hand(
 		host.Difficulty.PILE_SPREAD_DRAW_STRENGTH,
 		host.Difficulty.PILE_SPREAD_MIN_DRAW_WEIGHT
 	)
-	if wandering_cards:
+	if host.round_modifiers.snake_enabled:
+		host.snake_rule_controller.place_hand()
+	elif wandering_cards:
 		host._draw_wandering_hand()
 	var challenge_reload := (
 		host.game_mode == host.GameMode.CHALLENGE
@@ -315,6 +322,12 @@ static func generate_next_hand(
 		host.call_deferred("_run_quick_peek")
 	elif start_timer:
 		host._start_turn_countdown(host.bonus_manager.next_hand_time(host.turn_time))
+	if host.round_modifiers.snake_enabled and not host._quick_peek_pending:
+		# Grid cards have no entrance animation. Report them ready through the
+		# usual signal so a regeneration-triggered hand replacement can unlock.
+		for card in host.hand_manager.current_cards:
+			if is_instance_valid(card):
+				card.call_deferred("emit_signal", "entrance_became_interactive", card)
 
 
 static func draw_wandering_hand(host: GameManager) -> void:

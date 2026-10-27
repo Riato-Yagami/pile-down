@@ -1,6 +1,9 @@
 class_name SpecialRuleManager
 extends Node
 
+signal piles_swap_started
+signal piles_swapped(piles: Array[MemoryPile])
+
 signal rules_selected(rules: Array[SpecialRuleData])
 signal rules_announcing(rules: Array[SpecialRuleData])
 signal rules_announcement_finished()
@@ -247,6 +250,8 @@ func _select_locked_rules(
 
 func activate_board_effects(piles: Array[MemoryPile], round_number: int) -> void:
 	context.piles.assign(piles)
+	if modifiers.snake_enabled and context.game_manager != null:
+		context.game_manager.snake_rule_controller.start(context.game_manager, movement_rng)
 	var bonus_manager := get_node_or_null("../BonusManager") as BonusManager
 	var intensity := (
 		bonus_manager.adaptation_multiplier()
@@ -284,6 +289,7 @@ func after_card_played(piles: Array[MemoryPile], round_number: int) -> void:
 	var moving: Array[MemoryPile] = []
 	for index in swap_count:
 		moving.append(active[index])
+	piles_swap_started.emit()
 	var destinations: Array[Vector2] = []
 	for pile in moving:
 		destinations.append(pile.position)
@@ -297,6 +303,7 @@ func after_card_played(piles: Array[MemoryPile], round_number: int) -> void:
 			1,
 			movement_duration
 		)
+		piles_swapped.emit(moving)
 		return
 	for index in moving.size():
 		var tween: Tween = (
@@ -311,12 +318,17 @@ func after_card_played(piles: Array[MemoryPile], round_number: int) -> void:
 			movement_duration
 		)
 		tweens.append(tween)
-	await tweens[0].finished
+	for tween in tweens:
+		if tween.is_valid() and tween.is_running():
+			await tween.finished
+	piles_swapped.emit(moving)
 
 
 func end_round(
 	piles_to_clean: Array[MemoryPile] = [], animated := true
 ) -> void:
+	if context.game_manager != null and is_instance_valid(context.game_manager):
+		context.game_manager.snake_rule_controller.stop()
 	if moving_pile_pattern != null:
 		await moving_pile_pattern.stop()
 	for pile in piles_to_clean:

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AchievementData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"joker_trio"
+title = "THREE OF A KIND"
+description = "Hold three Joker cards in your hand at the same time. Unlocks dots."
+category = &"COMBOS"
+difficulty = 5
+required_count = 3
+allow_challenges = true
+allow_checkpoints = true
+reward_rationale = "Un brelan de jokers débloque les points."

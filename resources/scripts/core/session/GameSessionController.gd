@@ -15,6 +15,7 @@ static func start_game(
 	seed_rule_ids: Array[StringName] = [],
 	seed_difficulty: Dictionary = {}
 ) -> void:
+	(host.overlay as EndScreen).pending_tile_snapshot = ""
 	host.first_move_hint.completed = false
 	host.first_move_hint.phase = 0.0
 	host._gameplay_generation += 1
@@ -40,6 +41,9 @@ static func start_game(
 	host.gameplay_layer.visible = true
 	host.back_button.visible = not animate_menu_exit
 	host.current_challenge = challenge_data
+	if challenge_data != null:
+		host.challenge_manager.record_start(challenge_data)
+		host.achievement_manager.record_challenge_starts(host.challenge_manager.started, host.challenge_manager.definitions)
 	host.challenge_endless = challenge_is_endless
 	host._reload_tutorial_hand_pending = (
 		challenge_data != null and challenge_data.id == &"reload_required"
@@ -300,6 +304,10 @@ static func reset_to_menu_state(host: GameManager) -> void:
 
 
 static func finish_game(host: GameManager, completed_all_rounds := false) -> void:
+	var result_screen := host.overlay as EndScreen
+	var share_tiles := result_screen.pending_tile_snapshot
+	if share_tiles.is_empty():
+		share_tiles = ResultShare.capture_tiles(host.piles)
 	host._end_gameplay_for_result_screen()
 	host.music_manager.set_low_pass_enabled(true)
 	var finite_victory := host._is_finite_mode_victory(completed_all_rounds)
@@ -401,6 +409,16 @@ static func finish_game(host: GameManager, completed_all_rounds := false) -> voi
 	else:
 		host.overlay_title.text = TranslationServer.translate("[center]%d ROUNDS LEFT[/center]") % host.round_number
 		host.overlay_details.text = TranslationServer.translate("[center]in %s[/center]") % formatted_time
+	var share_title := host.overlay_title.get_parsed_text()
+	if completed_all_rounds and host.game_mode == host.GameMode.STANDARD:
+		share_title += "\n" + TranslationServer.translate("%d ROUNDS LEFT") % maxi(host.round_number, 0)
+	var share_details := host.overlay_details.get_parsed_text()
+	if host.game_mode == host.GameMode.CHECKPOINT:
+		share_details = TranslationServer.translate("in %s") % formatted_time
+	(host.overlay as EndScreen).set_share_result(
+		share_title, share_details,
+		share_tiles
+	)
 	host._append_new_progression_summary()
 	host.end_seed_display.set_seed(host.run_seed_label)
 	host.end_seed_display.set_copy_enabled(DisplayServer.has_feature(

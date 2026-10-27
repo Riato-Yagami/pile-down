@@ -6,6 +6,9 @@ signal safe_area_changed
 static var instance: MobileDisplayController
 
 const BASE_SIZE := Vector2(256, 320)
+const ORIENTATION_MODES := ["portrait", "landscape", "automatic"]
+const ORIENTATION_VALUES := [DisplayServer.SCREEN_PORTRAIT, DisplayServer.SCREEN_LANDSCAPE, DisplayServer.SCREEN_SENSOR]
+var orientation_mode := "portrait"
 var show_system_bars := true
 var ignore_notch := false
 var _safe_pixels := Rect2()
@@ -40,8 +43,27 @@ func reload_settings() -> void:
 		"graphics", "show_system_bars", true
 	))
 	ignore_notch = bool(config.get_value("graphics", "ignore_notch", false))
+	orientation_mode = str(config.get_value("graphics", "orientation_mode", "portrait"))
+	if not orientation_mode in ORIENTATION_MODES:
+		orientation_mode = "portrait"
+	_apply_orientation()
 	_apply_system_bars()
 	_refresh_safe_area(true)
+
+
+func set_orientation_mode(value: String) -> void:
+	if not is_mobile() or not value in ORIENTATION_MODES:
+		return
+	orientation_mode = value
+	var config := SaveConfig.load_current()
+	config.set_value("graphics", "orientation_mode", value)
+	config.save(SaveConfig.PATH)
+	_apply_orientation()
+
+
+func _apply_orientation() -> void:
+	if is_mobile():
+		DisplayServer.screen_set_orientation(ORIENTATION_VALUES[ORIENTATION_MODES.find(orientation_mode)])
 
 
 func set_system_bars_visible(value: bool) -> void:

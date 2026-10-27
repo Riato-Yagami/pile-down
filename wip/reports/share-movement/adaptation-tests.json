@@ -1,0 +1,8 @@
+[
+  {
+    "test": "test_share_movement_adaptation.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.arch_linux.ed1daf0bf (2026-08-17 01:18:38 UTC) - https://godotengine.org\n\nShare movement checked: adaptation_orbit / 13\nShare movement checked: adaptation_shake / 13\nShare movement checked: adaptation_wave / 13\nShare movement checked: adaptation_snake / 13\nAdaptation share audit passed: four level-III movement combinations, 27 snapshots.\n"
+  }
+]

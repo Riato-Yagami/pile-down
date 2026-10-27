@@ -13,7 +13,7 @@ static func build(menu: ProgressionMenu) -> Dictionary:
 	var preview_font_title := "CURRENT FONT"
 	var editor_font := catalog.get_editor_preview_font()
 	if editor_font != null:
-		preview_font = editor_font.font
+		preview_font = editor_font.get_render_font()
 		preview_font_size = editor_font.tile_font_size
 		preview_font_offset = editor_font.tile_font_offset
 		preview_title_font_offset = editor_font.title_font_offset
@@ -100,5 +100,13 @@ static func build(menu: ProgressionMenu) -> Dictionary:
 			},
 		],
 		"palettes": preview_palettes,
+		"value_styles": preview_value_styles(),
 		"unread_progression_pages": [ProgressionMenu.Page.ACHIEVEMENTS],
 	}
+
+
+static func preview_value_styles() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for data: ValueStyleData in ValueStyleManager.CATALOG.enabled_data:
+		result.append({"id": data.id, "title": data.title, "unlocked": true})
+	return result

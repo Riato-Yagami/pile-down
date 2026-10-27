@@ -14,3 +14,5 @@ title_font_offset = Vector2(1, 1)
 title_font_size = 16
 required_achievement = ExtResource("progression_reward")
 id = &"kiwi_soda"
+pip_shape = 0
+pip_scale = 0.85

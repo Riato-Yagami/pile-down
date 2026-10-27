@@ -1,6 +1,8 @@
 class_name AchievementData
 extends Data
 
+## Optional notification icon; achievements use the trophy by default.
+@export var notification_icon: Texture2D
 @export var title: String
 @export var description: String
 @export var category: StringName

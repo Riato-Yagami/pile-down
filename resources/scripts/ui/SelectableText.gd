@@ -300,7 +300,11 @@ func _refresh_content_size() -> void:
 				maxf(_base_minimum_size.x, custom_minimum_size.x),
 				maxf(content_min_height, custom_minimum_size.y)
 			)
-			size = custom_minimum_size
+			# Expanded rows keep the width assigned by their container.
+			if (size_flags_horizontal & Control.SIZE_EXPAND) != 0:
+				size.y = custom_minimum_size.y
+			else:
+				size = custom_minimum_size
 		return
 	_layout_children()
 	var bounds := Rect2(Vector2.ZERO, Vector2.ZERO)

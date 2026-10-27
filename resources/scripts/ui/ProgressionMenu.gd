@@ -2,8 +2,14 @@
 class_name ProgressionMenu
 extends "res://resources/scripts/ui/MenuPanelLayout.gd"
 
+var cosmetic_cache: Dictionary = {}
+var preview_cache := 0
+var cosmetic_builds: Dictionary = {}
+var cosmetic_build_serial := 0
+
 signal closed()
 signal font_selected(font_id: StringName)
+signal value_style_selected(style: StringName)
 signal palette_selected(palette_id: StringName)
 signal page_viewed(page: int)
 
@@ -141,6 +147,8 @@ var copy_notification_placement_action: Callable = _copy_notification_placement
 @onready var content: VBoxContainer = %PageContent
 @onready var main_scroll: ScrollContainer = %Scroll
 @onready var fonts_scroll: ScrollContainer = %FontsScroll
+@onready var values_scroll: ScrollContainer = %ValuesScroll
+@onready var values_content: VBoxContainer = %ValuesContent
 @onready var palettes_scroll: ScrollContainer = %PalettesScroll
 @onready var cosmetic_lists: VBoxContainer = %CosmeticLists
 @onready var fonts_content: VBoxContainer = %FontsContent
@@ -190,6 +198,7 @@ func _ready() -> void:
 	_page_animator.travel_distance = page_transition_distance
 	if not font_catalog.editor_preview_changed.is_connected(_refresh_editor_preview):
 		font_catalog.editor_preview_changed.connect(_refresh_editor_preview)
+	(cosmetic_lists as CustomisationTabs).tab_selected.connect(_on_cosmetic_tab_selected)
 	_style_vertical_scrollbars()
 	lock_filter.set_mode(ProgressFilter.BOTH)
 	lock_filter.mode_changed.connect(_on_filter_selected)
@@ -202,6 +211,7 @@ func _ready() -> void:
 		%BackButton.pressed.connect(close)
 	resized.connect(_constrain_list_widths)
 	visibility_changed.connect(preserve_panel_rect)
+	visibility_changed.connect(_update_cosmetic_processing)
 	if Engine.is_editor_hint() and show_editor_preview:
 		_show_editor_preview()
 	else:
@@ -210,7 +220,7 @@ func _ready() -> void:
 
 func _style_vertical_scrollbars() -> void:
 	var scrolls: Array[ScrollContainer] = [
-		main_scroll, fonts_scroll, palettes_scroll,
+		main_scroll, fonts_scroll, palettes_scroll, values_scroll,
 	]
 	for scroll in scrolls:
 		PixelUiScript.style_scroll_container(
@@ -299,6 +309,7 @@ func _show_page(page: int, animate := false) -> void:
 	)
 	main_scroll.visible = _page != Page.FONTS
 	cosmetic_lists.visible = _page == Page.FONTS
+	_update_cosmetic_processing()
 	for index in page_buttons.size():
 		page_buttons[index].modulate = (
 			SELECTED_COLOR if index == _page else GameColors.WHITE
@@ -318,7 +329,7 @@ func _show_page(page: int, animate := false) -> void:
 			title_label.text = "SPECIAL RULES"
 			_populate_discoveries(_snapshot.get("special_rules", []))
 		Page.FONTS:
-			title_label.text = "FONTS"
+			title_label.text = "CUSTOMISATION"
 			_populate_fonts()
 	if animate and previous_page != _page:
 		_page_animator.play(page_panel, signi(_page - previous_page))
@@ -378,7 +389,7 @@ func _constrain_list_widths() -> void:
 	if not is_node_ready():
 		return
 	var list_width := _progression_list_width()
-	for target in [content, fonts_content, palettes_content]:
+	for target in [content, fonts_content, palettes_content, values_content]:
 		target.custom_minimum_size.x = 0.0
 		target.size.x = list_width
 		_constrain_wrap_labels(target, list_width)
@@ -404,8 +415,7 @@ func _constrain_wrap_labels(root: Node, list_width: float) -> void:
 
 
 func _clear_content() -> void:
-	for target in [content, fonts_content, palettes_content]:
-		PixelUiScript.queue_free_children(target, true)
+	PixelUiScript.queue_free_children(content, true)
 
 
 func _populate_highscores() -> void:
@@ -627,3 +637,17 @@ func _set_progress_bar_highlight(
 func refresh(snapshot: Dictionary) -> void:
 	_snapshot = snapshot
 	_show_page(_page)
+
+
+func _on_cosmetic_tab_selected(_index: int) -> void:
+	if _page == Page.FONTS:
+		_populate_fonts()
+		_constrain_list_widths()
+
+
+func update_value_style(style: StringName) -> void:
+	ProgressionCosmeticsViewScript.apply_value_style(self, style)
+
+
+func _update_cosmetic_processing() -> void:
+	cosmetic_lists.process_mode = Node.PROCESS_MODE_INHERIT if visible and _page == Page.FONTS else Node.PROCESS_MODE_DISABLED

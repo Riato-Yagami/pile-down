@@ -14,4 +14,4 @@ target_round = 20
 allow_endless = true
 pool_physics_enabled = true
 disabled_bonuses = Array[StringName]([&"pile_mover"])
-disabled_rules = Array[StringName]([&"free_range_cards", &"sticky_fingers", &"hot_potatoes", &"floor_is_lava"])
+disabled_rules = Array[StringName]([&"snake", &"free_range_cards", &"sticky_fingers", &"hot_potatoes", &"floor_is_lava"])

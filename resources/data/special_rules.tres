@@ -22,6 +22,8 @@
 [ext_resource type="Resource" path="res://resources/data/special_rules/17_colorblind.tres" id="19_data"]
 [ext_resource type="Resource" path="res://resources/data/special_rules/19_pixelated.tres" id="21_data"]
 
+[ext_resource type="Resource" path="res://resources/data/special_rules/20_snake.tres" id="snake"]
+
 [resource]
 script = ExtResource("1_catalog")
-enabled_data = Array[ExtResource("1_y5tp1")]([ExtResource("2_data"), ExtResource("3_data"), ExtResource("4_data"), ExtResource("5_data"), ExtResource("6_data"), ExtResource("7_data"), ExtResource("8_data"), ExtResource("9_data"), ExtResource("10_data"), ExtResource("11_data"), ExtResource("12_data"), ExtResource("13_data"), ExtResource("14_data"), ExtResource("15_data"), ExtResource("16_data"), ExtResource("17_data"), ExtResource("18_data"), ExtResource("19_data"), ExtResource("21_data")])
+enabled_data = Array[ExtResource("1_y5tp1")]([ExtResource("2_data"), ExtResource("3_data"), ExtResource("4_data"), ExtResource("5_data"), ExtResource("6_data"), ExtResource("7_data"), ExtResource("8_data"), ExtResource("9_data"), ExtResource("10_data"), ExtResource("11_data"), ExtResource("12_data"), ExtResource("13_data"), ExtResource("14_data"), ExtResource("15_data"), ExtResource("16_data"), ExtResource("17_data"), ExtResource("18_data"), ExtResource("19_data"), ExtResource("21_data"), ExtResource("snake")])

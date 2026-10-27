@@ -1,0 +1,26 @@
+[
+  {
+    "test": "test_customisation_performance.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.arch_linux.ed1daf0bf (2026-08-17 01:18:38 UTC) - https://godotengine.org\n\nCustomisation timings: { \"open_ms\": [28.676, 1.206, 0.639, 1.357], \"switch_ms\": [15.126, 1.378, 3.907, 2.442, 1.013], \"font_count\": 23 }\n"
+  },
+  {
+    "test": "test_pip_font_audit.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.arch_linux.ed1daf0bf (2026-08-17 01:18:38 UTC) - https://godotengine.org\n\nPip audit passed for all 27 declared fonts, values 0\u20139: cropped ink, 6\u20138 px diameter and tile-centered geometry.\n"
+  },
+  {
+    "test": "test_snake_meal_animation.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.arch_linux.ed1daf0bf (2026-08-17 01:18:38 UTC) - https://godotengine.org\n\nSnake meal animation tests passed: centered shrink, moving head, sequential visual pulse and cleanup.\n"
+  },
+  {
+    "test": "test_value_styles.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.arch_linux.ed1daf0bf (2026-08-17 01:18:38 UTC) - https://godotengine.org\n\nValue styles passed: tabs, letters, dots 0-9, preview, persistence, masking, joker, Roman, Snake and afterglow.\n"
+  }
+]

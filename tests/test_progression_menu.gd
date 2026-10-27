@@ -349,6 +349,10 @@ func _run() -> void:
 	assert(menu.font_preview_scroll.get_parent() == layout)
 	assert(menu.font_preview_scroll.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED)
 	assert(menu.font_preview_scroll.custom_minimum_size.y >= 37.0)
+	while bool(menu.cosmetic_builds.get(0, {}).get("running", false)):
+		await process_frame
+	await process_frame
+	await process_frame
 	var selected_button := menu.fonts_content.get_child(0) as Button
 	var other_button := menu.fonts_content.get_child(1) as Button
 	var locked_button := menu.fonts_content.get_child(2) as SelectableText
@@ -407,6 +411,10 @@ func _run() -> void:
 	assert(is_equal_approx(first_preview_label.offset_bottom, -2.0))
 	other_button.pressed.emit()
 	assert(result.selected_font == &"other")
+	(menu.cosmetic_lists as CustomisationTabs).select_tab(1, false)
+	while bool(menu.cosmetic_builds.get(1, {}).get("running", false)):
+		await process_frame
+	await process_frame
 	var other_palette_button := menu.palettes_content.get_child(1) as Button
 	var selected_palette_button := menu.palettes_content.get_child(0) as Button
 	var palette_title := selected_palette_button.get_node("PaletteTitle") as RichTextLabel

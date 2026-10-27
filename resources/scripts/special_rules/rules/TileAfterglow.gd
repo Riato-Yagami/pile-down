@@ -71,3 +71,15 @@ func _process(delta: float) -> void:
 			# Follow current visibility/text so a flipped tile never leaks its value.
 			(copy as Label).text = (source as Label).text
 			copy.modulate.a *= glow * 0.85
+
+			var source_pips := source.get_node_or_null("ValuePips") as TilePips
+			var copy_pips := copy.get_node_or_null("ValuePips") as TilePips
+			if source_pips != null:
+				TilePips.apply(copy as Label, source_pips.value, &"dots", false, source_pips.visible, source_pips.font_offset)
+				copy_pips = copy.get_node_or_null("ValuePips") as TilePips
+				if copy_pips != null:
+					copy_pips.tile_rect = source_pips.drawing_area()
+					copy_pips.color = GameColors.AFTERGLOW_TEXT
+					copy_pips.queue_redraw()
+			elif copy_pips != null:
+				copy_pips.visible = false

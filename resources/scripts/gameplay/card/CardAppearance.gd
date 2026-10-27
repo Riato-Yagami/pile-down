@@ -38,11 +38,13 @@ static func update(card: PlayingCard) -> void:
 			or not card.round_modifiers.hide_tile_numbers
 		)
 	)
+	var value_style := card.round_modifiers.value_style if card.round_modifiers != null else &"numbers"
+	var use_roman := card.roman_numerals_enabled and value_style != &"roman"
 	card.value_label.text = (
 		"?" if custom_hidden_tile
 		else "J" if card.is_joker
 		else RoundModifiers.format_value(
-			card.card_value, card.roman_numerals_enabled
+			card.card_value, use_roman
 		)
 	)
 	card._apply_value_label_offset(card.face_sprite.position.y)
@@ -52,12 +54,12 @@ static func update(card: PlayingCard) -> void:
 			card._value_font_size
 			* (
 				0.7
-				if card.roman_numerals_enabled and card.card_value in [7, 8]
+				if use_roman and card.card_value in [7, 8]
 				else 1.0
 			)
 		))
 	)
-	if card.face_up and card.roman_numerals_enabled and card.card_value in [7, 8]:
+	if card.face_up and use_roman and card.card_value in [7, 8]:
 		card.value_label.add_theme_font_override("font", TINY_REGULAR_FONT)
 	elif card._value_font != null:
 		card.value_label.add_theme_font_override("font", card._value_font)
@@ -69,3 +71,7 @@ static func update(card: PlayingCard) -> void:
 		else Settings.COLORBLIND_VALUE_COLOR if card.colorblind_enabled
 		else GameColors.tile_text_color(color)
 	)
+
+	TilePips.apply(card.value_label, card.card_value,
+		card.round_modifiers.value_style if card.round_modifiers != null else &"numbers",
+		card.roman_numerals_enabled, card.face_up and not card.is_joker, card._value_font_offset)

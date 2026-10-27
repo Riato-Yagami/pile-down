@@ -1,6 +1,8 @@
 class_name HandManager
 extends Node
 
+signal joker_count_changed(count: int)
+
 signal card_selected(card)
 signal card_drag_started(card)
 signal card_drag_released(card, release_position)
@@ -378,6 +380,12 @@ func _create_card(
 			card_forced_return_requested.emit(forced_card, reason)
 	)
 	current_cards.append(card)
+	if joker:
+		var count := 0
+		for held_card in current_cards:
+			if is_instance_valid(held_card) and held_card.is_joker and not held_card.placement_confirmed and not held_card.discard_claimed:
+				count += 1
+		joker_count_changed.emit(count)
 	if animate_draw:
 		if enter_from_right:
 			card.set_selectable(false)
@@ -449,6 +457,10 @@ func discard_hand(
 		if allow_play:
 			card.modulate.a = 1.0
 		var delay := index * 0.04
+		if card.round_modifiers != null and card.round_modifiers.snake_enabled and not allow_play:
+			longest_duration = maxf(longest_duration, CardAnimations.play_snake_exit(card, delay))
+			exit_tweens[card] = card.discard_tween
+			continue
 		if card.free_range_card:
 			longest_duration = maxf(
 				longest_duration,

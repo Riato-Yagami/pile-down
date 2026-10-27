@@ -13,3 +13,5 @@ tile_font_offset = Vector2(0, 1)
 title_font_offset = Vector2(1, 0)
 required_achievement = ExtResource("2_iys68")
 id = &"digital_disco"
+pip_shape = 0
+pip_scale = 0.85

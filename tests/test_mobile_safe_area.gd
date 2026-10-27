@@ -3,6 +3,9 @@ extends SceneTree
 class SimulatedMobile:
 	extends "res://resources/scripts/settings/display/MobileDisplay.gd"
 	var reported_safe := Rect2()
+	var applied_orientation := ""
+	func _apply_orientation() -> void:
+		applied_orientation = orientation_mode
 	func is_mobile() -> bool:
 		return true
 	func supports_system_bars() -> bool:
@@ -27,6 +30,7 @@ func _run() -> void:
 	root.add_child(main)
 	await _settle()
 	assert(not main.get_node("GameCenter/Game").system_bars_button.visible)
+	assert(not main.get_node("GameCenter/Game").orientation_button.visible)
 	main.queue_free()
 	await process_frame
 	mobile.set_script(SimulatedMobile)
@@ -44,6 +48,15 @@ func _run() -> void:
 	await _settle()
 	var game := main.get_node("GameCenter/Game") as GameManager
 	assert(game.system_bars_button.visible)
+	assert(game.orientation_button.visible)
+	assert(mobile.orientation_mode == "portrait")
+	for expected in ["landscape", "automatic", "portrait"]:
+		game.orientation_button.pressed.emit()
+		assert(mobile.orientation_mode == expected)
+		mobile.reload_settings()
+		assert(mobile.orientation_mode == expected and mobile.applied_orientation == expected)
+	mobile.set_orientation_mode("invalid")
+	assert(mobile.orientation_mode == "portrait")
 	assert(not game.ignore_notch_button.visible)
 	mobile.set_ignore_notch(true)
 	assert(not mobile.ignore_notch, "The notch option is unavailable while bars are visible")

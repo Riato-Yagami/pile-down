@@ -13,6 +13,8 @@ static func build(game: GameManager) -> Dictionary:
 		"special_rules": special_rules(game),
 		"fonts": fonts(game),
 		"palettes": palettes(game),
+		"selected_value_style": game.value_style_manager.selected_style,
+		"value_styles": game.value_style_manager.entries(),
 		"unread_progression_pages": game.unread_progression_pages.duplicate(),
 	}
 
@@ -57,6 +59,12 @@ static func achievements(game: GameManager) -> Array[Dictionary]:
 		var progress_current := 0
 		var progress_target := 0
 		match data.id:
+			&"a_to_z":
+				progress_target = game.challenge_manager.definitions.size()
+				for challenge in game.challenge_manager.definitions:
+					if game.challenge_manager.started.has(challenge.id):
+						progress_current += 1
+				progress = TranslationServer.translate("Challenges started: %d / %d") % [progress_current, progress_target]
 			&"all_checkpoints":
 				progress_current = game.achievement_manager.qualified_checkpoint_ids.size()
 				progress_target = AchievementManager.normal_checkpoint_ids().size()
@@ -149,10 +157,12 @@ static func special_rules(game: GameManager) -> Array[Dictionary]:
 static func fonts(game: GameManager) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for data in game.font_manager.definitions:
+		if data.secret and not game.font_manager.unlocked.has(data.id):
+			continue
 		result.append({
 			"id": data.id,
 			"title": data.display_name,
-			"font": data.font,
+			"font": data.get_render_font(),
 			"font_size": data.tile_font_size,
 			"font_offset": data.tile_font_offset,
 			"title_font_offset": data.title_font_offset,

@@ -12,5 +12,5 @@ conveyor_hand = true
 conveyor_guaranteed_interval = 3
 conveyor_speed = 100.0
 disabled_bonuses = Array[StringName]([&"redraw"])
-disabled_rules = Array[StringName]([&"free_range_cards"])
+disabled_rules = Array[StringName]([&"snake", &"free_range_cards"])
 id = &"conveyor_belt"

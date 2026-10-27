@@ -168,6 +168,7 @@ static func style_buttons(game: GameManager) -> void:
 		game.drag_and_drop_button,
 		game.adaptive_resolution_button,
 		game.true_pixel_art_button,
+		game.orientation_button,
 		game.system_bars_button,
 		game.ignore_notch_button,
 		game.dust_effects_button,
@@ -261,6 +262,11 @@ static func refresh_gameplay(game: GameManager) -> void:
 
 static func setup_graphics(game: GameManager) -> void:
 	MobileDisplayController.instance.reload_settings()
+	game.orientation_button.visible = MobileDisplayController.instance.is_mobile()
+	var cycle_orientation := _cycle_orientation.bind(game)
+	if not game.orientation_button.pressed.is_connected(cycle_orientation):
+		game.orientation_button.pressed.connect(cycle_orientation)
+	_refresh_orientation(game)
 	game.system_bars_button.visible = MobileDisplayController.instance.supports_system_bars()
 	var toggle_bars := _toggle_system_bars.bind(game)
 	if not game.system_bars_button.pressed.is_connected(toggle_bars):
@@ -305,6 +311,19 @@ static func setup_graphics(game: GameManager) -> void:
 	refresh_dust(game)
 	refresh_background(game)
 	game.relief_lighting.set_enabled(false)
+
+
+static func _cycle_orientation(game: GameManager) -> void:
+	var mobile := MobileDisplayController.instance
+	var index := mobile.ORIENTATION_MODES.find(mobile.orientation_mode)
+	mobile.set_orientation_mode(mobile.ORIENTATION_MODES[(index + 1) % mobile.ORIENTATION_MODES.size()])
+	_refresh_orientation(game)
+
+
+static func _refresh_orientation(game: GameManager) -> void:
+	var labels := ["ORIENTATION: PORTRAIT", "ORIENTATION: LANDSCAPE", "ORIENTATION: AUTOMATIC"]
+	var mobile := MobileDisplayController.instance
+	game.orientation_button.text = labels[mobile.ORIENTATION_MODES.find(mobile.orientation_mode)]
 
 
 static func _toggle_system_bars(game: GameManager) -> void:

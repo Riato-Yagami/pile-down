@@ -5,6 +5,7 @@ const SAVE_PATH := SaveConfig.PATH
 
 var definitions: Array[ChallengeData] = ChallengeRegistry.create_all()
 var completed: Array[StringName] = []
+var started: Array[StringName] = []
 var highscores: Dictionary = {}
 var endless_highscores: Dictionary = {}
 var best_times_ms: Dictionary = {}
@@ -27,9 +28,27 @@ func load_progress() -> void:
 		var value: Variant = config.get_value("challenges", key, {})
 		set(key, value if is_valid_progress_value(key, value) else {})
 
+	started.clear()
+	var saved_started: Variant = config.get_value("challenges", "started", [])
+	if is_valid_progress_value("started", saved_started):
+		for value in saved_started:
+			if not started.has(StringName(value)):
+				started.append(StringName(value))
+	# Recorded runs prove that these challenges were already launched before tracking existed.
+	for data in definitions:
+		if (completed.has(data.id) or highscores.has(data.id) or endless_highscores.has(data.id)) and not started.has(data.id):
+			started.append(data.id)
+
+
+func record_start(data: ChallengeData) -> void:
+	if data == null or find(data.id) == null or started.has(data.id):
+		return
+	started.append(data.id)
+	_save()
+
 
 static func is_valid_progress_value(key: String, value: Variant) -> bool:
-	if key == "completed":
+	if key in ["completed", "started"]:
 		if not value is Array:
 			return false
 		for id in value:
@@ -131,6 +150,7 @@ func record_result(
 func _save() -> void:
 	var config := SaveConfig.load_current()
 	config.set_value("challenges", "completed", completed)
+	config.set_value("challenges", "started", started)
 	config.set_value("challenges", "highscores", highscores)
 	config.set_value("challenges", "endless_highscores", endless_highscores)
 	config.set_value("challenges", "best_times_ms", best_times_ms)

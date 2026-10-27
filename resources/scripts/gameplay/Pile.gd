@@ -17,8 +17,12 @@ const Settings := preload("res://resources/scripts/settings/settings.gd")
 @onready var face_sprite: TextureRect = %FaceSprite
 @onready var back_sprite: TextureRect = %BackSprite
 @onready var value_label: Label = %ValueLabel
-@onready var regeneration_ring: RegenerationRing = $RegenerationRing
+@onready var regeneration_ring: RegenerationRing = $VisualRoot/RegenerationRing
+@onready var visual_root: Control = $VisualRoot
 
+var _swallow_tween: Tween
+
+var value_style: StringName = &"numbers"
 var pile_index := 0
 var start_value := 5
 var current_value := 5
@@ -210,6 +214,16 @@ func _regenerate() -> void:
 	if completed or not regeneration_enabled or not _can_regenerate():
 		_update_regeneration_ring_visibility()
 		return
+	if regenerate_once(false):
+		await reveal_value_temporarily()
+	if _can_regenerate():
+		regeneration_timer.start(regeneration_duration)
+	_update_regeneration_ring_visibility()
+
+
+func regenerate_once(reveal := true) -> bool:
+	if completed or not _can_regenerate():
+		return false
 	var delta := -1 if stack_direction == RoundModifiers.StackDirection.UP else 1
 	var previous := current_value
 	current_value = (
@@ -221,10 +235,10 @@ func _regenerate() -> void:
 		_refresh()
 		_show_floating_text("-1" if delta < 0 else "+1")
 		regenerated.emit(self, delta)
-		await reveal_value_temporarily()
-	if _can_regenerate():
-		regeneration_timer.start(regeneration_duration)
-	_update_regeneration_ring_visibility()
+		if reveal:
+			call_deferred("reveal_value_temporarily")
+		return true
+	return false
 
 
 func _can_regenerate() -> bool:
@@ -489,10 +503,11 @@ func _refresh() -> void:
 		"tile_color", HIDDEN_TILE_COLOR if custom_hidden_tile else visual_color
 	)
 	value_label.visible = (face_up or custom_hidden_tile) and not hide_tile_numbers
+	var use_roman := roman_numerals_enabled and value_style != &"roman"
 	value_label.text = (
 		"?"
 		if custom_hidden_tile
-		else RoundModifiers.format_value(current_value, roman_numerals_enabled)
+		else RoundModifiers.format_value(current_value, use_roman)
 	)
 	value_label.offset_left = _value_font_offset.x
 	value_label.offset_right = _value_font_offset.x
@@ -502,10 +517,10 @@ func _refresh() -> void:
 		"font_size",
 		int(round(
 			_value_font_size
-			* (0.7 if roman_numerals_enabled and current_value in [7, 8] else 1.0)
+			* (0.7 if use_roman and current_value in [7, 8] else 1.0)
 		))
 	)
-	if face_up and roman_numerals_enabled and current_value in [7, 8]:
+	if face_up and use_roman and current_value in [7, 8]:
 		value_label.add_theme_font_override("font", TINY_REGULAR_FONT)
 	elif _value_font != null:
 		value_label.add_theme_font_override("font", _value_font)
@@ -520,7 +535,34 @@ func _refresh() -> void:
 		else GameColors.tile_text_color(color)
 	)
 
+	TilePips.apply(value_label, current_value, value_style, roman_numerals_enabled, face_up and not hide_tile_numbers, _value_font_offset)
+
 
 func set_colorblind_enabled(enabled: bool) -> void:
 	colorblind_enabled = enabled
+	_refresh()
+
+
+func play_swallow_pulse(delay: float, on_swallowed: Callable = Callable()) -> void:
+	stop_swallow_pulse()
+	if completed:
+		return
+	visual_root.pivot_offset = visual_root.size * 0.5
+	_swallow_tween = create_tween()
+	_swallow_tween.tween_interval(delay)
+	_swallow_tween.tween_property(visual_root, "scale", Vector2.ONE * 1.1, 0.11).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	if on_swallowed.is_valid():
+		_swallow_tween.tween_callback(on_swallowed)
+	_swallow_tween.tween_property(visual_root, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
+func stop_swallow_pulse() -> void:
+	if _swallow_tween != null and _swallow_tween.is_valid():
+		_swallow_tween.kill()
+	if is_instance_valid(visual_root):
+		visual_root.scale = Vector2.ONE
+
+
+func set_value_style(style: StringName) -> void:
+	value_style = style
 	_refresh()

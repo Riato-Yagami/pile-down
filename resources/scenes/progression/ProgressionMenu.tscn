@@ -19,6 +19,8 @@
 [ext_resource type="Script" uid="uid://ceb0ntijxrn07" path="res://resources/scripts/ui/PixelGridSnap.gd" id="14_pixel_snap"]
 [ext_resource type="Resource" uid="uid://ctgmu0ul3l1d2" path="res://resources/data/palettes/00_arcade.tres" id="17_preview_palette"]
 
+[ext_resource type="Script" path="res://resources/scripts/ui/progression/CustomisationTabs.gd" id="customisation_tabs"]
+
 [sub_resource type="StyleBoxTexture" id="FontButtonStyle"]
 texture = ExtResource("10_button")
 
@@ -69,6 +71,21 @@ resource_local_to_scene = true
 shader = SubResource("ProgressionButtonHighlightShader")
 shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
 shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
+
+[sub_resource type="StyleBoxFlat" id="CustomTabSelected"]
+bg_color = Color(0, 0, 0, 0)
+content_margin_left = 6.0
+content_margin_right = 6.0
+content_margin_top = 3.0
+content_margin_bottom = 4.0
+border_width_bottom = 2
+border_color = Color(0.302, 0.51, 0.761, 1)
+
+[sub_resource type="StyleBoxEmpty" id="CustomTabIdle"]
+content_margin_left = 6.0
+content_margin_right = 6.0
+content_margin_top = 3.0
+content_margin_bottom = 4.0
 
 [node name="ProgressionMenu" type="Control" unique_id=2009484719]
 unique_name_in_owner = true
@@ -270,7 +287,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
 theme_override_fonts/font = ExtResource("2_41y2m")
 theme_override_font_sizes/font_size = 20
-text = "FONTS"
+text = "CUSTOMISATION"
 
 [node name="Scroll" type="ScrollContainer" parent="Margin/Layout/Body/Page" unique_id=345096820]
 unique_name_in_owner = true
@@ -295,13 +312,23 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 4
+script = ExtResource("customisation_tabs")
 
-[node name="FontsLabel" type="Label" parent="Margin/Layout/Body/Page/CosmeticLists" unique_id=249977810]
+[node name="Tabs" type="TabBar" parent="Margin/Layout/Body/Page/CosmeticLists"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+focus_mode = 2
+mouse_default_cursor_shape = 2
 theme_override_fonts/font = ExtResource("3_p3cah")
 theme_override_font_sizes/font_size = 16
-text = "FONTS"
+theme_override_colors/font_selected_color = Color(0.302, 0.51, 0.761, 1)
+theme_override_colors/font_unselected_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_colors/font_hovered_color = Color(0.302, 0.51, 0.761, 1)
+theme_override_colors/font_disabled_color = Color(0.235, 0.235, 0.235, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0)
+theme_override_styles/tab_selected = SubResource("CustomTabSelected")
+theme_override_styles/tab_unselected = SubResource("CustomTabIdle")
+theme_override_styles/tab_hovered = SubResource("CustomTabIdle")
+clip_tabs = true
 
 [node name="FontsScroll" type="ScrollContainer" parent="Margin/Layout/Body/Page/CosmeticLists" unique_id=249977811]
 unique_name_in_owner = true
@@ -321,14 +348,8 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 2
 
-[node name="PalettesLabel" type="Label" parent="Margin/Layout/Body/Page/CosmeticLists" unique_id=249977813]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
-theme_override_fonts/font = ExtResource("3_p3cah")
-theme_override_font_sizes/font_size = 16
-text = "COLOR PALETTES"
-
 [node name="PalettesScroll" type="ScrollContainer" parent="Margin/Layout/Body/Page/CosmeticLists" unique_id=249977814]
+visible = false
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
@@ -341,6 +362,25 @@ size_flags_horizontal = 3
 theme_override_constants/margin_right = 10
 
 [node name="PalettesContent" type="VBoxContainer" parent="Margin/Layout/Body/Page/CosmeticLists/PalettesScroll/ContentMargin" unique_id=249977815]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="ValuesScroll" type="ScrollContainer" parent="Margin/Layout/Body/Page/CosmeticLists"]
+visible = false
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ContentMargin" type="MarginContainer" parent="Margin/Layout/Body/Page/CosmeticLists/ValuesScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_right = 10
+
+[node name="ValuesContent" type="VBoxContainer" parent="Margin/Layout/Body/Page/CosmeticLists/ValuesScroll/ContentMargin"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3

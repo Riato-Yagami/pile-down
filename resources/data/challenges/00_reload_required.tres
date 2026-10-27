@@ -15,4 +15,5 @@ starting_hand_size = 2
 starting_card_value = 5
 guarantee_playable_hand = false
 disabled_bonuses = Array[StringName]([&"redraw"])
+disabled_rules = Array[StringName]([&"snake"])
 id = &"reload_required"

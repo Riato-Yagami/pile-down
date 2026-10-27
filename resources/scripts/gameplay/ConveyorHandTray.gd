@@ -2,6 +2,9 @@
 class_name ConveyorHandTray
 extends Control
 
+const REDUCED_TEXTURE := preload("res://resources/sprites/hand/reduced.png")
+const FOLD_DURATION := 0.45
+
 const DEFAULT_OFFSETS := Rect2(18.0, -55.0, -36.0, 46.0)
 const CONVEYOR_OFFSETS := Rect2(18.0, -55.0, -18.0, 55.0)
 
@@ -10,6 +13,11 @@ const CONVEYOR_OFFSETS := Rect2(18.0, -55.0, -18.0, 55.0)
 @onready var conveyor_background: NinePatchRect = %ConveyorBackground
 
 var _conveyor_enabled := false
+var _reduced_enabled := false
+var _fold_progress := 0.0
+var _fold_tween: Tween
+var _reduced_background: TextureRect
+
 
 @export_category("Conveyor Belt")
 @export_range(0.0, 256.0, 1.0, "suffix:px") var conveyor_turn_point_x := 36.0:
@@ -39,6 +47,15 @@ var _conveyor_enabled := false
 
 
 func _ready() -> void:
+	_reduced_background = TextureRect.new()
+	_reduced_background.name = "ReducedHandBackground"
+	_reduced_background.texture = REDUCED_TEXTURE
+	_reduced_background.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_reduced_background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_reduced_background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	add_child(_reduced_background)
+	move_child(_reduced_background, regular_background.get_index() + 1)
+	resized.connect(_apply_fold)
 	resized.connect(_fit_conveyor_bottom)
 	_conveyor_enabled = preview_conveyor_belt if Engine.is_editor_hint() else false
 	set_conveyor_enabled(_conveyor_enabled)
@@ -47,10 +64,11 @@ func _ready() -> void:
 
 func set_conveyor_enabled(enabled: bool) -> void:
 	_conveyor_enabled = enabled
-	regular_background.visible = not enabled
+	regular_background.visible = not enabled and _fold_progress < 1.0
 	conveyor_background.visible = enabled
 	conveyor_bottom.visible = enabled
 	_apply_offsets()
+	_apply_fold()
 
 
 func set_screen_edge_margins(margins: Vector4) -> void:
@@ -105,3 +123,38 @@ func _fit_conveyor_bottom() -> void:
 	# The authored top and horizontal placement remain editable in the scene.
 	var bottom := get_global_transform_with_canvas().affine_inverse() * get_viewport_rect().end
 	conveyor_bottom.offset_bottom = maxf(bottom.y, conveyor_bottom.offset_top)
+
+
+func set_reduced_enabled(enabled: bool, animate := true) -> void:
+	if _reduced_enabled == enabled:
+		return
+	_reduced_enabled = enabled
+	if _fold_tween != null and _fold_tween.is_valid():
+		_fold_tween.kill()
+	var target := 1.0 if enabled else 0.0
+	if not animate or Engine.is_editor_hint():
+		_set_fold_progress(target)
+		return
+	_fold_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	_fold_tween.tween_method(_set_fold_progress, _fold_progress, target, FOLD_DURATION)
+
+
+func _set_fold_progress(value: float) -> void:
+	_fold_progress = value
+	_apply_fold()
+
+
+func _apply_fold() -> void:
+	if not is_node_ready() or not is_instance_valid(_reduced_background):
+		return
+	# Only the background folds; life icons and card layout keep their coordinates.
+	var progress := 0.0 if _conveyor_enabled else _fold_progress
+	var reduced_width := float(REDUCED_TEXTURE.get_width())
+	regular_background.offset_right = lerpf(0.0, reduced_width - size.x, progress)
+	regular_background.patch_margin_right = roundi(lerpf(18.0, 4.0, progress))
+	var blend := smoothstep(0.75, 1.0, progress)
+	regular_background.modulate.a = 1.0 - blend
+	regular_background.visible = not _conveyor_enabled and progress < 1.0
+	_reduced_background.size = Vector2(reduced_width, size.y)
+	_reduced_background.modulate.a = blend
+	_reduced_background.visible = not _conveyor_enabled and progress > 0.75

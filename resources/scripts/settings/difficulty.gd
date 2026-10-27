@@ -96,7 +96,16 @@ const FIRST_ADD_CARD_WEIGHT := 30.0
 
 # Special Rules.
 # Comment a line to remove that rule from every automatic selection.
+const SNAKE_CELL_SIZE := 44.0
+const SNAKE_STEP_DURATION := 1.5
+const SNAKE_SLIDE_DURATION := 0.65
+const SNAKE_MEAL_PAUSE_DURATION := 1.0
+# Probability that a meal restores one point to a damaged snake segment.
+const SNAKE_MEAL_HEAL_CHANCE := 0.5
+const SNAKE_MISTAKE_PAUSE_DURATION := 1.3
+
 const ENABLED_SPECIAL_RULES: Array[StringName] = [
+	&"snake",
 	&"shell_game",
 	&"merry_go_stack",
 	&"shaking_piles",

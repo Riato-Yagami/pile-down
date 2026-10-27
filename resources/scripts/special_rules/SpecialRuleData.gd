@@ -38,6 +38,8 @@ func activate(context: RoundContext) -> void:
 		&"wavy_baby":
 			context.modifiers.moving_pile_pattern = true
 			context.modifiers.moving_pile_pattern_id = &"wave"
+		&"snake":
+			context.modifiers.snake_enabled = true
 		&"free_range_cards":
 			context.modifiers.wandering_hand_cards = true
 		&"pile_up":
@@ -109,6 +111,8 @@ func deactivate(context: RoundContext) -> void:
 		&"shaking_piles", &"wavy_baby":
 			context.modifiers.moving_pile_pattern = false
 			context.modifiers.moving_pile_pattern_id = &""
+		&"snake":
+			context.modifiers.snake_enabled = false
 		&"free_range_cards":
 			context.modifiers.wandering_hand_cards = false
 		&"pile_up":

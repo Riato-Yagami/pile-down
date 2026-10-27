@@ -136,14 +136,14 @@ static func apply_tile_font(host: GameManager) -> void:
 	var data := host.font_manager.find(host.font_manager.selected_font)
 	if data == null:
 		return
-	host.hand_manager.value_font = data.font
+	host.hand_manager.value_font = data.get_render_font()
 	host.hand_manager.value_font_size = data.tile_font_size
 	host.hand_manager.value_font_offset = data.tile_font_offset
 	host.hand_manager.override_hidden_tile_with_font = data.override_hidden_tile_with_font
 	for card in host.hand_manager.current_cards:
 		if is_instance_valid(card):
 			card.set_value_font(
-				data.font,
+				data.get_render_font(),
 				data.tile_font_size,
 				data.tile_font_offset,
 				data.override_hidden_tile_with_font
@@ -151,7 +151,7 @@ static func apply_tile_font(host: GameManager) -> void:
 	for pile in host.piles:
 		if is_instance_valid(pile):
 			pile.set_value_font(
-				data.font,
+				data.get_render_font(),
 				data.tile_font_size,
 				data.tile_font_offset,
 				data.override_hidden_tile_with_font
@@ -299,3 +299,14 @@ static func new_achievement_titles(host: GameManager) -> PackedStringArray:
 		if data != null and not titles.has(TranslationServer.translate(data.title)):
 			titles.append(TranslationServer.translate(data.title))
 	return titles
+
+
+static func apply_value_style(host: GameManager, style: StringName) -> void:
+	host.round_modifiers.value_style = style
+	for card in host.hand_manager.interactive_cards():
+		if is_instance_valid(card):
+			card._update_appearance()
+	for pile in host.piles:
+		if is_instance_valid(pile):
+			pile.set_value_style(style)
+	host.progression_menu.update_value_style(style)

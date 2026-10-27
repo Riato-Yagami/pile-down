@@ -10,6 +10,8 @@ var stack_direction := StackDirection.DOWN
 var swap_piles_after_play := false
 var moving_pile_pattern := false
 var moving_pile_pattern_id: StringName = &""
+var value_style: StringName = &"numbers"
+var snake_enabled := false
 var wandering_hand_cards := false
 var flashlight_enabled := false
 var hover_reveal_enabled := false
@@ -37,10 +39,12 @@ var special_rule_intensity_multiplier := 1.0
 
 
 func reset() -> void:
+	value_style = &"numbers"
 	stack_direction = StackDirection.DOWN
 	swap_piles_after_play = false
 	moving_pile_pattern = false
 	moving_pile_pattern_id = &""
+	snake_enabled = false
 	wandering_hand_cards = false
 	flashlight_enabled = false
 	hover_reveal_enabled = false

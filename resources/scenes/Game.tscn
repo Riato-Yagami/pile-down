@@ -62,6 +62,7 @@
 [ext_resource type="PackedScene" uid="uid://brvd6qt0cdmx4" path="res://resources/scenes/bonuses/ActiveBonusBadge.tscn" id="51_active_bonus_badge"]
 [ext_resource type="Texture2D" uid="uid://b42l1lu2mbst1" path="res://resources/sprites/hand/conveyer-bottom.png" id="conveyor_bottom"]
 [ext_resource type="Script" uid="uid://cs7l6xh16ji4y" path="res://resources/scripts/ui/OptionsMenuLayout.gd" id="options_layout"]
+[ext_resource type="Script" uid="uid://evs5pkmsrsbi" path="res://resources/scripts/special_rules/rules/SnakeRuleController.gd" id="snake_controller"]
 
 [sub_resource type="Theme" id="PixelTheme"]
 default_font = ExtResource("12")
@@ -69,7 +70,7 @@ default_font_size = 20
 
 [sub_resource type="Gradient" id="ReliefLightGradient"]
 offsets = PackedFloat32Array(0, 0.72, 1)
-colors = PackedColorArray(1.000000000, 1.000000000, 1.000000000, 0.720000029, 1.000000000, 1.000000000, 1.000000000, 0.180000007, 1.000000000, 1.000000000, 1.000000000, 0.000000000)
+colors = PackedColorArray(1, 1, 1, 0.72, 1, 1, 1, 0.18, 1, 1, 1, 0)
 
 [sub_resource type="GradientTexture2D" id="ReliefLightTexture"]
 gradient = SubResource("ReliefLightGradient")
@@ -106,9 +107,9 @@ void fragment() {
 resource_local_to_scene = true
 shader = SubResource("ClockProgressShader")
 shader_parameter/progress = 1.0
-shader_parameter/progress_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+shader_parameter/progress_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
 shader_parameter/empty_clock_color = Color(0.8, 0.8, 0.8, 1)
-shader_parameter/flash_color = Color(0.878431380, 0.392156869, 0.333333343, 1.000000000)
+shader_parameter/flash_color = Color(0.8784314, 0.39215687, 0.33333334, 1)
 shader_parameter/flash_strength = 0.0
 
 [sub_resource type="Shader" id="Shader_cw3lv"]
@@ -133,16 +134,16 @@ void fragment() {
 [sub_resource type="ShaderMaterial" id="EscapeButtonHighlightMaterial"]
 resource_local_to_scene = true
 shader = SubResource("Shader_cw3lv")
-shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
-shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
+shader_parameter/base_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
+shader_parameter/highlight_color = Color(0.42745098, 0.654902, 0.8980392, 1)
 
 [sub_resource type="StyleBoxFlat" id="Wave"]
-bg_color = Color(0.310000002, 0.639999986, 0.629999995, 0.039999999)
+bg_color = Color(0.31, 0.64, 0.63, 0.04)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.310000002, 0.639999986, 0.629999995, 0.280000001)
+border_color = Color(0.31, 0.64, 0.63, 0.28)
 corner_radius_top_left = 100
 corner_radius_top_right = 100
 corner_radius_bottom_right = 100
@@ -177,7 +178,7 @@ void fragment() {
 	COLOR = textureLod(screen_texture, pixel_uv, 0.0);
 }"
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_c606d"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_k0uil"]
 resource_local_to_scene = true
 shader = SubResource("PixelationShader")
 shader_parameter/pixel_size = 2.0
@@ -205,7 +206,7 @@ shader_parameter/center_uv = Vector2(0.5, 0.5)
 shader_parameter/radius = 2.0
 shader_parameter/aspect_ratio = 1.0
 shader_parameter/feather = 0.008
-shader_parameter/mask_color = Color(0.968627453, 0.964705884, 0.949019611, 1.000000000)
+shader_parameter/mask_color = Color(0.96862745, 0.9647059, 0.9490196, 1)
 
 [sub_resource type="Shader" id="ButtonHighlightShader"]
 code = "shader_type canvas_item;
@@ -226,99 +227,111 @@ void fragment() {
 	COLOR = source;
 }"
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_k0uil"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_d4gu4"]
 resource_local_to_scene = true
 shader = SubResource("ButtonHighlightShader")
 shader_parameter/base_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
 shader_parameter/highlight_color = Color(0.42745098, 0.654902, 0.8980392, 1)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_d4gu4"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_b3b7l"]
 atlas = ExtResource("14")
 region = Rect2(0, 0, 86, 31)
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_b3b7l"]
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_2j8wy"]
 content_margin_left = 9.0
 content_margin_top = 4.0
 content_margin_right = 9.0
 content_margin_bottom = 4.0
-texture = SubResource("AtlasTexture_d4gu4")
+texture = SubResource("AtlasTexture_b3b7l")
 texture_margin_left = 8.0
 texture_margin_top = 6.0
 texture_margin_right = 8.0
 texture_margin_bottom = 6.0
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_2j8wy"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_d7b04"]
 resource_local_to_scene = true
 shader = SubResource("ButtonHighlightShader")
-shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
-shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
+shader_parameter/base_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
+shader_parameter/highlight_color = Color(0.42745098, 0.654902, 0.8980392, 1)
 
 [sub_resource type="StyleBoxFlat" id="SpriteButtonPressed"]
-bg_color = Color(0.175999999, 0.372999996, 0.620000005, 1.000000000)
+bg_color = Color(0.176, 0.373, 0.62, 1)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
 corner_radius_bottom_right = 5
 corner_radius_bottom_left = 5
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_d7b04"]
-resource_local_to_scene = true
-shader = SubResource("Shader_cw3lv")
-shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
-shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
-
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_tlylo"]
 resource_local_to_scene = true
 shader = SubResource("Shader_cw3lv")
-shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
-shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
+shader_parameter/base_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
+shader_parameter/highlight_color = Color(0.42745098, 0.654902, 0.8980392, 1)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_alyih"]
 resource_local_to_scene = true
 shader = SubResource("Shader_cw3lv")
-shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
-shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
+shader_parameter/base_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
+shader_parameter/highlight_color = Color(0.42745098, 0.654902, 0.8980392, 1)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_h3d45"]
 resource_local_to_scene = true
 shader = SubResource("Shader_cw3lv")
-shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
-shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
+shader_parameter/base_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
+shader_parameter/highlight_color = Color(0.42745098, 0.654902, 0.8980392, 1)
+
+[sub_resource type="StyleBoxTexture" id="NotificationPanel"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+texture = ExtResource("15")
+texture_margin_left = 12.0
+texture_margin_top = 12.0
+texture_margin_right = 12.0
+texture_margin_bottom = 12.0
+region_rect = Rect2(20, 42, 226, 112)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ddaiw"]
 resource_local_to_scene = true
 shader = SubResource("Shader_cw3lv")
-shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
-shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
+shader_parameter/base_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
+shader_parameter/highlight_color = Color(0.42745098, 0.654902, 0.8980392, 1)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_8af6y"]
 resource_local_to_scene = true
 shader = SubResource("Shader_cw3lv")
-shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
-shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
+shader_parameter/base_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
+shader_parameter/highlight_color = Color(0.42745098, 0.654902, 0.8980392, 1)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_bwbmk"]
 resource_local_to_scene = true
 shader = SubResource("Shader_cw3lv")
-shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
-shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
+shader_parameter/base_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
+shader_parameter/highlight_color = Color(0.42745098, 0.654902, 0.8980392, 1)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_6pw2q"]
 resource_local_to_scene = true
 shader = SubResource("Shader_cw3lv")
-shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
-shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
+shader_parameter/base_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
+shader_parameter/highlight_color = Color(0.42745098, 0.654902, 0.8980392, 1)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_dbqh1"]
 resource_local_to_scene = true
 shader = SubResource("Shader_cw3lv")
-shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
-shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
+shader_parameter/base_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
+shader_parameter/highlight_color = Color(0.42745098, 0.654902, 0.8980392, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_jbajs"]
+resource_local_to_scene = true
+shader = SubResource("Shader_cw3lv")
+shader_parameter/base_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
+shader_parameter/highlight_color = Color(0.42745098, 0.654902, 0.8980392, 1)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_65kn7"]
 resource_local_to_scene = true
 shader = SubResource("ButtonHighlightShader")
-shader_parameter/base_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
-shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
+shader_parameter/base_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
+shader_parameter/highlight_color = Color(0.42745098, 0.654902, 0.8980392, 1)
 
 [sub_resource type="AtlasTexture" id="TransparentSliderGrabber"]
 atlas = ExtResource("21_bar")
@@ -349,18 +362,18 @@ void fragment() {
 resource_local_to_scene = true
 shader = SubResource("VolumeBarShader")
 shader_parameter/progress = 1.0
-shader_parameter/fill_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
-shader_parameter/empty_color = Color(0.725000024, 0.764999986, 0.811999977, 1.000000000)
-shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
+shader_parameter/fill_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
+shader_parameter/empty_color = Color(0.725, 0.765, 0.812, 1)
+shader_parameter/highlight_color = Color(0.42745098, 0.654902, 0.8980392, 1)
 shader_parameter/highlighted = 0.0
 
 [sub_resource type="ShaderMaterial" id="SoundVolumeBarMaterial"]
 resource_local_to_scene = true
 shader = SubResource("VolumeBarShader")
 shader_parameter/progress = 1.0
-shader_parameter/fill_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
-shader_parameter/empty_color = Color(0.725000024, 0.764999986, 0.811999977, 1.000000000)
-shader_parameter/highlight_color = Color(0.427450985, 0.654901981, 0.898039222, 1.000000000)
+shader_parameter/fill_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
+shader_parameter/empty_color = Color(0.725, 0.765, 0.812, 1)
+shader_parameter/highlight_color = Color(0.42745098, 0.654902, 0.8980392, 1)
 shader_parameter/highlighted = 0.0
 
 [sub_resource type="StyleBoxTexture" id="DeleteSavePanel"]
@@ -396,7 +409,7 @@ void fragment() {
 	COLOR = source;
 }"
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_jbajs"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_v5tvr"]
 resource_local_to_scene = true
 shader = SubResource("ProgressionButtonHighlightShader")
 shader_parameter/base_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
@@ -414,7 +427,7 @@ void fragment() {
 }
 "
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_v5tvr"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_cw05c"]
 resource_local_to_scene = true
 shader = SubResource("FontPreviewTileShader")
 shader_parameter/tile_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
@@ -431,11 +444,12 @@ script = ExtResource("1")
 replay_mask_duration = 0.4
 dust_particles_per_10000_pixels = 100.0
 dust_viscosity = 10.0
-dust_particle_color = Color(0.466666669, 0.454901963, 0.631372571, 0.933333337)
+dust_particle_color = Color(0.46666667, 0.45490196, 0.6313726, 0.93333334)
 dust_dragged_tile_influence = 0.5
 start_adaptive_in_editor = true
 
 [node name="Artwork" type="Control" parent="." unique_id=401090310]
+z_index = -2
 layout_mode = 1
 anchors_preset = 0
 offset_right = 256.0
@@ -530,7 +544,7 @@ offset_right = 1.0
 offset_bottom = -1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_colors/font_color = Color(0.235294119, 0.235294119, 0.235294119, 1.000000000)
+theme_override_colors/font_color = Color(0.23529412, 0.23529412, 0.23529412, 1)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "5"
@@ -559,7 +573,7 @@ anchor_bottom = 1.0
 offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_colors/font_color = Color(0.235294119, 0.235294119, 0.235294119, 1.000000000)
+theme_override_colors/font_color = Color(0.23529412, 0.23529412, 0.23529412, 1)
 theme_override_font_sizes/font_size = 20
 text = "100"
 horizontal_alignment = 1
@@ -572,7 +586,7 @@ offset_left = 18.0
 offset_top = 13.0
 offset_right = 199.0
 offset_bottom = 31.0
-theme_override_colors/font_color = Color(0.541176498, 0.533333361, 0.509803951, 1.000000000)
+theme_override_colors/font_color = Color(0.5411765, 0.53333336, 0.50980395, 1)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "1 min 12 s 323 ms"
@@ -668,7 +682,7 @@ offset_right = 220.0
 offset_bottom = 36.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_colors/font_color = Color(0.235294119, 0.235294119, 0.235294119, 1.000000000)
+theme_override_colors/font_color = Color(0.23529412, 0.23529412, 0.23529412, 1)
 theme_override_font_sizes/font_size = 20
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -683,7 +697,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 12.0
 offset_top = -55.0
-offset_right = 1194.0
+offset_right = 4.0
 grow_horizontal = 2
 grow_vertical = 0
 script = ExtResource("7_conveyor_tray")
@@ -820,7 +834,7 @@ offset_left = 17.0
 offset_top = 12.0
 offset_right = 29.0
 offset_bottom = 24.0
-theme_override_colors/font_color = Color(0.235294119, 0.235294119, 0.235294119, 1.000000000)
+theme_override_colors/font_color = Color(0.23529412, 0.23529412, 0.23529412, 1)
 theme_override_font_sizes/font_size = 10
 text = "2"
 horizontal_alignment = 1
@@ -848,7 +862,7 @@ mouse_filter = 2
 
 [node name="ActiveBonusDescription" type="PanelContainer" parent="Gameplay" unique_id=1608555819]
 unique_name_in_owner = true
-self_modulate = Color(1.000000000, 1.000000000, 1.000000000, 0.631372571)
+self_modulate = Color(1, 1, 1, 0.6313726)
 z_index = 4
 layout_mode = 0
 offset_left = 64.0
@@ -881,8 +895,8 @@ offset_right = 157.0
 offset_bottom = -4.0
 grow_vertical = 0
 mouse_filter = 1
-theme_override_colors/font_color = Color(1.000000000, 1.000000000, 1.000000000, 0.819999993)
-theme_override_colors/font_outline_color = Color(0.100000001, 0.100000001, 0.100000001, 0.899999976)
+theme_override_colors/font_color = Color(1, 1, 1, 0.82)
+theme_override_colors/font_outline_color = Color(0.1, 0.1, 0.1, 0.9)
 theme_override_constants/outline_size = 2
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 8
@@ -898,8 +912,8 @@ offset_left = 5.0
 offset_top = 60.0
 offset_right = 155.0
 offset_bottom = 132.0
-theme_override_colors/font_color = Color(1.000000000, 1.000000000, 1.000000000, 0.899999976)
-theme_override_colors/font_outline_color = Color(0.100000001, 0.100000001, 0.100000001, 0.899999976)
+theme_override_colors/font_color = Color(1, 1, 1, 0.9)
+theme_override_colors/font_outline_color = Color(0.1, 0.1, 0.1, 0.9)
 theme_override_constants/outline_size = 2
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 8
@@ -927,6 +941,10 @@ script = ExtResource("8")
 [node name="MusicManager" type="AudioStreamPlayer" parent="Managers" unique_id=1212818728]
 unique_name_in_owner = true
 script = ExtResource("8_music")
+
+[node name="SnakeRuleController" type="Node" parent="Managers" unique_id=1672887496]
+unique_name_in_owner = true
+script = ExtResource("snake_controller")
 
 [node name="MovingPilePattern" type="Node" parent="Managers" unique_id=497167325]
 unique_name_in_owner = true
@@ -966,7 +984,7 @@ layer = 15
 
 [node name="PixelationOverlay" parent="PresentationLayers/PixelationLayer" unique_id=659575838 instance=ExtResource("17_pixelation")]
 unique_name_in_owner = true
-material = SubResource("ShaderMaterial_c606d")
+material = SubResource("ShaderMaterial_k0uil")
 layout_mode = 3
 
 [node name="TransitionLayer" type="CanvasLayer" parent="PresentationLayers" unique_id=1957222345]
@@ -982,7 +1000,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.968627453, 0.964705884, 0.949019611, 1.000000000)
+color = Color(0.96862745, 0.9647059, 0.9490196, 1)
 
 [node name="MenuTransitionLayer" type="CanvasLayer" parent="PresentationLayers" unique_id=1818659348]
 unique_name_in_owner = true
@@ -1003,18 +1021,18 @@ layer = 20
 theme_override_font_sizes/normal_font_size = 20
 
 [node name="FirstChoice" parent="PresentationLayers/BonusSelectionLayer/BonusSelection/Choices" parent_id_path=PackedInt32Array(830019442, 745094377) index="0" unique_id=1359979182]
-highlight_material = SubResource("ShaderMaterial_k0uil")
+highlight_material = SubResource("ShaderMaterial_d4gu4")
 
 [node name="SkipButton" parent="PresentationLayers/BonusSelectionLayer/BonusSelection" index="4"]
 custom_minimum_size = Vector2(86, 20)
 theme_override_font_sizes/font_size = 16
-theme_override_styles/normal = SubResource("StyleBoxTexture_b3b7l")
-theme_override_styles/pressed = SubResource("StyleBoxTexture_b3b7l")
-theme_override_styles/hover = SubResource("StyleBoxTexture_b3b7l")
-theme_override_styles/disabled = SubResource("StyleBoxTexture_b3b7l")
-theme_override_styles/focus = SubResource("StyleBoxTexture_b3b7l")
+theme_override_styles/normal = SubResource("StyleBoxTexture_2j8wy")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_2j8wy")
+theme_override_styles/hover = SubResource("StyleBoxTexture_2j8wy")
+theme_override_styles/disabled = SubResource("StyleBoxTexture_2j8wy")
+theme_override_styles/focus = SubResource("StyleBoxTexture_2j8wy")
 text = "skip"
-highlight_material = SubResource("ShaderMaterial_2j8wy")
+highlight_material = SubResource("ShaderMaterial_d7b04")
 
 [node name="SkippableSequenceLayer" type="CanvasLayer" parent="PresentationLayers" unique_id=1910882523]
 layer = 30
@@ -1051,7 +1069,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.079999998, 0.090000004, 0.119999997, 0.460000008)
+color = Color(0.08, 0.09, 0.12, 0.46)
 
 [node name="Center" type="CenterContainer" parent="PresentationLayers/QuitPopupLayer/QuitPopup" unique_id=523622726]
 layout_mode = 1
@@ -1100,7 +1118,7 @@ theme_override_styles/pressed = SubResource("SpriteButtonPressed")
 theme_override_styles/hover = SubResource("SpriteButton")
 text = "CONTINUE"
 script = ExtResource("22_highlight")
-highlight_material = SubResource("ShaderMaterial_d7b04")
+highlight_material = SubResource("ShaderMaterial_tlylo")
 
 [node name="QuitRestartButton" parent="PresentationLayers/QuitPopupLayer/QuitPopup/Center/Panel/Content/Buttons" unique_id=1150324439 instance=ExtResource("22_region_button")]
 unique_name_in_owner = true
@@ -1111,7 +1129,7 @@ theme_override_styles/pressed = SubResource("SpriteButtonPressed")
 theme_override_styles/hover = SubResource("SpriteButton")
 text = "RESTART"
 script = ExtResource("22_highlight")
-highlight_material = SubResource("ShaderMaterial_tlylo")
+highlight_material = SubResource("ShaderMaterial_alyih")
 
 [node name="QuitRunButton" parent="PresentationLayers/QuitPopupLayer/QuitPopup/Center/Panel/Content/Buttons" unique_id=2042110092 instance=ExtResource("22_region_button")]
 unique_name_in_owner = true
@@ -1122,7 +1140,7 @@ theme_override_styles/pressed = SubResource("SpriteButtonPressed")
 theme_override_styles/hover = SubResource("SpriteButton")
 text = "QUIT"
 script = ExtResource("22_highlight")
-highlight_material = SubResource("ShaderMaterial_alyih")
+highlight_material = SubResource("ShaderMaterial_h3d45")
 
 [node name="PauseSeedMargin" type="MarginContainer" parent="PresentationLayers/QuitPopupLayer/QuitPopup/Center/Panel/Content" unique_id=1996146495]
 unique_name_in_owner = true
@@ -1159,7 +1177,7 @@ offset_bottom = 100.0
 grow_horizontal = 2
 mouse_filter = 2
 
-[node name="Center" type="CenterContainer" parent="Screens/AchievementPopup" unique_id=367203332]
+[node name="Center" type="PanelContainer" parent="Screens/AchievementPopup" unique_id=367203332]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -1167,6 +1185,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_override_styles/panel = SubResource("NotificationPanel")
 
 [node name="Content" type="HBoxContainer" parent="Screens/AchievementPopup/Center" unique_id=1978355019]
 layout_mode = 2
@@ -1184,9 +1203,10 @@ stretch_mode = 5
 
 [node name="AchievementPopupTitle" type="Label" parent="Screens/AchievementPopup/Center/Content" unique_id=1979825494]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(130, 0)
+custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.235294119, 0.235294119, 0.235294119, 1.000000000)
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.23529412, 0.23529412, 0.23529412, 1)
 theme_override_fonts/font = ExtResource("12")
 theme_override_font_sizes/font_size = 20
 text = "STACK OVERFLOW"
@@ -1210,7 +1230,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.968999982, 0.964999974, 0.949000001, 0.899999976)
+color = Color(0.969, 0.965, 0.949, 0.9)
 
 [node name="Center" type="CenterContainer" parent="Screens/OverlayLegacy" unique_id=282762708]
 layout_mode = 1
@@ -1254,7 +1274,7 @@ alignment = 1
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 mouse_filter = 2
-theme_override_colors/default_color = Color(0.235294119, 0.235294119, 0.235294119, 1.000000000)
+theme_override_colors/default_color = Color(0.23529412, 0.23529412, 0.23529412, 1)
 theme_override_font_sizes/normal_font_size = 20
 bbcode_enabled = true
 text = "[center]100 rounds left[/center]"
@@ -1265,7 +1285,7 @@ scroll_active = false
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 mouse_filter = 2
-theme_override_colors/default_color = Color(0.541176498, 0.533333361, 0.509803951, 1.000000000)
+theme_override_colors/default_color = Color(0.5411765, 0.53333336, 0.50980395, 1)
 theme_override_fonts/normal_font = ExtResource("6_1vynq")
 theme_override_font_sizes/normal_font_size = 16
 bbcode_enabled = true
@@ -1289,7 +1309,7 @@ theme_override_styles/pressed = SubResource("SpriteButtonPressed")
 theme_override_styles/hover = SubResource("SpriteButton")
 text = "REPLAY"
 script = ExtResource("22_highlight")
-highlight_material = SubResource("ShaderMaterial_h3d45")
+highlight_material = SubResource("ShaderMaterial_ddaiw")
 
 [node name="LegacyOverlayEndlessButton" parent="Screens/OverlayLegacy/Center/ResultStack/Panel/Content/OverlayButtons" unique_id=1277210770 instance=ExtResource("22_region_button")]
 visible = false
@@ -1300,7 +1320,7 @@ theme_override_styles/pressed = SubResource("SpriteButtonPressed")
 theme_override_styles/hover = SubResource("SpriteButton")
 text = "INFINITE"
 script = ExtResource("22_highlight")
-highlight_material = SubResource("ShaderMaterial_ddaiw")
+highlight_material = SubResource("ShaderMaterial_8af6y")
 
 [node name="LegacyOverlayQuitButton" parent="Screens/OverlayLegacy/Center/ResultStack/Panel/Content/OverlayButtons" unique_id=1724562451 instance=ExtResource("22_region_button")]
 custom_minimum_size = Vector2(110, 31)
@@ -1311,13 +1331,13 @@ theme_override_styles/pressed = SubResource("SpriteButtonPressed")
 theme_override_styles/hover = SubResource("SpriteButton")
 text = "QUIT"
 script = ExtResource("22_highlight")
-highlight_material = SubResource("ShaderMaterial_8af6y")
+highlight_material = SubResource("ShaderMaterial_bwbmk")
 
 [node name="LegacyOverlayHighScore" type="RichTextLabel" parent="Screens/OverlayLegacy" unique_id=1165595282]
 custom_minimum_size = Vector2(236, 20)
 layout_mode = 0
 mouse_filter = 2
-theme_override_colors/default_color = Color(0.235294119, 0.235294119, 0.235294119, 1.000000000)
+theme_override_colors/default_color = Color(0.23529412, 0.23529412, 0.23529412, 1)
 theme_override_font_sizes/normal_font_size = 20
 bbcode_enabled = true
 text = "[center][wave amp=25.0 freq=3.0 connected=1]HIGHSCORE[/wave][/center]"
@@ -1328,7 +1348,7 @@ scroll_active = false
 custom_minimum_size = Vector2(236, 0)
 layout_mode = 0
 mouse_filter = 2
-theme_override_colors/default_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+theme_override_colors/default_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
 theme_override_fonts/normal_font = ExtResource("6_1vynq")
 theme_override_font_sizes/normal_font_size = 16
 bbcode_enabled = true
@@ -1361,7 +1381,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.968627453, 0.964705884, 0.949019611, 1.000000000)
+color = Color(0.96862745, 0.9647059, 0.9490196, 1)
 
 [node name="Center" type="CenterContainer" parent="Screens/Splash" unique_id=1815383714]
 layout_mode = 1
@@ -1382,7 +1402,7 @@ layout_mode = 2
 offset_transform_enabled = true
 offset_transform_position = Vector2(-10, 0)
 mouse_filter = 2
-theme_override_colors/default_color = Color(0.235294119, 0.235294119, 0.235294119, 1.000000000)
+theme_override_colors/default_color = Color(0.23529412, 0.23529412, 0.23529412, 1)
 theme_override_font_sizes/normal_font_size = 40
 bbcode_enabled = true
 text = "[wave amp=25.0 freq=3.0 connected=1] .PILE DOWN.[/wave]"
@@ -1395,7 +1415,7 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
-theme_override_colors/font_color = Color(0.878431380, 0.392156869, 0.333333343, 1.000000000)
+theme_override_colors/font_color = Color(0.8784314, 0.39215687, 0.33333334, 1)
 theme_override_font_sizes/font_size = 14
 text = "DEBUG MODE"
 horizontal_alignment = 1
@@ -1414,7 +1434,7 @@ anchor_right = 1.0
 offset_bottom = 52.0
 grow_horizontal = 2
 mouse_filter = 2
-theme_override_colors/default_color = Color(0.541176498, 0.533333361, 0.509803951, 1.000000000)
+theme_override_colors/default_color = Color(0.5411765, 0.53333336, 0.50980395, 1)
 theme_override_constants/line_separation = 4
 theme_override_font_sizes/normal_font_size = 20
 bbcode_enabled = true
@@ -1431,7 +1451,7 @@ offset_left = 30.0
 offset_top = 49.0
 offset_right = 250.0
 offset_bottom = 73.0
-theme_override_colors/font_color = Color(0.541176498, 0.533333361, 0.509803951, 1.000000000)
+theme_override_colors/font_color = Color(0.5411765, 0.53333336, 0.50980395, 1)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "in 1 min 12 s 323 ms"
@@ -1454,7 +1474,7 @@ theme_override_styles/pressed = SubResource("SpriteButtonPressed")
 theme_override_styles/hover = SubResource("SpriteButton")
 text = "PLAY"
 script = ExtResource("22_highlight")
-highlight_material = SubResource("ShaderMaterial_bwbmk")
+highlight_material = SubResource("ShaderMaterial_6pw2q")
 
 [node name="CheckpointSelector" type="HBoxContainer" parent="Screens/Splash/Center/Content/RunButtons" unique_id=246945019]
 layout_mode = 2
@@ -1469,7 +1489,7 @@ theme_override_styles/pressed = SubResource("SpriteButtonPressed")
 theme_override_styles/hover = SubResource("SpriteButton")
 text = "FROM"
 script = ExtResource("22_highlight")
-highlight_material = SubResource("ShaderMaterial_6pw2q")
+highlight_material = SubResource("ShaderMaterial_dbqh1")
 
 [node name="CheckpointArrows" type="VBoxContainer" parent="Screens/Splash/Center/Content/RunButtons/CheckpointSelector" unique_id=1071569152]
 layout_mode = 2
@@ -1509,7 +1529,7 @@ theme_override_styles/pressed = SubResource("SpriteButtonPressed")
 theme_override_styles/hover = SubResource("SpriteButton")
 text = "ENDLESS"
 script = ExtResource("22_highlight")
-highlight_material = SubResource("ShaderMaterial_dbqh1")
+highlight_material = SubResource("ShaderMaterial_jbajs")
 
 [node name="ProgressionButton" type="TextureButton" parent="Screens/Splash" unique_id=448854562]
 unique_name_in_owner = true
@@ -1589,7 +1609,7 @@ offset_right = 150.0
 offset_bottom = -8.0
 grow_vertical = 0
 mouse_filter = 1
-theme_override_colors/font_color = Color(0.234999999, 0.234999999, 0.234999999, 0.819999993)
+theme_override_colors/font_color = Color(0.235, 0.235, 0.235, 0.82)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 6
 text = "DEBUG SHORTCUTS
@@ -1614,7 +1634,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.968627453, 0.964705884, 0.949019611, 1.000000000)
+color = Color(0.96862745, 0.9647059, 0.9490196, 1)
 
 [node name="Margin" type="MarginContainer" parent="Screens/Splash/OptionsMenu" unique_id=597374488]
 layout_mode = 1
@@ -1640,7 +1660,7 @@ theme_override_constants/separation = 4
 [node name="Title" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Header" unique_id=1547225580]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.235294119, 0.235294119, 0.235294119, 1.000000000)
+theme_override_colors/font_color = Color(0.23529412, 0.23529412, 0.23529412, 1)
 theme_override_font_sizes/font_size = 20
 text = "OPTIONS"
 
@@ -1669,7 +1689,7 @@ alignment = 1
 
 [node name="GameplayOptionsButton" type="TextureButton" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/Navigation" unique_id=1118789519]
 unique_name_in_owner = true
-modulate = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+modulate = Color(0.3019608, 0.50980395, 0.7607843, 1)
 light_mask = 2
 texture_filter = 1
 custom_minimum_size = Vector2(30, 34)
@@ -1747,7 +1767,7 @@ theme_override_constants/separation = 8
 [node name="OptionsPageTitle" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page" unique_id=561215275]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+theme_override_colors/font_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
 theme_override_font_sizes/font_size = 20
 text = "SOUND"
 
@@ -1759,7 +1779,7 @@ theme_override_constants/separation = 2
 
 [node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GameplayOptions" unique_id=2121987407]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+theme_override_colors/font_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "DISPLAY"
@@ -1822,7 +1842,7 @@ highlight_material = SubResource("ShaderMaterial_65kn7")
 
 [node name="AccessibilityLabel" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GameplayOptions" unique_id=2132811917]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+theme_override_colors/font_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "ACCESSIBILITY"
@@ -1867,7 +1887,7 @@ theme_override_constants/separation = 2
 
 [node name="Title" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/SoundOptions/AudioControls" unique_id=1397884041]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+theme_override_colors/font_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "VOLUME"
@@ -1879,7 +1899,7 @@ theme_override_constants/separation = 4
 [node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/SoundOptions/AudioControls/MusicRow" unique_id=1718612431]
 custom_minimum_size = Vector2(72, 24)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.235294119, 0.235294119, 0.235294119, 1.000000000)
+theme_override_colors/font_color = Color(0.23529412, 0.23529412, 0.23529412, 1)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "MUSIC"
@@ -1925,7 +1945,7 @@ theme_override_constants/separation = 4
 [node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/SoundOptions/AudioControls/SoundRow" unique_id=1444721140]
 custom_minimum_size = Vector2(72, 24)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.000000000, 0.000000000, 0.000000000, 1.000000000)
+theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "SOUNDS"
@@ -1977,7 +1997,7 @@ theme_override_constants/separation = 2
 
 [node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GraphicsOptions/Content" unique_id=244331881]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+theme_override_colors/font_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "SCREEN SIZE"
@@ -2043,6 +2063,21 @@ autowrap_mode = 3
 script = ExtResource("22_highlight")
 highlight_material = SubResource("ShaderMaterial_65kn7")
 
+[node name="OrientationButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GraphicsOptions/Content" unique_id=681395043]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("6_1vynq")
+theme_override_font_sizes/font_size = 16
+text = "ORIENTATION: PORTRAIT"
+flat = true
+alignment = 0
+autowrap_mode = 3
+script = ExtResource("22_highlight")
+highlight_material = SubResource("ShaderMaterial_65kn7")
+
 [node name="SystemBarsButton" type="Button" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GraphicsOptions/Content" unique_id=2131740616]
 unique_name_in_owner = true
 visible = false
@@ -2075,7 +2110,7 @@ highlight_material = SubResource("ShaderMaterial_65kn7")
 
 [node name="BackgroundLabel" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/GraphicsOptions/Content" unique_id=1694687744]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+theme_override_colors/font_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "BACKGROUND"
@@ -2135,7 +2170,7 @@ theme_override_constants/separation = 3
 
 [node name="Title" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/SaveOptions/SaveData" unique_id=1344683528]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+theme_override_colors/font_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "SAVE DATA"
@@ -2190,7 +2225,7 @@ highlight_material = SubResource("ShaderMaterial_65kn7")
 [node name="SaveStatus" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/SaveOptions/SaveData" unique_id=2117054953]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.541176498, 0.533333361, 0.509803951, 1.000000000)
+theme_override_colors/font_color = Color(0.5411765, 0.53333336, 0.50980395, 1)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 12
 autowrap_mode = 2
@@ -2204,7 +2239,7 @@ theme_override_constants/separation = 2
 
 [node name="Label" type="Label" parent="Screens/Splash/OptionsMenu/Margin/Layout/Body/PageScroll/Page/LinksOptions" unique_id=1677015471]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.301960796, 0.509803951, 0.760784328, 1.000000000)
+theme_override_colors/font_color = Color(0.3019608, 0.50980395, 0.7607843, 1)
 theme_override_fonts/font = ExtResource("6_1vynq")
 theme_override_font_sizes/font_size = 16
 text = "FIND JUELS ONLINE"
@@ -2260,7 +2295,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.968627453, 0.964705884, 0.949019611, 1.000000000)
+color = Color(0.96862745, 0.9647059, 0.9490196, 1)
 
 [node name="Center" type="CenterContainer" parent="Screens/Splash/CheckpointMenu" unique_id=1709969302]
 layout_mode = 1
@@ -2277,7 +2312,7 @@ alignment = 1
 
 [node name="Title" type="Label" parent="Screens/Splash/CheckpointMenu/Center/Content" unique_id=1882437620]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.235294119, 0.235294119, 0.235294119, 1.000000000)
+theme_override_colors/font_color = Color(0.23529412, 0.23529412, 0.23529412, 1)
 theme_override_font_sizes/font_size = 24
 text = "CHECKPOINTS"
 horizontal_alignment = 1
@@ -2299,8 +2334,8 @@ script = ExtResource("22_highlight")
 
 [node name="ProgressionMenu" parent="Screens" unique_id=1548032098 instance=ExtResource("36_progression_menu")]
 layout_mode = 1
-font_button_highlight_material = SubResource("ShaderMaterial_jbajs")
-font_preview_tile_material = SubResource("ShaderMaterial_v5tvr")
+font_button_highlight_material = SubResource("ShaderMaterial_v5tvr")
+font_preview_tile_material = SubResource("ShaderMaterial_cw05c")
 
 [node name="ChallengeSelection" parent="Screens" unique_id=504750781 instance=ExtResource("17_challenges")]
 unique_name_in_owner = true

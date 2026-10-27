@@ -15,3 +15,5 @@ title_font_offset = Vector2(0, -1)
 title_font_size = null
 override_hidden_tile_with_font = null
 required_achievement = ExtResource("2_jximv")
+pip_shape = 1
+pip_scale = 1.0

@@ -336,6 +336,7 @@ cache/0/32/0/glyphs/28/texture_idx = 0
 
 [resource]
 script = ExtResource("3_pvkyp")
+pip_scale = 0.85
 display_name = "BIRCH LEAF"
 font = SubResource("FontFile_lynu6")
 tile_font_size = 16

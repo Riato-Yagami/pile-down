@@ -68,7 +68,7 @@ const SubmenuPageAnimatorScript := preload(
 )
 const PAGE_CHALLENGES := 0
 const PAGE_SEEDS := 1
-const SEEDED_MAX_PILES := 4
+const SEEDED_MAX_PILES := DifficultySettings.MAX_PILES
 const SEEDED_MIN_CARD_VALUE := 1
 const SEED_MENU_HEIGHT := 31.0
 const SEED_MENU_POPUP_MAX_HEIGHT := 290.0

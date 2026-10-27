@@ -30,7 +30,8 @@ Son centre est placé à 53 % de la hauteur (5 % plus haut que le placement pré
 Les deux animations démarrent ensemble à 0,9 seconde dans la conclusion.
 Par défaut, des glissements de dix images relient les écrans sans passage au noir ;
 le type, le sens et la durée de chaque raccord sont configurables.
-Les deux orientations sont capturées séparément en mode adaptatif, sans recadrer
+Les deux orientations sont capturées séparément dans le mode choisi (adaptatif
+par défaut), sans recadrer
 le plateau. Bring a Friend est montré au **niveau 1** : une seule carte voisine
 accompagne la carte déplacée ; Shell Game échange réellement les positions des piles.
 La quatrième séquence montre le véritable défi Conveyor Belt : les tuiles
@@ -82,6 +83,34 @@ python publishing/scripts/create_trailer.py --reuse-capture
 python publishing/scripts/create_trailer.py --language en --format landscape
 ```
 
+Pour choisir exactement les versions et leur mode d'affichage :
+
+```sh
+python publishing/scripts/create_trailer.py --versions portrait-fr landscape-en --display-mode semi_adaptive
+```
+
+`--display-mode` accepte `classic`, `semi_adaptive`, `adaptive` et
+`menu_adaptive` (menus adaptatifs). Le choix s'applique à toutes les versions
+sélectionnées. Pour conserver ces choix, modifier `GENERATION` dans
+`publishing/scripts/trailer_config.py` :
+
+```python
+GENERATION = {
+    "versions": ["portrait-fr", "landscape-en"],
+    "display_mode": "semi_adaptive",
+}
+```
+
+`--versions` remplace la liste configurée ; `--format` et `--language` filtrent
+ensuite cette liste. Une sélection vide est refusée. `--display-mode` remplace
+le mode configuré. Les modes autres qu'`adaptive` ajoutent un suffixe au nom des
+MP4, aperçus et dossiers de travail, par exemple
+`pile-down-portrait-fr-semi_adaptive.mp4` et
+`wip/trailer/portrait-fr-semi_adaptive/`. Les noms adaptatifs existants sont
+conservés. `--reuse-capture` exige une capture du même format, langue et mode ;
+les anciennes captures sans mode explicite sont reconnues comme adaptatives.
+Changer de mode nécessite une première génération sans `--reuse-capture`.
+
 `--reuse-capture` exige les quatre séquences, dont le défi avec tapis roulant,
 leurs configurations variées,
 Bring a Friend au niveau 1 et les bruitages seuls. Après une modification des
@@ -95,6 +124,8 @@ disponible (le mode headless ne produit pas les images du jeu).
 Les images sont enregistrées après le rendu depuis le viewport complet :
 le changement de ratio ne coupe donc ni le HUD ni la main. Le montage les
 agrandit sans lissage et conserve leur orientation.
+Les erreurs de fermeture émises sur stderr sont conservées dans
+`capture-stderr.log` et font échouer la génération avant le montage.
 Le mode debug du jeu doit être désactivé. Les sauvegardes et préférences sont
 écrites dans un profil temporaire distinct, pas dans celui du joueur.
 Les enregistrements et images intermédiaires restent dans

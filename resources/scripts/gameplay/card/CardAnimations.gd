@@ -10,7 +10,7 @@ static func animate_return(host: PlayingCard, destination: Vector2, duration := 
 	host.dragging = false
 	host.drag_collision_area.monitorable = false
 	host.cancel_drag_timers()
-	host.z_index = 0
+	host.z_index = host._resting_z_index()
 	host.rotation = 0.0
 	var tween := host.create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(host, "global_position", destination, duration)
@@ -43,7 +43,7 @@ static func reset_hand_pose(host: PlayingCard) -> void:
 	host.selection_outline.position.y = -2.0
 	host._apply_value_label_offset()
 	host.drag_timer_ring.visible = false
-	host.z_index = 0
+	host.z_index = host._resting_z_index()
 
 
 static func record_hand_position(host: PlayingCard) -> void:
@@ -185,6 +185,35 @@ static func play_draw_from_right(host: PlayingCard, delay: float) -> void:
 	host._entrance_tween.tween_callback(host._finish_entrance_animation)
 
 
+static func play_snake_entrance(host: PlayingCard) -> void:
+	host.finish_entrance_immediately()
+	host.set_selectable(false)
+	host._entrance_unlock_pending = true
+	host._entrance_animation_running = true
+	host.visual_root.pivot_offset = host.visual_root.size * 0.5
+	host.visual_root.scale = Vector2.ONE * 0.05
+	host.modulate.a = 0.0
+	host._entrance_tween = host.create_tween().set_parallel().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	host._entrance_tween.tween_property(host.visual_root, "scale", Vector2.ONE, 0.28)
+	host._entrance_tween.tween_property(host, "modulate:a", 1.0, 0.28)
+	host._entrance_tween.chain().tween_callback(host._finish_entrance_animation)
+
+
+static func play_snake_exit(host: PlayingCard, delay: float) -> float:
+	host.set_selectable(false)
+	host.cancel_drag_timers()
+	host._cancel_flip_animation()
+	if host._visual_tween != null and host._visual_tween.is_valid():
+		host._visual_tween.kill()
+	host.visual_root.pivot_offset = host.visual_root.size * 0.5
+	var tween := host.create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	host.discard_tween = tween
+	tween.tween_interval(delay)
+	tween.tween_property(host.visual_root, "scale", Vector2.ONE * 0.05, 0.26)
+	tween.parallel().tween_property(host, "modulate:a", 0.0, 0.26)
+	return delay + 0.26
+
+
 static func play_draw_in_place(host: PlayingCard, delay: float) -> void:
 	host.modulate.a = 0.0
 	var tween := host.create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -249,6 +278,7 @@ static func materialize_entrance_for_drag(host: PlayingCard) -> void:
 		for visual in host._entrance_home_positions:
 			(visual as Control).position = host._entrance_home_positions[visual]
 	host._entrance_home_positions.clear()
+	host.visual_root.scale = Vector2.ONE
 	host._entrance_animation_running = false
 	host._entrance_unlock_pending = false
 	host.rotation = 0.0
@@ -259,6 +289,7 @@ static func finish_entrance_animation(host: PlayingCard) -> void:
 	for visual in host._entrance_home_positions:
 		(visual as Control).position = host._entrance_home_positions[visual]
 	host._entrance_home_positions.clear()
+	host.visual_root.scale = Vector2.ONE
 	host._entrance_animation_running = false
 	host._complete_entrance_interaction()
 
@@ -271,6 +302,7 @@ static func finish_entrance_immediately(host: PlayingCard) -> void:
 	for visual in host._entrance_home_positions:
 		(visual as Control).position = host._entrance_home_positions[visual]
 	host._entrance_home_positions.clear()
+	host.visual_root.scale = Vector2.ONE
 	host._entrance_animation_running = false
 	host.modulate.a = 1.0
 	host.rotation = 0.0

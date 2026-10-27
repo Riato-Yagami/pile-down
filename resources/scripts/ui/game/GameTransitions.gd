@@ -88,9 +88,19 @@ static func play_menu_opening(host: GameManager) -> void:
 static func play_return_to_menu_transition(host: GameManager) -> void:
 	# Screens also inherits the game container's offset after a window resize.
 	# Convert its origin into the transition layer instead of losing that offset.
+	var menu_canvas_transform := host.screens.get_global_transform_with_canvas()
+	if host.round_modifiers.mirror_match_enabled:
+		# The returning menu is outside the mirrored game CanvasItem. Cancel
+		# its reflection around the pivot without changing the board underneath.
+		var reflection := Transform2D(
+			0.0, host.scale, 0.0, host.pivot_offset - host.scale * host.pivot_offset
+		)
+		menu_canvas_transform = (
+			host.get_global_transform_with_canvas() * reflection * host.screens.get_transform()
+		)
 	var splash_destination := (
 		host.menu_transition_layer.get_final_transform().affine_inverse()
-		* host.screens.get_global_transform_with_canvas().origin
+		* menu_canvas_transform.origin
 	)
 	host.splash.set_anchors_preset(Control.PRESET_TOP_LEFT, false)
 	# Keep the centered menu rect while its background covers the wider canvas.

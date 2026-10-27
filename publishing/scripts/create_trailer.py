@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 
@@ -98,7 +99,31 @@ def run(command, **kwargs):
     subprocess.run([str(part) for part in command], check=True, **kwargs)
 
 
-def capture(godot, mode, language, work):
+DISPLAY_MODES = ("classic", "semi_adaptive", "adaptive", "menu_adaptive")
+VERSIONS = ("portrait-fr", "landscape-fr", "portrait-en", "landscape-en")
+
+
+def selected_versions(args):
+    versions = args.versions if args.versions is not None else config.GENERATION["versions"]
+    if not versions or any(version not in VERSIONS for version in versions):
+        raise ValueError("Choose at least one version from: " + ", ".join(VERSIONS))
+    return [(mode, language) for mode, language in
+            (version.split("-") for version in dict.fromkeys(versions))
+            if args.format in ("both", mode) and args.language in ("both", language)]
+
+
+def display_suffix(display_mode):
+    return "" if display_mode == "adaptive" else "-" + display_mode
+
+
+def validate_capture_selection(metadata, mode, language, display_mode):
+    validate_capture(metadata)
+    # Recordings made before this option always used adaptive display.
+    if (metadata.get("format"), metadata.get("language"), metadata.get("display_mode", "adaptive")) != (mode, language, display_mode):
+        raise RuntimeError("Capture settings differ; record again without --reuse-capture")
+
+
+def capture(godot, mode, language, work, display_mode="adaptive"):
     metadata_path = work / "capture.json"
     metadata_path.unlink(missing_ok=True)
     log = work / "capture.log"
@@ -119,10 +144,13 @@ def capture(godot, mode, language, work):
             "--fixed-fps", FPS, "--disable-vsync", "--quit-after", 4500,
             "--log-file", work / "capture.log",
             "--script", "res://resources/scripts/tools/CaptureTrailer.gd",
-            "--", metadata_path, mode, language,
+            "--", metadata_path, mode, language, display_mode,
         ]
-        process = subprocess.Popen([str(part) for part in command], cwd=PROJECT,
-                                   env=environment, startupinfo=startup)
+        # Godot's --log-file does not include late shutdown errors on stderr.
+        stderr_path = work / "capture-stderr.log"
+        with stderr_path.open("w", encoding="utf-8") as stderr_log:
+            process = subprocess.Popen([str(part) for part in command], cwd=PROJECT,
+                                       env=environment, startupinfo=startup, stderr=stderr_log)
         try:
             deadline = time.monotonic() + 600
             while process.poll() is None:
@@ -133,8 +161,11 @@ def capture(godot, mode, language, work):
                 time.sleep(0.1)
             if process.returncode:
                 raise subprocess.CalledProcessError(process.returncode, command)
-            if "ERROR:" in log.read_text(encoding="utf-8", errors="replace"):
-                raise RuntimeError(f"Godot capture failed; inspect {log}")
+            stderr_text = stderr_path.read_text(encoding="utf-8", errors="replace")
+            if stderr_text:
+                print(stderr_text, end="", file=sys.stderr)
+            if "ERROR:" in log.read_text(encoding="utf-8", errors="replace") or "ERROR:" in stderr_text:
+                raise RuntimeError(f"Godot capture failed; inspect {log} and {stderr_path}")
         finally:
             if process.poll() is None:
                 process.kill()
@@ -436,7 +467,8 @@ def compose(ffmpeg, mode, language, metadata, work):
     video_filters, previous = video_filter_graph(len(encoded), transitions, starts)
     video_graph = work / "video-filter.txt"
     video_graph.write_text(video_filters, encoding="utf-8")
-    output = OUTPUT / f"pile-down-{mode}-{language}.mp4"
+    suffix = display_suffix(metadata.get("display_mode", "adaptive"))
+    output = OUTPUT / f"pile-down-{mode}-{language}{suffix}.mp4"
     inputs = [part for clip in encoded for part in ("-i", clip)]
     run([ffmpeg, "-hide_banner", "-loglevel", "error", "-y", *inputs, "-i", soundtrack,
          "-filter_complex_threads", "1", "-filter_complex", video_filters,
@@ -445,6 +477,7 @@ def compose(ffmpeg, mode, language, metadata, work):
          "-color_range", "tv", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", output],
         timeout=300)
     (work / "edit.json").write_text(json.dumps({
+        "display_mode": metadata.get("display_mode", "adaptive"),
         "duration": elapsed, "transitions": transitions,
         "starts": starts, "music": config.MUSIC, "audio": audio,
         "music_continuous": True, "friend_level": metadata["friend_level"],
@@ -474,7 +507,7 @@ def compose(ffmpeg, mode, language, metadata, work):
     for thumb in thumbs:
         sheet.paste(thumb, (x, 0))
         x += thumb.width
-    sheet.save(OUTPUT / f"preview-{mode}-{language}.jpg", quality=95)
+    sheet.save(OUTPUT / f"preview-{mode}-{language}{suffix}.jpg", quality=95)
     print(f"Ready: {output.relative_to(PROJECT)} ({width}x{height}, ~{elapsed:.1f}s)", flush=True)
 
 
@@ -485,7 +518,19 @@ def main():
     parser.add_argument("--reuse-capture", action="store_true")
     parser.add_argument("--format", choices=("both", "portrait", "landscape"), default="both")
     parser.add_argument("--language", choices=("both", "fr", "en"), default="both")
+    parser.add_argument("--versions", nargs="+", choices=VERSIONS,
+                        help="Exact format/language combinations (overrides GENERATION)")
+    parser.add_argument("--display-mode", choices=DISPLAY_MODES,
+                        default=config.GENERATION["display_mode"])
     args = parser.parse_args()
+    try:
+        versions = selected_versions(args)
+        if not versions:
+            raise ValueError("No versions match the format/language filters")
+        if args.display_mode not in DISPLAY_MODES:
+            raise ValueError("Invalid display_mode in GENERATION")
+    except ValueError as error:
+        parser.error(str(error))
     for executable in ([args.ffmpeg] if args.reuse_capture else [args.godot, args.ffmpeg]):
         if not shutil.which(executable):
             parser.error(f"Executable not found: {executable}")
@@ -493,17 +538,17 @@ def main():
     (OUTPUT / ".gdignore").touch()
     WORK.mkdir(parents=True, exist_ok=True)
     (WORK / ".gdignore").touch()
-    for language in (["fr", "en"] if args.language == "both" else [args.language]):
-        for mode in (["portrait", "landscape"] if args.format == "both" else [args.format]):
-            work = WORK / f"{mode}-{language}"
-            work.mkdir(parents=True, exist_ok=True)
-            if args.reuse_capture:
-                metadata = json.loads((work / "capture.json").read_text(encoding="utf-8"))
-            else:
-                print(f"Recording {mode}/{language} with isolated saves...", flush=True)
-                metadata = capture(args.godot, mode, language, work)
-            print(f"Editing {mode}/{language}...", flush=True)
-            compose(args.ffmpeg, mode, language, metadata, work)
+    for mode, language in versions:
+        work = WORK / f"{mode}-{language}{display_suffix(args.display_mode)}"
+        work.mkdir(parents=True, exist_ok=True)
+        if args.reuse_capture:
+            metadata = json.loads((work / "capture.json").read_text(encoding="utf-8"))
+        else:
+            print(f"Recording {mode}/{language}/{args.display_mode} with isolated saves...", flush=True)
+            metadata = capture(args.godot, mode, language, work, args.display_mode)
+        validate_capture_selection(metadata, mode, language, args.display_mode)
+        print(f"Editing {mode}/{language}/{args.display_mode}...", flush=True)
+        compose(args.ffmpeg, mode, language, metadata, work)
 
 
 if __name__ == "__main__":

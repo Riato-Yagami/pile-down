@@ -3,6 +3,7 @@ extends Control
 
 signal card_placed(card, pile)
 signal mistake_made()
+signal placement_mistake_made()
 signal round_completed()
 signal game_over()
 
@@ -170,7 +171,7 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var overlay_title: RichTextLabel = $Screens/Overlay/OverlayCenter/ResultStack/OverlayPanel/Content/OverlayTitle
 @onready var overlay_details: RichTextLabel = $Screens/Overlay/OverlayCenter/ResultStack/OverlayPanel/Content/OverlayDetails
 @onready var overlay_button: Button = $Screens/Overlay/OverlayCenter/ResultStack/OverlayPanel/Content/OverlayButtons/OverlayButton
-@onready var end_seed_display: SeedCopyDisplay = $Screens/Overlay/OverlayCenter/ResultStack/OverlayPanel/Content/EndSeedDisplay
+@onready var end_seed_display: SeedCopyDisplay = $Screens/Overlay/OverlayCenter/ResultStack/OverlayPanel/Content/Footer/EndSeedDisplay
 @onready var overlay_endless_button: Button = $Screens/Overlay/OverlayCenter/ResultStack/OverlayPanel/Content/OverlayButtons/OverlayEndlessButton
 @onready var overlay_high_score: RichTextLabel = $Screens/Overlay/OverlayCenter/ResultStack/OverlayHighScore
 @onready var overlay_unlocks: RichTextLabel = $Screens/Overlay/OverlayCenter/ResultStack/OverlayUnlocks
@@ -217,6 +218,7 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var screen_size_down_button: TextureHighlightButton = %ScreenSizeDownButton
 @onready var adaptive_resolution_button: Button = %AdaptiveResolutionButton
 @onready var true_pixel_art_button: Button = %TruePixelArtButton
+@onready var orientation_button: Button = %OrientationButton
 @onready var system_bars_button: Button = %SystemBarsButton
 @onready var ignore_notch_button: Button = %IgnoreNotchButton
 @onready var dust_effects_button: Button = %DustEffectsButton
@@ -247,6 +249,7 @@ const URGENT_TICK_THRESHOLDS: Array[float] = [
 @onready var music_manager: MusicManager = %MusicManager
 @onready var special_rule_manager: SpecialRuleManager = %SpecialRuleManager
 @onready var bonus_manager: BonusManager = %BonusManager
+@onready var snake_rule_controller: SnakeRuleController = %SnakeRuleController
 @onready var lava_rule_controller: LavaRuleController = %LavaRuleController
 @onready var sticky_fingers_controller: StickyFingersRuleController = %StickyFingersRuleController
 @onready var mirror_match_controller: MirrorMatchRuleController = %MirrorMatchRuleController
@@ -327,6 +330,7 @@ var newly_unlocked_checkpoints: Array[int] = []
 var unread_progression_pages: Array[int] = []
 var unread_progression_items: Dictionary = {}
 var achievement_manager := AchievementManager.new()
+var value_style_manager := ValueStyleManager.new()
 var font_manager := FontManager.new()
 var palette_manager := ColorPaletteManager.new()
 var theme_manager := ThemeManagerScript.new()
@@ -512,6 +516,7 @@ func _ready() -> void:
 	_submenu_page_animator.travel_distance = 18.0
 	add_child(achievement_manager)
 	add_child(challenge_manager)
+	add_child(value_style_manager)
 	add_child(font_manager)
 	add_child(palette_manager)
 	add_child(theme_manager)
@@ -527,6 +532,7 @@ func _ready() -> void:
 		palette_manager.selected_palette = default_palette.id
 	achievement_manager.load_progress()
 	challenge_manager.load_progress()
+	value_style_manager.load_progress()
 	font_manager.load_progress()
 	palette_manager.load_progress()
 	theme_manager.configure_from_palettes(
@@ -540,6 +546,8 @@ func _ready() -> void:
 		font_manager.unlock_for_achievement(achievement_id)
 		palette_manager.unlock_for_achievement(achievement_id)
 	achievement_manager.achievement_unlocked.connect(_on_achievement_unlocked)
+	achievement_manager.record_challenge_starts(challenge_manager.started, challenge_manager.definitions)
+	hand_manager.joker_count_changed.connect(achievement_manager.hand_joker_count_changed.emit)
 	hand_manager.card_selected.connect(_on_card_selected)
 	hand_manager.card_drag_started.connect(_on_card_drag_started)
 	hand_manager.card_drag_released.connect(_on_card_drag_released)
@@ -599,6 +607,10 @@ func _ready() -> void:
 	progression_menu.closed.connect(_on_progression_menu_closed)
 	progression_menu.font_selected.connect(_on_progression_font_selected)
 	progression_menu.palette_selected.connect(_on_progression_palette_selected)
+	progression_menu.value_style_selected.connect(func(style: StringName): value_style_manager.select(style))
+	value_style_manager.style_changed.connect(func(style: StringName):
+		GameMenuPresenterScript.apply_value_style(self, style)
+	)
 	progression_menu.page_viewed.connect(_on_progression_page_viewed)
 	theme_manager.theme_changed.connect(_on_theme_changed)
 	endless_button.mouse_entered.connect(_show_endless_high_score)
@@ -1690,7 +1702,7 @@ func _on_card_drag_started(card: PlayingCard, tactile := false) -> void:
 	var selection_time_left := card.drag_timer.time_left if card._selected else -1.0
 	selected_card = card
 	hand_manager.clear_selection()
-	if (card.is_discarding and card.get_parent() != hand_container) or round_modifiers.wandering_hand_cards or challenge_modifiers.conveyor_hand:
+	if (card.is_discarding and card.get_parent() != hand_container) or round_modifiers.wandering_hand_cards or round_modifiers.snake_enabled or challenge_modifiers.conveyor_hand:
 		drag_home_index = -1
 		_clear_drag_placeholder()
 	else:
@@ -1759,6 +1771,8 @@ func _on_card_drag_released(card: PlayingCard, release_position: Vector2) -> voi
 	hovered_pile = null
 	if card.is_discarding:
 		await DiscardPlayController.release(self, card, target)
+		return
+	if round_modifiers.snake_enabled and snake_rule_controller.try_release_card(card, target):
 		return
 	if target == null:
 		if (
@@ -2284,6 +2298,8 @@ func _start_seeded_run(
 	bonus_levels: Dictionary, rule_ids: Array[StringName],
 	endless: bool, seed_difficulty: Dictionary
 ) -> void:
+	if SecretCodeManager.redeem(self, seed_text):
+		return
 	var data: ChallengeData = null
 	if not challenge_id.is_empty():
 		data = challenge_manager.find(challenge_id)
@@ -2332,7 +2348,7 @@ func _sanitized_seed_difficulty(seed_difficulty: Dictionary) -> Dictionary:
 		"start_round": clampi(int(seed_difficulty.get("start_round", 1)), 1, int(_seed_difficulty_limits()["max_start_round"])),
 	}
 	var bounds := {
-		"pile_count": [Difficulty.START_PILES, 4],
+		"pile_count": [Difficulty.START_PILES, Difficulty.MAX_PILES],
 		"hand_size": [Difficulty.START_HAND_SIZE, Difficulty.MAX_HAND_SIZE],
 		"start_value": [1, Difficulty.MAX_CARD_VALUE],
 		"turn_time": [Difficulty.MIN_TURN_TIME, Difficulty.START_TURN_TIME],
@@ -2775,7 +2791,7 @@ func _on_bonuses_seen(bonus_ids: Array[StringName]) -> void:
 
 
 func _refresh_pile_mover_cursors() -> void:
-	var pile_mover_active := bonus_manager.has_bonus(&"pile_mover")
+	var pile_mover_active := bonus_manager.has_bonus(&"pile_mover") and not round_modifiers.snake_enabled
 	for pile in piles:
 		if is_instance_valid(pile):
 			pile.set_movable(pile_mover_active)
@@ -2893,6 +2909,8 @@ func _build_run_summary(normal_game_completed: bool) -> RunSummary:
 
 
 func _on_achievement_unlocked(data: AchievementData) -> void:
+	if not value_style_manager.achievements.has(data.id):
+		value_style_manager.achievements.append(data.id)
 	newly_unlocked_achievements.append(data.id)
 	_mark_progression_item_unread(ProgressionMenu.Page.ACHIEVEMENTS, data.id)
 	for font_id in font_manager.unlock_for_achievement(data.id):

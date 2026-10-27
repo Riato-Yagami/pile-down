@@ -9,52 +9,115 @@ static func populate_fonts(host: ProgressionMenu) -> void:
 	var fonts: Array = host._snapshot.get("fonts", [])
 	var palettes: Array = host._snapshot.get("palettes", [])
 	var preview_data: Dictionary = {}
-	var ordered_fonts := fonts
-	if Engine.is_editor_hint():
-		ordered_fonts = host._selected_first(fonts)
-	for font_value in ordered_fonts:
-		var font_data := font_value as Dictionary
-		var unlocked := bool(font_data.get("unlocked", false))
-		if unlocked and (preview_data.is_empty() or bool(font_data.get("selected", false))):
-			preview_data = font_data
+	for entry: Dictionary in fonts:
+		if bool(entry.get("unlocked", false)) and (preview_data.is_empty() or bool(entry.get("selected", false))):
+			preview_data = entry.duplicate()
+	for entry: Dictionary in palettes:
+		if bool(entry.get("selected", false)):
+			preview_data["colors"] = entry.get("colors", [])
+	var tab := (host.cosmetic_lists as CustomisationTabs).current_tab
+	var entries: Array = fonts if tab == 0 else palettes if tab == 1 else host._snapshot.get("value_styles", [])
+	# Selection changes only the checkmarks, never the list geometry or scroll.
+	var catalog: Array = []
+	for entry: Dictionary in entries:
+		var definition := entry.duplicate()
+		definition.erase("selected")
+		catalog.append(definition)
+	var signature := hash([catalog, host.lock_filter.mode, TranslationServer.get_locale()])
+	if host.cosmetic_cache.get(tab, null) != signature:
+		var target := host.fonts_content if tab == 0 else host.palettes_content if tab == 1 else host.values_content
+		host.PixelUiScript.queue_free_children(target, true)
+		host.cosmetic_cache[tab] = signature
+		if tab == 2:
+			var group := ButtonGroup.new()
+			group.allow_unpress = false
+			for entry: Dictionary in entries:
+				var style := StringName(entry["id"])
+				var unlocked := bool(entry.get("unlocked", false))
+				if not host._matches_progress_filter(unlocked):
+					continue
+				host._add_cosmetic_choice(target, entry["title"], unlocked, false,
+					func():
+						if StringName(host._snapshot.get("selected_value_style", &"numbers")) != style:
+							host.value_style_selected.emit(style))
+				var button := target.get_child(target.get_child_count() - 1) as Button
+				button.set_meta("value_style", style)
+				button.button_group = group
+		else:
+			host.cosmetic_build_serial += 1
+			host.cosmetic_builds[tab] = {"id": host.cosmetic_build_serial, "next": 0, "running": false}
+	if tab != 2:
+		var target := host.fonts_content if tab == 0 else host.palettes_content
+		for button: Button in target.get_children():
+			_sync_choice(host, button, tab)
+		var state: Dictionary = host.cosmetic_builds.get(tab, {})
+		if not state.is_empty() and not state["running"]:
+			var ordered := host._selected_first(entries) if Engine.is_editor_hint() else entries
+			if int(state["next"]) < ordered.size():
+				state["running"] = true
+				_build_choices(host, tab, ordered, state)
+	var preview_signature := hash([preview_data, host._snapshot.get("max_discovered_tile_value", 3)])
+	if host.preview_cache != preview_signature:
+		host.preview_cache = preview_signature
+		host._update_font_preview(preview_data)
+	apply_value_style(host, StringName(host._snapshot.get("selected_value_style", &"numbers")))
+
+
+static func _build_choices(host: ProgressionMenu, tab: int, entries: Array, state: Dictionary) -> void:
+	# Yield the first build so the menu/header/preview can be drawn immediately.
+	# Rows are retained when changing tabs and resume when that tab is revisited.
+	var batch_started := 0
+	while int(state["next"]) < entries.size():
+		if batch_started == 0 or Time.get_ticks_usec() - batch_started >= 4000:
+			await host.get_tree().process_frame
+			batch_started = Time.get_ticks_usec()
+		if not is_instance_valid(host) or host.is_queued_for_deletion():
+			return
+		if host.cosmetic_builds.get(tab, {}).get("id", -1) != state["id"]:
+			return
+		if not host.visible or host._page != ProgressionMenu.Page.FONTS or (host.cosmetic_lists as CustomisationTabs).current_tab != tab:
+			state["running"] = false
+			return
+		var entry: Dictionary = entries[int(state["next"])]
+		state["next"] = int(state["next"]) + 1
+		var unlocked := bool(entry.get("unlocked", false))
 		if not host._matches_progress_filter(unlocked):
 			continue
-		var selected := bool(font_data.get("selected", false))
-		host._add_cosmetic_choice(
-			host.fonts_content,
-			str(font_data.get("title", "FONT")),
-			unlocked,
-			selected,
-			host._select_font.bind(StringName(font_data.get("id", &""))),
-			font_data.get("font") as Font,
-			[],
-			int(font_data.get(
-				"title_font_size",
-				font_data.get("font_size", host.entry_heading_font_size)
-			)),
-			host._vector2_or_zero(font_data.get("title_font_offset"))
-		)
-	var ordered_palettes := palettes
-	if Engine.is_editor_hint():
-		ordered_palettes = host._selected_first(palettes)
-	for palette_value in ordered_palettes:
-		var palette_data := palette_value as Dictionary
-		var palette_unlocked := bool(palette_data.get("unlocked", false))
-		var palette_selected_now := bool(palette_data.get("selected", false))
-		if palette_selected_now:
-			preview_data["colors"] = palette_data.get("colors", [])
-		if not host._matches_progress_filter(palette_unlocked):
+		var target := host.fonts_content if tab == 0 else host.palettes_content
+		if tab == 0:
+			host._add_cosmetic_choice(target, str(entry.get("title", "FONT")), unlocked,
+				bool(entry.get("selected", false)), host._select_font.bind(StringName(entry.get("id", &""))),
+				entry.get("font") as Font, [], int(entry.get("title_font_size", entry.get("font_size", host.entry_heading_font_size))),
+				host._vector2_or_zero(entry.get("title_font_offset")))
+		else:
+			host._add_cosmetic_choice(target, str(entry.get("title", "PALETTE")), unlocked,
+				bool(entry.get("selected", false)), host._select_palette.bind(StringName(entry.get("id", &""))),
+				null, entry.get("colors", []) as Array)
+		var button := target.get_child(target.get_child_count() - 1) as Button
+		button.set_meta("cosmetic_id", StringName(entry.get("id", &"")))
+		_sync_choice(host, button, tab)
+	state["running"] = false
+
+
+static func _sync_choice(host: ProgressionMenu, button: Button, tab: int) -> void:
+	var entries: Array = host._snapshot.get("fonts" if tab == 0 else "palettes", [])
+	for entry: Dictionary in entries:
+		if StringName(entry.get("id", &"")) == StringName(button.get_meta("cosmetic_id", &"")):
+			button.set_pressed_no_signal(bool(entry.get("selected", false)))
+			return
+
+
+static func apply_value_style(host: ProgressionMenu, style: StringName) -> void:
+	host._snapshot["selected_value_style"] = style
+	for button in host.values_content.get_children():
+		(button as Button).set_pressed_no_signal(StringName(button.get_meta("value_style", &"")) == style)
+	for tile in host.font_preview.get_children():
+		if not tile.has_meta("preview_value"):
 			continue
-		host._add_cosmetic_choice(
-			host.palettes_content,
-			str(palette_data.get("title", "PALETTE")),
-			palette_unlocked,
-			palette_selected_now,
-			host._select_palette.bind(StringName(palette_data.get("id", &""))),
-			null,
-			palette_data.get("colors", []) as Array
-		)
-	host._update_font_preview(preview_data)
+		var label := tile.get_child(0) as Label
+		var value := int(tile.get_meta("preview_value"))
+		label.text = str(value)
+		TilePips.apply(label, value, style, false, true, label.get_meta("value_font_offset", Vector2.ZERO))
 
 
 static func selected_first(host: ProgressionMenu, entries: Array) -> Array:
@@ -115,13 +178,11 @@ static func add_cosmetic_choice(
 	button.modulate = GameColors.WHITE
 	button.disabled = not unlocked
 	host.PixelUiScript.set_interactive_cursor(button, unlocked)
-	if selected:
-		# The active cosmetic stays checked until a different choice refreshes
-		# the list with the new selection.
-		button.button_group = ButtonGroup.new()
-		button.button_group.allow_unpress = false
+	# Each row stays selected on a second click; snapshot refresh synchronizes peers.
+	button.button_group = ButtonGroup.new()
+	button.button_group.allow_unpress = false
 	button.set_pressed_no_signal(selected)
-	if unlocked and not selected:
+	if unlocked:
 		button.pressed.connect(selection)
 	target.add_child(button)
 	if not palette_colors.is_empty():
@@ -148,9 +209,9 @@ static func add_font_title(
 	label.set_meta("progression_wrap_width", 0.0)
 	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	label.offset_left = 18.0 + font_offset.x
-	label.offset_right += font_offset.x
-	label.offset_top += font_offset.y
-	label.offset_bottom += font_offset.y
+	label.offset_right = font_offset.x
+	label.offset_top = font_offset.y
+	label.offset_bottom = font_offset.y
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.use_parent_material = true
 	label.text = title
@@ -317,6 +378,7 @@ static func update_font_preview(host: ProgressionMenu, font_data: Dictionary) ->
 		var label := Label.new()
 		label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		# Match the two-pixel optical lift used by Card and Pile value labels.
+		label.set_meta("value_font_offset", font_offset)
 		label.offset_left = font_offset.x
 		label.offset_right = font_offset.x
 		label.offset_top = font_offset.y
@@ -332,12 +394,22 @@ static func update_font_preview(host: ProgressionMenu, font_data: Dictionary) ->
 		if font != null:
 			label.add_theme_font_override("font", font)
 		tile.add_child(label)
+		if not is_hidden_tile:
+			tile.set_meta("preview_value", int(value))
+		TilePips.apply(label, int(value) if not is_hidden_tile else 0,
+			StringName(host._snapshot.get("selected_value_style", &"numbers")), false, not is_hidden_tile, font_offset)
 		host.font_preview.add_child(tile)
 
 
 static func select_font(host: ProgressionMenu, font_id: StringName) -> void:
+	for entry: Dictionary in host._snapshot.get("fonts", []):
+		if StringName(entry.get("id", &"")) == font_id and bool(entry.get("selected", false)):
+			return
 	host.font_selected.emit(font_id)
 
 
 static func select_palette(host: ProgressionMenu, palette_id: StringName) -> void:
+	for entry: Dictionary in host._snapshot.get("palettes", []):
+		if StringName(entry.get("id", &"")) == palette_id and bool(entry.get("selected", false)):
+			return
 	host.palette_selected.emit(palette_id)

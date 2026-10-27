@@ -1,0 +1,8 @@
+[
+  {
+    "test": "test_share_movement_shell_orbit.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.arch_linux.ed1daf0bf (2026-08-17 01:18:38 UTC) - https://godotengine.org\n\nShare movement checked: shell_orbit / 13\nShell Game + orbit share audit passed: swaps across orbit paths, 9 snapshots.\n"
+  }
+]

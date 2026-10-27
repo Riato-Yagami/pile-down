@@ -17,9 +17,13 @@ func load_progress() -> void:
 	var saved_fonts: Array = config.get_value("progression", "unlocked_fonts", [])
 	for value in saved_fonts:
 		var id := StringName(value)
+		if id == &"comic_relief_pixel":
+			id = &"liberation_sans"
 		if not unlocked.has(id):
 			unlocked.append(id)
 	selected_font = StringName(config.get_value("settings", "selected_font", selected_font))
+	if selected_font == &"comic_relief_pixel":
+		selected_font = &"liberation_sans"
 	if not unlocked.has(selected_font):
 		selected_font = &"press_start_2p"
 
@@ -63,3 +67,11 @@ func _save() -> void:
 	config.set_value("progression", "unlocked_fonts", unlocked)
 	config.set_value("settings", "selected_font", selected_font)
 	config.save(SAVE_PATH)
+
+
+func unlock(id: StringName) -> bool:
+	if find(id) == null or unlocked.has(id):
+		return false
+	unlocked.append(id)
+	_save()
+	return true

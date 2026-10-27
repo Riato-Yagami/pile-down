@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AchievementData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"circus_maximus"
+title = "CIRCUS MAXIMUS"
+description = "Beat a round with Roman Holiday and Merry-Go-Stack together. Unlocks Roman numerals."
+category = &"COMBOS"
+difficulty = 5
+reward_rationale = "Le cirque romain associe Rome et les piles qui tournent. Débloque les chiffres romains."
+allow_challenges = true
+allow_checkpoints = true

@@ -14,3 +14,5 @@ tile_font_offset = Vector2(0, 2)
 title_font_size = null
 override_hidden_tile_with_font = null
 required_achievement = ExtResource("2_yx7on")
+pip_shape = 0
+pip_scale = 0.85

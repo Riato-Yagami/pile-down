@@ -6,6 +6,16 @@ Les tailles, espacements et offset_x/offset_y sont en pixels de la vidéo finale
 Les temps sont en secondes ; le montage les arrondit à 30 images/s.
 """
 
+# Versions exactes à générer : retirer les combinaisons inutiles.
+GENERATION = {
+    "versions": [
+        # "portrait-fr", "landscape-fr", 
+        "portrait-en", 
+        # "landscape-en"
+    ],
+    "display_mode": "menu_adaptive",  # classic, semi_adaptive, adaptive, menu_adaptive
+}
+
 COPY = {
     "fr": {
         "intro": "PILE DOWN",
@@ -36,7 +46,7 @@ TITLE_TILES = {
 TITLE_DEFAULTS = {
     "headline": {
         "x": 0.5,                 # Centre horizontal du bloc de texte.
-        "y": 0.43,                # Haut du texte ; un bloc multiligne est centré autour.
+        "y": 0.38,                # Haut du texte ; un bloc multiligne est centré autour.
         "offset_x": 0,
         "offset_y": 0,
         "font_size": 110,         # Réduit automatiquement pour respecter margin_x.
@@ -53,7 +63,7 @@ TITLE_DEFAULTS = {
     "accent": {
         "visible": True,
         "x": 0.5,
-        "y": 0.31,
+        "y": 0.26,
         "offset_x": 0,
         "offset_y": 0,
         "width": 160,

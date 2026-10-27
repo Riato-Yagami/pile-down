@@ -1,6 +1,8 @@
 class_name AchievementNotificationController
 extends RefCounted
 
+const DEFAULT_ICON := preload("res://resources/materials/icons/trophies.tres")
+
 
 static func queue(game: GameManager, data: AchievementData) -> void:
 	if not game._achievement_notifications_enabled:
@@ -38,9 +40,21 @@ static func play(game: GameManager) -> void:
 			game._achievement_notification_queue.pop_front()
 		)
 		game.achievement_popup_title.text = data.title
-		position(game)
+		var icon := game.achievement_popup.get_node("Center/Content/Icon") as TextureRect
+		icon.texture = data.notification_icon if data.notification_icon != null else DEFAULT_ICON
+		icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		# Long translated messages must remain inside the same opaque panel.
+		game.achievement_popup_title.custom_minimum_size.x = 0
+		game.achievement_popup_title.size.x = maxf(40, game.achievement_popup.size.x - 54)
+		game.achievement_popup.size.y = maxf(
+			50, game.achievement_popup_title.get_minimum_size().y + 16
+		)
 		game.achievement_popup.visible = true
 		game.achievement_popup.modulate.a = 0.0
+		await game.get_tree().process_frame
+		var panel := game.achievement_popup.get_node("Center") as PanelContainer
+		game.achievement_popup.size.y = maxf(50, panel.get_combined_minimum_size().y)
+		position(game)
 		var target_y := game.achievement_popup.position.y
 		game.achievement_popup.position.y = target_y - 16.0
 		game.soft_audio.play_achievement()

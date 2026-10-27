@@ -14,3 +14,5 @@ title_font_size = 10
 override_hidden_tile_with_font = false
 required_achievement = ExtResource("progression_reward")
 id = &"digitalix"
+pip_shape = 1
+pip_scale = 1.0

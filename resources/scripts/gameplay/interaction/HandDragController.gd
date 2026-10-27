@@ -27,7 +27,7 @@ static func prepare_drag_companions(host: GameManager, main_card: PlayingCard) -
 
 static func selection_companions(host: GameManager, main_card: PlayingCard) -> Array[PlayingCard]:
 	var level := host.bonus_manager.level(&"bring_a_friend")
-	if level <= 0 or host.round_modifiers.wandering_hand_cards:
+	if level <= 0 or host.round_modifiers.wandering_hand_cards or host.round_modifiers.snake_enabled:
 		return []
 	var cards := host.hand_manager.active_cards()
 	var main_index := cards.find(main_card)
@@ -288,6 +288,11 @@ static func return_card_to_hand(host: GameManager, card: PlayingCard, duration :
 		return
 	var destination := card.hand_return_position()
 	await card.animate_return(destination, duration)
+	if host.round_modifiers.snake_enabled:
+		host._clear_drag_placeholder()
+		card.reset_hand_pose()
+		card.set_selectable(not host.input_locked)
+		return
 	if host.round_modifiers.wandering_hand_cards:
 		host._clear_drag_placeholder()
 		card.scale = Vector2.ONE

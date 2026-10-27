@@ -94,7 +94,9 @@ func _run() -> void:
 	assert(not DebugSettings.ENABLED, "Disable debug mode for publishing captures")
 	create_timer(150.0).timeout.connect(func(): quit(1))
 	var args := OS.get_cmdline_user_args()
-	assert(args.size() == 3, "Expected metadata path, format and language")
+	assert(args.size() == 4, "Expected metadata path, format, language and display mode")
+	var display_index := ScreenSizeOptions.SCREEN_SIZE_MODES.find(StringName(args[3]))
+	assert(display_index >= 0, "Unknown trailer display mode")
 	frame_directory = args[0].get_base_dir().path_join("full")
 	DirAccess.make_dir_recursive_absolute(frame_directory)
 	RenderingServer.frame_post_draw.connect(_capture_frame)
@@ -108,7 +110,7 @@ func _run() -> void:
 	# Late seeded starts are unlocked only inside this disposable capture profile.
 	game.best_rounds_left = 1
 	game._global_timer_enabled = false
-	ScreenSizeOptions.set_screen_size_mode(game, 2)
+	ScreenSizeOptions.set_screen_size_mode(game, display_index)
 	await _start(_profile_seed("TRAILER-CLASSIC", 3, 2, 2, 3), {}, [], 3)
 	var begin := _time()
 	for index in 2:
@@ -177,10 +179,16 @@ func _run() -> void:
 		"conveyor_placements": conveyor_placements, "conveyor_distance": conveyor_distance,
 		"segments": segments, "placements": placements,
 		"friend_placements": friend_placements, "swaps": swaps,
-		"format": args[1], "language": args[2],
+		"format": args[1], "language": args[2], "display_mode": args[3],
 	}, "\t"))
 	file.close()
 	print("Trailer: %d placements, %d companions, %d swaps" % [placements, friend_placements, swaps])
+	# Release scene-owned callbacks and resources before SceneTree shuts down.
+	RenderingServer.frame_post_draw.disconnect(_capture_frame)
+	game = null
+	main.queue_free()
+	await process_frame
+	await process_frame
 	quit()
 
 

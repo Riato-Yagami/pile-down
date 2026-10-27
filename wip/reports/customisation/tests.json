@@ -1,0 +1,38 @@
+[
+  {
+    "test": "test_cosmetic_selection.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.arch_linux.ed1daf0bf (2026-08-17 01:18:38 UTC) - https://godotengine.org\n\nCosmetic selection tests passed.\nWARNING: 2 ObjectDB instances were leaked at exit (run with `--verbose` for details).\n   at: cleanup (core/object/object.cpp:2536)\n"
+  },
+  {
+    "test": "test_customisation_performance.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.arch_linux.ed1daf0bf (2026-08-17 01:18:38 UTC) - https://godotengine.org\n\nCustomisation timings: { \"open_ms\": [5.939, 0.861, 0.711, 0.714], \"switch_ms\": [0.812, 7.116, 3.174, 3.058, 0.893], \"font_count\": 23 }\n"
+  },
+  {
+    "test": "test_customisation_tabs.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.arch_linux.ed1daf0bf (2026-08-17 01:18:38 UTC) - https://godotengine.org\n\nCustomisation tabs tests passed: title, pages, animation, rapid changes, refresh, keyboard and extensibility.\n"
+  },
+  {
+    "test": "test_menu_first_open.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.arch_linux.ed1daf0bf (2026-08-17 01:18:38 UTC) - https://godotengine.org\n\nFirst menu opening tests passed.\n"
+  },
+  {
+    "test": "test_snake_meal_animation.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.arch_linux.ed1daf0bf (2026-08-17 01:18:38 UTC) - https://godotengine.org\n\nSnake meal animation tests passed: centered shrink, moving head, sequential visual pulse and cleanup.\n"
+  },
+  {
+    "test": "test_value_styles.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.arch_linux.ed1daf0bf (2026-08-17 01:18:38 UTC) - https://godotengine.org\n\nValue styles passed: tabs, letters, dots 0-9, preview, persistence, masking, joker, Roman, Snake and afterglow.\n"
+  }
+]

@@ -14,3 +14,5 @@ title_font_offset = Vector2(1, 0)
 title_font_size = 16
 required_achievement = ExtResource("progression_reward")
 id = &"alkhemikal"
+pip_shape = 0
+pip_scale = 0.85

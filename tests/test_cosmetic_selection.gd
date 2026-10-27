@@ -30,7 +30,11 @@ func _run() -> void:
 	menu._show_page(ProgressionMenu.Page.FONTS)
 	await process_frame
 	await process_frame
-	for list in [menu.fonts_content, menu.palettes_content]:
+	for tab in [0, 1]:
+		(menu.cosmetic_lists as CustomisationTabs).select_tab(tab, false)
+		while bool(menu.cosmetic_builds.get(tab, {}).get("running", false)):
+			await process_frame
+		var list := menu.fonts_content if tab == 0 else menu.palettes_content
 		var checked := 0
 		for child in list.get_children():
 			var button := child as Button

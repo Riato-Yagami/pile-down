@@ -10,6 +10,7 @@ static func on_pile_drag_requested(
 ) -> void:
 	if (
 		host.input_locked
+		or host.round_modifiers.snake_enabled
 		or not host.bonus_manager.has_bonus(&"pile_mover")
 		or host.selected_card != null
 		or pile.completed
@@ -157,6 +158,7 @@ static func handle_pile_touch_input(host: GameManager, event: InputEvent) -> boo
 				return host._pile_touch_index == touch.index
 			if (
 				host.input_locked
+				or host.round_modifiers.snake_enabled
 				or not host.bonus_manager.has_bonus(&"pile_mover")
 				or host.selected_card != null
 			):

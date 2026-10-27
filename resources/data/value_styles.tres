@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DataCatalog" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/data/DataCatalog.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/data/value_styles/00_numbers.tres" id="style_0"]
+[ext_resource type="Resource" path="res://resources/data/value_styles/01_letters.tres" id="style_1"]
+[ext_resource type="Resource" path="res://resources/data/value_styles/02_dots.tres" id="style_2"]
+[ext_resource type="Resource" path="res://resources/data/value_styles/03_roman.tres" id="style_3"]
+
+[ext_resource type="Script" path="res://resources/scripts/data/Data.gd" id="data_type"]
+
+[resource]
+script = ExtResource("1_script")
+enabled_data = Array[ExtResource("data_type")]([ExtResource("style_0"), ExtResource("style_1"), ExtResource("style_2"), ExtResource("style_3")])

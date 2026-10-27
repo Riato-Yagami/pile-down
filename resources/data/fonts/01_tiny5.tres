@@ -12,3 +12,5 @@ tile_font_offset = Vector2(1, 0)
 title_font_offset = Vector2(2, 0)
 required_achievement = ExtResource("progression_reward")
 id = &"tiny5"
+pip_shape = 1
+pip_scale = 1.0

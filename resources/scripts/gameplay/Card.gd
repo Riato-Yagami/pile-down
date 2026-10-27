@@ -159,6 +159,7 @@ func setup(
 	modifiers: RoundModifiers = null
 ) -> void:
 	round_modifiers = modifiers
+	z_index = _resting_z_index()
 	card_value = value
 	hover_reveal_enabled = hover_reveal
 	roman_numerals_enabled = use_roman_numerals
@@ -224,9 +225,9 @@ func set_selected_visual(is_selected: bool) -> void:
 		# The hover zoom uses a fractional scale and lifts only the sprites.
 		# A resting selection keeps the sprite and its outline on the same grid.
 		reset_hand_pose()
-		z_index = 1
+		z_index = _resting_z_index() if _is_board_card() else 1
 	elif not is_selected and not dragging:
-		z_index = 0
+		z_index = _resting_z_index()
 	if selection_changed:
 		if is_selected and round_modifiers != null and round_modifiers.hot_potatoes_enabled:
 			if round_modifiers.hot_potato_drag_duration > 0.0:
@@ -467,7 +468,7 @@ func finish_drag() -> void:
 	drag_state = DragState.IDLE
 	reset_touch_interaction()
 	cancel_drag_timers()
-	z_index = 0
+	z_index = _resting_z_index()
 	rotation = 0.0
 
 
@@ -710,3 +711,11 @@ func _on_drag_timer_timeout() -> void:
 	if placement_confirmed or (not dragging and not _selected):
 		return
 	request_forced_return(ForcedReturnReason.HOT_POTATO)
+
+
+func _is_board_card() -> bool:
+	return round_modifiers != null and (round_modifiers.wandering_hand_cards or round_modifiers.snake_enabled)
+
+
+func _resting_z_index() -> int:
+	return -1 if _is_board_card() else 0

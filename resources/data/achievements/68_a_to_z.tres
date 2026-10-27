@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AchievementData" format=3]
+
+[ext_resource type="Script" path="res://resources/scripts/progression/AchievementData.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"a_to_z"
+title = "A TO Z"
+description = "Start every challenge at least once. Unlocks letters."
+category = &"CHALLENGES"
+difficulty = 4
+allow_menu = true
+reward_rationale = "Explorer tous les défis, de A à Z, débloque les lettres."

@@ -1,0 +1,22 @@
+[
+  {
+    "test": "test_adaptive_submenus.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.arch_linux.ed1daf0bf (2026-08-17 01:18:38 UTC) - https://godotengine.org\n\nAdaptive submenu tests passed.\n"
+  },
+  {
+    "test": "test_progression_lock_filter.gd",
+    "passed": true,
+    "errors": [],
+    "output": "Godot Engine v4.7.2.stable.arch_linux.ed1daf0bf (2026-08-17 01:18:38 UTC) - https://godotengine.org\n\n"
+  },
+  {
+    "test": "test_progression_menu.gd",
+    "passed": false,
+    "errors": [
+      "SCRIPT ERROR: Assertion failed."
+    ],
+    "output": "Godot Engine v4.7.2.stable.arch_linux.ed1daf0bf (2026-08-17 01:18:38 UTC) - https://godotengine.org\n\nSCRIPT ERROR: Assertion failed.\n          at: _run (res://tests/test_progression_menu.gd:24)\n          GDScript backtrace (most recent call first):\n              [0] _run (res://tests/test_progression_menu.gd:24)\n"
+  }
+]

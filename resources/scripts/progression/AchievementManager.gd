@@ -15,6 +15,7 @@ signal special_rule_round_completed(
 	rule_ids: Array[StringName], beaten_ids: Array[StringName]
 )
 signal hand_combo_resolved(summary: HandComboSummary)
+signal hand_joker_count_changed(count: int)
 signal life_lost()
 signal external_link_opened(link_id: StringName)
 signal run_completed(summary: RunSummary)
@@ -49,6 +50,7 @@ func _ready() -> void:
 	bonus_acquired.connect(_on_bonus_acquired)
 	special_rule_round_completed.connect(_on_special_rule_round_completed)
 	hand_combo_resolved.connect(_on_hand_combo_resolved)
+	hand_joker_count_changed.connect(_on_hand_joker_count_changed)
 	run_completed.connect(_on_run_completed)
 	pile_round_started.connect(_on_pile_round_started)
 	pile_placement_resolved.connect(_on_pile_placement_resolved)
@@ -138,6 +140,11 @@ func check_all_achievements(persist := true, from_menu := false) -> void:
 		if data.id != &"all_achievements" and not unlocked.has(data.id):
 			return
 	unlock(&"all_achievements", persist, from_menu)
+
+
+func record_challenge_starts(started: Array[StringName], challenges: Array[ChallengeData]) -> void:
+	if not challenges.is_empty() and challenges.all(func(data: ChallengeData) -> bool: return started.has(data.id)):
+		unlock(&"a_to_z", true, true)
 
 
 func _on_external_link_opened(link_id: StringName) -> void:
@@ -343,8 +350,15 @@ func _on_special_rule_round_completed(
 		_save()
 	if _contains_all_enabled(qualified_rule_ids, Difficulty.ENABLED_SPECIAL_RULES):
 		unlock(&"beat_all_special_rules")
+	if rule_ids.has(&"roman_holiday") and rule_ids.has(&"merry_go_stack"):
+		unlock(&"circus_maximus")
 	if rule_ids.has(&"colorblind") and rule_ids.size() >= 3:
 		unlock(&"colorblind_expert")
+
+
+func _on_hand_joker_count_changed(count: int) -> void:
+	if count >= _required_count(&"joker_trio", 3):
+		unlock(&"joker_trio")
 
 
 func _on_hand_combo_resolved(summary: HandComboSummary) -> void:

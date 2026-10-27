@@ -6,7 +6,7 @@ const SPECIAL_RULE_CATALOG := preload("res://resources/data/special_rules.tres")
 const BACKGROUND_CATALOG := preload("res://resources/data/backgrounds.tres")
 
 # Master switch. Every option below is ignored while this is false.
-const ENABLED := false
+const ENABLED := true
 
 # Mistakes still play their feedback, but never consume a life.
 const GOD_MODE := false
@@ -41,7 +41,7 @@ const DISABLE_BG_MORPH_TRANSITION := false
 # hot_potatoes, blind_delivery, mirror_match, sudden_death, grace_period,
 # colorblind, floor_is_lava, pixelated, shaking_piles, wavy_baby.
 const LOCK_SPECIAL_RULES: Array[StringName] = [
-	#"free_range_cards",
+	#"snake",
 	#"wavy_baby",
 	#"shaking_piles",
 	#"lights_out",
@@ -59,7 +59,7 @@ const LOCK_SPECIAL_RULES: Array[StringName] = [
 # lucky_hand, time_bank, slow_start, spare_life, safety_net, clean_slate,
 # bring_a_friend, pile_mover, double_down, deja_vu, rule_breaker, adaptation.
 const LOCK_BONUSES: Dictionary = {
-	&"safety_net": 1,
+	# &"safety_net": 1,
 	#&"wild_card": 3,
 	#&"pile_mover":1,
 	#&"double_down": 1,

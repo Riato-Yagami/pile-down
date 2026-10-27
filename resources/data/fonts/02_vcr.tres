@@ -5,6 +5,7 @@
 
 [resource]
 script = ExtResource("3_rn2xm")
+pip_scale = 0.85
 display_name = "CLASSIC"
 font = ExtResource("1_oibao")
 tile_font_offset = Vector2(0, -1)

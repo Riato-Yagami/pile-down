@@ -10,8 +10,13 @@ func _init() -> void:
 func _run() -> void:
 	var game := GameScene.instantiate() as GameManager
 	root.add_child(game)
-	game.start_game()
+	game.start_game(false, null, false, "MISTAKE-RETRY", {}, [], {"pile_count": 2, "hand_size": 2, "start_value": 5})
 	await _wait_until_unlocked(game)
+	GameManager.Debug._runtime_god_mode = false
+	game.bonus_manager.active.clear()
+	game.bonus_manager.safety_net_available = false
+	game.snake_rule_controller.stop()
+	game.round_modifiers.snake_enabled = false
 	if game.round_modifiers.wandering_hand_cards:
 		game.round_modifiers.wandering_hand_cards = false
 		for generated_card in game.hand_manager.current_cards:
@@ -60,8 +65,9 @@ func _run() -> void:
 	game._on_card_drag_started(timed_out_card)
 	await game._on_time_expired()
 	assert(game.mistakes_left == mistakes_before_timeout - 1)
-	assert(timed_out_card.get_parent() == game.hand_container)
-	assert(not timed_out_card.dragging)
+	assert(timed_out_card.get_parent() == game.drag_layer)
+	assert(game.selected_card == timed_out_card)
+	assert(timed_out_card.dragging)
 	assert(timed_out_card.selectable)
 	assert(not game.input_locked)
 	frozen_time = game.timer_manager.time_left

@@ -294,16 +294,30 @@ static func handle_mistake(
 		host.checkpoint_flawless_rounds = 0
 		host.achievement_manager.life_lost.emit()
 	host.mistake_made.emit()
+	if not caused_by_timeout:
+		host.placement_mistake_made.emit()
 	if protected_by_safety_net:
 		host.soft_audio.play_safety_net_break()
 	elif caused_by_timeout:
 		host.soft_audio.play_timeout_error()
 	else:
 		host.soft_audio.play_error()
+	if host.mistakes_left > 0 and caused_by_timeout:
+		# A surviving timeout restarts the clock without interrupting the held tile.
+		host.input_locked = false
+		host.hand_manager.unlock_hand()
+		if is_instance_valid(host.selected_card):
+			host.hand_manager.lock_all_cards_except(host.selected_card)
+		host._start_turn_countdown()
+		host.timer_manager.freeze_countdown(host.Difficulty.MISTAKE_TIMER_FREEZE_DURATION)
+		_damage_feedback(host, protected_by_safety_net)
+		return
 	if host.mistakes_left > 0 and not caused_by_timeout:
 		_resume_after_mistake(host, pile, protected_by_safety_net, shared_clock_time)
 		return
 	if host.mistakes_left <= 0:
+		# Freeze the board before death feedback or delayed regeneration changes it.
+		(host.overlay as EndScreen).capture_share_tiles(host.piles)
 		host.music_manager.set_low_pass_enabled(true)
 	if protected_by_safety_net:
 		await host.mistakes_dots.play_safety_net_break()
@@ -466,7 +480,7 @@ static func _return_rejected_card(host: GameManager, card: PlayingCard) -> void:
 	if card.is_discarding or card.placement_confirmed:
 		return
 	host._remove_hand_slot_placeholder(card)
-	if not host.round_modifiers.wandering_hand_cards:
+	if not host.round_modifiers.wandering_hand_cards and not host.round_modifiers.snake_enabled:
 		card.reparent(host.hand_container, false)
 		host._restore_hand_child_order()
 	card.reset_hand_pose()
